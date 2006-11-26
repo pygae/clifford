@@ -176,21 +176,22 @@ Robert Kern
 robert.kern@gmail.com
 """
 
-import Numeric
+# Standard library imports.
 import types
-import operator
 import math
 
-from Numeric import pi, e
+# Major library imports.
+import numpy as np
+from scipy import linalg
 
-try:
-    import LinearAlgebra
-    LA = LinearAlgebra
-except ImportError:
-    LA = None
 
-_eps = 1e-15  # float epsilon for float comparisons
-_pretty = 0   # pretty-print global
+class NoMorePermutations(StandardError):
+    """ No more permutations can be generated.
+    """
+
+
+_eps = 1e-15     # float epsilon for float comparisons
+_pretty = False  # pretty-print global
 
 def _myDot(a, b):
     """Returns the inner product as *I* learned it.
@@ -204,96 +205,96 @@ def _myDot(a, b):
     _myDot(a, b) --> NumPy array
     """
 
-    a = Numeric.asarray(a)
-    b = Numeric.asarray(b)
+    a = np.asarray(a)
+    b = np.asarray(b)
 
     tempAxes = tuple(range(1, len(b.shape)) + [0])
-    newB = Numeric.transpose(b, tempAxes)
+    newB = np.transpose(b, tempAxes)
 
     # innerproduct sums over the *last* axes of *both* arguments
-    return Numeric.innerproduct(a, newB)
+    return np.innerproduct(a, newB)
     
 
 class Layout:
-    """\
-Layout stores information regarding the geometric algebra itself and 
-the internal representation of multivectors.  It is constructed like this:
+    """ Layout stores information regarding the geometric algebra itself and the
+    internal representation of multivectors.
+    
+    It is constructed like this:
 
-  Layout(signature, bladeList, firstIdx=0, names=None)
+      Layout(signature, bladeList, firstIdx=0, names=None)
 
-The arguments to be passed are interpreted as follows:
+    The arguments to be passed are interpreted as follows:
 
-  signature -- the signature of the vector space.  This should be
-      a list of positive and negative numbers where the sign determines
-      the sign of the inner product of the corresponding vector with itself.
-      The values are irrelevant except for sign.  This list also determines
-      the dimensionality of the vectors.  Signatures with zeroes are not
-      permitted at this time.
+      signature -- the signature of the vector space.  This should be
+          a list of positive and negative numbers where the sign determines
+          the sign of the inner product of the corresponding vector with itself.
+          The values are irrelevant except for sign.  This list also determines
+          the dimensionality of the vectors.  Signatures with zeroes are not
+          permitted at this time.
+          
+          Examples:
+            signature = [+1, -1, -1, -1]  # Hestenes', et al. Space-Time Algebra
+            signature = [+1, +1, +1]      # 3-D Euclidean signature
+            
+      bladeList -- list of tuples corresponding to the blades in the whole 
+          algebra.  This list determines the order of coefficients in the 
+          internal representation of multivectors.  The entry for the scalar
+          must be an empty tuple, and the entries for grade-1 vectors must be
+          singleton tuples.  Remember, the length of the list will be 2**dims.
+
+          Example:
+            bladeList = [(), (0,), (1,), (0,1)]  # 2-D
       
-      Examples:
-        signature = [+1, -1, -1, -1]  # Hestenes', et al. Space-Time Algebra
-        signature = [+1, +1, +1]      # 3-D Euclidean signature
-        
-  bladeList -- list of tuples corresponding to the blades in the whole 
-      algebra.  This list determines the order of coefficients in the 
-      internal representation of multivectors.  The entry for the scalar
-      must be an empty tuple, and the entries for grade-1 vectors must be
-      singleton tuples.  Remember, the length of the list will be 2**dims.
+      firstIdx -- the index of the first vector.  That is, some systems number
+          the base vectors starting with 0, some with 1.  Choose by passing
+          the correct number as firstIdx.  0 is the default.
+      
+      names -- list of names of each blade.  When pretty-printing multivectors,
+          use these symbols for the blades.  names should be in the same order
+          as bladeList.  You may use an empty string for scalars.  By default,
+          the name for each non-scalar blade is 'e' plus the indices of the blade
+          as given in bladeList.
 
-      Example:
-        bladeList = [(), (0,), (1,), (0,1)]  # 2-D
-  
-  firstIdx -- the index of the first vector.  That is, some systems number
-      the base vectors starting with 0, some with 1.  Choose by passing
-      the correct number as firstIdx.  0 is the default.
-  
-  names -- list of names of each blade.  When pretty-printing multivectors,
-      use these symbols for the blades.  names should be in the same order
-      as bladeList.  You may use an empty string for scalars.  By default,
-      the name for each non-scalar blade is 'e' plus the indices of the blade
-      as given in bladeList.
+          Example:
+            names = ['', 's0', 's1', 'i']  # 2-D
 
-      Example:
-        names = ['', 's0', 's1', 'i']  # 2-D
+      
+    Layout's Members:
 
-  
-Layout's Members:
+      dims -- dimensionality of vectors (== len(signature))
 
-  dims -- dimensionality of vectors (== len(signature))
+      sig -- normalized signature (i.e. all values are +1 or -1)
 
-  sig -- normalized signature (i.e. all values are +1 or -1)
+      firstIdx -- starting point for vector indices
 
-  firstIdx -- starting point for vector indices
+      bladeList -- list of blades
 
-  bladeList -- list of blades
+      gradeList -- corresponding list of the grades of each blade
 
-  gradeList -- corresponding list of the grades of each blade
+      gaDims -- 2**dims
 
-  gaDims -- 2**dims
+      names -- pretty-printing symbols for the blades
 
-  names -- pretty-printing symbols for the blades
+      even -- dictionary of even permutations of blades to the canonical blades
 
-  even -- dictionary of even permutations of blades to the canonical blades
+      odd -- dictionary of odd permutations of blades to the canonical blades
 
-  odd -- dictionary of odd permutations of blades to the canonical blades
+      gmt -- multiplication table for geometric product [1]
 
-  gmt -- multiplication table for geometric product [1]
+      imt -- multiplication table for inner product [1]
 
-  imt -- multiplication table for inner product [1]
+      omt -- multiplication table for outer product [1]
 
-  omt -- multiplication table for outer product [1]
-
-  lcmt -- multiplication table for the left-contraction [1]
+      lcmt -- multiplication table for the left-contraction [1]
 
 
-[1] The multiplication tables are NumPy arrays of rank 3 with indices like 
-    the tensor g_ijk discussed above.
-"""
+    [1] The multiplication tables are NumPy arrays of rank 3 with indices like 
+        the tensor g_ijk discussed above.
+    """
 
     def __init__(self, sig, bladeList, firstIdx=0, names=None):
         self.dims = len(sig)
-        self.sig = Numeric.divide(sig,
-                                  Numeric.absolute(sig)).astype(Numeric.Int)
+        self.sig = np.divide(sig, np.absolute(sig)).astype(int)
         self.firstIdx = firstIdx
 
         self.bladeList = map(tuple, bladeList)
@@ -308,7 +309,7 @@ Layout's Members:
             
             for i in range(self.gaDims):
                 if self.gradeList[i] > 1:
-                    self.names.append(e + str(Numeric.add.reduce(map(str, self.bladeList[i]))))
+                    self.names.append(e + str(np.add.reduce(map(str, self.bladeList[i]))))
                 elif self.gradeList[i] == 1:
                     self.names.append(e + str(self.bladeList[i][0]))
                 else:
@@ -323,10 +324,8 @@ Layout's Members:
         self._genTables()
 
     def __repr__(self):
-        s = "Layout(%s, %s, firstIdx=%s, names=%s)" % (list(self.sig),
-                                          self.bladeList,
-                                          self.firstIdx,
-                                          self.names)
+        s = ("Layout(%r, %r, firstIdx=%r, names=%r)" % (list(self.sig),
+            self.bladeList, self.firstIdx, self.names))
         return s
 
     def _sign(self, seq, orig):
@@ -359,9 +358,6 @@ Layout's Members:
         self.even = {}
         self.odd = {}
 
-        class NoMorePermutations(StandardError):
-            pass
-
         for i in range(self.gaDims):
             blade = self.bladeList[i]
             grade = self.gradeList[i]
@@ -381,7 +377,7 @@ Layout's Members:
                 idx = range(grade)
                 
                 try:
-                    for i in range(Numeric.multiply.reduce(range(1, grade+1))):
+                    for i in range(np.multiply.reduce(range(1, grade+1))):
                         # grade! permutations
 
                         done = 0
@@ -479,7 +475,7 @@ Layout's Members:
             idx = self.bladeList.index(self.odd[newBlade])
             mul = -mul
     
-        element = Numeric.zeros((self.gaDims,), Numeric.Int)
+        element = np.zeros((self.gaDims,), dtype=int)
         element[idx] = mul
 
         return element, idx
@@ -488,27 +484,22 @@ Layout's Members:
         "Generate the multiplication tables."
         
         # geometric multiplication table
-        gmt = Numeric.zeros((self.gaDims, self.gaDims, self.gaDims), 
-                             Numeric.Int)
+        gmt = np.zeros((self.gaDims, self.gaDims, self.gaDims), dtype=int)
         # inner product table
-        imt = Numeric.zeros((self.gaDims, self.gaDims, self.gaDims),
-                             Numeric.Int)
-
+        imt = np.zeros((self.gaDims, self.gaDims, self.gaDims), dtype=int)
         # outer product table
-        omt = Numeric.zeros((self.gaDims, self.gaDims, self.gaDims),
-                             Numeric.Int)
-
+        omt = np.zeros((self.gaDims, self.gaDims, self.gaDims), dtype=int)
         # left-contraction table
-        lcmt = Numeric.zeros((self.gaDims, self.gaDims, self.gaDims),
-                             Numeric.Int)
+        lcmt = np.zeros((self.gaDims, self.gaDims, self.gaDims), dtype=int)
 
         for i in range(self.gaDims):
             for j in range(self.gaDims):
                 gmt[i,:,j], idx = self._gmtElement(list(self.bladeList[i]), 
                                                   list(self.bladeList[j]))
 
-                if self.gradeList[idx] == abs(self.gradeList[i] - self.gradeList[j]) and \
-                   self.gradeList[i] != 0 and self.gradeList[j] != 0:
+                if (self.gradeList[idx] == abs(self.gradeList[i] - self.gradeList[j]) 
+                    and self.gradeList[i] != 0 
+                    and self.gradeList[j] != 0):
                     
                     # A_r . B_s = <A_r B_s>_|r-s|
                     # if r,s != 0
@@ -561,11 +552,12 @@ class MultiVector:
         self.layout = layout
 
         if value is None:
-            self.value = Numeric.zeros((self.layout.gaDims,), Numeric.Float)
+            self.value = np.zeros((self.layout.gaDims,), dtype=float)
         else:
-            self.value = Numeric.array(value)
+            self.value = np.array(value)
             if self.value.shape != (self.layout.gaDims,):
-                raise ValueError, "value must be a sequence of length %s" % self.layout.gaDims
+                raise ValueError("value must be a sequence of length %s" % 
+                    self.layout.gaDims)
 
     def _checkOther(self, other, coerce=1):
         """Ensure that the other argument has the same Layout or coerce value if 
@@ -579,15 +571,15 @@ class MultiVector:
                 # numeric scalar
                 newOther = self._newMV()
                 newOther[()] = other
-                return newOther, 1
+                return newOther, True
             else:
-                return other, 0
+                return other, False
 
-        elif isinstance(other, self.__class__) and \
-             other.layout is not self.layout:
-            raise ValueError, "cannot operate on MultiVectors with different Layouts"
+        elif (isinstance(other, self.__class__) 
+            and other.layout is not self.layout):
+            raise ValueError("cannot operate on MultiVectors with different Layouts")
 
-        return other, 1
+        return other, True
 
     def _newMV(self, newValue=None):
         """Returns a new MultiVector (or derived class instance).
@@ -611,7 +603,7 @@ class MultiVector:
         other, mv = self._checkOther(other, coerce=0)
         
         if mv:
-            newValue = Numeric.dot(self.value, Numeric.dot(self.layout.gmt,
+            newValue = np.dot(self.value, np.dot(self.layout.gmt,
                                                            other.value))
         else:
             newValue = other * self.value
@@ -628,7 +620,7 @@ class MultiVector:
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = Numeric.dot(other.value, Numeric.dot(self.layout.gmt,
+            newValue = np.dot(other.value, np.dot(self.layout.gmt,
                                                             self.value))
         else:
             newValue = other * self.value
@@ -645,7 +637,7 @@ class MultiVector:
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = Numeric.dot(self.value, Numeric.dot(self.layout.omt,
+            newValue = np.dot(self.value, np.dot(self.layout.omt,
                                                            other.value))
         else:
             newValue = other * self.value
@@ -662,7 +654,7 @@ class MultiVector:
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = Numeric.dot(other.value, Numeric.dot(self.layout.omt,
+            newValue = np.dot(other.value, np.dot(self.layout.omt,
                                                             self.value))
         else:
             newValue = other * self.value
@@ -679,7 +671,7 @@ class MultiVector:
         other, mv = self._checkOther(other)
 
         if mv:
-            newValue = Numeric.dot(self.value, Numeric.dot(self.layout.imt,
+            newValue = np.dot(self.value, np.dot(self.layout.imt,
                                                            other.value))
         else:
             return self._newMV()  # l * M = M * l = 0 for scalar l
@@ -767,7 +759,7 @@ class MultiVector:
 
         other = int(round(other))
 
-        newMV = self._newMV(Numeric.array(self.value))  # copy
+        newMV = self._newMV(np.array(self.value))  # copy
 
         for i in range(1, other):
             newMV = newMV & self
@@ -861,7 +853,7 @@ class MultiVector:
         __abs__() --> PyFloat
         """
         
-        return Numeric.sqrt(self.mag2())
+        return np.sqrt(self.mag2())
 
     def adjoint(self):
         """Adjoint / reversion
@@ -872,8 +864,8 @@ class MultiVector:
         """
         # The multivector created by reversing all multiplications
 
-        grades = Numeric.array(self.layout.gradeList)
-        signs = Numeric.power(-1, grades*(grades-1)/2)
+        grades = np.array(self.layout.gradeList)
+        signs = np.power(-1, grades*(grades-1)/2)
 
         newValue = signs * self.value  # elementwise multiplication
         
@@ -1025,12 +1017,12 @@ class MultiVector:
         if grade not in self.layout.gradeList:
             raise ValueError, "algebra does not have grade %s" % grade
         
-        if type(grade) is not types.IntType:
+        if isinstance(grade, not types.IntType):
             raise ValueError, "grade must be an integer"
 
-        mask = Numeric.equal(grade, self.layout.gradeList)
+        mask = np.equal(grade, self.layout.gradeList)
 
-        newValue = Numeric.multiply(mask, self.value)
+        newValue = np.multiply(mask, self.value)
 
         return self._newMV(newValue)
 
@@ -1099,12 +1091,12 @@ class MultiVector:
         __nonzero() --> Boolean
         """
 
-        nonzeroes = Numeric.greater(Numeric.absolute(self.value), _eps)
+        nonzeroes = np.absolute(self.value) > _eps
 
         if nonzeroes:
-            return 1
+            return True
         else:
-            return 0
+            return False
 
     def __cmp__(self, other):
         """Compares two multivectors.
@@ -1116,7 +1108,8 @@ class MultiVector:
         lists just so as to return something valid.  Therefore, 
         inequalities are well-nigh meaningless (since they are 
         meaningless for multivectors while equality is meaningful).  
-        Oh, how I wish for rich comparisons.
+
+        TODO: rich comparisons.
         
         M == N
         __cmp__(other) --> -1|0|1
@@ -1124,8 +1117,7 @@ class MultiVector:
 
         other, mv = self._checkOther(other)
         
-        if Numeric.alltrue(Numeric.less(Numeric.absolute( \
-                self.value - other.value), _eps)):
+        if (np.absolute(self.value - other.value) < _eps).all():
             # equal within epsilon
             return 0
         else:
@@ -1142,7 +1134,7 @@ class MultiVector:
         if eps is None:
             eps = _eps
 
-        mask = Numeric.greater(Numeric.absolute(self.value), eps)
+        mask = np.absolute(self.value) > eps
 
         # note element-wise multiplication
         self.value = mask * self.value
@@ -1159,9 +1151,8 @@ class MultiVector:
 
         if eps is None:
             eps = _eps
-
         
-        self.value = Numeric.around(self.value, eps)
+        self.value = np.around(self.value, eps)
 
         return self
 
@@ -1176,13 +1167,10 @@ class MultiVector:
 
         other, mv = self._checkOther(other, coerce=1)
 
-        newValue = Numeric.dot(self.value, Numeric.dot(self.layout.lcmt,
-                                                       other.value))
+        newValue = np.dot(self.value, np.dot(self.layout.lcmt, other.value))
 
         return self._newMV(newValue)
 
-    
-    
     def pseudoScalar(self):
         "Returns a MultiVector that is the pseudoscalar of this space."
 
@@ -1214,9 +1202,9 @@ class MultiVector:
             if abs(self.value[i]) < _eps:
                 continue
             else:
-                return 0
+                return False
 
-        return 1
+        return True
 
     def isBlade(self):
         """Returns true if multivector is a blade.
@@ -1262,7 +1250,7 @@ class MultiVector:
         normal() --> MultiVector
         """
 
-        return self / Numeric.sqrt(abs(self.mag2()))
+        return self / np.sqrt(abs(self.mag2()))
         
     def leftLaInv(self):
         """Return left-inverse using a computational linear algebra method 
@@ -1272,16 +1260,16 @@ class MultiVector:
         leftLaInv() --> MultiVector
         """
         
-        identity = Numeric.zeros((self.layout.gaDims,))
+        identity = np.zeros((self.layout.gaDims,))
         identity[self.layout.gradeList.index(0)] = 1
 
-        intermed = Numeric.dot(self.layout.gmt, self.value)
-        intermed = Numeric.transpose(intermed)
+        intermed = np.dot(self.layout.gmt, self.value)
+        intermed = np.transpose(intermed)
 
-        if abs(LA.determinant(intermed)) < _eps:
-            raise ValueError, "multivector has no left-inverse"
+        if abs(linalg.det(intermed)) < _eps:
+            raise ValueError("multivector has no left-inverse")
 
-        sol = LA.solve_linear_equations(intermed, identity)
+        sol = linalg.solve(intermed, identity)
 
         return self._newMV(sol)
         
@@ -1293,15 +1281,15 @@ class MultiVector:
         rightLaInv() --> MultiVector
         """
 
-        identity = Numeric.zeros((self.layout.gaDims,))
+        identity = np.zeros((self.layout.gaDims,))
         identity[self.layout.gradeList.index(0)] = 1
 
         intermed = _myDot(self.value, self.layout.gmt)
 
-        if abs(LA.determinant(intermed)) < _eps:
-            raise ValueError, "multivector has no right-inverse"
+        if abs(linalg.det(intermed)) < _eps:
+            raise ValueError("multivector has no right-inverse")
 
-        sol = LA.solve_linear_equations(intermed, identity)
+        sol = linalg.solve(intermed, identity)
 
         return self._newMV(sol)
 
@@ -1321,11 +1309,8 @@ class MultiVector:
         else:
             raise ValueError, "no inverse exists for this multivector"
 
-    if LA:
-        leftInv = leftLaInv
-        inv = rightInv = rightLaInv
-    else:
-        inv = leftInv = rightInv = normalInv
+    leftInv = leftLaInv
+    inv = rightInv = rightLaInv
 
     def dual(self, I=None):
         """Returns the dual of the multivector against the given subspace I.
@@ -1369,7 +1354,7 @@ class MultiVector:
         gradeInvol() --> MultiVector
         """
         
-        signs = Numeric.power(-1, self.layout.gradeList)
+        signs = np.power(-1, self.layout.gradeList)
 
         newValue = signs * self.value
 
@@ -1420,7 +1405,7 @@ class MultiVector:
 
         for i in range(self.layout.gaDims):
             if self.layout.gradeList[i] == 1:
-                v = Numeric.zeros((self.layout.gaDims,), Numeric.Float)
+                v = np.zeros((self.layout.gaDims,), dtype=float)
                 v[i] = 1.
                 wholeBasis.append(self._newMV(v))
 
@@ -1545,7 +1530,7 @@ def comb(n, k):
     """
 
     def fact(n):
-        return Numeric.multiply.reduce(range(1, n+1))
+        return np.multiply.reduce(range(1, n+1))
 
     return fact(n) / (fact(k) * fact(n-k))
 
@@ -1629,26 +1614,28 @@ def bases(layout, mvClass=MultiVector):
     dict = {}
     for i in range(layout.gaDims):
         if layout.gradeList[i] != 0:
-            v = Numeric.zeros((layout.gaDims,))
+            v = np.zeros((layout.gaDims,), dtype=int)
             v[i] = 1
             dict[layout.names[i]] = mvClass(layout, v)
     return dict
 
-def randomMV(layout, min=-2.0, max=2.0, grades=None, mvClass=MultiVector):
+def randomMV(layout, min=-2.0, max=2.0, grades=None, mvClass=MultiVector,
+    uniform=None):
     """Random MultiVector with given layout.
     
     Coefficients are between min and max, and if grades is a list of integers,
-    only those grades will be non-zero.  Uses the RandomArray module.
+    only those grades will be non-zero.
 
-    randomMV(layout, min=-2.0, max=2.0, grades=None)
+    randomMV(layout, min=-2.0, max=2.0, grades=None, uniform=None)
     """
     
-    from RandomArray import uniform
+    if uniform is None:
+        uniform = np.random.uniform
     
     if grades is None:
         return mvClass(layout, uniform(min, max, (layout.gaDims,)))
     else:
-        newValue = Numeric.zeros((layout.gaDims,)).astype(Numeric.Float)
+        newValue = np.zeros((layout.gaDims,))
         for i in range(layout.gaDims):
             if layout.gradeList[i] in grades:
                 newValue[i] = uniform(min, max)
@@ -1661,7 +1648,7 @@ def pretty():
     """
     
     global _pretty
-    _pretty = 1
+    _pretty = True
 
 def ugly():
     """Makes repr(M) default to eval-able representation.
@@ -1670,7 +1657,7 @@ def ugly():
     """
     
     global _pretty
-    _pretty = 0
+    _pretty = False
 
 def eps(newEps):
     """Set the epsilon for float comparisons.
