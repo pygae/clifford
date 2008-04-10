@@ -129,6 +129,10 @@ Issues
    division.  Public outcry will convince me to add the explicit casts
    if this becomes a problem.
    
+Acknowledgements
+----------------
+Konrad Hinsen fixed a few bugs in the conversion to numpy.
+
 
 Changes 0.6-0.7
 ===============
@@ -194,7 +198,7 @@ def _myDot(a, b):
     newB = np.transpose(b, tempAxes)
 
     # innerproduct sums over the *last* axes of *both* arguments
-    return np.innerproduct(a, newB)
+    return np.inner(a, newB)
     
 
 class Layout(object):
@@ -290,10 +294,8 @@ class Layout(object):
             self.names = []
             
             for i in range(self.gaDims):
-                if self.gradeList[i] > 1:
-                    self.names.append(e + str(np.add.reduce(map(str, self.bladeList[i]))))
-                elif self.gradeList[i] == 1:
-                    self.names.append(e + str(self.bladeList[i][0]))
+                if self.gradeList[i] >= 1:
+                    self.names.append(e + ''.join(map(str, self.bladeList[i])))
                 else:
                     self.names.append('')
             
