@@ -1,12 +1,11 @@
 """ Geometric Algebra for Python
 
-This module implements geometric algebras (a.k.a. Clifford algebras).
-For the uninitiated, a geometric algebra is an algebra of vectors of
-given dimensions and signature. The familiar inner (dot) product and the 
-outer product, a generalized relative of the three-dimensional cross 
-product are unified in an invertible geometric product.  Scalars, vectors,
-and higher-grade entities can be mixed freely and consistently in the
-form of mixed-grade multivectors.
+This module implements geometric algebras (a.k.a. Clifford algebras).  For the
+uninitiated, a geometric algebra is an algebra of vectors of given dimensions
+and signature. The familiar inner (dot) product and the outer product,
+a generalized relative of the three-dimensional cross product, are unified in an
+invertible geometric product.  Scalars, vectors, and higher-grade entities can
+be mixed freely and consistently in the form of mixed-grade multivectors.
 
 For more information, see the Cambridge Clifford Algebras website:
 http://www.mrao.cam.ac.uk/~clifford
@@ -46,8 +45,7 @@ Issues
 
      1^e0 + 2^e1  !=  (1^e0) + (2^e1)
    
-   as is probably intended.  Additionally (comments on this pun will be 
-   summarily ignored),
+   as is probably intended.  Additionally,
 
      M = MultiVector(layout2D)  # null multivector
      M << 1^e0 << 2^e1 == 10.0^e1 + 1.0^e01
@@ -62,11 +60,6 @@ Issues
      e1 == 1^e1
      e01 == 1^e01
    
-   A shell that reorders the operators and adds a few conveniences is in 
-   the works. Contributions, of course, are appreciated! I'm thinking
-   about using parsetools from
-   ftp://archaeopteryx.com/pub/parsetools/parsetools-0.9.2.tgz
-   
  * Since * is the inner product and the inner product with a scalar 
    vanishes by definition, an expression like 
 
@@ -79,8 +72,7 @@ Issues
    checking, one can run into problems as "1 & 2" has a very different
    result from the same multiplication with scalar MultiVectors.
 
- * If the LinearAlgebra module from the NumPy distribution is available,
-   taking the inverse of a MultiVector will use a method proposed by
+ * Taking the inverse of a MultiVector will use a method proposed by
    Christian Perwass that involves the solution of a matrix equation.
    A description of that method follows:
 
@@ -100,8 +92,7 @@ Issues
 
    The usual, analytic, method for computing inverses [M**-1 = ~M/(M&~M) iff
    M&~M == |M|**2] fails for those multivectors where M&~M is not a scalar.
-   It is only used if the inv method is manually set to point to normalInv 
-   or the module LinearAlgebra from NumPy is not available.
+   It is only used if the inv method is manually set to point to normalInv.
 
    My testing suggests that laInv works.  In the cases where normalInv works,
    laInv returns the same result (within _eps).  In all cases, 
@@ -114,22 +105,19 @@ Issues
      M.laInv() & M == 1.0
      M & M.laInv() != 1.0
    
-   XXX Thus, there are two other methods defined, leftInv and rightInv
-   which point to leftLaInv and rightLaInv if the LinearAlgebra module
-   exists.  The method inv points to rightInv.  Should LinearAlgebra
-   not be available, or the user choose, leftInv and rightInv will both
-   point to normalInv, which yields a left- and right-inverse that are
-   the same should either exist (the proof is fairly simple).
+   XXX Thus, there are two other methods defined, leftInv and rightInv which
+   point to leftLaInv and rightLaInv.  The method inv points to rightInv.
+   Should the user choose, leftInv and rightInv will both point to normalInv,
+   which yields a left- and right-inverse that are the same should either exist
+   (the proof is fairly simple).
    
  * The basis vectors of any algebra will be orthonormal unless you supply
-   your own multiplication tables (which you are free to do after 
-   the Layout constructor is called).  A derived class is in preparation
-   that will calculate these tables for you (and include methods for 
-   generating reciprocal bases and the like).  I would greatly appreciate
-   help on the algorithm to generate these tables from an arbitrary 
-   bilinear form. Pretty please?
+   your own multiplication tables (which you are free to do after the Layout
+   constructor is called).  A derived class could be made to calculate these
+   tables for you (and include methods for generating reciprocal bases and the
+   like).
 
- * No care is taken to preserve the typecode of the arrays.  The purpose 
+ * No care is taken to preserve the dtype of the arrays.  The purpose 
    of this module is pedagogical.  If your application requires so many
    multivectors that storage becomes important, the class structure here
    is unsuitable for you anyways.  Instead, use the algorithms from this
@@ -141,12 +129,6 @@ Issues
    division.  Public outcry will convince me to add the explicit casts
    if this becomes a problem.
    
- * The way I make variables of the bases is by .update()'ing the global
-   (or local for functions) namespace dictionary.  I use a convenient
-   function for that in the global case.  I have not included it here
-   as I don't want to canonize something that is, well, let's face it, 
-   evil.  But it's a venial kind of evil, so do it anyways.
-
 
 Changes 0.6-0.7
 ===============
@@ -182,7 +164,7 @@ import math
 
 # Major library imports.
 import numpy as np
-from scipy import linalg
+from numpy import linalg
 
 
 class NoMorePermutations(StandardError):
@@ -215,7 +197,7 @@ def _myDot(a, b):
     return np.innerproduct(a, newB)
     
 
-class Layout:
+class Layout(object):
     """ Layout stores information regarding the geometric algebra itself and the
     internal representation of multivectors.
     
@@ -519,7 +501,7 @@ class Layout:
         self.omt = omt
         self.lcmt = lcmt
 
-class MultiVector:
+class MultiVector(object):
     """ The elements of the algebras, the multivectors, are implemented in the
     MultiVector class.
     
@@ -773,11 +755,8 @@ class MultiVector:
         __rpow__(other) --> MultiVector
         """
 
-        # check that other is a Python number, not a MultiVector
-        
-        if type(other) not in (types.IntType, types.FloatType, types.LongType):
-            raise ValueError, "base must be a Python number"
-
+        # Let math.log() check that other is a Python number, not something
+        # else.
         intMV = math.log(other) & self
         # pow(x, y) == exp(y & log(x))
 
@@ -799,11 +778,11 @@ class MultiVector:
 
         return newMV
         
-    def __lshift__(self, other):
+    def __iadd__(self, other):
         """In-place addition
         
         M << N --> M + N
-        __lshift__(other) --> MultiVector
+        __iadd__(other) --> MultiVector
         """
         
         other, mv = self._checkOther(other)
@@ -930,9 +909,9 @@ class MultiVector:
            
         if key in self.layout.bladeList:
             return self.value[self.layout.bladeList.index(key)]
-        elif key in self.layout.even.keys():
+        elif key in self.layout.even:
             return self.value[self.layout.bladeList.index(self.layout.even[key])]
-        elif key in self.layout.odd.keys():
+        elif key in self.layout.odd:
             return -self.value[self.layout.bladeList.index(self.layout.odd[key])]
         else:
             return self.value[key]
@@ -949,9 +928,9 @@ class MultiVector:
         
         if key in self.layout.bladeList:
             self.value[self.layout.bladeList.index(key)] = value
-        elif key in self.layout.even.keys():
+        elif key in self.layout.even:
             self.value[self.layout.bladeList.index(self.layout.even[key])] = value
-        elif key in self.layout.odd.keys():
+        elif key in self.layout.odd:
             self.value[self.layout.bladeList.index(self.layout.odd[key])] = -value
         else:
             self.value[key] = value
@@ -966,9 +945,9 @@ class MultiVector:
         
         if key in self.layout.bladeList:
             self.value[self.layout.bladeList.index(key)] = 0
-        elif key in self.layout.even.keys():
+        elif key in self.layout.even:
             self.value[self.layout.bladeList.index(self.layout.even[key])] = 0
-        elif key in self.layout.odd.keys():
+        elif key in self.layout.odd:
             self.value[self.layout.bladeList.index(self.layout.odd[key])] = 0
         else:
             self.value[key] = 0
@@ -1208,7 +1187,11 @@ class MultiVector:
 
     def isBlade(self):
         """Returns true if multivector is a blade.
-        
+
+        FIXME: Apparently, not all single-grade multivectors are blades. E.g. in
+        the 4-D Euclidean space, a=(e1^e2 + e3^e4) is not a blade. There is no
+        vector v such that v^a=0.
+
         isBlade() --> Boolean
         """
 
@@ -1395,6 +1378,7 @@ class MultiVector:
         gr = self.grades()
 
         if len(gr) != 1:
+            # FIXME: this is not a sufficient condition for a blade.
             raise ValueError, "self is not a blade"
 
         selfInv = self.inv()
