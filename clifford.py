@@ -131,7 +131,8 @@ Issues
    
 Acknowledgements
 ----------------
-Konrad Hinsen fixed a few bugs in the conversion to numpy.
+Konrad Hinsen fixed a few bugs in the conversion to numpy and adding some unit
+tests.
 
 
 Changes 0.6-0.7
@@ -163,7 +164,6 @@ robert.kern@gmail.com
 """
 
 # Standard library imports.
-import types
 import math
 
 # Major library imports.
@@ -550,7 +550,7 @@ class MultiVector(object):
         _checkOther(other, coerce=1) --> newOther, isMultiVector
         """
 
-        if type(other) in (types.IntType, types.FloatType, types.LongType):
+        if isinstance(other, (int, float, long)):
             if coerce:
                 # numeric scalar
                 newOther = self._newMV()
@@ -735,8 +735,8 @@ class MultiVector(object):
         __pow__(other) --> MultiVector
         """
         
-        if type(other) not in (types.IntType, types.FloatType):
-            raise ValueError, "exponent must be a Python Int or Float"
+        if not isinstance(other, (int, float)):
+            raise ValueError, "exponent must be a Python int or float"
         
         if abs(round(other) - other) > _eps:
             raise ValueError, "exponent must have no fractional part"
@@ -998,7 +998,7 @@ class MultiVector(object):
         if grade not in self.layout.gradeList:
             raise ValueError, "algebra does not have grade %s" % grade
         
-        if isinstance(grade, not types.IntType):
+        if not isinstance(grade, int):
             raise ValueError, "grade must be an integer"
 
         mask = np.equal(grade, self.layout.gradeList)
@@ -1516,6 +1516,8 @@ def comb(n, k):
     """
 
     def fact(n):
+        if n == 0:
+            return 1
         return np.multiply.reduce(range(1, n+1))
 
     return fact(n) / (fact(k) * fact(n-k))
