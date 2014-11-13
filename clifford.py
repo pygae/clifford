@@ -780,7 +780,7 @@ class MultiVector(object):
 
         return newMV
         
-    def __iadd__(self, other):
+    def __lshift__(self, other):
         """In-place addition
         
         M << N --> M + N
