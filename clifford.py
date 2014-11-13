@@ -1307,7 +1307,7 @@ class MultiVector(object):
         """
         
         if I is None:
-            Iinv = self.layout.invPS()
+            Iinv = self.invPS()
         else:
             Iinv = I.inv()
         
