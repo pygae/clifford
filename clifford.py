@@ -1077,7 +1077,7 @@ class MultiVector(object):
 
         nonzeroes = np.absolute(self.value) > _eps
 
-        if nonzeroes:
+        if nonzeroes.all():
             return True
         else:
             return False
