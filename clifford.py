@@ -742,7 +742,10 @@ class MultiVector(object):
             raise ValueError, "exponent must have no fractional part"
 
         other = int(round(other))
-
+        
+        if other == 0:
+            return 1
+        
         newMV = self._newMV(np.array(self.value))  # copy
 
         for i in range(1, other):
