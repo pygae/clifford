@@ -10,14 +10,29 @@ a generalized relative of the three-dimensional cross product, are unified in an
 invertible geometric product.  Scalars, vectors, and higher-grade entities can
 be mixed freely and consistently in the form of mixed-grade multivectors.
 
+
+Links
+--------
+
+There is also a symbolic geometric alebra module for python,
+
+ * https://github.com/brombo/galgebra
+
 For more information, see the Cambridge Clifford Algebras website:
+
  * http://www.mrao.cam.ac.uk/~clifford
 
 and David Hestenes' website:
+
  * http://geocalc.clas.asu.edu/
+
+
+
+
 
 Two classes, Layout and MultiVector, and several helper functions are 
 provided to implement the algebras.
+
 
 
 
