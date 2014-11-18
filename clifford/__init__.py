@@ -14,7 +14,7 @@ For more information, see the Cambridge Clifford Algebras website:
  * http://www.mrao.cam.ac.uk/~clifford
 
 and David Hestenes' website:
- * http://modelingnts.la.asu.edu/GC_R&D.html
+ * http://geocalc.clas.asu.edu/
 
 Two classes, Layout and MultiVector, and several helper functions are 
 provided to implement the algebras.
