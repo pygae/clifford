@@ -1,4 +1,7 @@
-""" Geometric Algebra for Python
+""" 
+
+clifford: Geometric Algebra for Python
+----------------------------------------
 
 This module implements geometric algebras (a.k.a. Clifford algebras).  For the
 uninitiated, a geometric algebra is an algebra of vectors of given dimensions
@@ -8,34 +11,38 @@ invertible geometric product.  Scalars, vectors, and higher-grade entities can
 be mixed freely and consistently in the form of mixed-grade multivectors.
 
 For more information, see the Cambridge Clifford Algebras website:
-http://www.mrao.cam.ac.uk/~clifford
+ * http://www.mrao.cam.ac.uk/~clifford
+
 and David Hestenes' website:
-http://modelingnts.la.asu.edu/GC_R&D.html
+ * http://modelingnts.la.asu.edu/GC_R&D.html
 
 Two classes, Layout and MultiVector, and several helper functions are 
 provided to implement the algebras.
 
 
+
+Classes
+===============
+
+.. autosummary::
+    :toctree: generated/
+    
+    MultiVector
+    Layout
+
 Helper Functions
 ================
 
-  Cl(p, q=0, names=None, firstIdx=0, mvClass=MultiVector) -- generates 
-      the geometric algebra Cl_p,q and returns the appropriate Layout 
-      and dictionary of basis element names to their MultiVector instances.
-      Uses mvClass if provided.
 
-  bases(layout) -- returns the dictionary of basis element names: instances
-      as above
-
-  randomMV(layout, grades=None) -- random MultiVector using layout.  If 
-      grades is a sequence of integrers, only those grades will be non-zero
-  
-  pretty() -- set repr() to pretty-print MultiVectors
-
-  ugly() -- set repr() to return eval-able strings
-
-  eps(newEps) -- set _eps, the epsilon for comparisons and zero-testing
-
+.. autosummary::
+    :toctree: generated/
+    
+    Cl
+    bases
+    randomMV
+    pretty
+    ugly
+    eps
 
 Issues
 ======
@@ -130,7 +137,7 @@ Issues
    if this becomes a problem.
    
 Acknowledgements
-----------------
++++++++++++++++++
 Konrad Hinsen fixed a few bugs in the conversion to numpy and adding some unit
 tests.
 
@@ -159,7 +166,9 @@ Changes 0.5-0.6
  * fixed dumb bug in elements() that limited it to 4 dimensions
 
 Happy hacking!
+
 Robert Kern
+
 robert.kern@gmail.com
 """
 
@@ -519,7 +528,7 @@ class MultiVector(object):
           blades
 
     MultiVector's Members
-    =====================
+
 
       layout -- instance of Layout
 
