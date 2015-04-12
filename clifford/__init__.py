@@ -202,7 +202,7 @@ class NoMorePermutations(StandardError):
 
 _eps = 1e-15     # float epsilon for float comparisons
 _pretty = False  # pretty-print global
-
+_print_precision = 5 # pretty printing precision on floats
 def _myDot(a, b):
     """Returns the inner product as *I* learned it.
 
@@ -794,7 +794,7 @@ class MultiVector(object):
         nextTerm = self._newMV()
         nextTerm[()] = 1  # order 0 term of exp(x) Taylor expansion
 
-        n = 1
+        n = 1.
 
         while nextTerm != 0:
             # iterate until the added term is within _eps of 0
@@ -1044,6 +1044,7 @@ class MultiVector(object):
         """
         
         s = ''
+        p = _print_precision
         
         for i in range(self.layout.gaDims):
             # if we have nothing yet, don't use + and - as operators but
@@ -1057,18 +1058,18 @@ class MultiVector(object):
                 # scalar
                 if abs(self.value[i]) >= _eps:
                     if self.value[i] > 0:
-                        s = '%s%s%s' % (s, seps[0], self.value[i])
+                        s = '%s%s%s' % (s, seps[0], round(self.value[i],p))
                     else:
-                        s = '%s%s%s' % (s, seps[1], -self.value[i])
+                        s = '%s%s%s' % (s, seps[1], -round(self.value[i],p))
                         
             else:
                 if abs(self.value[i]) >= _eps:
                     # not a scalar
                     if self.value[i] > 0:
-                        s = '%s%s(%s^%s)' % (s, seps[0], self.value[i], 
+                        s = '%s%s(%s^%s)' % (s, seps[0], round(self.value[i],p), 
                                               self.layout.names[i]) 
                     else:
-                        s = '%s%s(%s^%s)' % (s, seps[1], -self.value[i], 
+                        s = '%s%s(%s^%s)' % (s, seps[1], -round(self.value[i],p), 
                                               self.layout.names[i])
         if s:
             # non-zero
@@ -1656,14 +1657,27 @@ def randomMV(layout, min=-2.0, max=2.0, grades=None, mvClass=MultiVector,
                 newValue[i] = uniform(min, max)
         return mvClass(layout, newValue)
 
-def pretty():
-    """Makes repr(M) default to pretty-print.
+def pretty(precision=None):
+    """Makes repr(M) default to pretty-print. 
+    
+    `precision` arg can be used to set the printed precision.
 
-    pretty()
+    Parameters
+    -----------
+    precision : int
+        number of sig figs to print past decimal
+        
+    Examples
+    ----------
+    >>> pretty(5)
+
     """
     
     global _pretty
     _pretty = True
+    
+    if print_precision is not None:
+        print_precision(precision)
 
 def ugly():
     """Makes repr(M) default to eval-able representation.
@@ -1682,5 +1696,21 @@ def eps(newEps):
     
     global _eps
     _eps = newEps
+
+def print_precision(newVal):
+    """Set the epsilon for float comparisons.
+    
+    Parameters
+    -----------
+    newVal : int
+        number of sig figs to print (see builtin `round`)
+        
+    Examples
+    ----------
+    >>> print_precision(5)
+    """
+    
+    global _print_precision
+    _print_precision = newVal
 
 

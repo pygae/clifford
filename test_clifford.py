@@ -25,7 +25,13 @@ class CliffordTests(unittest.TestCase):
                     self.assert_(abs((a & a_inv)-1.) < 1.e-11)
                     self.assert_(abs((a_inv & a)-1.) < 1.e-11)
                     self.assert_(abs(a_inv - 1./a) < 1.e-11)
-
+    
+    def test_exp(self):
+        layout,blades = self.algebras[0]:
+        R = e**blades['e01']
+        e0 = blades['e0']
+        R& e0 &~R
+        
 if __name__ == '__main__':
     unittest.main()
 
