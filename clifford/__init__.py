@@ -1014,14 +1014,24 @@ class MultiVector(object):
 
     ## grade projection
 
-    def __call__(self, grade):
-        """Return a new multi-vector projected onto the specified grade.
+    def __call__(self, other):
+        """Return a new multi-vector projected onto a grade OR a MV
+        
 
         M(grade) --> <M>
                         grade
+        OR 
+        
+        M(other) --> other.project(M)
+        
         __call__(grade) --> MultiVector
         """
-        
+        if isinstance(other, MultiVector):
+            return other.project(self)
+        else:
+            # we are making a grade projection 
+            grade = other 
+            
         if grade not in self.layout.gradeList:
             raise ValueError, "algebra does not have grade %s" % grade
         
@@ -1688,14 +1698,16 @@ def ugly():
     global _pretty
     _pretty = False
 
-def eps(newEps):
-    """Set the epsilon for float comparisons.
+def eps(newEps=None):
+    """Get/Set the epsilon for float comparisons.
 
     eps(newEps)
     """
     
     global _eps
-    _eps = newEps
+    if _eps is not None:
+        eps = newEps
+    return _eps
 
 def print_precision(newVal):
     """Set the epsilon for float comparisons.
