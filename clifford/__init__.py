@@ -1686,7 +1686,7 @@ def pretty(precision=None):
     global _pretty
     _pretty = True
     
-    if print_precision is not None:
+    if precision is not None:
         print_precision(precision)
 
 def ugly():
