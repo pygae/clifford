@@ -1705,7 +1705,7 @@ def eps(newEps=None):
     """
     
     global _eps
-    if _eps is not None:
+    if newEps is not None:
         eps = newEps
     return _eps
 
