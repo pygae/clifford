@@ -1706,7 +1706,7 @@ def eps(newEps=None):
     
     global _eps
     if newEps is not None:
-        eps = newEps
+        _eps = newEps
     return _eps
 
 def print_precision(newVal):
