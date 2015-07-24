@@ -527,6 +527,23 @@ class Layout(object):
         self.omt = omt
         self.lcmt = lcmt
 
+    def randomMV(self,n=1,**kw):
+        '''
+        Convenience method to create a random multivector. 
+        
+        see `clifford.randomMV` for details 
+        '''
+        kw.update(dict(n=n))
+        return randomMV(layout =self, **kw)
+    
+    def randomV(self,n=1, **kw):
+        '''
+        generate a random 1-vector 
+        
+        '''
+        kw.update(dict(n=n, grades=[1]))
+        return randomMV(layout=self, **kw)
+        
 class MultiVector(object):
     """ The elements of the algebras, the multivectors, are implemented in the
     MultiVector class.
@@ -624,7 +641,6 @@ class MultiVector(object):
         N & M --> NM
         __rand__(other) --> MultiVector
         """
-        
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
@@ -1646,21 +1662,31 @@ def bases(layout, mvClass=MultiVector):
     return dict
 
 def randomMV(layout, min=-2.0, max=2.0, grades=None, mvClass=MultiVector,
-    uniform=None):
-    """Random MultiVector with given layout.
+    uniform=None, n = 1):
+    """n Random MultiVectors with given layout.
     
     Coefficients are between min and max, and if grades is a list of integers,
     only those grades will be non-zero.
-
-    randomMV(layout, min=-2.0, max=2.0, grades=None, uniform=None)
-    """
     
+    
+    Examples
+    --------
+    >>>randomMV(layout, min=-2.0, max=2.0, grades=None, uniform=None,n=2)
+    
+    """
+    if n>1:
+        # return many multivectors
+        return [randomMV(layout=layout, min=min, max=max, grades=grades,
+                         mvClass=mvClass, uniform=uniform, n = 1) for k in range(n)]
+                    
     if uniform is None:
         uniform = np.random.uniform
     
     if grades is None:
         return mvClass(layout, uniform(min, max, (layout.gaDims,)))
     else:
+        if isinstance(grades, int):
+            grades = [grades]
         newValue = np.zeros((layout.gaDims,))
         for i in range(layout.gaDims):
             if layout.gradeList[i] in grades:
@@ -1725,4 +1751,22 @@ def print_precision(newVal):
     global _print_precision
     _print_precision = newVal
 
+def gp(M, N):
+        """Geometric product
+            
+        gp(M,N) =  M & N
+        
+        M and N must be from the same layout
+        
+        This function is calls the MultiVector.__and__ operator, but 
+        is useful in calculating series of products, like `reduce`  
+        for example
+        
+        >>>Ms = [M1,M2,M3] # list of multivectors
+        >>>reduce(gp, Ms) #  == M1&M2&M3
+        
+        """
+        
+        return M&N
+        
 
