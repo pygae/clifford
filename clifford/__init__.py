@@ -538,11 +538,26 @@ class Layout(object):
     
     def randomV(self,n=1, **kw):
         '''
-        generate a random 1-vector 
+        generate n random 1-vector s
         
         '''
         kw.update(dict(n=n, grades=[1]))
         return randomMV(layout=self, **kw)
+    
+    def randomRotor(self):
+        '''
+        generate a random Rotor. 
+        
+        this is created by muliplying an N unit vectors, where N is 
+        the dimension of the algebra if its even; else its one less.
+        
+        '''
+        n = self.dims if self.dims%2 ==0 else self.dims-1
+        R = reduce(gp, self.randomV(n, normed=True))
+        return R
+       
+    def basis_vectors(self, **kw):
+        return basis_vectors(self, **kw)
         
 class MultiVector(object):
     """ The elements of the algebras, the multivectors, are implemented in the
@@ -1646,23 +1661,34 @@ def Cl(p, q=0, names=None, firstIdx=0, mvClass=MultiVector):
     return layout, blades
 
 
-def bases(layout, mvClass=MultiVector):
+def bases(layout, mvClass=MultiVector,grades=None):
     """Returns a dictionary mapping basis element names to their MultiVector
-    instances.
+    instances, optionally for specific grades
 
     bases(layout) --> {'name': baseElement, ...}
     """
     
     dict = {}
     for i in range(layout.gaDims):
-        if layout.gradeList[i] != 0:
+        grade = layout.gradeList[i]
+        if grade != 0:
+            if grades is not None and grade not in grades:
+                continue
             v = np.zeros((layout.gaDims,), dtype=int)
             v[i] = 1
             dict[layout.names[i]] = mvClass(layout, v)
     return dict
 
+
+
+def basis_vectors(layout):
+    '''
+    dictionary of basis vectors
+    '''
+    return bases(layout=layout, grades=[1])
+
 def randomMV(layout, min=-2.0, max=2.0, grades=None, mvClass=MultiVector,
-    uniform=None, n = 1):
+    uniform=None, n = 1, normed=False):
     """n Random MultiVectors with given layout.
     
     Coefficients are between min and max, and if grades is a list of integers,
@@ -1674,16 +1700,18 @@ def randomMV(layout, min=-2.0, max=2.0, grades=None, mvClass=MultiVector,
     >>>randomMV(layout, min=-2.0, max=2.0, grades=None, uniform=None,n=2)
     
     """
+    
     if n>1:
         # return many multivectors
         return [randomMV(layout=layout, min=min, max=max, grades=grades,
-                         mvClass=mvClass, uniform=uniform, n = 1) for k in range(n)]
+                         mvClass=mvClass, uniform=uniform, n = 1, 
+                         normed=normed) for k in range(n)]
                     
     if uniform is None:
         uniform = np.random.uniform
     
     if grades is None:
-        return mvClass(layout, uniform(min, max, (layout.gaDims,)))
+        mv= mvClass(layout, uniform(min, max, (layout.gaDims,)))
     else:
         if isinstance(grades, int):
             grades = [grades]
@@ -1691,7 +1719,12 @@ def randomMV(layout, min=-2.0, max=2.0, grades=None, mvClass=MultiVector,
         for i in range(layout.gaDims):
             if layout.gradeList[i] in grades:
                 newValue[i] = uniform(min, max)
-        return mvClass(layout, newValue)
+        mv= mvClass(layout, newValue)
+    
+    if normed:
+        mv = mv/abs(mv)
+    
+    return mv
 
 def pretty(precision=None):
     """Makes repr(M) default to pretty-print. 
