@@ -881,6 +881,8 @@ class MultiVector(object):
            2
         |M|
         mag2() --> PyFloat | PyInt
+        
+        Note in mixed signature spaces this may be negative
         """
 
         return (~self & self)[()]
@@ -890,9 +892,13 @@ class MultiVector(object):
         
         abs(M) --> |M|
         __abs__() --> PyFloat
+        
+        This is sqrt(abs(~M&M)).
+        
+        The abs inside the sqrt is need for spaces of mixed signature
         """
         
-        return np.sqrt(self.mag2())
+        return np.sqrt(abs(self.mag2()))
 
     def adjoint(self):
         """Adjoint / reversion

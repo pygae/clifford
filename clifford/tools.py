@@ -1,6 +1,8 @@
 from warnings import warn
 from . import Cl
-def Mat2Frame(A, layout=None):
+
+
+def mat2Frame(A, layout=None):
     '''
     Translates a [complex] matrix into a real frame
     
@@ -9,7 +11,7 @@ def Mat2Frame(A, layout=None):
         * M = dimension of space
         * N = number of vectors
         
-    If A is complex M and N are doubled.
+    If A is complex M and N are doubled. If M>6, this is very slow. 
     
     Parameters 
     ------------
@@ -61,17 +63,13 @@ def Mat2Frame(A, layout=None):
         
     return a, layout
 
-
-def OrthoMat2Verser(A, eps= 1e-6,layout=None):
+def orthoFrames2Verser(A,B):
     '''
-    Translates a [complex] orthogonal matrix to a Verser 
-    '''
-    B,layout = Mat2Frame(A,layout=layout)
-    N = len(B)
-    A,layout = Mat2Frame(eye(N),layout=layout)
+    Determines Verser relating two frames
     
-    if (A.dot(A.conj().T) -eye(N)).max()>eps:
-        warn('A doesnt appear to be a rotation. ')
+    
+    '''
+    ## TODO: shoudl we test to see if A and B are related by rotation?
     
     # store each reflector  in a list 
     rs = [1]*N
@@ -81,8 +79,21 @@ def OrthoMat2Verser(A, eps= 1e-6,layout=None):
             continue
         r = (A[k]-B[k])/abs(A[k]-B[k])
         for j  in range(k,N):
-            A[j] = -r.inv()&A[j]&r
+            A[j] = -r.inv()&A[j]&rf
 
         rs[k] =r
     R = reduce(gp,rs )
     return R
+
+def orthoMat2Verser(A, eps= 1e-6,layout=None):
+    '''
+    Translates a [complex] orthogonal matrix to a Verser 
+    '''
+    B,layout = Mat2Frame(A,layout=layout)
+    N = len(B)
+    A,layout = Mat2Frame(eye(N),layout=layout)
+    
+    if (A.dot(A.conj().T) -eye(N)).max()>eps:
+            warn('A doesnt appear to be a rotation. ')
+
+    return orthoFramePair2Verser(A,B)
