@@ -1,5 +1,8 @@
-from clifford import MultiVector, Cl, randomMV
+from clifford import MultiVector, Cl, randomMV,eps, pretty,gp
+from clifford.tools import orthoFrames2Verser
+
 from numpy.random import uniform
+from numpy import  exp
 import unittest
 
 # Put the names of the blades into the module namespace.
@@ -25,13 +28,51 @@ class CliffordTests(unittest.TestCase):
                     self.assert_(abs((a & a_inv)-1.) < 1.e-11)
                     self.assert_(abs((a_inv & a)-1.) < 1.e-11)
                     self.assert_(abs(a_inv - 1./a) < 1.e-11)
+
+    
     
     def test_exp(self):
-        layout,blades = self.algebras[0]:
-        R = e**blades['e01']
+        return 1
+        layout, blades = self.algebras[0]
+        R = exp(blades['e01'])
         e0 = blades['e0']
-        R& e0 &~R
+        R&e0&~R
+
+
+
+class ToolsTests(unittest.TestCase):
+    def testOrthoFrames2Verser(self):
+        for p,q in [[4,0],[3,1]]:
+            #p,q =4,0
+            N=p+q
+            eps(1e-6)
+            layout, blades = Cl(p,q)
+            
+            # create frame 
+            A = layout.randomV(n=N, normed=True)
+            # create Rotor
+            R = layout.randomRotor()
+            # create rotated frame
+            B =  [R&a&~R for a in A]
+            
+            # find verser from both frames
+            R_found = orthoFrames2Verser(A,B)
+            
+            pretty()
         
+            print p,q
+            print R
+            print R_found
+            #raise ValueError
+            # Rotor is determiend correctly, within a sign
+            self.assertTrue(R==R_found  or R==-R_found)
+            
+            # Determined Verser implements desired transformation  
+            self.assertTrue([R_found&a&~R_found for a in A] ==B)
+
+
+
+
 if __name__ == '__main__':
     unittest.main()
 

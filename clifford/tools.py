@@ -1,6 +1,5 @@
 from warnings import warn
-from . import Cl
-
+from . import Cl, gp
 
 def mat2Frame(A, layout=None):
     '''
@@ -63,13 +62,19 @@ def mat2Frame(A, layout=None):
         
     return a, layout
 
-def orthoFrames2Verser(A,B):
+def orthoFrames2Verser(A,B, eps =1e-6):
     '''
-    Determines Verser relating two frames
+    Determines verser for two frames related by an orthogonal tfrm
     
     
     '''
+    A = A[:] # keep copy of original frame
     ## TODO: shoudl we test to see if A and B are related by rotation?
+    if len(A)!=len(B):
+        raise ValueError('len(A)!=len(B)')
+    
+    N = len(A)
+    
     
     # store each reflector  in a list 
     rs = [1]*N
@@ -79,10 +84,13 @@ def orthoFrames2Verser(A,B):
             continue
         r = (A[k]-B[k])/abs(A[k]-B[k])
         for j  in range(k,N):
-            A[j] = -r.inv()&A[j]&rf
+            A[j] = -r&A[j]&r
 
         rs[k] =r
-    R = reduce(gp,rs )
+    
+    
+    R = reduce(gp,rs[::-1] )
+    #A=A_
     return R
 
 def orthoMat2Verser(A, eps= 1e-6,layout=None):
@@ -96,4 +104,4 @@ def orthoMat2Verser(A, eps= 1e-6,layout=None):
     if (A.dot(A.conj().T) -eye(N)).max()>eps:
             warn('A doesnt appear to be a rotation. ')
 
-    return orthoFramePair2Verser(A,B)
+    return orthoFramePair2Verser(A,B, eps = eps)
