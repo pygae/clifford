@@ -62,7 +62,7 @@ def mat2Frame(A, layout=None):
         
     return a, layout
 
-def orthoFrames2Verser(A,B, eps =1e-6):
+def orthoFrames2Verser2(A,B, eps =1e-6):
     '''
     Determines verser for two frames related by an orthogonal tfrm
     
@@ -91,7 +91,59 @@ def orthoFrames2Verser(A,B, eps =1e-6):
     
     R = reduce(gp,rs[::-1] )
     #A=A_
-    return R
+    return R,rs
+
+def orthoFrames2Verser(A,B, eps =1e-6):
+    '''
+    Determines verser for two frames related by an orthogonal transform
+    
+    Based on [1]. This works  in Euclidean spaces and, under special 
+    circumstances in other signatures. see [1] for limitaions/details
+    
+    
+    [1] Reconstructing Rotations and Rigid Body Motions from Exact Point 
+    Correspondences Through Reflections, Daniel Fontijne and Leo Dorst
+    
+    '''
+    ## TODO: shoudl we test to see if A and B are related by rotation?
+    
+    # keep copy of original frames
+    A = A[:] 
+    B = B[:]
+    
+    
+    if len(A)!=len(B):
+        raise ValueError('len(A)!=len(B)')
+    
+    N = len(A)
+        
+    # store each reflector  in a list 
+    r_list = []
+    
+    # find the vector pair with the largest distance
+    dist = [abs((a-b)**2) for a,b in zip(A,B)]
+    k =  dist.index(max(dist))
+    
+    while dist[k] >= eps:
+        r = (A[k]-B[k])/abs(A[k]-B[k]) # determine reflector
+        r_list.append(r)                   # append to our list 
+        A.pop(k)                       # remove current vector pair
+        B.pop(k)
+
+        if len(A)==0:
+            break
+        # reflect remaining vectors 
+        for j in range(len(A)):
+            A[j] = -r&A[j]&r
+       
+        # find the next pair based on current distance
+        dist = [abs((a-b)**2) for a,b in zip(A,B)]
+        k = dist.index(max(dist))
+    
+    print str(len(r_list)) + ' reflections found'
+    R = reduce(gp,r_list[::-1] )
+    
+    return R ,r_list
 
 def orthoMat2Verser(A, eps= 1e-6,layout=None):
     '''

@@ -45,7 +45,7 @@ class ToolsTests(unittest.TestCase):
         for p,q in [[4,0],[3,1]]:
             #p,q =4,0
             N=p+q
-            eps(1e-6)
+            eps(1e-4)
             layout, blades = Cl(p,q)
             
             # create frame 
