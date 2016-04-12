@@ -24,19 +24,19 @@ class CliffordTests(unittest.TestCase):
                 a = randomMV(layout, grades=[0, 1])
                 denominator = float(a(1)**2-a(0)**2)
                 if abs(denominator) > 1.e-5:
-                    a_inv = (-a(0)/denominator) + ((1./denominator) & a(1))
-                    self.assert_(abs((a & a_inv)-1.) < 1.e-11)
-                    self.assert_(abs((a_inv & a)-1.) < 1.e-11)
+                    a_inv = (-a(0)/denominator) + ((1./denominator) * a(1))
+                    self.assert_(abs((a * a_inv)-1.) < 1.e-11)
+                    self.assert_(abs((a_inv * a)-1.) < 1.e-11)
                     self.assert_(abs(a_inv - 1./a) < 1.e-11)
 
-    
+
     
     def test_exp(self):
         return 1
         layout, blades = self.algebras[0]
         R = exp(blades['e01'])
         e0 = blades['e0']
-        R&e0&~R
+        R*e0*~R
 
 
 
@@ -53,7 +53,7 @@ class ToolsTests(unittest.TestCase):
             # create Rotor
             R = layout.randomRotor()
             # create rotated frame
-            B =  [R&a&~R for a in A]
+            B =  [R*a*~R for a in A]
             
             # find verser from both frames
             R_found = orthoFrames2Verser(A,B)
@@ -68,7 +68,7 @@ class ToolsTests(unittest.TestCase):
             self.assertTrue(R==R_found  or R==-R_found)
             
             # Determined Verser implements desired transformation  
-            self.assertTrue([R_found&a&~R_found for a in A] ==B)
+            self.assertTrue([R_found*a*~R_found for a in A] ==B)
 
 
 

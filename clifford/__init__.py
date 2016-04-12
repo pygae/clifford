@@ -91,7 +91,7 @@ Issues
    multiply scalars with MultiVectors.  This can cause problems if
    one has code that mixes Python numbers and MultiVectors.  If the
    code multiplies two values that can each be either type without
-   checking, one can run into problems as "1 & 2" has a very different
+   checking, one can run into problems as "1 * 2" has a very different
    result from the same multiplication with scalar MultiVectors.
 
  * Taking the inverse of a MultiVector will use a method proposed by
@@ -112,20 +112,20 @@ Issues
    to solve this matrix equation for n_k.  The laInv method does precisely
    that.
 
-   The usual, analytic, method for computing inverses [M**-1 = ~M/(M&~M) iff
-   M&~M == |M|**2] fails for those multivectors where M&~M is not a scalar.
+   The usual, analytic, method for computing inverses [M**-1 = ~M/(M*~M) iff
+   M*~M == |M|**2] fails for those multivectors where M*~M is not a scalar.
    It is only used if the inv method is manually set to point to normalInv.
 
    My testing suggests that laInv works.  In the cases where normalInv works,
    laInv returns the same result (within _eps).  In all cases, 
-   M & M.laInv() == 1.0 (within _eps).  Use whichever you feel comfortable 
+   M * M.laInv() == 1.0 (within _eps).  Use whichever you feel comfortable 
    with.
 
    Of course, a new issue arises with this method.  The inverses found
    are sometimes dependant on the order of multiplication.  That is:
 
-     M.laInv() & M == 1.0
-     M & M.laInv() != 1.0
+     M.laInv() * M == 1.0
+     M * M.laInv() != 1.0
    
    XXX Thus, there are two other methods defined, leftInv and rightInv which
    point to leftLaInv and rightLaInv.  The method inv points to rightInv.
@@ -633,10 +633,10 @@ class MultiVector(object):
     ## numeric special methods
     # binary
     
-    def __and__(self, other):
+    def __mul__(self, other):
         """Geometric product
         
-        M & N --> MN
+        M * N --> MN
         __and__(other) --> MultiVector
         """
         
@@ -650,10 +650,10 @@ class MultiVector(object):
 
         return self._newMV(newValue)
         
-    def __rand__(self, other):
+    def __rmul__(self, other):
         """Right-hand geometric product
         
-        N & M --> NM
+        N * M --> NM
         __rand__(other) --> MultiVector
         """
         other, mv = self._checkOther(other, coerce=0)
@@ -700,10 +700,10 @@ class MultiVector(object):
 
         return self._newMV(newValue)
         
-    def __mul__(self, other):
+    def __or__(self, other):
         """Inner product
         
-        M * N
+        M | N
         __mul__(other) --> MultiVector
         """
         
@@ -717,7 +717,7 @@ class MultiVector(object):
 
         return self._newMV(newValue)
 
-    __rmul__ = __mul__
+    __ror__ = __or__
     
     def __add__(self, other):
         """Addition
@@ -760,14 +760,14 @@ class MultiVector(object):
     def __div__(self, other):
         """Division
                        -1
-        M / N --> M & N
+        M / N --> M * N
         __div__(other) --> MultiVector
         """
         
         other, mv = self._checkOther(other, coerce=0)
         
         if mv:
-            return self & other.inv()
+            return self * other.inv()
         else:
             newValue = self.value / other
             return self._newMV(newValue)
@@ -775,13 +775,13 @@ class MultiVector(object):
     def __rdiv__(self, other):
         """Right-hand division
                        -1
-        N / M --> N & M
+        N / M --> N * M
         __rdiv__(other) --> MultiVector
         """
         
         other, mv = self._checkOther(other)
 
-        return other & self.inv()
+        return other * self.inv()
 
     def __pow__(self, other):
         """Exponentiation of a multivector by an integer
@@ -804,7 +804,7 @@ class MultiVector(object):
         newMV = self._newMV(np.array(self.value))  # copy
 
         for i in range(1, other):
-            newMV = newMV & self
+            newMV = newMV * self
 
         return newMV
 
@@ -817,8 +817,8 @@ class MultiVector(object):
 
         # Let math.log() check that other is a Python number, not something
         # else.
-        intMV = math.log(other) & self
-        # pow(x, y) == exp(y & log(x))
+        intMV = math.log(other) * self
+        # pow(x, y) == exp(y * log(x))
 
         newMV = self._newMV()  # null
 
@@ -830,7 +830,7 @@ class MultiVector(object):
         while nextTerm != 0:
             # iterate until the added term is within _eps of 0
             newMV << nextTerm
-            nextTerm = nextTerm & intMV / n
+            nextTerm = nextTerm * intMV / n
             n = n + 1
         else:
             # squeeze out that extra little bit of accuracy
@@ -885,7 +885,7 @@ class MultiVector(object):
         Note in mixed signature spaces this may be negative
         """
 
-        return (~self & self)[()]
+        return (~self * self)[()]
 
     def __abs__(self):
         """Magnitude (modulus)
@@ -893,7 +893,7 @@ class MultiVector(object):
         abs(M) --> |M|
         __abs__() --> PyFloat
         
-        This is sqrt(abs(~M&M)).
+        This is sqrt(abs(~M*M)).
         
         The abs inside the sqrt is need for spaces of mixed signature
         """
@@ -904,7 +904,7 @@ class MultiVector(object):
         """Adjoint / reversion
                _
         ~M --> M (any one of several conflicting notations)
-        ~(N & M) --> ~M & ~N
+        ~(N * M) --> ~M * ~N
         adjoint() --> MultiVector
         """
         # The multivector created by reversing all multiplications
@@ -1316,7 +1316,7 @@ class MultiVector(object):
         """Return left-inverse using a computational linear algebra method 
         proposed by Christian Perwass.
          -1         -1
-        M    where M  & M  == 1
+        M    where M  * M  == 1
         leftLaInv() --> MultiVector
         """
         
@@ -1337,7 +1337,7 @@ class MultiVector(object):
         """Return right-inverse using a computational linear algebra method 
         proposed by Christian Perwass.
          -1              -1
-        M    where M & M  == 1
+        M    where M * M  == 1
         rightLaInv() --> MultiVector
         """
 
@@ -1354,14 +1354,14 @@ class MultiVector(object):
         return self._newMV(sol)
 
     def normalInv(self):
-        """Returns the inverse of itself if M&~M == |M|**2.
+        """Returns the inverse of itself if M*~M == |M|**2.
          -1
-        M   = ~M / (M & ~M)
+        M   = ~M / (M * ~M)
         normalInv() --> MultiVector
         """
 
         Madjoint = ~self
-        MadjointM = (Madjoint & self)
+        MadjointM = (Madjoint * self)
 
         if MadjointM.isScalar() and abs(MadjointM[()]) > _eps:
             # inverse exists
@@ -1386,25 +1386,25 @@ class MultiVector(object):
         else:
             Iinv = I.inv()
         
-        return self * Iinv
+        return self | Iinv
 
     def commutator(self, other):
         """Returns the commutator product of two multivectors.
 
-        [M, N] = M X N = (M&N - N&M)/2
+        [M, N] = M X N = (M*N - N*M)/2
         commutator(other) --> MultiVector
         """
 
-        return ((self & other) - (other & self)) / 2
+        return ((self * other) - (other * self)) / 2
 
     def anticommutator(self, other):
         """Returns the anti-commutator product of two multivectors.
 
-        (M&N + N&M)/2
+        (M*N + N*M)/2
         anticommutator(other) --> MultiVector
         """
 
-        return ((self & other) + (other & self)) / 2
+        return ((self * other) + (other * self)) / 2
 
     def gradeInvol(self):
         """Returns the grade involution of the multivector.
@@ -1434,7 +1434,7 @@ class MultiVector(object):
     def project(self, other):
         """Projects the multivector onto the subspace represented by this blade.
                             -1
-        P (M) = (M _| A) & A
+        P (M) = (M _| A) * A
          A
         project(M) --> MultiVector
         """
@@ -1444,7 +1444,7 @@ class MultiVector(object):
         if not self.isBlade():
             raise ValueError, "self is not a blade"
 
-        return other.lc(self) & self.inv()
+        return other.lc(self) * self.inv()
 
     def basis(self):
         """Finds a vector basis of this subspace.
@@ -1476,7 +1476,7 @@ class MultiVector(object):
                              # to the point of iteration
 
         for ei in wholeBasis:
-            Pei = ei.lc(self) & selfInv
+            Pei = ei.lc(self) * selfInv
 
             J.clean()
             
@@ -1512,11 +1512,11 @@ class MultiVector(object):
                 return J.normal()
 
             # try something else
-            M = (other & self.invPS()).lc(self)
+            M = (other * self.invPS()).lc(self)
 
             if M != 0:
                 C = M.normal()
-                J = (self & C.rightInv()) ^ other
+                J = (self * C.rightInv()) ^ other
                 return J.normal()
             
             if grSelf[0] >= grOther[0]:
@@ -1526,7 +1526,7 @@ class MultiVector(object):
                 A = other
                 B = self
 
-            if (A & B) == (A * B):
+            if (A * B) == (A | B):
                 # B is a subspace of A or the same if grades are equal
                 return A.normal()
 
@@ -1579,7 +1579,7 @@ class MultiVector(object):
         if subspace is None:
             subspace = self.join(other)
 
-        return (self & subspace.inv()) * other
+        return (self * subspace.inv()) | other
 
 
 def comb(n, k):
@@ -1793,7 +1793,7 @@ def print_precision(newVal):
 def gp(M, N):
         """Geometric product
             
-        gp(M,N) =  M & N
+        gp(M,N) =  M * N
         
         M and N must be from the same layout
         
@@ -1802,10 +1802,10 @@ def gp(M, N):
         for example
         
         >>>Ms = [M1,M2,M3] # list of multivectors
-        >>>reduce(gp, Ms) #  == M1&M2&M3
+        >>>reduce(gp, Ms) #  == M1*M2*M3
         
         """
         
-        return M&N
+        return M*N
         
 

@@ -80,11 +80,11 @@ def orthoFrames2Verser(A,B, eps =1e-6):
     rs = [1]*N
     
     for k in range(N):
-        if abs((A[k]*B[k])-1) <eps:
+        if abs((A[k]|B[k])-1) <eps:
             continue
         r = (A[k]-B[k])/abs(A[k]-B[k])
         for j  in range(k,N):
-            A[j] = -r&A[j]&r
+            A[j] = -r*A[j]*r
 
         rs[k] =r
     
