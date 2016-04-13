@@ -189,6 +189,7 @@ robert.kern@gmail.com
 
 # Standard library imports.
 import math
+import numbers
 
 # Major library imports.
 import numpy as np
@@ -606,7 +607,7 @@ class MultiVector(object):
         _checkOther(other, coerce=1) --> newOther, isMultiVector
         """
 
-        if isinstance(other, (int, float, long)):
+        if isinstance(other, numbers.Number):
             if coerce:
                 # numeric scalar
                 newOther = self._newMV()
@@ -647,7 +648,8 @@ class MultiVector(object):
                                                            other.value))
         else:
             newValue = other * self.value
-
+    
+        
         return self._newMV(newValue)
         
     def __rmul__(self, other):
@@ -656,6 +658,7 @@ class MultiVector(object):
         N * M --> NM
         __rand__(other) --> MultiVector
         """
+        
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
