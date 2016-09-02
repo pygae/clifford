@@ -1,4 +1,5 @@
 from warnings import warn
+from numpy import eye
 from . import Cl, gp
 
 def mat2Frame(A, layout=None):
@@ -38,7 +39,9 @@ def mat2Frame(A, layout=None):
         layout, blades = Cl(M,firstIdx=0)
         
     e_ = layout.basis_vectors()
-    e_ = [e_['e%i'%k] for k in range(M)]
+    
+    
+    e_ = [e_['e%i'%k] for k in range(layout.firstIdx,layout.firstIdx+ M)]
     
     a=[0^e_[0]]*N
     
@@ -149,11 +152,18 @@ def orthoMat2Verser(A, eps= 1e-6,layout=None):
     '''
     Translates a [complex] orthogonal matrix to a Verser 
     '''
-    B,layout = Mat2Frame(A,layout=layout)
+    B,layout = mat2Frame(A,layout=layout)
     N = len(B)
-    A,layout = Mat2Frame(eye(N),layout=layout)
     
-    if (A.dot(A.conj().T) -eye(N)).max()>eps:
+    if (A.dot(A.conj().T) -eye(N/2)).max()>eps:
             warn('A doesnt appear to be a rotation. ')
+            
+    
+    A,layout = mat2Frame(eye(N),layout=layout)
+    
+    
 
-    return orthoFramePair2Verser(A,B, eps = eps)
+    return orthoFrames2Verser(A,B, eps = eps)
+
+
+

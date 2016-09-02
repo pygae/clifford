@@ -38,6 +38,8 @@ extensions = [
     'sphinx.ext.pngmath',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
+    'IPython.sphinxext.ipython_directive',
+    'IPython.sphinxext.ipython_console_highlighting',
     'numpydoc',
 ]
 
@@ -58,7 +60,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Clifford'
-copyright = u'2014, Robert Kern'
+copyright = u'2016, Robert Kern and the Clifford Team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -211,7 +213,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'Clifford.tex', u'Clifford Documentation',
-   u'Robert Kern', 'manual'),
+   u'Clifford Team', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -241,7 +243,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'clifford', u'Clifford Documentation',
-     [u'Robert Kern'], 1)
+     [u'Clifford Team'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -255,7 +257,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'Clifford', u'Clifford Documentation',
-   u'Robert Kern', 'Clifford', 'One line description of project.',
+   u'Clifford Team', 'Clifford', 'One line description of project.',
    'Miscellaneous'),
 ]
 
