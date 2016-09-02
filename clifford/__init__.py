@@ -19,7 +19,9 @@ Instantiate a G2 algebra
 .. ipython::
 
     In [1 38]:import clifford as cf
+
     In [138]:cf.pretty(precision=2)    # sets display precision 
+
     In [138]:layout, blades = cf.Cl(2) # creates a 2-dimensional clifford algebr
 
 
@@ -28,7 +30,9 @@ Assign Blades
 .. ipython::
 
     In [138]: e0 = blades['e0']
+   
     In [138]: e1 = blades['e1']
+    
     In [138]: e01 = blades['e01']
     
     
