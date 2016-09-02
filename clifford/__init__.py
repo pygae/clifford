@@ -18,7 +18,7 @@ Instantiate a G2 algebra
 
 .. ipython::
 
-    In [1 38]:import clifford as cf
+    In [138]:import clifford as cf
 
     In [138]:cf.pretty(precision=2)    # sets display precision 
 
