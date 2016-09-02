@@ -1,7 +1,7 @@
 """ 
 
 clifford: Geometric Algebra for Python
-----------------------------------------
+==========================================
 
 This module implements geometric algebras (a.k.a. Clifford algebras).  For the
 uninitiated, a geometric algebra is an algebra of vectors of given dimensions
