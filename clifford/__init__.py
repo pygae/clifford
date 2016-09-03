@@ -606,7 +606,6 @@ class MultiVector(object):
         
         _checkOther(other, coerce=1) --> newOther, isMultiVector
         """
-
         if isinstance(other, numbers.Number):
             if coerce:
                 # numeric scalar

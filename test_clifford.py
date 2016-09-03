@@ -2,8 +2,10 @@ from clifford import MultiVector, Cl, randomMV,eps, pretty,gp
 from clifford.tools import orthoFrames2Verser
 
 from numpy.random import uniform
-from numpy import  exp
+from numpy import  exp, float64,e
 import unittest
+
+from nose.plugins.skip import SkipTest
 
 # Put the names of the blades into the module namespace.
 # This is a bit of a hack, but it's quite convenient.
@@ -32,14 +34,26 @@ class CliffordTests(unittest.TestCase):
 
     
     def test_exp(self):
-        return 1
+        
         layout, blades = self.algebras[0]
-        R = exp(blades['e01'])
+        R = e**(blades['e01'])
         e0 = blades['e0']
         R*e0*~R
+        
+    def test_add_float64(self):
+        
+        layout, blades = self.algebras[0]
+        e0 = blades['e0']
+        
+        
+        float64(1)+e0
+        self.assertEqual(1+e0,float64(1)+e0)
 
 
+    
+    
 
+@SkipTest
 class ToolsTests(unittest.TestCase):
     def testOrthoFrames2Verser(self):
         for p,q in [[4,0],[3,1]]:
