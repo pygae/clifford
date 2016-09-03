@@ -1,7 +1,7 @@
 """ 
 
 clifford: Geometric Algebra for Python
-==========================================
+----------------------------------------
 
 This module implements geometric algebras (a.k.a. Clifford algebras).  For the
 uninitiated, a geometric algebra is an algebra of vectors of given dimensions
@@ -12,7 +12,7 @@ be mixed freely and consistently in the form of mixed-grade multivectors.
 
 
 Quick Example
---------------
+================
 
 Instantiate a G2 algebra 
 
@@ -22,7 +22,7 @@ Instantiate a G2 algebra
 
     In [138]:cf.pretty(precision=2)    # sets display precision 
 
-    In [138]:layout, blades = cf.Cl(2) # creates a 2-dimensional clifford algebr
+    In [138]:layout, blades = cf.Cl(2) # creates a 2-dimensional clifford algebra
 
 
 Assign Blades
