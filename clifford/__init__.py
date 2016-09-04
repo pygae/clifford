@@ -40,11 +40,11 @@ Basics
 
 .. ipython::
 
-    In [4]:e0&e1 # geometric product
+    In [4]:e0*e1 # geometric product
 
     In [5]:e0^e1 # outer product
 
-    In [6]:e0*e1 # inner product
+    In [6]:e0|e1 # inner product
 
 Rotation
 
@@ -52,29 +52,24 @@ Rotation
 
     In [138]:  from scipy.constants import e,pi
 
-    In [138]:  R = e**(pi/4. &e01)
+    In [138]:  R = e**(pi/4 *e01)
     
-    In [138]:  R&e0&~R
+    In [138]:  R*e0*~R
 
 
 Links
 --------
 
-There is also a symbolic geometric alebra module for python,
+ * symbolic geometric alebra module for python, https://github.com/brombo/galgebra
 
- * https://github.com/brombo/galgebra
+ * Cambridge GA group  http://www.mrao.cam.ac.uk/~clifford
 
-For more information, see the Cambridge Clifford Algebras website:
-
- * http://www.mrao.cam.ac.uk/~clifford
-
-and David Hestenes' website:
-
- * http://geocalc.clas.asu.edu/
+ * David Hestenes' (The man)  http://geocalc.clas.asu.edu/
 
 
 
-
+API
+------
 
 Two classes, Layout and MultiVector, and several helper functions are 
 provided to implement the algebras.
@@ -108,7 +103,7 @@ Helper Functions
 Issues
 ======
 
- * Due to Python's order of operations, the bit operators & ^ << follow
+ * Due to Python's order of operations, the bit operators ^ << follow
    the normal arithmetic operators + - * /, so 
 
      1^e0 + 2^e1  !=  (1^e0) + (2^e1)
@@ -131,13 +126,13 @@ Issues
  * Since * is the inner product and the inner product with a scalar 
    vanishes by definition, an expression like 
 
-     1*e0 + 2*e1
+     1|e0 + 2|e1
    
    is null.  Use the outer product or full geometric product, to 
    multiply scalars with MultiVectors.  This can cause problems if
    one has code that mixes Python numbers and MultiVectors.  If the
    code multiplies two values that can each be either type without
-   checking, one can run into problems as "1 * 2" has a very different
+   checking, one can run into problems as "1 | 2" has a very different
    result from the same multiplication with scalar MultiVectors.
 
  * Taking the inverse of a MultiVector will use a method proposed by
