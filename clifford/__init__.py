@@ -1,80 +1,7 @@
 """ 
 
-clifford: Geometric Algebra for Python
-----------------------------------------
-
-This module implements geometric algebras (a.k.a. Clifford algebras).  For the
-uninitiated, a geometric algebra is an algebra of vectors of given dimensions
-and signature. The familiar inner (dot) product and the outer product,
-a generalized relative of the three-dimensional cross product, are unified in an
-invertible geometric product.  Scalars, vectors, and higher-grade entities can
-be mixed freely and consistently in the form of mixed-grade multivectors.
-
-
-Quick Example
-================
-
-Instantiate a G2 algebra 
-
-.. ipython::
-
-    In [138]:import clifford as cf
-
-    In [138]:cf.pretty(precision=2)    # sets display precision 
-
-    In [138]:layout, blades = cf.Cl(2) # creates a 2-dimensional clifford algebra
-
-
-Assign Blades
-
-.. ipython::
-
-    In [138]: e0 = blades['e0']
-   
-    In [138]: e1 = blades['e1']
-    
-    In [138]: e01 = blades['e01']
-    
-    
-Basics
-
-.. ipython::
-
-    In [4]:e0*e1 # geometric product
-
-    In [5]:e0^e1 # outer product
-
-    In [6]:e0|e1 # inner product
-
-Rotation
-
-.. ipython::
-
-    In [138]:  from scipy.constants import e,pi
-
-    In [138]:  R = e**(pi/4 *e01)
-    
-    In [138]:  R*e0*~R
-
-
-Links
---------
-
- * symbolic geometric alebra module for python, https://github.com/brombo/galgebra
-
- * Cambridge GA group  http://www.mrao.cam.ac.uk/~clifford
-
- * David Hestenes' (The man)  http://geocalc.clas.asu.edu/
-
-
-
-API
-------
-
 Two classes, Layout and MultiVector, and several helper functions are 
 provided to implement the algebras.
-
-
 
 
 Classes
@@ -191,6 +118,7 @@ Issues
    by Python integers will have the same consequences as normal integer
    division.  Public outcry will convince me to add the explicit casts
    if this becomes a problem.
+   
    
 Acknowledgements
 +++++++++++++++++
