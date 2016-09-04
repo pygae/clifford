@@ -599,7 +599,25 @@ class MultiVector(object):
             if self.value.shape != (self.layout.gaDims,):
                 raise ValueError("value must be a sequence of length %s" % 
                     self.layout.gaDims)
-
+    
+    
+    def __array_wrap__(self,out_arr, context=None):
+        uf, objs, huh = context
+        if uf.__name__ =='multiply':
+            return objs[1]*objs[0]
+        if uf.__name__ =='divide':
+            return objs[1].inv()*objs[0]
+        elif uf.__name__=='add':
+            return objs[1]+objs[0]
+        elif uf.__name__=='subtract':
+            return -objs[1]+objs[0]
+        elif uf.__name__ =='exp':
+            return math.e**(objs[0])
+        
+        else:
+            raise ValueError('i dont know what to do')
+        
+    
     def _checkOther(self, other, coerce=1):
         """Ensure that the other argument has the same Layout or coerce value if 
         necessary/requested.

@@ -36,7 +36,7 @@ class CliffordTests(unittest.TestCase):
     def test_exp(self):
         
         layout, blades = self.algebras[0]
-        R = e**(blades['e01'])
+        R = exp(blades['e01'])
         e0 = blades['e0']
         R*e0*~R
         
