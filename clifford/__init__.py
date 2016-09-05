@@ -180,7 +180,7 @@ def _myDot(a, b):
                                     representing arbitrary, omitted indices
 
     The sum is over the last axis of the first argument and the first axis 
-    of the last axis.
+    of the last argument.
 
     _myDot(a, b) --> NumPy array
     """
@@ -296,7 +296,7 @@ class Layout(object):
         elif len(names) == self.gaDims:
             self.names = names
         else:
-            raise ValueError, "names list of length %i needs to be of length %i"% (len(names), self.gaDims)
+            raise ValueError, "names list of length %i needs to be of length %i" % (len(names), self.gaDims)
 
         self._genEvenOdd()
         self._genTables()
@@ -1361,12 +1361,12 @@ class MultiVector(object):
     leftInv = leftLaInv
     inv = rightInv = rightLaInv
 
-    def dual(self, I=None):
+    def dual(self, I=None):  # correction: for " * " read " & " --- WFL !! 
         """Returns the dual of the multivector against the given subspace I.
         I defaults to the pseudoscalar.
 
         ~        -1
-        M = M * I
+        M = M & I
         dual(I=None) --> MultiVector
         """
         
@@ -1375,7 +1375,7 @@ class MultiVector(object):
         else:
             Iinv = I.inv()
         
-        return self * Iinv
+        return self & Iinv 
 
     def commutator(self, other):
         """Returns the commutator product of two multivectors.
@@ -1797,4 +1797,28 @@ def gp(M, N):
         
         return M*N
         
+        
+"""
+# Reported / corrected by Fred Lunnon 28/08/16 
+# python 
+
+# Instantiate algebra and unit vectors 
+from clifford import *; 
+p,q,r = 2,0,0;  # r = 0 ! 
+GAlayout, GAblades = Cl(p, q); 
+(e0, e1) = ( GAblades[GAlayout.names[k+1]] for k in range(0, p+q) ); 
+two = 2 & e0 & e0;  # coerce scalar to multor 
+
+# Bug in dual() : not involutory 
+X = 1 + (e0 & e1); 
+print X; print ( X.dual() ).dual();  # unequal? 
+# Corrected: file <__init__.py> lines 1380, 1389 : for " * " read " & " 
+
+# Bug in add, subtract: type error etc. (NumPy issue?) 
+X = 1 + (e0 & e1);  print X;  # multor! 
+print X.mag2() + X;  # array? wrong answer? 
+
+# Bug in "pretty" polynomial o/p: list reverts to "ugly" o/p (Python issue?) 
+print(e0); print([e0, e1]);  # pretty!; ugly? 
+""" 
 
