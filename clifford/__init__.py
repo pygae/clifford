@@ -1375,7 +1375,7 @@ class MultiVector(object):
         else:
             Iinv = I.inv()
         
-        return self | Iinv
+        return self * Iinv
 
     def commutator(self, other):
         """Returns the commutator product of two multivectors.
