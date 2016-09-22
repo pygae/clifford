@@ -11,7 +11,7 @@ Instantiate a G3 algebra
 
     In [138]:cf.pretty(precision=2)    # sets display precision 
 
-    In [138]:layout, blades = cf.Cl(3) # creates a 2-dimensional clifford algebra
+    In [138]:layout, blades = cf.Cl(3) # creates a 3-dimensional clifford algebra
 
 
 Inspect Blades

@@ -82,7 +82,8 @@ And some methods to create vectors in the *original* 2D space, as well as the co
         ....:   return x- E0.project(x)
                 
 
-Some tests to sure that up-projection produces a null vector and that  up/down projection are consistent. 
+Some tests to sure that up-projection produces a null vector and that  up/down projection are consistent.
+ 
 .. ipython::
 
     In [138]:  x = v2()
