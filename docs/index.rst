@@ -35,6 +35,13 @@ API
     
     api
 
+Tools
+------
+
+.. toctree::
+    :maxdepth: 1
+    
+    tools
 
 Links
 --------

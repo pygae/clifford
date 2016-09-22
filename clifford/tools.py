@@ -1,8 +1,5 @@
 """
-Tools
---------
-
-Contains algorithms and tools of various kinds.
+Algorithms and tools of various kinds.
 
 
 Determining Rotors From Frame Pairs or Matrices

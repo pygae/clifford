@@ -27,6 +27,10 @@ Helper Functions
     ugly
     eps
 
+
+
+
+
 Issues
 ======
 
@@ -126,14 +130,17 @@ Konrad Hinsen fixed a few bugs in the conversion to numpy and adding some unit
 tests.
 
 
+ChangeLog
+=========
+
 Changes 0.6-0.7
-===============
++++++++++++++++++
 
  * Added a real license.
  * Convert to numpy instead of Numeric.
    
 Changes 0.5-0.6
-===============
++++++++++++++++++
 
  * join() and meet() actually work now, but have numerical accuracy problems
  * added clean() to MultiVector
