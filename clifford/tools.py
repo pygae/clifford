@@ -1,3 +1,28 @@
+"""
+Tools
+--------
+
+Contains algorithms and tools of various kinds.
+
+
+Determining Rotors From Frame Pairs or Matrices
+===============================================
+
+Given two frames that are related by a orthogonal transform, we seek a rotor which enacts the transform. Detail of the mathematics and psuedo code used the create the algorithms below can be found at Allan Cortzen's website.
+
+ http://ctz.dk/geometric-algebra/frames-to-versor-algorithm/
+
+There are also some helper functions which can be used to translate matrices into GA frames, so an orthogonal matrix can be directly translated into a Verser. 
+
+.. autosummary::
+    :toctree: generated/
+    
+    orthoFrames2Verser
+    orthoMat2Verser
+    mat2Frame
+    
+"""
+
 from warnings import warn
 from numpy import eye
 from . import Cl, gp
@@ -100,25 +125,24 @@ def orthoFrames2Verser(A,B, eps =1e-6):
     '''
     Determines verser for two frames related by an orthogonal transform
     
-    Based on [1]. This works  in Euclidean spaces and, under special 
+    Based on [1,2]. This works  in Euclidean spaces and, under special 
     circumstances in other signatures. see [1] for limitaions/details
     
+    [1] http://ctz.dk/geometric-algebra/frames-to-versor-algorithm/
     
-    [1] Reconstructing Rotations and Rigid Body Motions from Exact Point 
+    [2] Reconstructing Rotations and Rigid Body Motions from Exact Point 
     Correspondences Through Reflections, Daniel Fontijne and Leo Dorst
     
     '''
     ## TODO: shoudl we test to see if A and B are related by rotation?
+    ## TODO: implement  reflect/rotate based on distance (as in[1])
     
     # keep copy of original frames
     A = A[:] 
     B = B[:]
     
-    
     if len(A)!=len(B):
         raise ValueError('len(A)!=len(B)')
-    
-    N = len(A)
         
     # store each reflector  in a list 
     r_list = []
@@ -137,7 +161,7 @@ def orthoFrames2Verser(A,B, eps =1e-6):
             break
         # reflect remaining vectors 
         for j in range(len(A)):
-            A[j] = -r&A[j]&r
+            A[j] = -r*A[j]*r
        
         # find the next pair based on current distance
         dist = [abs((a-b)**2) for a,b in zip(A,B)]
@@ -151,18 +175,19 @@ def orthoFrames2Verser(A,B, eps =1e-6):
 def orthoMat2Verser(A, eps= 1e-6,layout=None):
     '''
     Translates a [complex] orthogonal matrix to a Verser 
+    
+    This assumes that the identity matrix and `A` are related by an 
+    orthogonal transformation, and finds the rotor which enacts this 
+    transform. 
+    
     '''
     B,layout = mat2Frame(A,layout=layout)
     N = len(B)
     
     if (A.dot(A.conj().T) -eye(N/2)).max()>eps:
-            warn('A doesnt appear to be a rotation. ')
+        warn('A doesnt appear to be a rotation. ')
             
-    
     A,layout = mat2Frame(eye(N),layout=layout)
-    
-    
-
     return orthoFrames2Verser(A,B, eps = eps)
 
 

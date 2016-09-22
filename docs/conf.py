@@ -41,6 +41,8 @@ extensions = [
     'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
     'numpydoc',
+    #'nbsphinx',
+    #'sphinx.ext.mathjax',
 ]
 
 #autodoc_default_flags='members'

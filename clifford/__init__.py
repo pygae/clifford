@@ -530,27 +530,30 @@ class Layout(object):
         return basis_vectors(self, **kw)
         
 class MultiVector(object):
-    """ The elements of the algebras, the multivectors, are implemented in the
-    MultiVector class.
+    """An  element of the algebra
     
-    It has the following constructor:
+    Parameters
+    -------------
+    layout: instance of `Layout`
+        the layout of the algebra
+    
+    value : sequence of length layout.gaDims
+        the coefficients of the base blades
 
-      MultiVector(layout, value=None)
-
-    The meaning of the arguments is as follows:
-
-      layout -- instance of Layout
-
-      value -- a sequence, of length layout.gaDims, of coefficients of the base
-          blades
-
-    MultiVector's Members
-
-
-      layout -- instance of Layout
-
-      value -- a NumPy array, of length layout.gaDims, of coefficients of the base
-          blades
+    Notes
+    ------
+    The following operators are overloaded as follows:
+    
+    * `*` : geometric product
+    * `^` : outer product
+    * `|` : inner product
+    * `~` : reversion
+    * `||`: abs value, this is  sqrt(abs(~M*M))
+    
+    sequence method
+    
+    * M(N) : grade or subspace projection
+    * M[N] : blade projection
     """
 
     def __init__(self, layout, value=None):

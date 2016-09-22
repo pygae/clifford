@@ -19,7 +19,7 @@ Vectors in the orignal space are mapped to vectors in conformal space through th
     X = x + \frac{1}{2} x^2 e_{\infty} +e_o 
 
 
-The inverse map is the made by normalizing the conformal vector, then rejection from the minkowski plane $E_0$,
+The inverse map is the made by normalizing the conformal vector, then rejection from the minkowski plane _math:`$E_0$`,
 
 
 .. math:: 
@@ -70,6 +70,7 @@ Define the up and down projection functions
     In [138]: down = lambda x: (homo(x)^E0)|E0
 
 
+And some methods to create vectors in the *original* 2D space, as well as the conformal 4D space. 
 
 .. ipython::
 
@@ -77,10 +78,20 @@ Define the up and down projection functions
     In [138]: v4 =  lambda : cf.randomMV(layout, grades=[1])
 
     In [138]: def v2():
-    
-    x=v4()
+        ....:   x=v4()
+        ....:   return x- E0.project(x)
                 
-    return x- E0.project(x)
+
+Some tests to sure that up-projection produces a null vector and that  up/down projection are consistent. 
+.. ipython::
+
+    In [138]:  x = v2()
+    
+    In [138]: X = up(x)
+    
+    In [138]: assert(X**2 ==0)
+    
+    In [138]: assert(down(X) ==x)
 
 
 [ Do things...]
