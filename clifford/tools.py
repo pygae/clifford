@@ -24,7 +24,7 @@ from warnings import warn
 from numpy import eye
 from . import Cl, gp
 
-def mat2Frame(A, layout=None):
+def mat2Frame(A, layout=None, is_complex=None):
     '''
     Translates a [complex] matrix into a real frame
     
@@ -49,13 +49,15 @@ def mat2Frame(A, layout=None):
     # N = number of vectors
     M,N = A.shape
     
-    if A.dtype == 'complex':
-        is_complex = True
+    if is_complex is None:
+        if A.dtype == 'complex':
+            is_complex = True
+    
+        else:
+            is_complex = False
+    if is_complex:
         N = N*2
         M = M*2
-        
-    else:
-        is_complex = False
     
     if layout is None:
         layout, blades = Cl(M,firstIdx=0)
@@ -164,12 +166,12 @@ def orthoFrames2Verser(A,B, eps =1e-6):
         dist = [abs((a-b)**2) for a,b in zip(A,B)]
         k = dist.index(max(dist))
     
-    print str(len(r_list)) + ' reflections found'
+    #print str(len(r_list)) + ' reflections found'
     R = reduce(gp,r_list[::-1] )
     
     return R ,r_list
 
-def orthoMat2Verser(A, eps= 1e-6,layout=None):
+def orthoMat2Verser(A, eps= 1e-6,layout=None,is_complex=None):
     '''
     Translates a [complex] orthogonal matrix to a Verser 
     
@@ -178,13 +180,13 @@ def orthoMat2Verser(A, eps= 1e-6,layout=None):
     transform. 
     
     '''
-    B,layout = mat2Frame(A,layout=layout)
+    B,layout = mat2Frame(A,layout=layout,is_complex=is_complex)
     N = len(B)
     
-    if (A.dot(A.conj().T) -eye(N/2)).max()>eps:
-        warn('A doesnt appear to be a rotation. ')
+    #if (A.dot(A.conj().T) -eye(N/2)).max()>eps:
+    #    warn('A doesnt appear to be a rotation. ')
             
-    A,layout = mat2Frame(eye(N),layout=layout)
+    A,layout = mat2Frame(eye(N),layout=layout,is_complex=False)
     return orthoFrames2Verser(A,B, eps = eps)
 
 

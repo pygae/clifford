@@ -32,6 +32,7 @@ import os
 sys.path.insert(0, os.path.abspath('../sphinxext'))
 
 extensions = [
+    'nbsphinx',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
@@ -41,12 +42,12 @@ extensions = [
     'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
     'numpydoc',
-    #'nbsphinx',
+    
     #'sphinx.ext.mathjax',
 ]
 
 #autodoc_default_flags='members'
-autosummary_generate=True
+autosummary_generate=['tools.rst','api.rst']
 numpydoc_show_class_members = False
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

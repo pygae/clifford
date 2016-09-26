@@ -535,7 +535,28 @@ class Layout(object):
        
     def basis_vectors(self, **kw):
         return basis_vectors(self, **kw)
+    
+    def blades(self,*args, **kw):
+        '''
+        Returns a dictionary mapping basis element names to their MultiVector
+        instances, optionally for specific grades
+
+        if you are lazy,  you might do this to populate your namespace
+        with the variables of a given layout.
         
+        >>> locals().update(layout.blades())
+        
+        
+        
+        See Also
+        ---------
+        bases
+        '''
+        return bases(layout=self, *args,**kw)
+    
+    
+
+            
 class MultiVector(object):
     """An  element of the algebra
     
@@ -1669,7 +1690,12 @@ def Cl(p, q=0, names=None, firstIdx=0, mvClass=MultiVector):
 def bases(layout, mvClass=MultiVector,grades=None):
     """Returns a dictionary mapping basis element names to their MultiVector
     instances, optionally for specific grades
-
+    
+    if you are lazy,  you might do this to populate your namespace
+    with the variables of a given layout.
+        
+    >>> locals().update(layout.blades())
+    
     bases(layout) --> {'name': baseElement, ...}
     """
     
@@ -1796,7 +1822,7 @@ def gp(M, N):
         
         M and N must be from the same layout
         
-        This function is calls the MultiVector.__and__ operator, but 
+        This function  calls the MultiVector.__and__ operator, but 
         is useful in calculating series of products, like `reduce`  
         for example
         
@@ -1807,4 +1833,3 @@ def gp(M, N):
         
         return M*N
         
-

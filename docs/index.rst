@@ -22,10 +22,11 @@ Documentation
 .. toctree::
     :maxdepth: 1
     
-    quickstart
+    QuickStartG2
     G3
     cga
-
+    
+    
 API
 ------
 
