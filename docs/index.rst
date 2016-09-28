@@ -30,6 +30,7 @@ Documentation
     Installation
     QuickStartG2
     TheAlgebraOfSpaceG3
+    EulerAngles
     cga
     
     
