@@ -7,15 +7,15 @@ from distutils.core import Extension
 
 VERSION = '0.8'
 LONG_DESCRIPTION = """
-	Geometric algebras (a.k.a. Clifford algebras). 
+Numerical Geometric Algebra Module
 """
 setup(name='clifford',
 	version=VERSION,
 	#license='gpl',
-	description='Geometric algebras (a.k.a. Clifford algebras)',
+	description='Numerical Geometric Algebra Module',
 	long_description=LONG_DESCRIPTION,
 	author='Robert Kern',
-	author_email='robert.kern@gmail.com',
+	author_email='alexarsenovic@gmail.com',
 	#url='http://scikit-rf.org',
 	packages=find_packages(),
 	install_requires = [
