@@ -7,7 +7,7 @@ from distutils.core import Extension
 
 VERSION = '0.8'
 LONG_DESCRIPTION = """
-Numerical Geometric Algebra Module
+This module implements geometric algebras (a.k.a. Clifford algebras). For the uninitiated, a geometric algebra is an algebra of vectors of given dimensions and signature. The familiar inner (dot) product and the outer product, a generalized relative of the three-dimensional cross product, are unified in an invertible geometric product. Scalars, vectors, and higher-grade entities can be mixed freely and consistently in the form of mixed-grade multivectors.
 """
 setup(name='clifford',
 	version=VERSION,
@@ -16,7 +16,7 @@ setup(name='clifford',
 	long_description=LONG_DESCRIPTION,
 	author='Robert Kern',
 	author_email='alexarsenovic@gmail.com',
-	#url='http://scikit-rf.org',
+	url='http://clifford.readthedocs.io',
 	packages=find_packages(),
 	install_requires = [
 		'numpy',

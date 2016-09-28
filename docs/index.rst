@@ -27,6 +27,7 @@ Documentation
 .. toctree::
     :maxdepth: 1
     
+    Installation
     QuickStartG2
     TheAlgebraOfSpaceG3
     cga

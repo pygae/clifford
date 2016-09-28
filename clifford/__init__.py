@@ -178,7 +178,7 @@ class NoMorePermutations(StandardError):
 
 
 _eps = 1e-15     # float epsilon for float comparisons
-_pretty = False  # pretty-print global
+_pretty = True  # pretty-print global
 _print_precision = 5 # pretty printing precision on floats
 def _myDot(a, b):
     """Returns the inner product as *I* learned it.
