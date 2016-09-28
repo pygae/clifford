@@ -1668,7 +1668,7 @@ def elements(dims, firstIdx=0):
     return blades            
                 
 
-def Cl(p, q=0, names=None, firstIdx=0, mvClass=MultiVector):
+def Cl(p, q=0, names=None, firstIdx=1, mvClass=MultiVector):
     """Returns a Layout and basis blades for the geometric algebra Cl_p,q.
     
     The notation Cl_p,q means that the algebra is p+q dimensional, with
