@@ -536,7 +536,7 @@ class Layout(object):
     def basis_vectors(self, **kw):
         return basis_vectors(self, **kw)
     
-    def blades(self,*args, **kw):
+    def bases(self,*args, **kw):
         '''
         Returns a dictionary mapping basis element names to their MultiVector
         instances, optionally for specific grades
@@ -544,7 +544,7 @@ class Layout(object):
         if you are lazy,  you might do this to populate your namespace
         with the variables of a given layout.
         
-        >>> locals().update(layout.blades())
+        >>> locals().update(layout.bases())
         
         
         
