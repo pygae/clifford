@@ -535,7 +535,8 @@ class Layout(object):
         n = self.dims if self.dims%2 ==0 else self.dims-1
         R = reduce(gp, self.randomV(n, normed=True))
         return R
-       
+    
+    @property
     def basis_vectors(self, **kw):
         return basis_vectors(self, **kw)
     
@@ -1855,3 +1856,70 @@ def gp(M, N):
         
         return M*N
         
+def conformalize(layout):
+    '''
+    Conformalize a Geometric Algebra 
+    
+    Given the `Layout` for a GA of signature (p,q), this
+    will produce a GA of signature (p+1,q+1), as well as 
+    return a new list of blades and some `stuff`. `stuff` 
+    is a dict containing the null basis blades, and some
+    up/down functions for projecting in/out of the CGA.
+    
+    
+    
+    Parameters
+    -------------
+    layout: `clifford.Layout`
+         layout of the GA to conformalize
+    
+    Returns 
+    ---------
+    layout_c:  `clifford.Layout`
+        layout of the conformalized GA
+    blades_c: dict
+        blades for the CGA
+    stuff: dict 
+        dict containing the following:
+            * ep - postive basis vector added
+            * en - negative basis vector added
+            * eo - zero vector of null basis (=.5*(en-ep))
+            * einf - infinity vector of null basis (=en+ep)
+            * E0 - minkowski bivector (=einf^eo)
+            * up - up-project a vector from GA to CGA
+            * down - down-project a vector from CGA to GA
+            * homo - homogenize a CGA vector
+            
+            
+    Examples
+    ---------
+    >>> from clifford import Cl, conformalize
+    >>> G2, blades = Cl(2)
+    >>> G2c, bladesc, stuff = conformalize(G2)
+    >>> locals().update(bladesc)
+    >>> locals().update(stuff)
+    '''
+    p =(layout.sig==1).sum()
+    q =(layout.sig==-1).sum()
+
+    layout_c, blades_c = Cl(p+1,q+1)
+    basis_vectors = layout_c.basis_vectors
+    added_keys = sorted(layout_c.basis_vectors.keys())[-2:]
+    ep,en = [basis_vectors[k] for k in added_keys]
+
+    # setup  null basis, and minkowski subspace bivector
+    eo = .5^(en-ep)
+    einf= en+ep
+    E0= einf^eo
+    
+    #  some  convenience functions 
+    up = lambda x: x + (.5^((x**2)*einf)) + eo
+    homo = lambda x: x * (-x|einf).normalInv() # homogenise conformal vector
+    down = lambda x: (homo(x)^E0)*E0
+    
+    stuff = {}
+    stuff.update({'ep': ep,'en':en,'eo':eo,'einf':einf,'E0':E0,
+                 'up':up,'down':down,'homo':homo})
+    
+    return layout_c, blades_c, stuff
+    

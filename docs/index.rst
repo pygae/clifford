@@ -31,6 +31,7 @@ Documentation
     QuickStartG2
     TheAlgebraOfSpaceG3
     EulerAngles
+    ConformalGeometricAlgebra
     InterfacingOtherMathSystems
     
     
