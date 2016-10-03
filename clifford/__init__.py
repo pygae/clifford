@@ -290,8 +290,11 @@ class Layout(object):
         self.gaDims = len(self.bladeList)
         self.gradeList = map(len, self.bladeList)
 
-        if names is None:
-            e = 'e'
+        if names is None or isinstance(names,str):
+            if isinstance(names,str):
+                e = names
+            else:
+                e = 'e'
             self.names = []
             
             for i in range(self.gaDims):
@@ -1439,7 +1442,26 @@ class MultiVector(object):
         newValue = signs * self.value
 
         return self._newMV(newValue)
-
+    
+    @property
+    def even(self):
+        '''
+        Even part of this mulivector
+        
+        defined as 
+        M + M.gradInvol()
+        '''
+        return .5*(self +self.gradeInvol())
+    @property
+    def odd(self):
+        '''
+        Odd part of this mulivector
+        
+        defined as 
+        M +- M.gradInvol()
+        '''
+        return .5*(self -self.gradeInvol())
+    
     def conjugate(self):
         """Returns the Clifford conjugate (reversion and grade involution).
          *
