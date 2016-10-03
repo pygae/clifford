@@ -16,7 +16,7 @@ be mixed freely and consistently in the form of mixed-grade multivectors.
    :width: 500 px
    :align: center
 
-If you think GA looks interesting and want to learn more, check out the `wiki page <https://en.wikipedia.org/wiki/Geometric_algebra>`_,  and here are some great introductory textbooks!
+If you think Geometric Algebra looks interesting and want to learn more, check out the `wiki page <https://en.wikipedia.org/wiki/Geometric_algebra>`_,  and here are some great introductory textbooks!
 
 * Geometric Algebra for Physicists, by Doran and Lasenby
 * Geometric Algebra for Computer Science, by Dorst, Fontijne and Mann
