@@ -7,5 +7,3 @@ scipy
 sphinx>=1.4
 nbsphinx
 ipykernel
-setuptools
-numpy-quaternion
