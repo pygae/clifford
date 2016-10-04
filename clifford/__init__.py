@@ -171,15 +171,10 @@ import numbers
 import numpy as np
 from numpy import linalg
 
+_eps = 1e-15            # float epsilon for float comparisons
+_pretty = True          # pretty-print global
+_print_precision = 5    # pretty printing precision on floats
 
-class NoMorePermutations(StandardError):
-    """ No more permutations can be generated.
-    """
-
-
-_eps = 1e-15     # float epsilon for float comparisons
-_pretty = True  # pretty-print global
-_print_precision = 5 # pretty printing precision on floats
 def _myDot(a, b):
     """Returns the inner product as *I* learned it.
 
@@ -200,7 +195,11 @@ def _myDot(a, b):
 
     # innerproduct sums over the *last* axes of *both* arguments
     return np.inner(a, newB)
-    
+
+class NoMorePermutations(StandardError):
+    """ No more permutations can be generated.
+    """
+
 
 class Layout(object):
     """ Layout stores information regarding the geometric algebra itself and the
@@ -558,9 +557,6 @@ class Layout(object):
         '''
         return bases(layout=self, *args,**kw)
     
-    
-
-            
 class MultiVector(object):
     """An  element of the algebra
     
@@ -606,6 +602,12 @@ class MultiVector(object):
     
     
     def __array_wrap__(self,out_arr, context=None):
+        '''
+        This is a work-around needed to prevent numpy arrays from 
+        operating  on MultiVectors using their operators.  This happens
+        because Multivectors act enough like an array, that duck 
+        typing thinks they are an array.  
+        '''
         uf, objs, huh = context
         if uf.__name__ =='multiply':
             return objs[1]*objs[0]
@@ -619,7 +621,7 @@ class MultiVector(object):
             return math.e**(objs[0])
         
         else:
-            raise ValueError('i dont know what to do')
+            raise ValueError('i dont know how to %s yet'%uf.__name__)
         
     
     def _checkOther(self, other, coerce=1):
@@ -1709,7 +1711,6 @@ def Cl(p, q=0, names=None, firstIdx=1, mvClass=MultiVector):
 
     return layout, blades
 
-
 def bases(layout, mvClass=MultiVector,grades=None):
     """Returns a dictionary mapping basis element names to their MultiVector
     instances, optionally for specific grades
@@ -1732,8 +1733,6 @@ def bases(layout, mvClass=MultiVector,grades=None):
             v[i] = 1
             dict[layout.names[i]] = mvClass(layout, v)
     return dict
-
-
 
 def basis_vectors(layout):
     '''
