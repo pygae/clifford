@@ -16,7 +16,7 @@ from nose.plugins.skip import SkipTest
 class CliffordTests(unittest.TestCase):
 
     def setUp(self):
-        self.algebras = [Cl(i) for i in [3, 4, 5, 6]]
+        self.algebras = [Cl(i) for i in [3, 4, 5]]
 
     def test_inverse(self):
         for layout, blades in self.algebras:
