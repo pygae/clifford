@@ -1,7 +1,6 @@
 """
 Algorithms and tools of various kinds.
 
-
 Determining Rotors From Frame Pairs or Orthogonal Matrices
 ==========================================================
 
