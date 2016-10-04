@@ -33,7 +33,7 @@ Documentation
     EulerAngles
     ConformalGeometricAlgebra
     InterfacingOtherMathSystems
-    
+    PredefinedGAs
     
 API
 ------

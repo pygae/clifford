@@ -32,7 +32,12 @@ Helper Functions
 
 
 Issues
-======
+======  
+
+ * Currently, algebras over 6 dimensions are very slow. this is because
+   this module was written for *pedagogical* purposes. However, because the
+   syntax for this module is so attractive, we plan to fix the 
+   perfomance problems,  in the future...
 
  * Due to Python's order of operations, the bit operators ^ << follow
    the normal arithmetic operators + - * /, so 
