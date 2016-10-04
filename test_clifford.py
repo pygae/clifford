@@ -20,7 +20,7 @@ class CliffordTests(unittest.TestCase):
 
     def test_inverse(self):
         for layout, blades in self.algebras:
-            a = 1. + blades['e0']
+            a = 1. + blades['e1']
             self.assertRaises(ValueError, lambda x: 1/x, a)
             for i in range(10):
                 a = randomMV(layout, grades=[0, 1])
@@ -36,18 +36,18 @@ class CliffordTests(unittest.TestCase):
     def test_exp(self):
         
         layout, blades = self.algebras[0]
-        R = exp(blades['e01'])
-        e0 = blades['e0']
-        R*e0*~R
+        R = exp(blades['e12'])
+        e1 = blades['e1']
+        R*e1*~R
         
     def test_add_float64(self):
         
         layout, blades = self.algebras[0]
-        e0 = blades['e0']
+        e1 = blades['e1']
         
         
-        float64(1)+e0
-        self.assertEqual(1+e0,float64(1)+e0)
+        float64(1)+e1
+        self.assertEqual(1+e1,float64(1)+e1)
 
 
     
