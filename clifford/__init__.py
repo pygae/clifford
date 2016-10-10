@@ -12,6 +12,7 @@ Classes
     
     MultiVector
     Layout
+    Frame
 
 Helper Functions
 ================
@@ -21,6 +22,7 @@ Helper Functions
     :toctree: generated/
     
     Cl
+    conformalize
     bases
     randomMV
     pretty
@@ -171,12 +173,14 @@ robert.kern@gmail.com
 # Standard library imports.
 import math
 import numbers
+import itertools
+from collections import MutableSequence
 
 # Major library imports.
 import numpy as np
-from numpy import linalg
+from numpy import linalg, array
 
-_eps = 1e-15            # float epsilon for float comparisons
+_eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
 
@@ -567,7 +571,7 @@ class MultiVector(object):
     
     Parameters
     -------------
-    layout: instance of `Layout`
+    layout: instance of `clifford.Layout`
         the layout of the algebra
     
     value : sequence of length layout.gaDims
@@ -577,11 +581,11 @@ class MultiVector(object):
     ------
     The following operators are overloaded as follows:
     
-    * `*` : geometric product
-    * `^` : outer product
-    * `|` : inner product
-    * `~` : reversion
-    * `||`: abs value, this is  sqrt(abs(~M*M))
+    * * : geometric product
+    * ^ : outer product
+    * | : inner product
+    * ~ : reversion
+    * ||: abs value, this is  sqrt(abs(~M*M))
     
     sequence method
     
@@ -1402,6 +1406,7 @@ class MultiVector(object):
 
     leftInv = leftLaInv
     inv = rightInv = rightLaInv
+    #inv= normalInv
 
     def dual(self, I=None):
         """Returns the dual of the multivector against the given subspace I.
@@ -1631,6 +1636,86 @@ class MultiVector(object):
 
         return (self * subspace.inv()) | other
 
+class Frame(MutableSequence):
+    '''
+    A vector frame
+    '''
+    def __init__(self, vectors):
+        
+        self.vecs = vectors 
+    
+    def __iter__(self):
+        return iter(self.vecs)
+    
+    def __getitem__(self,key):
+        return self.vecs.__getitem__(key)
+    
+    def __setitem__(self,key,value):
+        return self.vecs.__setitem__(key,value)
+        
+    def __delitem__(self,key):
+        return self.vecs.__delitem__(key)
+        
+    def __len__(self):
+        return len(self.vecs)
+    
+    def __repr__(self):
+        return self.vecs.__repr__()
+    
+    def insert(self,i,x):
+        return self.vecs.insert(i,x)
+    
+    @property
+    def En(self):
+        '''
+        Volume element for this frame
+        
+        En = e1^e2^...^en
+        '''
+        return reduce(op,self.vecs)
+        
+    @property
+    def inv(self):
+        '''
+        The inverse frame of self
+        
+        Returns
+        ---------
+        inv : `clifford.Frame`
+        '''
+        v = self.vecs
+        En = self.En
+        # see D&L sec 4.3
+        vectors = [(-1)**(k)*reduce(op,(v[:k]+v[k+1:]))*En.inv() \
+                    for k in range(len(self))]
+        
+        return Frame(vectors=vectors)
+        
+    def is_innermorphic_to(self,other):
+        '''
+        Is this frame `innermorhpic` to  other?
+        
+        *innermorphic* means both frames share the same inner-product 
+        between corresponding vectors. This implies that the two frames
+        are related by an orthogonal transform
+        
+        Parameters
+        ------------
+        other : `clifford.Frame`
+            the other frame
+            
+        Returns
+        ----------
+        value : bool
+        
+        '''
+        # make iterable `pairs` of all index combos, without repeat
+        pairs = list(itertools.combinations(range(len(self)), 2))
+        a,b = self,other
+        return array([(b[m]|b[n]==a[m]|a[n]) for m,n in pairs]).all()
+    
+    
+    
 
 def comb(n, k):
     """\
@@ -1780,7 +1865,7 @@ def randomMV(layout, min=-2.0, max=2.0, grades=None, mvClass=MultiVector,
         mv= mvClass(layout, newValue)
     
     if normed:
-        mv = mv/abs(mv)
+        mv = mv.normal()
     
     return mv
 
@@ -1843,14 +1928,14 @@ def print_precision(newVal):
     _print_precision = newVal
 
 def gp(M, N):
-        """Geometric product
+        """
+        Geometric product
             
         gp(M,N) =  M * N
         
         M and N must be from the same layout
         
-        This function  calls the MultiVector.__and__ operator, but 
-        is useful in calculating series of products, like `reduce`  
+        This is useful in calculating series of products, with `reduce()`  
         for example
         
         >>>Ms = [M1,M2,M3] # list of multivectors
@@ -1859,7 +1944,37 @@ def gp(M, N):
         """
         
         return M*N
+
+def ip(M, N):
+        """
+        Inner product function
+            
+        ip(M,N) =  M | N
         
+        M and N must be from the same layout
+        
+        """
+        
+        return M^N
+
+def op(M, N):
+        """
+        Outer product function
+            
+        op(M,N) =  M ^ N
+        
+        M and N must be from the same layout
+        
+        This is useful in calculating series of products, with `reduce()`  
+        for example
+        
+        >>>Ms = [M1,M2,M3] # list of multivectors
+        >>>reduce(op, Ms) #  == M1^M2^M3
+        
+        """
+        
+        return M^N
+
 def conformalize(layout):
     '''
     Conformalize a Geometric Algebra 

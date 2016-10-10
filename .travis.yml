@@ -29,5 +29,5 @@ install:
 script:
   - nosetests test_clifford.py
 
-after_success:
-  - coveralls
+#after_success:
+#  - coveralls
