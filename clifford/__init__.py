@@ -1640,13 +1640,31 @@ class MultiVector(object):
 
         return (self * subspace.inv()) | other
 
-class Frame(np.ndarray):
+
+class MVArray(np.ndarray):
+    '''
+    MultiVector Array
+    '''
 
     def __new__(cls, input_array):
-        #obj = np.asarray(input_array).view(cls)
         obj = np.empty(len(input_array), dtype=object)
         obj[:] = input_array
         obj = obj.view(cls)
+        return obj
+
+    def __array_finalize__(self, obj):
+        if obj is None: return
+        
+        
+class Frame(MVArray):
+    '''
+    A frame of vectors
+    '''
+    def __new__(cls, input_array):
+        if not np.all([k.grades()==[1] for k in input_array]):
+            raise TypeError('Frames must be made from vectors')
+        
+        obj = MVArray.__new__(cls, input_array)
         return obj
 
     def __array_finalize__(self, obj):
