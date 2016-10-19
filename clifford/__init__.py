@@ -548,6 +548,10 @@ class Layout(object):
     def basis_vectors(self, **kw):
         return basis_vectors(self, **kw)
     
+    @property
+    def blades(self):
+        return self.bases()
+        
     def bases(self,*args, **kw):
         '''
         Returns a dictionary mapping basis element names to their MultiVector
@@ -1636,35 +1640,18 @@ class MultiVector(object):
 
         return (self * subspace.inv()) | other
 
-class Frame(MutableSequence):
-    '''
-    A vector frame
-    '''
-    def __init__(self, vectors):
+class Frame(np.ndarray):
+
+    def __new__(cls, input_array):
+        #obj = np.asarray(input_array).view(cls)
+        obj = np.empty(len(input_array), dtype=object)
+        obj[:] = input_array
+        obj = obj.view(cls)
+        return obj
+
+    def __array_finalize__(self, obj):
+        if obj is None: return
         
-        self.vecs = vectors 
-    
-    def __iter__(self):
-        return iter(self.vecs)
-    
-    def __getitem__(self,key):
-        return self.vecs.__getitem__(key)
-    
-    def __setitem__(self,key,value):
-        return self.vecs.__setitem__(key,value)
-        
-    def __delitem__(self,key):
-        return self.vecs.__delitem__(key)
-        
-    def __len__(self):
-        return len(self.vecs)
-    
-    def __repr__(self):
-        return self.vecs.__repr__()
-    
-    def insert(self,i,x):
-        return self.vecs.insert(i,x)
-    
     @property
     def En(self):
         '''
@@ -1672,8 +1659,8 @@ class Frame(MutableSequence):
         
         En = e1^e2^...^en
         '''
-        return reduce(op,self.vecs)
-        
+        return reduce(op,self)
+    
     @property
     def inv(self):
         '''
@@ -1683,13 +1670,13 @@ class Frame(MutableSequence):
         ---------
         inv : `clifford.Frame`
         '''
-        v = self.vecs
+        
         En = self.En
         # see D&L sec 4.3
-        vectors = [(-1)**(k)*reduce(op,(v[:k]+v[k+1:]))*En.inv() \
+        vectors = [(-1)**(k)*reduce(op,np.hstack([self[:k],self[k+1:]]))*En.inv() \
                     for k in range(len(self))]
         
-        return Frame(vectors=vectors)
+        return Frame(vectors)
         
     def is_innermorphic_to(self,other):
         '''
@@ -1713,8 +1700,8 @@ class Frame(MutableSequence):
         pairs = list(itertools.combinations(range(len(self)), 2))
         a,b = self,other
         return array([(b[m]|b[n]==a[m]|a[n]) for m,n in pairs]).all()
-    
-    
+        
+
     
 
 def comb(n, k):
