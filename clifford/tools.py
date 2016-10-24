@@ -129,8 +129,8 @@ def orthoFrames2Verser_dist(A,B, eps =None):
     while dist[k] >= eps:
         r = (A[k]-B[k])/abs(A[k]-B[k]) # determine reflector
         r_list.append(r)                   # append to our list 
-        A= A[:-1]               # remove current vector pair
-        B= B[:-1]
+        A= A[1:]               # remove current vector pair
+        B= B[1:]
 
         if len(A)==0:
             break
@@ -208,8 +208,8 @@ def orthoFrames2Verser(A,B, eps =None, delta=1e-3):
         if  d >= delta:
             # reflection  part
             r_list.append(r)
-            A= A[:-1]               # remove current vector pair
-            B= B[:-1]
+            A= A[1:]               # remove current vector pair
+            B= B[1:]
             for j in range(len(A)):
                 A[j] = -r*A[j]*r.inv()
         
@@ -221,8 +221,8 @@ def orthoFrames2Verser(A,B, eps =None, delta=1e-3):
             
             R = b*(a+b)
             r_list.append(R)       # append to our list 
-            A= A[:-1]               # remove current vector pair
-            B= B[:-1]
+            A= A[1:]               # remove current vector pair
+            B= B[1:]
             for j in range(len(A)):
                 A[j] = R*A[j]*R.inv()
        
