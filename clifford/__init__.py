@@ -545,8 +545,13 @@ class Layout(object):
         return R
     
     @property
-    def basis_vectors(self, **kw):
-        return basis_vectors(self, **kw)
+    def basis_vectors(self):
+        return basis_vectors(self)
+    
+    @property
+    def basis_vectors_lst(self):
+        d = self.basis_vectors
+        return [d[k] for k in sorted(d.keys())]
     
     @property
     def blades(self):
@@ -1436,7 +1441,8 @@ class MultiVector(object):
         """
 
         return ((self * other) - (other * self)) / 2
-
+    
+    x = commutator
     def anticommutator(self, other):
         """Returns the anti-commutator product of two multivectors.
 

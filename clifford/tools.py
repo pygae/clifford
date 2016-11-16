@@ -90,7 +90,19 @@ def mat2Frame(A, layout=None, is_complex=None):
         
         
     return a, layout
-
+    
+def frame2Mat(B, A=None, is_complex=None):
+    if is_complex is not None:
+        raise NotImplementedError()
+    if A is None:
+        # assume we have orthonormal initial frame
+        A=B[0].layout.basis_vectors_lst
+        
+    
+    M = [float(b|a) for b in B for a in A] # you need float() due to bug in clifford
+    M = array(M).reshape(len(B),len(B))
+    
+    
 def orthoFrames2Verser_dist(A,B, eps =None):
     '''
     Determines verser for two frames related by an orthogonal transform
@@ -148,7 +160,7 @@ def orthoFrames2Verser_dist(A,B, eps =None):
     
     return R ,r_list
 
-def orthoFrames2Verser(A,B, eps =None, delta=1e-3):
+def orthoFrames2Verser(B,A=None, eps =None, delta=1e-3):
     '''
     Determines verser for two frames related by an orthogonal transform
     
@@ -163,6 +175,10 @@ def orthoFrames2Verser(A,B, eps =None, delta=1e-3):
     '''
     
     ## Checking and Setup
+    if A is None:
+        # assume we have orthonormal initial frame
+        bv = B[0].layout.basis_vectors
+        A=[bv[k] for k in sorted(bv.keys())]
     
     # make copy of original frames, so we can rotate A
     A = Frame(A[:] )
@@ -257,7 +273,7 @@ def orthoMat2Verser(A, eps=None,layout=None,is_complex=None):
     #    warn('A doesnt appear to be a rotation. ')
             
     A,layout = mat2Frame(eye(N),layout=layout,is_complex=False)
-    return orthoFrames2Verser(A,B, eps = eps)
+    return orthoFrames2Verser(A=A,B=B, eps = eps)
 
 
 
