@@ -39,12 +39,13 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
-    #'sphinx.ext.pngmath',
+    #'sphinx.ext.pngmath',\
+    'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'IPython.sphinxext.ipython_directive',
-    'IPython.sphinxext.ipython_console_highlighting',
-    'numpydoc',
+    #'IPython.sphinxext.ipython_directive',
+    #'IPython.sphinxext.ipython_console_highlighting',
+    #'numpydoc',
     'sphinx.ext.viewcode',
     
     #'sphinx.ext.mathjax',
