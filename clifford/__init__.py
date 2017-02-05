@@ -1788,21 +1788,23 @@ class BladeMap(object):
     def layout2(self):
         return self.b2[0].layout
         
-    def it(self, A):
+    def __call__(self, A):
         '''map an MV `A` according to blade_map'''
+        
         #determine direction of map
         if A.layout == self.layout1:
-            from_objs = self.objs1
-            to_objs = self.objs2
+            from_b = self.b1
+            to_b = self.b2
         
         elif A.layout == self.layout2:
-            from_objs = self.objs2
-            to_objs = self.objs1
+            from_b = self.b2
+            to_b = self.b1
         else:
             raise ValueError('A doesnt belong to either Algebra in this Map')
         
-        B=to_objs[0]._newMV()
-        for from_obj,to_obj in zip(from_objs,to_objs):
+        # create empty MV, and map values
+        B=to_b[0]._newMV()
+        for from_obj,to_obj in zip(from_b,to_b):
             B+=(sum(A.value*from_obj.value)*to_obj)
         return B
     
