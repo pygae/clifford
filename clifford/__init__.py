@@ -216,7 +216,7 @@ class Layout(object):
     
     It is constructed like this:
 
-      Layout(signature, bladeList, firstIdx=0, names=None)
+      Layout(signature, bladeTupList, firstIdx=0, names=None)
 
     The arguments to be passed are interpreted as follows:
 
@@ -231,14 +231,14 @@ class Layout(object):
             signature = [+1, -1, -1, -1]  # Hestenes', et al. Space-Time Algebra
             signature = [+1, +1, +1]      # 3-D Euclidean signature
             
-      bladeList -- list of tuples corresponding to the blades in the whole 
+      bladeTupList -- list of tuples corresponding to the blades in the whole 
           algebra.  This list determines the order of coefficients in the 
           internal representation of multivectors.  The entry for the scalar
           must be an empty tuple, and the entries for grade-1 vectors must be
           singleton tuples.  Remember, the length of the list will be 2**dims.
 
           Example:
-            bladeList = [(), (0,), (1,), (0,1)]  # 2-D
+            bladeTupList = [(), (0,), (1,), (0,1)]  # 2-D
       
       firstIdx -- the index of the first vector.  That is, some systems number
           the base vectors starting with 0, some with 1.  Choose by passing
@@ -246,9 +246,9 @@ class Layout(object):
       
       names -- list of names of each blade.  When pretty-printing multivectors,
           use these symbols for the blades.  names should be in the same order
-          as bladeList.  You may use an empty string for scalars.  By default,
+          as bladeTupList.  You may use an empty string for scalars.  By default,
           the name for each non-scalar blade is 'e' plus the indices of the blade
-          as given in bladeList.
+          as given in bladeTupList.
 
           Example:
             names = ['', 's0', 's1', 'i']  # 2-D
@@ -262,7 +262,7 @@ class Layout(object):
 
       firstIdx -- starting point for vector indices
 
-      bladeList -- list of blades
+      bladeTupList -- list of blades
 
       gradeList -- corresponding list of the grades of each blade
 
@@ -287,16 +287,16 @@ class Layout(object):
         the tensor g_ijk discussed above.
     """
 
-    def __init__(self, sig, bladeList, firstIdx=0, names=None):
+    def __init__(self, sig, bladeTupList, firstIdx=0, names=None):
         self.dims = len(sig)
         self.sig = np.divide(sig, np.absolute(sig)).astype(int)
         self.firstIdx = firstIdx
 
-        self.bladeList = map(tuple, bladeList)
+        self.bladeTupList = map(tuple, bladeTupList)
         self._checkList()
         
-        self.gaDims = len(self.bladeList)
-        self.gradeList = map(len, self.bladeList)
+        self.gaDims = len(self.bladeTupList)
+        self.gradeList = map(len, self.bladeTupList)
 
         if names is None or isinstance(names,str):
             if isinstance(names,str):
@@ -307,7 +307,7 @@ class Layout(object):
             
             for i in range(self.gaDims):
                 if self.gradeList[i] >= 1:
-                    self.names.append(e + ''.join(map(str, self.bladeList[i])))
+                    self.names.append(e + ''.join(map(str, self.bladeTupList[i])))
                 else:
                     self.names.append('')
             
@@ -321,7 +321,7 @@ class Layout(object):
 
     def __repr__(self):
         s = ("Layout(%r, %r, firstIdx=%r, names=%r)" % (list(self.sig),
-            self.bladeList, self.firstIdx, self.names))
+            self.bladeTupList, self.firstIdx, self.names))
         return s
 
     def _sign(self, seq, orig):
@@ -355,7 +355,7 @@ class Layout(object):
         self.odd = {}
 
         for i in range(self.gaDims):
-            blade = self.bladeList[i]
+            blade = self.bladeTupList[i]
             grade = self.gradeList[i]
 
             if grade in (0, 1):
@@ -415,23 +415,23 @@ class Layout(object):
         "Ensure validity of arguments."
 
         # check for uniqueness
-        for blade in self.bladeList:
-            if self.bladeList.count(blade) != 1:
+        for blade in self.bladeTupList:
+            if self.bladeTupList.count(blade) != 1:
                 raise ValueError, "blades not unique"
 
         # check for right dimensionality
-        if len(self.bladeList) != 2**self.dims:
+        if len(self.bladeTupList) != 2**self.dims:
             raise ValueError, "incorrect number of blades"
 
         # check for valid ranges of indices
         valid =  range(self.firstIdx, self.firstIdx+self.dims)
         try:
-            for blade in self.bladeList:
+            for blade in self.bladeTupList:
                 for idx in blade:
                     if (idx not in valid) or (list(blade).count(idx) != 1):
                         raise ValueError
         except (ValueError, TypeError):
-            raise ValueError, "invalid bladeList; must be a list of tuples"
+            raise ValueError, "invalid bladeTupList; must be a list of tuples"
     
     def _gmtElement(self, a, b):
         "Returns the element of the geometric multiplication table given blades a, b."
@@ -460,15 +460,15 @@ class Layout(object):
                 
         newBlade = tuple(newBlade)
         
-        if newBlade in self.bladeList:
-            idx = self.bladeList.index(newBlade)
-            # index of the product blade in the bladeList
+        if newBlade in self.bladeTupList:
+            idx = self.bladeTupList.index(newBlade)
+            # index of the product blade in the bladeTupList
         elif newBlade in self.even.keys():
             # even permutation
-            idx = self.bladeList.index(self.even[newBlade])
+            idx = self.bladeTupList.index(self.even[newBlade])
         else:
             # odd permutation
-            idx = self.bladeList.index(self.odd[newBlade])
+            idx = self.bladeTupList.index(self.odd[newBlade])
             mul = -mul
     
         element = np.zeros((self.gaDims,), dtype=int)
@@ -490,8 +490,8 @@ class Layout(object):
 
         for i in range(self.gaDims):
             for j in range(self.gaDims):
-                gmt[i,:,j], idx = self._gmtElement(list(self.bladeList[i]), 
-                                                  list(self.bladeList[j]))
+                gmt[i,:,j], idx = self._gmtElement(list(self.bladeTupList[i]), 
+                                                  list(self.bladeTupList[j]))
 
                 if (self.gradeList[idx] == abs(self.gradeList[i] - self.gradeList[j]) 
                     and self.gradeList[i] != 0 
@@ -552,6 +552,16 @@ class Layout(object):
     def basis_vectors_lst(self):
         d = self.basis_vectors
         return [d[k] for k in sorted(d.keys())]
+    
+    @property
+    def blades_list(self):
+        '''
+        Ordered list of blades in this layout (with scalar as [0])
+        '''
+        blades = self.blades
+        names = self.names
+        N = self.gaDims
+        return [1.0]+[blades[names[k]] for k in range(1,N)]
     
     @property
     def blades(self):
@@ -1017,12 +1027,12 @@ class MultiVector(object):
         __getitem__(key) --> PyFloat | PyInt
         """
            
-        if key in self.layout.bladeList:
-            return self.value[self.layout.bladeList.index(key)]
+        if key in self.layout.bladeTupList:
+            return self.value[self.layout.bladeTupList.index(key)]
         elif key in self.layout.even:
-            return self.value[self.layout.bladeList.index(self.layout.even[key])]
+            return self.value[self.layout.bladeTupList.index(self.layout.even[key])]
         elif key in self.layout.odd:
-            return -self.value[self.layout.bladeList.index(self.layout.odd[key])]
+            return -self.value[self.layout.bladeTupList.index(self.layout.odd[key])]
         else:
             return self.value[key]
 
@@ -1036,12 +1046,12 @@ class MultiVector(object):
         __setitem__(key, value)
         """
         
-        if key in self.layout.bladeList:
-            self.value[self.layout.bladeList.index(key)] = value
+        if key in self.layout.bladeTupList:
+            self.value[self.layout.bladeTupList.index(key)] = value
         elif key in self.layout.even:
-            self.value[self.layout.bladeList.index(self.layout.even[key])] = value
+            self.value[self.layout.bladeTupList.index(self.layout.even[key])] = value
         elif key in self.layout.odd:
-            self.value[self.layout.bladeList.index(self.layout.odd[key])] = -value
+            self.value[self.layout.bladeTupList.index(self.layout.odd[key])] = -value
         else:
             self.value[key] = value
 
@@ -1053,12 +1063,12 @@ class MultiVector(object):
         __delitem__(key)
         """
         
-        if key in self.layout.bladeList:
-            self.value[self.layout.bladeList.index(key)] = 0
+        if key in self.layout.bladeTupList:
+            self.value[self.layout.bladeTupList.index(key)] = 0
         elif key in self.layout.even:
-            self.value[self.layout.bladeList.index(self.layout.even[key])] = 0
+            self.value[self.layout.bladeTupList.index(self.layout.even[key])] = 0
         elif key in self.layout.odd:
-            self.value[self.layout.bladeList.index(self.layout.odd[key])] = 0
+            self.value[self.layout.bladeTupList.index(self.layout.odd[key])] = 0
         else:
             self.value[key] = 0
 
@@ -1341,7 +1351,19 @@ class MultiVector(object):
                 grades.append(self.layout.gradeList[i])
 
         return grades
+    
+    @property
+    def blades_list(self):
+        '''
+        ordered list of blades present in this MV
+        '''
+        blades_list = self.layout.blades_list
+        value = self.value
 
+        b= [value[0]]+[value[k]*blades_list[k] for k in range(1,len(self))]
+        return [k for k in b if k!=0]
+        
+    
     def normal(self):
         """Return the (mostly) normalized multivector.
 
@@ -1725,7 +1747,64 @@ class Frame(MVArray):
         a,b = self,other
         return array([(b[m]|b[n]==a[m]|a[n]) for m,n in pairs]).all()
         
+class BladeMap(object):
+    '''
+    A Map Relating Blades in two different algebras
 
+    Examples
+    -----------
+    >>> from clifford import Cl
+    >>> # Dirac Algebra  `D`
+    >>> D, D_blades = Cl(1,3, firstIdx=0, names='d')
+    >>> locals().update(D_blades)
+
+    >>> # Pauli Algebra  `P`
+    >>> P, P_blades = Cl(3, names='p')
+    >>> locals().update(P_blades)
+    >>> sta_split = BladeMap([(d01,p1),
+                              (d02,p2),
+                              (d03,p3),
+                              (d12,p12),
+                              (d23,p23),
+                              (d13,p13)])
+
+    '''
+    def __init__(self, blades_map):
+        
+        self.blades_map = blades_map
+    
+    @property
+    def b1(self):
+        return [k[0] for k in self.blades_map]
+    @property
+    def b2(self):
+        return [k[1] for k in self.blades_map]
+    
+    @property
+    def layout1(self):
+        return self.b1[0].layout
+    
+    @property
+    def layout2(self):
+        return self.b2[0].layout
+        
+    def it(self, A):
+        '''map an MV `A` according to blade_map'''
+        #determine direction of map
+        if A.layout == self.layout1:
+            from_objs = self.objs1
+            to_objs = self.objs2
+        
+        elif A.layout == self.layout2:
+            from_objs = self.objs2
+            to_objs = self.objs1
+        else:
+            raise ValueError('A doesnt belong to either Algebra in this Map')
+        
+        B=to_objs[0]._newMV()
+        for from_obj,to_obj in zip(from_objs,to_objs):
+            B+=(sum(A.value*from_obj.value)*to_obj)
+        return B
     
 
 def comb(n, k):
@@ -1747,7 +1826,7 @@ def elements(dims, firstIdx=0):
     """Return a list of tuples representing all 2**dims of blades
     in a dims-dimensional GA.
     
-    elements(dims, firstIdx=0) --> bladeList
+    elements(dims, firstIdx=0) --> bladeTupList
     """
 
     indcs = range(firstIdx, firstIdx + dims)
@@ -1805,9 +1884,9 @@ def Cl(p, q=0, names=None, firstIdx=1, mvClass=MultiVector):
     """
     
     sig = [+1]*p + [-1]*q
-    bladeList = elements(p+q, firstIdx)
+    bladeTupList = elements(p+q, firstIdx)
     
-    layout = Layout(sig, bladeList, firstIdx=firstIdx, names=names)
+    layout = Layout(sig, bladeTupList, firstIdx=firstIdx, names=names)
     blades = bases(layout, mvClass)
 
     return layout, blades
