@@ -32,6 +32,7 @@ Documentation
     TheAlgebraOfSpaceG3
     EulerAngles
     ConformalGeometricAlgebra
+    SpaceTimeAlgebra
     InterfacingOtherMathSystems
     PredefinedGAs
     

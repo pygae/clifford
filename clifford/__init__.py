@@ -1769,9 +1769,16 @@ class BladeMap(object):
                               (d13,p13)])
 
     '''
-    def __init__(self, blades_map):
-        
+    def __init__(self, blades_map, map_scalars=True):
         self.blades_map = blades_map
+        
+        if map_scalars:
+            # make scalars in each algebra map
+            s1 = self.b1[0]._newMV()+1
+            s2 = self.b2[0]._newMV()+1
+            self.blades_map = [(s1,s2)] + self.blades_map
+            
+            
     
     @property
     def b1(self):
