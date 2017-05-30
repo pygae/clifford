@@ -636,7 +636,7 @@ class MultiVector(object):
         because Multivectors act enough like an array, that duck 
         typing thinks they are an array.  
         '''
-        uf, objs, huh = context
+        uf, objs, out_index = context
         if uf.__name__ =='multiply':
             return objs[1]*objs[0]
         if uf.__name__ =='divide':

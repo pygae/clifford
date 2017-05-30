@@ -5,5 +5,5 @@ ipython
 matplotlib
 scipy
 sphinx>=1.4
-nbsphinx
 ipykernel
+-e git+https://github.com/arsenovic/nbsphinx.git@master
