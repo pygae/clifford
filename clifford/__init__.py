@@ -1,6 +1,6 @@
-""" 
+"""
 
-Two classes, Layout and MultiVector, and several helper functions are 
+Two classes, Layout and MultiVector, and several helper functions are
 provided to implement the algebras.
 
 
@@ -9,7 +9,7 @@ Classes
 
 .. autosummary::
     :toctree: generated/
-    
+
     MultiVector
     Layout
     Frame
@@ -20,7 +20,7 @@ Helper Functions
 
 .. autosummary::
     :toctree: generated/
-    
+
     Cl
     conformalize
     bases
@@ -34,18 +34,18 @@ Helper Functions
 
 
 Issues
-======  
+======
 
  * Currently, algebras over 6 dimensions are very slow. this is because
    this module was written for *pedagogical* purposes. However, because the
-   syntax for this module is so attractive, we plan to fix the 
+   syntax for this module is so attractive, we plan to fix the
    perfomance problems,  in the future...
 
  * Due to Python's order of operations, the bit operators ^ << follow
-   the normal arithmetic operators + - * /, so 
+   the normal arithmetic operators + - * /, so
 
      1^e0 + 2^e1  !=  (1^e0) + (2^e1)
-   
+
    as is probably intended.  Additionally,
 
      M = MultiVector(layout2D)  # null multivector
@@ -54,19 +54,19 @@ Issues
      e0 == 2 + 1^e0
 
    as is definitely not intended.  However,
-   
+
      M = MultiVector(layout2D)
      M << (2^e0) << e1 << (3^e01) == M == 2^e0 + 1^e1 + 3^e01
      e0 == 1^e0
      e1 == 1^e1
      e01 == 1^e01
-   
- * Since * is the inner product and the inner product with a scalar 
-   vanishes by definition, an expression like 
+
+ * Since * is the inner product and the inner product with a scalar
+   vanishes by definition, an expression like
 
      1|e0 + 2|e1
-   
-   is null.  Use the outer product or full geometric product, to 
+
+   is null.  Use the outer product or full geometric product, to
    multiply scalars with MultiVectors.  This can cause problems if
    one has code that mixes Python numbers and MultiVectors.  If the
    code multiplies two values that can each be either type without
@@ -82,9 +82,9 @@ Issues
    In pseudo-tensorish language (using summation notation):
 
      m_i * g_ijk * n_k = v_j
-   
+
    Suppose m_i are known (M is the vector we are taking the inverse of),
-   the g_ijk have been computed for this algebra, and v_j = 1 if the 
+   the g_ijk have been computed for this algebra, and v_j = 1 if the
    j'th element is the scalar element and 0 otherwise, we can compute the
    dot product m_i * g_ijk.  This yields a rank-2 matrix.  We can
    then use well-established computational linear algebra techniques
@@ -96,8 +96,8 @@ Issues
    It is only used if the inv method is manually set to point to normalInv.
 
    My testing suggests that laInv works.  In the cases where normalInv works,
-   laInv returns the same result (within _eps).  In all cases, 
-   M * M.laInv() == 1.0 (within _eps).  Use whichever you feel comfortable 
+   laInv returns the same result (within _eps).  In all cases,
+   M * M.laInv() == 1.0 (within _eps).  Use whichever you feel comfortable
    with.
 
    Of course, a new issue arises with this method.  The inverses found
@@ -105,20 +105,20 @@ Issues
 
      M.laInv() * M == 1.0
      M * M.laInv() != 1.0
-   
+
    XXX Thus, there are two other methods defined, leftInv and rightInv which
    point to leftLaInv and rightLaInv.  The method inv points to rightInv.
    Should the user choose, leftInv and rightInv will both point to normalInv,
    which yields a left- and right-inverse that are the same should either exist
    (the proof is fairly simple).
-   
+
  * The basis vectors of any algebra will be orthonormal unless you supply
    your own multiplication tables (which you are free to do after the Layout
    constructor is called).  A derived class could be made to calculate these
    tables for you (and include methods for generating reciprocal bases and the
    like).
 
- * No care is taken to preserve the dtype of the arrays.  The purpose 
+ * No care is taken to preserve the dtype of the arrays.  The purpose
    of this module is pedagogical.  If your application requires so many
    multivectors that storage becomes important, the class structure here
    is unsuitable for you anyways.  Instead, use the algorithms from this
@@ -129,8 +129,8 @@ Issues
    by Python integers will have the same consequences as normal integer
    division.  Public outcry will convince me to add the explicit casts
    if this becomes a problem.
-   
-   
+
+
 Acknowledgements
 +++++++++++++++++
 Konrad Hinsen fixed a few bugs in the conversion to numpy and adding some unit
@@ -145,14 +145,14 @@ Changes 0.6-0.7
 
  * Added a real license.
  * Convert to numpy instead of Numeric.
-   
+
 Changes 0.5-0.6
 +++++++++++++++++
 
  * join() and meet() actually work now, but have numerical accuracy problems
  * added clean() to MultiVector
  * added leftInv() and rightInv() to MultiVector
- * moved pseudoScalar() and invPS() to MultiVector (so we can derive 
+ * moved pseudoScalar() and invPS() to MultiVector (so we can derive
    new classes from MultiVector)
  * changed all of the instances of creating a new MultiVector to create
    an instance of self.__class__ for proper inheritance
@@ -184,13 +184,14 @@ _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
 
+
 def _myDot(a, b):
     """Returns the inner product as *I* learned it.
 
-    a_i...k * b_k...m = c_i...m     in summation notation with the ...'s 
+    a_i...k * b_k...m = c_i...m     in summation notation with the ...'s
                                     representing arbitrary, omitted indices
 
-    The sum is over the last axis of the first argument and the first axis 
+    The sum is over the last axis of the first argument and the first axis
     of the last axis.
 
     _myDot(a, b) --> NumPy array
@@ -205,6 +206,7 @@ def _myDot(a, b):
     # innerproduct sums over the *last* axes of *both* arguments
     return np.inner(a, newB)
 
+
 class NoMorePermutations(StandardError):
     """ No more permutations can be generated.
     """
@@ -213,7 +215,7 @@ class NoMorePermutations(StandardError):
 class Layout(object):
     """ Layout stores information regarding the geometric algebra itself and the
     internal representation of multivectors.
-    
+
     It is constructed like this:
 
       Layout(signature, bladeTupList, firstIdx=0, names=None)
@@ -221,39 +223,39 @@ class Layout(object):
     The arguments to be passed are interpreted as follows:
 
       signature -- the signature of the vector space.  This should be
-          a list of positive and negative numbers where the sign determines
-          the sign of the inner product of the corresponding vector with itself.
+          a list of positive and negative numbers where the sign determines the
+          sign of the inner product of the corresponding vector with itself.
           The values are irrelevant except for sign.  This list also determines
           the dimensionality of the vectors.  Signatures with zeroes are not
           permitted at this time.
-          
+
           Examples:
-            signature = [+1, -1, -1, -1]  # Hestenes', et al. Space-Time Algebra
-            signature = [+1, +1, +1]      # 3-D Euclidean signature
-            
-      bladeTupList -- list of tuples corresponding to the blades in the whole 
-          algebra.  This list determines the order of coefficients in the 
+            signature = [+1, -1, -1, -1] # Hestenes', et al. Space-Time Algebra
+            signature = [+1, +1, +1]     # 3-D Euclidean signature
+
+      bladeTupList -- list of tuples corresponding to the blades in the whole
+          algebra.  This list determines the order of coefficients in the
           internal representation of multivectors.  The entry for the scalar
           must be an empty tuple, and the entries for grade-1 vectors must be
           singleton tuples.  Remember, the length of the list will be 2**dims.
 
           Example:
             bladeTupList = [(), (0,), (1,), (0,1)]  # 2-D
-      
+
       firstIdx -- the index of the first vector.  That is, some systems number
           the base vectors starting with 0, some with 1.  Choose by passing
           the correct number as firstIdx.  0 is the default.
-      
+
       names -- list of names of each blade.  When pretty-printing multivectors,
           use these symbols for the blades.  names should be in the same order
-          as bladeTupList.  You may use an empty string for scalars.  By default,
-          the name for each non-scalar blade is 'e' plus the indices of the blade
-          as given in bladeTupList.
+          as bladeTupList.  You may use an empty string for scalars.  By
+          default, the name for each non-scalar blade is 'e' plus the indices
+          of the blade as given in bladeTupList.
 
           Example:
             names = ['', 's0', 's1', 'i']  # 2-D
 
-      
+
     Layout's Members:
 
       dims -- dimensionality of vectors (== len(signature))
@@ -283,7 +285,7 @@ class Layout(object):
       lcmt -- multiplication table for the left-contraction [1]
 
 
-    [1] The multiplication tables are NumPy arrays of rank 3 with indices like 
+    [1] The multiplication tables are NumPy arrays of rank 3 with indices like
         the tensor g_ijk discussed above.
     """
 
@@ -294,23 +296,24 @@ class Layout(object):
 
         self.bladeTupList = map(tuple, bladeTupList)
         self._checkList()
-        
+
         self.gaDims = len(self.bladeTupList)
         self.gradeList = map(len, self.bladeTupList)
 
-        if names is None or isinstance(names,str):
-            if isinstance(names,str):
+        if names is None or isinstance(names, str):
+            if isinstance(names, str):
                 e = names
             else:
                 e = 'e'
             self.names = []
-            
+
             for i in range(self.gaDims):
                 if self.gradeList[i] >= 1:
-                    self.names.append(e + ''.join(map(str, self.bladeTupList[i])))
+                    self.names.append(e + ''.join(
+                        map(str, self.bladeTupList[i])))
                 else:
                     self.names.append('')
-            
+
         elif len(names) == self.gaDims:
             self.names = names
         else:
@@ -320,8 +323,9 @@ class Layout(object):
         self._genTables()
 
     def __repr__(self):
-        s = ("Layout(%r, %r, firstIdx=%r, names=%r)" % (list(self.sig),
-            self.bladeTupList, self.firstIdx, self.names))
+        s = ("Layout(%r, %r, firstIdx=%r, names=%r)" % (
+                list(self.sig),
+                self.bladeTupList, self.firstIdx, self.names))
         return s
 
     def _sign(self, seq, orig):
@@ -342,7 +346,7 @@ class Layout(object):
 
     def _containsDups(self, list):
         "Checks if list contains duplicates."
-        
+
         for k in list:
             if list.count(k) != 1:
                 return 1
@@ -350,7 +354,7 @@ class Layout(object):
 
     def _genEvenOdd(self):
         "Create mappings of even and odd permutations to their canonical blades."
-        
+
         self.even = {}
         self.odd = {}
 
@@ -368,10 +372,10 @@ class Layout(object):
                 self.odd[(blade[1], blade[0])] = blade
                 continue
             else:
-                # general case, lifted from Chooser.py released on 
+                # general case, lifted from Chooser.py released on
                 # comp.lang.python by James Lehmann with permission.
                 idx = range(grade)
-                
+
                 try:
                     for i in range(np.multiply.reduce(range(1, grade+1))):
                         # grade! permutations
@@ -393,14 +397,14 @@ class Layout(object):
 
                             if not self._containsDups(idx):
                                 done = 1
-                                
+
                         perm = []
 
                         for k in idx:
                             perm.append(blade[k])
-                        
+
                         perm = tuple(perm)
-                        
+
                         if self._sign(perm, blade) == 1:
                             self.even[perm] = blade
                         else:
@@ -424,7 +428,7 @@ class Layout(object):
             raise ValueError, "incorrect number of blades"
 
         # check for valid ranges of indices
-        valid =  range(self.firstIdx, self.firstIdx+self.dims)
+        valid = range(self.firstIdx, self.firstIdx + self.dims)
         try:
             for blade in self.bladeTupList:
                 for idx in blade:
@@ -432,14 +436,14 @@ class Layout(object):
                         raise ValueError
         except (ValueError, TypeError):
             raise ValueError, "invalid bladeTupList; must be a list of tuples"
-    
+
     def _gmtElement(self, a, b):
         "Returns the element of the geometric multiplication table given blades a, b."
-        
+
         mul = 1         # multiplier
 
         newBlade = list(a) + list(b)
-        
+
         unique = 0
         while unique == 0:
             for i in range(len(newBlade)):
@@ -449,7 +453,7 @@ class Layout(object):
                     eo = 1 - 2*(delta % 2)
                     # eo == 1 if the elements are an even number of flips away
                     # eo == -1 otherwise
-                    
+
                     del newBlade[i+delta+1]
                     del newBlade[i]
 
@@ -457,9 +461,9 @@ class Layout(object):
                     break
             else:
                 unique = 1
-                
+
         newBlade = tuple(newBlade)
-        
+
         if newBlade in self.bladeTupList:
             idx = self.bladeTupList.index(newBlade)
             # index of the product blade in the bladeTupList
@@ -470,15 +474,15 @@ class Layout(object):
             # odd permutation
             idx = self.bladeTupList.index(self.odd[newBlade])
             mul = -mul
-    
+
         element = np.zeros((self.gaDims,), dtype=int)
         element[idx] = mul
 
         return element, idx
-    
+
     def _genTables(self):
         "Generate the multiplication tables."
-        
+
         # geometric multiplication table
         gmt = np.zeros((self.gaDims, self.gaDims, self.gaDims), dtype=int)
         # inner product table
@@ -490,69 +494,72 @@ class Layout(object):
 
         for i in range(self.gaDims):
             for j in range(self.gaDims):
-                gmt[i,:,j], idx = self._gmtElement(list(self.bladeTupList[i]), 
-                                                  list(self.bladeTupList[j]))
+                gmt[i, :, j], idx = self._gmtElement(
+                        list(self.bladeTupList[i]), list(self.bladeTupList[j]))
 
-                if (self.gradeList[idx] == abs(self.gradeList[i] - self.gradeList[j]) 
-                    and self.gradeList[i] != 0 
-                    and self.gradeList[j] != 0):
+                if (
+                        self.gradeList[idx] == abs(
+                            self.gradeList[i] - self.gradeList[j]) and
+                        self.gradeList[i] != 0 and self.gradeList[j] != 0):
                     
                     # A_r . B_s = <A_r B_s>_|r-s|
                     # if r,s != 0
-                    imt[i,:,j] = gmt[i,:,j]
+                    imt[i, :, j] = gmt[i, :, j]
 
-                if self.gradeList[idx] == (self.gradeList[i] + self.gradeList[j]):
+                if self.gradeList[idx] == (
+                        self.gradeList[i] + self.gradeList[j]):
 
                     # A_r ^ B_s = <A_r B_s>_|r+s|
-                    omt[i,:,j] = gmt[i,:,j]
+                    omt[i, :, j] = gmt[i, :, j]
 
-                if self.gradeList[idx] == (self.gradeList[j] - self.gradeList[i]):
+                if self.gradeList[idx] == (
+                        self.gradeList[j] - self.gradeList[i]):
                     # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
-                    lcmt[i,:,j] = gmt[i,:,j]
-                    
+                    lcmt[i, :, j] = gmt[i, :, j]
+
         self.gmt = gmt
         self.imt = imt
         self.omt = omt
         self.lcmt = lcmt
 
-    def randomMV(self,n=1,**kw):
+    def randomMV(self, n=1, **kw):
         '''
-        Convenience method to create a random multivector. 
-        
-        see `clifford.randomMV` for details 
+        Convenience method to create a random multivector.
+
+        see `clifford.randomMV` for details
         '''
         kw.update(dict(n=n))
-        return randomMV(layout =self, **kw)
-    
-    def randomV(self,n=1, **kw):
+        return randomMV(layout=self, **kw)
+
+    def randomV(self, n=1, **kw):
         '''
         generate n random 1-vector s
-        
+
         '''
         kw.update(dict(n=n, grades=[1]))
         return randomMV(layout=self, **kw)
-    
+
     def randomRotor(self):
         '''
-        generate a random Rotor. 
-        
-        this is created by muliplying an N unit vectors, where N is 
+        generate a random Rotor.
+
+        this is created by muliplying an N unit vectors, where N is
         the dimension of the algebra if its even; else its one less.
-        
+
         '''
-        n = self.dims if self.dims%2 ==0 else self.dims-1
+        n = self.dims if self.dims % 2 == 0 else self.dims - 1
         R = reduce(gp, self.randomV(n, normed=True))
         return R
-    
+
     @property
     def basis_vectors(self):
         return basis_vectors(self)
-    
+
     @property
     def basis_vectors_lst(self):
         d = self.basis_vectors
         return [d[k] for k in sorted(d.keys())]
-    
+
     @property
     def blades_list(self):
         '''
