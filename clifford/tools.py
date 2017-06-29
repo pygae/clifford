@@ -23,6 +23,10 @@ translated into a Verser.
 
 """
 
+from __future__ import absolute_import, division
+from __future__ import print_function, unicode_literals
+from functools import reduce
+
 from math import sqrt
 from numpy import eye, array
 from . import Cl, gp, Frame
@@ -78,9 +82,9 @@ def mat2Frame(A, layout=None, is_complex=None):
                 a[n] = (a[n]) + ((A[m, n]) ^ e_[m])
 
     else:
-        for n in range(N/2):
+        for n in range(N//2):
             n_ = 2*n
-            for m in range(M/2):
+            for m in range(M//2):
                 m_ = 2*m
 
                 a[n_] = (a[n_]) + ((A[m, n].real) ^ e_[m_]) \
@@ -153,7 +157,7 @@ def orthoFrames2Verser_dist(A, B, eps=None):
         dist = [abs((a - b)**2) for a, b in zip(A, B)]
         k = dist.index(max(dist))
 
-    # print str(len(r_list)) + ' reflections found'
+    # print(str(len(r_list)) + ' reflections found')
     R = reduce(gp, r_list[::-1])
 
     return R, r_list
