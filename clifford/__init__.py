@@ -172,7 +172,7 @@ robert.kern@gmail.com
 
 from __future__ import absolute_import, division
 from __future__ import print_function, unicode_literals
-from past.builtins import cmp
+from past.builtins import cmp, range
 from functools import reduce
 import sys
 
@@ -205,7 +205,7 @@ def _myDot(a, b):
     a = np.asarray(a)
     b = np.asarray(b)
 
-    tempAxes = tuple(range(1, len(b.shape)) + [0])
+    tempAxes = tuple(list(range(1, len(b.shape))) + [0])
     newB = np.transpose(b, tempAxes)
 
     # innerproduct sums over the *last* axes of *both* arguments
@@ -381,7 +381,7 @@ class Layout(object):
             else:
                 # general case, lifted from Chooser.py released on
                 # comp.lang.python by James Lehmann with permission.
-                idx = range(grade)
+                idx = list(range(grade))
 
                 try:
                     for i in range(np.multiply.reduce(range(1, grade+1))):
@@ -435,7 +435,7 @@ class Layout(object):
             raise ValueError("incorrect number of blades")
 
         # check for valid ranges of indices
-        valid = range(self.firstIdx, self.firstIdx + self.dims)
+        valid = list(range(self.firstIdx, self.firstIdx + self.dims))
         try:
             for blade in self.bladeTupList:
                 for idx in blade:
@@ -1319,7 +1319,7 @@ class MultiVector(object):
         isScalar() --> Boolean
         """
 
-        indices = range(self.layout.gaDims)
+        indices = list(range(self.layout.gaDims))
         indices.remove(self.layout.gradeList.index(0))
 
         for i in indices:
@@ -1856,7 +1856,7 @@ def elements(dims, firstIdx=0):
     elements(dims, firstIdx=0) --> bladeTupList
     """
 
-    indcs = range(firstIdx, firstIdx + dims)
+    indcs = list(range(firstIdx, firstIdx + dims))
 
     blades = [()]
 
@@ -1894,8 +1894,8 @@ def elements(dims, firstIdx=0):
 
                 # replace
                 blades.append(tuple(curBladeX))
-                curBladeX[marker:] = range(
-                    curBladeX[marker] + 1, curBladeX[marker] + 1 - marker)
+                curBladeX[marker:] = list(range(
+                    curBladeX[marker] + 1, curBladeX[marker] + 1 - marker))
 
     return blades
 
