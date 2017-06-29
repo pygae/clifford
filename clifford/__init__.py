@@ -170,11 +170,13 @@ Robert Kern
 robert.kern@gmail.com
 """
 
+from __future__ import absolute_import, division
+from __future__ import print_function, unicode_literals
+
 # Standard library imports.
 import math
 import numbers
 import itertools
-from collections import MutableSequence
 
 # Major library imports.
 import numpy as np
@@ -317,7 +319,9 @@ class Layout(object):
         elif len(names) == self.gaDims:
             self.names = names
         else:
-            raise ValueError, "names list of length %i needs to be of length %i"% (len(names), self.gaDims)
+            raise ValueError(
+                "names list of length %i needs to be of length %i" %
+                (len(names), self.gaDims))
 
         self._genEvenOdd()
         self._genTables()
@@ -421,11 +425,11 @@ class Layout(object):
         # check for uniqueness
         for blade in self.bladeTupList:
             if self.bladeTupList.count(blade) != 1:
-                raise ValueError, "blades not unique"
+                raise ValueError("blades not unique")
 
         # check for right dimensionality
         if len(self.bladeTupList) != 2**self.dims:
-            raise ValueError, "incorrect number of blades"
+            raise ValueError("incorrect number of blades")
 
         # check for valid ranges of indices
         valid = range(self.firstIdx, self.firstIdx + self.dims)
@@ -433,12 +437,12 @@ class Layout(object):
             for blade in self.bladeTupList:
                 for idx in blade:
                     if (idx not in valid) or (list(blade).count(idx) != 1):
-                        raise ValueError
+                        raise ValueError()
         except (ValueError, TypeError):
-            raise ValueError, "invalid bladeTupList; must be a list of tuples"
+            raise ValueError("invalid bladeTupList; must be a list of tuples")
 
     def _gmtElement(self, a, b):
-        "Returns the element of the geometric multiplication table given blades a, b."
+        "Element of the geometric multiplication table given blades a, b."
 
         mul = 1         # multiplier
 
@@ -852,10 +856,10 @@ class MultiVector(object):
         """
 
         if not isinstance(other, (int, float)):
-            raise ValueError, "exponent must be a Python int or float"
+            raise ValueError("exponent must be a Python int or float")
 
         if abs(round(other) - other) > _eps:
-            raise ValueError, "exponent must have no fractional part"
+            raise ValueError("exponent must have no fractional part")
 
         other = int(round(other))
 
@@ -1007,7 +1011,7 @@ class MultiVector(object):
         if self.isScalar():
             return float(self[()])
         else:
-            raise ValueError, "non-scalar coefficients are non-zero"
+            raise ValueError("non-scalar coefficients are non-zero")
 
     # sequence special methods
     def __len__(self):
@@ -1130,10 +1134,10 @@ class MultiVector(object):
             grade = other
 
         if grade not in self.layout.gradeList:
-            raise ValueError, "algebra does not have grade %s" % grade
+            raise ValueError("algebra does not have grade %s" % grade)
 
         if not isinstance(grade, int):
-            raise ValueError, "grade must be an integer"
+            raise ValueError("grade must be an integer")
 
         mask = np.equal(grade, self.layout.gradeList)
 
@@ -1438,7 +1442,7 @@ class MultiVector(object):
             # inverse exists
             return Madjoint / MadjointM[()]
         else:
-            raise ValueError, "no inverse exists for this multivector"
+            raise ValueError("no inverse exists for this multivector")
 
     leftInv = leftLaInv
     inv = rightInv = rightLaInv
@@ -1535,7 +1539,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=1)
 
         if not self.isBlade():
-            raise ValueError, "self is not a blade"
+            raise ValueError("self is not a blade")
 
         return other.lc(self) * self.inv()
 
@@ -1549,7 +1553,7 @@ class MultiVector(object):
 
         if len(gr) != 1:
             # FIXME: this is not a sufficient condition for a blade.
-            raise ValueError, "self is not a blade"
+            raise ValueError("self is not a blade")
 
         selfInv = self.inv()
 
@@ -1649,7 +1653,7 @@ class MultiVector(object):
             return J
 
         else:
-            raise ValueError, "not blades"
+            raise ValueError("not blades")
 
     def meet(self, other, subspace=None):
         """Returns the meet of two blades.
@@ -1667,7 +1671,7 @@ class MultiVector(object):
         s = other.grades()
 
         if len(r) > 1 or len(s) > 1:
-            raise ValueError, "not blades"
+            raise ValueError("not blades")
 
         if subspace is None:
             subspace = self.join(other)
