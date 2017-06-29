@@ -172,6 +172,9 @@ robert.kern@gmail.com
 
 from __future__ import absolute_import, division
 from __future__ import print_function, unicode_literals
+from past.builtins import cmp
+from functools import reduce
+import sys
 
 # Standard library imports.
 import math
@@ -209,7 +212,7 @@ def _myDot(a, b):
     return np.inner(a, newB)
 
 
-class NoMorePermutations(StandardError):
+class NoMorePermutations(Exception):
     """ No more permutations can be generated.
     """
 
@@ -357,7 +360,7 @@ class Layout(object):
         return 0
 
     def _genEvenOdd(self):
-        "Create mappings of even and odd permutations to their canonical blades."
+        "Make mappings of even and odd permutations to their canonical blades."
 
         self.even = {}
         self.odd = {}
@@ -992,14 +995,15 @@ class MultiVector(object):
 
         return int(self.__float__())
 
-    def __long__(self):
-        """Coerce to a long iff scalar.
+    if sys.version_info[0] < 3:
+        def __long__(self):
+            """Coerce to a long iff scalar.
 
-        long(M)
-        __long__() --> PyLong
-        """
+            long(M)
+            __long__() --> PyLong
+            """
 
-        return long(self.__float__())
+            return long(self.__float__())
 
     def __float__(self):
         """"Coerce to a float iff scalar.
