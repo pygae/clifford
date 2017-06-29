@@ -1,4 +1,4 @@
-from . import Cl,conformalize
+from . import Cl, conformalize
 layout, blades = Cl(2)
 layout, blades, stuff = conformalize(layout)
 
