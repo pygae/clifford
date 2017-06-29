@@ -299,11 +299,11 @@ class Layout(object):
         self.sig = np.divide(sig, np.absolute(sig)).astype(int)
         self.firstIdx = firstIdx
 
-        self.bladeTupList = map(tuple, bladeTupList)
+        self.bladeTupList = list(map(tuple, bladeTupList))
         self._checkList()
 
         self.gaDims = len(self.bladeTupList)
-        self.gradeList = map(len, self.bladeTupList)
+        self.gradeList = list(map(len, self.bladeTupList))
 
         if names is None or isinstance(names, str):
             if isinstance(names, str):
@@ -1846,7 +1846,7 @@ def comb(n, k):
             return 1
         return np.multiply.reduce(range(1, n+1))
 
-    return fact(n) / (fact(k) * fact(n-k))
+    return int(fact(n)/(fact(k)*fact(n - k)))
 
 
 def elements(dims, firstIdx=0):
