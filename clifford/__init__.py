@@ -825,7 +825,7 @@ class MultiVector(object):
 
         return self._newMV(newValue)
 
-    def __div__(self, other):
+    def __truediv__(self, other):
         """Division
                        -1
         M / N --> M * N
@@ -840,7 +840,7 @@ class MultiVector(object):
             newValue = self.value / other
             return self._newMV(newValue)
 
-    def __rdiv__(self, other):
+    def __rtruediv__(self, other):
         """Right-hand division
                        -1
         N / M --> N * M
@@ -850,6 +850,10 @@ class MultiVector(object):
         other, mv = self._checkOther(other)
 
         return other * self.inv()
+
+    if sys.version_info[0] < 3:
+        __div__ = __truediv__
+        __rdiv__ = __rtruediv__
 
     def __pow__(self, other):
         """Exponentiation of a multivector by an integer
@@ -1209,7 +1213,7 @@ class MultiVector(object):
             repr(self.layout), list(self.value))
         return s
 
-    def __nonzero__(self):
+    def __bool__(self):
         """Instance is nonzero iff at least one of the coefficients
         is nonzero.
 
@@ -1223,30 +1227,60 @@ class MultiVector(object):
         else:
             return False
 
-    def __cmp__(self, other):
-        """Compares two multivectors.
+    if sys.version_info[0] < 3:
+        __nonzero__ = __bool__
 
-        This is mostly defined for equality testing (within epsilon).
-        In the case that the two multivectors have different Layouts,
-        we will raise an error.  In the case that they are not equal,
-        we will compare the tuple represenations of the coefficients
-        lists just so as to return something valid.  Therefore,
-        inequalities are well-nigh meaningless (since they are
-        meaningless for multivectors while equality is meaningful).
+    if sys.version_info[0] < 3:
+        def __cmp__(self, other):
+            """Compares two multivectors.
 
-        TODO: rich comparisons.
+            This is mostly defined for equality testing (within epsilon).
+            In the case that the two multivectors have different Layouts,
+            we will raise an error.  In the case that they are not equal,
+            we will compare the tuple represenations of the coefficients
+            lists just so as to return something valid.  Therefore,
+            inequalities are well-nigh meaningless (since they are
+            meaningless for multivectors while equality is meaningful).
 
-        M == N
-        __cmp__(other) --> -1|0|1
-        """
+            TODO: rich comparisons.
 
-        other, mv = self._checkOther(other)
+            M == N
+            __cmp__(other) --> -1|0|1
+            """
 
-        if (np.absolute(self.value - other.value) < _eps).all():
-            # equal within epsilon
-            return 0
-        else:
-            return cmp(tuple(self.value), tuple(other.value))
+            other, mv = self._checkOther(other)
+            print('cmp1', self.value)
+            print('cmp2', other.value)
+
+            if (np.absolute(self.value - other.value) < _eps).all():
+                # equal within epsilon
+                return 0
+            else:
+                return cmp(tuple(self.value), tuple(other.value))
+    else:
+        def __eq__(self, other):
+            other, mv = self._checkOther(other)
+
+            if (np.absolute(self.value - other.value) < _eps).all():
+                # equal within epsilon
+                return True
+            else:
+                return False
+
+        def __ne__(self, other):
+            return not self.__eq__(other)
+
+        def __lt__(self, other):
+            raise NotImplementedError
+
+        def __le__(self, other):
+            raise NotImplementedError
+
+        def __gt__(self, other):
+            raise NotImplementedError
+
+        def __ge__(self, other):
+            raise NotImplementedError
 
     def clean(self, eps=None):
         """Sets coefficients whose absolute value is < eps to exactly 0.
