@@ -1,0 +1,14 @@
+channels:
+    - conda-forge
+dependencies:
+    - python=3.5
+    - ipython
+    - numpy
+    - scipy
+    - nose
+    - future
+    - pandoc
+    - nbconvert=4.2
+    - ipykernel
+    - pip:
+        - git+https://github.com/arsenovic/nbsphinx.git@master

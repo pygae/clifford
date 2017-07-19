@@ -17,9 +17,6 @@ matrix:
     - os: linux
       python: '2.7'
       env: CONDA=false
-    - os: osx
-      language: generic
-      env: CONDA=true TRAVIS_PYTHON_VERSION=2.7
 
 
 
