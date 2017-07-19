@@ -277,3 +277,36 @@ def orthoMat2Verser(A, eps=None,layout=None,is_complex=None):
 
 
 
+def rotor_decomp(V,x):
+    '''
+    Rotor decomposition of rotor V
+    
+    Given a rotor V, and a vector x, this will decompose V into  a 
+    series of two rotations, U  and H, where U leaves x
+    invariant and H contains x.
+    
+    Limited to 4D for now
+    
+    Parameters
+    ---------------
+    V : clifford.MultiVector
+        rotor 
+    x : clifford.MultiVector 
+        vector 
+    
+    Returns
+    -------
+    H : clifford.Multivector
+        rotor which contains x 
+    U : clifford.Multivector
+        rotor which leaves x invariant
+        
+    References
+    ----------------
+    [1] : Space Time Algebra, D. Hestenes. AppendixB, Theroem 4
+    
+    '''
+    H2 = V*x*~V*x.inv() # inv needed to handle signatures
+    H = (1+H2)/sqrt(abs(float(2*(1+H2(0)))))
+    U = H*x*V*x.inv()
+    return H,U
