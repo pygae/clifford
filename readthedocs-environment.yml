@@ -5,6 +5,7 @@ dependencies:
     - ipython
     - numpy
     - scipy
+    - matplotlib
     - nose
     - future
     - pandoc

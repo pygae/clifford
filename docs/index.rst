@@ -8,7 +8,7 @@ clifford: Geometric Algebra for Python
 
     In [138]: from clifford.g3 import *  # import GA for 3D space
     
-    In [138]: from scipy import e,pi
+    In [138]: from numpy import e,pi
     
     In [138]: a = e1 + 2*e2 + 3*e3 # vector 
     
