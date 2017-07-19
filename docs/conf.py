@@ -43,7 +43,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    #'IPython.sphinxext.ipython_directive',
+    'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
     #'numpydoc',
     'sphinx.ext.viewcode',
@@ -51,7 +51,7 @@ extensions = [
     #'sphinx.ext.mathjax',
 ]
 
-
+import clifford
 import nbsphinx
 nbsphinx_execute = 'always'
 nbsphinx_allow_errors=True

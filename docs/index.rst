@@ -4,12 +4,22 @@ clifford: Geometric Algebra for Python
 
 
 
-This module implements geometric algebras (a.k.a. Clifford algebras).  For the
-uninitiated, a geometric algebra is an algebra of vectors of given dimensions
-and signature. The familiar inner (dot) product and the outer product,
-a generalized relative of the three-dimensional cross product, are unified in an
-invertible geometric product.  Scalars, vectors, and higher-grade entities can
-be mixed freely and consistently in the form of mixed-grade multivectors.
+.. ipython::
+
+    In [138]: from clifford.g3 import *  # import GA for 3D space
+    
+    In [138]: from scipy import e,pi
+    
+    In [138]: a = e1 + 2*e2 + 3*e3 # vector 
+    
+    In [138]: R = e**(pi/4*e12)    # rotor 
+    
+    In [138]: R*a*~R    # rotate the vector  
+
+    
+    
+This module implements Geometric Algebras (a.k.a. Clifford algebras). Geometric Algebra (GA) is a universal algebra which subsumes complex algebra, quaternions, linear algebra and several other independent mathematical systems.  Scalars, vectors, and higher-grade entities can
+be mixed freely and consistently in the form of mixed-grade multivectors. 
 
 
 .. image:: _static/blades.png
