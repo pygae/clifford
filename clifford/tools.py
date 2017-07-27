@@ -218,7 +218,7 @@ def orthoFrames2Verser_dist(A, B, eps=None):
     return R, r_list
 
 
-def orthoFrames2Verser(B, A=None, eps=None, delta=1e-3,det=None,
+def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
                        remove_scaling=False):
     '''
     Determines verser for two frames related by an orthogonal transform
@@ -226,6 +226,45 @@ def orthoFrames2Verser(B, A=None, eps=None, delta=1e-3,det=None,
     Based on [1,2]. This works  in Euclidean spaces and, under special
     circumstances in other signatures. see [1] for limitaions/details
 
+    Parameters 
+    -----------
+    B : list of vectors, or clifford.Frame 
+        the set of  vectors after the transform, and homogenzation.
+        ie B=(B/B|einf)
+    
+    A : list of vectors, or clifford.Frame
+        the set of  vectors before the transform. If `None` we assume A is  
+        the basis given B.layout.basis_vectors
+    
+    delta : float 
+        Tolerance for reflection/rotation determination. If the normalized
+        distance between A[i] and B[i] is larger than delta, we use 
+        reflection, otherwise use rotation. 
+    
+    eps: float
+        Tolerance on spinor determination. if pseudoscalar of A  differs
+        in magnitude from pseudoscalar of B by eps, then we have spinor. 
+        If `None`, use the `clifford.eps()` global eps. 
+    det : [+1,-1,None]
+        The sign of the determinant of the versor, if known. If  it is
+        known a-priori that the versor is a rotation vs a reflection, this
+        fact might be needed to correctly append an additional reflection 
+        which leaves transformed points invariant. See 4.6.3 [2]. 
+    remove_scaling : Bool
+        Remove the effects of homogenzation from frame B. This is needed
+        if you are working in CGA, but the input data is given in the 
+        original space. See `omoh` method  for more. See 4.6.2 of [2]
+
+    Returns
+    ---------
+    R :  clifford.Multivector
+        the Versor. 
+    rs : list of clifford.Multivectors
+        ordered list of found reflectors/rotors. 
+            
+
+    References
+    ------------
     [1] http://ctz.dk/geometric-algebra/frames-to-versor-algorithm/
 
     [2] Reconstructing Rotations and Rigid Body Motions from Exact Point
@@ -244,19 +283,18 @@ def orthoFrames2Verser(B, A=None, eps=None, delta=1e-3,det=None,
     B = Frame(B[:])
     
     
-    
-    
-    
     if len(A) != len(B):
         raise ValueError('len(A)!=len(B)')
-    N = len(A)
+    
 
     if eps is None:
         eps = global_eps()
 
     # Determine if we have a spinor
     spinor = False
-    B_En = B.En # store peudoscalar of frame B, in case known det (see end)
+    # store peudoscalar of frame B, in case known det (see end)
+    B_En = B.En 
+    N = len(A)
     
     # Determine and remove scaling factors caused by homogenization
     if remove_scaling is True:
@@ -284,7 +322,7 @@ def orthoFrames2Verser(B, A=None, eps=None, delta=1e-3,det=None,
 
     for k in range(N):
         a, b = A[0], B[0]
-        r = a - b                     # determine reflector
+        r = a - b                   # determine reflector
         d = abs(r**2)/abs(b**2)     # conditional rotation tolerance
 
         if d >= delta:
