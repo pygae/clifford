@@ -28,9 +28,64 @@ from __future__ import print_function, unicode_literals
 from functools import reduce
 
 from math import sqrt
-from numpy import eye, array
+from numpy import eye, array, sign, zeros
 from . import Cl, gp, Frame
 from . import eps as global_eps
+
+from warnings import warn
+
+
+
+def omoh(A,B):
+    '''
+    Determines homogenzation scaling for two Frames related by a Rotor
+    
+    This is used as part of the frames2Versor algorithm, when the 
+    frames are given in CGA. It is requried because the model assumes, 
+
+        `B = R*A*~R`
+    but if data is given in the original space, only
+
+        `lambda*B' == homo(B)`
+
+    is observable. We need  to determine lambda before the Cartan-based
+    algorithm can be used. The name of this function is inverses of 
+    `homo`, which is the method used to homogenize
+    
+    Parameters 
+    --------------
+    A : list of vectors, or clifford.Frame
+        the set of  vectors before the transform
+    B : list of vectors, or clifford.Frame 
+        the set of  vectors after the transform, and homogenzation.
+        ie B=(B/B|einf)
+        
+        
+    Returns
+    ---------
+    out : list of floats
+        weights on `B`, which produce inhomogenous versions  of `B`. If 
+        you multiply the input `B` by `lam`, it will fulfill `B = R*A*~R`
+    
+    Examples
+    ----------
+    lam = ohom(A,B):
+    B_ohom = Frame([B[k]*lam[k] for k in range(len(B)])
+    '''
+    if len(A)!=len(B) or len(A)<3:
+        raise ValueError('input must be >=3 long and len(a)==len(b)')
+    
+    idx = range(len(A))   
+    lam = zeros(len(A))
+    
+    for i in idx:
+        j,k = [p for p in idx if p!=i]
+        lam[i] = \
+           float((A[i]*A[j])(0) * (A[i]*A[k])(0) * (B[j]*B[k])(0)) /\
+           float((B[i]*B[j])(0) * (B[i]*B[k])(0) * (A[j]*A[k])(0))
+        lam[i] = sqrt(float(lam[i]))
+        
+    return lam
 
 
 def mat2Frame(A, layout=None, is_complex=None):
@@ -163,7 +218,8 @@ def orthoFrames2Verser_dist(A, B, eps=None):
     return R, r_list
 
 
-def orthoFrames2Verser(B, A=None, eps=None, delta=1e-3):
+def orthoFrames2Verser(B, A=None, eps=None, delta=1e-3,det=None,
+                       remove_scaling=False):
     '''
     Determines verser for two frames related by an orthogonal transform
 
@@ -186,7 +242,11 @@ def orthoFrames2Verser(B, A=None, eps=None, delta=1e-3):
     # make copy of original frames, so we can rotate A
     A = Frame(A[:])
     B = Frame(B[:])
-
+    
+    
+    
+    
+    
     if len(A) != len(B):
         raise ValueError('len(A)!=len(B)')
     N = len(A)
@@ -196,7 +256,14 @@ def orthoFrames2Verser(B, A=None, eps=None, delta=1e-3):
 
     # Determine if we have a spinor
     spinor = False
-
+    B_En = B.En # store peudoscalar of frame B, in case known det (see end)
+    
+    # Determine and remove scaling factors caused by homogenization
+    if remove_scaling is True:
+        lam = omoh(A,B)
+        B= Frame([B[k]*lam[k] for k in range(N)])
+    
+    
     # compute ratio of volumes for each frame. take Nth root
     alpha = abs(B.En/A.En)**(1./N)
 
@@ -207,8 +274,7 @@ def orthoFrames2Verser(B, A=None, eps=None, delta=1e-3):
 
     # now that possible scaling has been removed, test for inner-morphism
     if not A.is_innermorphic_to(B):
-        raise ValueError(
-            'A and B dont appear to be related by orthogonal transform')
+        warn('A and B dont appear to be related by orthogonal transform')
 
     # Find the Verser
 
@@ -240,10 +306,20 @@ def orthoFrames2Verser(B, A=None, eps=None, delta=1e-3):
             B = B[1:]
             for j in range(len(A)):
                 A[j] = R*A[j]*R.inv()
-
+    
     R = reduce(gp, r_list[::-1])
+    
+    # if det is known a priori check to see if it's correct, if not add
+    # an extra reflection which leaves all points in B invarianct
+    if det is not None:
+        I = R.pseudoScalar()
+        our_det = (R*I*~R*I.inv())(0)
+        if sign(float(our_det)) != det:
+            R = B_En.dual()*R
+            
+    
     R = R/abs(R)
-
+    
     if spinor:
         R = R*sqrt(alpha)
 
