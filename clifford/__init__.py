@@ -180,6 +180,7 @@ import sys
 import math
 import numbers
 import itertools
+from warnings import warn
 
 # Major library imports.
 import numpy as np
@@ -1461,7 +1462,8 @@ class MultiVector(object):
         intermed = _myDot(self.value, self.layout.gmt)
 
         if abs(linalg.det(intermed)) < _eps:
-            raise ValueError("multivector has no right-inverse")
+            warn('Inverse might be inaccurate')
+            #raise ValueError("multivector has no right-inverse")
 
         sol = linalg.solve(intermed, identity)
 

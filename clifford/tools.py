@@ -79,7 +79,7 @@ def omoh(A,B):
     lam = zeros(len(A))
     
     for i in idx:
-        j,k = [p for p in idx if p!=i]
+        j,k = [p for p in idx if p!=i][:2]
         lam[i] = \
            float((A[i]*A[j])(0) * (A[i]*A[k])(0) * (B[j]*B[k])(0)) /\
            float((B[i]*B[j])(0) * (B[i]*B[k])(0) * (A[j]*A[k])(0))
