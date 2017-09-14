@@ -1125,17 +1125,22 @@ class MultiVector(object):
         self.value[i:j] = 0
 
     # grade projection
-    def __call__(self, other):
+    def __call__(self, other,*others):
         """Return a new multi-vector projected onto a grade OR a MV
 
 
-        M(grade) --> <M>
+        M(grade[s]) --> <M>
                         grade
         OR
 
         M(other) --> other.project(M)
 
         __call__(grade) --> MultiVector
+        
+        Examples
+        --------
+        >>>M(0)
+        >>>M(0,2)
         """
         if isinstance(other, MultiVector):
             return other.project(self)
@@ -1143,6 +1148,11 @@ class MultiVector(object):
             # we are making a grade projection
             grade = other
 
+        
+        if len(others) !=0:
+            return sum([self.__call__(k) for k in (other,)+others])
+        
+                
         if grade not in self.layout.gradeList:
             raise ValueError("algebra does not have grade %s" % grade)
 
