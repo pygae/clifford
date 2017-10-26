@@ -581,6 +581,10 @@ class Layout(object):
     @property
     def blades(self):
         return self.bases()
+    
+    @property
+    def pseudoScalar(self):
+        return self.blades_list[-1]
 
     def bases(self, *args, **kw):
         '''
@@ -1343,14 +1347,8 @@ class MultiVector(object):
 
     def pseudoScalar(self):
         "Returns a MultiVector that is the pseudoscalar of this space."
-
-        psIdx = self.layout.gradeList.index(self.layout.dims)
-        # pick out out blade with grade equal to dims
-
-        pScalar = self._newMV()
-        pScalar.value[psIdx] = 1
-
-        return pScalar
+        return self.layout.pseudoScalar
+        
 
     def invPS(self):
         "Returns the inverse of the pseudoscalar of the algebra."
@@ -1788,7 +1786,7 @@ class Frame(MVArray):
 
         return Frame(vectors)
 
-    def is_innermorphic_to(self, other):
+    def is_innermorphic_to(self, other,eps=None):
         '''
         Is this frame `innermorhpic` to  other?
 
@@ -1809,7 +1807,11 @@ class Frame(MVArray):
         # make iterable `pairs` of all index combos, without repeat
         pairs = list(itertools.combinations(range(len(self)), 2))
         a, b = self, other
-        return array([(b[m] | b[n] == a[m] | a[n]) for m, n in pairs]).all()
+        if eps is None:
+            eps=_eps
+            
+            
+        return array([float((b[m]|b[n]) - (a[m]|a[n]))<eps for m, n in pairs]).all()
 
 
 class BladeMap(object):
@@ -1947,7 +1949,7 @@ def elements(dims, firstIdx=0):
     return blades
 
 
-def Cl(p, q=0, names=None, firstIdx=1, mvClass=MultiVector):
+def Cl(p=0, q=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
     """Returns a Layout and basis blades for the geometric algebra Cl_p,q.
 
     The notation Cl_p,q means that the algebra is p+q dimensional, with
@@ -1956,9 +1958,9 @@ def Cl(p, q=0, names=None, firstIdx=1, mvClass=MultiVector):
 
     Cl(p, q=0, names=None, firstIdx=0) --> Layout, {'name': basisElement, ...}
     """
-
-    sig = [+1]*p + [-1]*q
-    bladeTupList = elements(p+q, firstIdx)
+    if sig is None:
+        sig = [+1]*p + [-1]*q
+    bladeTupList = elements(len(sig), firstIdx)
 
     layout = Layout(sig, bladeTupList, firstIdx=firstIdx, names=names)
     blades = bases(layout, mvClass)
@@ -2151,7 +2153,7 @@ def op(M, N):
         return M ^ N
 
 
-def conformalize(layout):
+def conformalize(layout, added_sig=[1,-1]):
     '''
     Conformalize a Geometric Algebra
 
@@ -2181,6 +2183,7 @@ def conformalize(layout):
             * eo - zero vector of null basis (=.5*(en-ep))
             * einf - infinity vector of null basis (=en+ep)
             * E0 - minkowski bivector (=einf^eo)
+            * I_ga - pseudoscalar for conformalized GA in new layout
             * up - up-project a vector from GA to CGA
             * down - down-project a vector from CGA to GA
             * homo - homogenize a CGA vector
@@ -2194,10 +2197,9 @@ def conformalize(layout):
     >>> locals().update(bladesc)
     >>> locals().update(stuff)
     '''
-    p = (layout.sig == 1).sum()
-    q = (layout.sig == -1).sum()
-
-    layout_c, blades_c = Cl(p + 1, q + 1)
+    
+    sig_c = list(layout.sig) + added_sig
+    layout_c, blades_c = Cl(sig=sig_c)
     basis_vectors = layout_c.basis_vectors
     added_keys = sorted(layout_c.basis_vectors.keys())[-2:]
     ep, en = [basis_vectors[k] for k in added_keys]
@@ -2206,7 +2208,7 @@ def conformalize(layout):
     eo = .5 ^ (en - ep)
     einf = en + ep
     E0 = einf ^ eo
-
+    I_ga = layout_c.pseudoScalar*E0
     #  some  convenience functions
     def up(x):
         return x + (.5 ^ ((x**2)*einf)) + eo
@@ -2220,6 +2222,6 @@ def conformalize(layout):
     stuff = {}
     stuff.update({
         'ep': ep, 'en': en, 'eo': eo, 'einf': einf, 'E0': E0,
-        'up': up, 'down': down, 'homo': homo})
+        'up': up, 'down': down, 'homo': homo,'I_ga':I_ga})
 
     return layout_c, blades_c, stuff

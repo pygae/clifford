@@ -322,8 +322,12 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
 
     for k in range(N):
         a, b = A[0], B[0]
-        r = a - b                   # determine reflector
-        d = abs(r**2)/abs(b**2)     # conditional rotation tolerance
+        r = a - b                       # determine reflector
+        if abs(b**2) > eps:          
+            d = abs(r**2)/abs(b**2)     # conditional rotation tolerance
+        else:
+            # probably b is a null vector, make our best guess for tol!
+            d =abs(r**2)
 
         if d >= delta:
             # reflection  part
@@ -339,7 +343,8 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
             #     break
 
             R = b*(a+b)
-            r_list.append(R)       # append to our list
+            if abs(R) > eps: #  abs(R) can be <eps in null space 
+                r_list.append(R)       # append to our list
             A = A[1:]               # remove current vector pair
             B = B[1:]
             for j in range(len(A)):
@@ -355,7 +360,8 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
         if sign(float(our_det)) != det:
             R = B_En.dual()*R
             
-    
+    if abs(R)<eps:
+        warn('abs(R)<eps. likely to be inaccurate')
     R = R/abs(R)
     
     if spinor:
