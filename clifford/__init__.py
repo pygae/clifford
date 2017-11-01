@@ -336,6 +336,12 @@ class Layout(object):
                 self.bladeTupList, self.firstIdx, self.names))
         return s
 
+    def __eq__(self,other):
+        return np.all(self.sig ==other.sig)
+    
+    def __ne__(self,other):
+        return not self.__eq__(other)
+        
     def _sign(self, seq, orig):
         """Determine {even,odd}-ness of permutation seq or orig.
 
@@ -689,7 +695,7 @@ class MultiVector(object):
 
         elif (
                 isinstance(other, self.__class__) and
-                other.layout is not self.layout):
+                other.layout != self.layout):
             raise ValueError(
                 "cannot operate on MultiVectors with different Layouts")
 
