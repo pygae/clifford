@@ -3,7 +3,6 @@ clifford: Geometric Algebra for Python
 =======================================
 
 
-
 .. ipython::
 
     In [138]: from clifford.g3 import *  # import GA for 3D space
