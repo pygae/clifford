@@ -185,10 +185,41 @@ from warnings import warn
 # Major library imports.
 import numpy as np
 from numpy import linalg, array
+import numba
 
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
+
+
+def get_layout_comp_func(layout_in_sig):
+    '''
+    Returns a partially completed function that compares layouts
+    '''
+    @numba.njit
+    def layout_comp(other_layout_sig):
+        return np.all(layout_in_sig == other_layout_sig)
+    return layout_comp
+
+def get_mult_function(mult_table,n_dims):
+    ''' 
+    Returns a function that implements the mult_table on two input multivectors
+    '''
+    non_zero_indices = mult_table.nonzero()
+    k_list = non_zero_indices[0]
+    l_list = non_zero_indices[1]
+    m_list = non_zero_indices[2]
+    mult_table_vals = np.array([mult_table[k,l,m] for k,l,m in np.transpose(non_zero_indices)],dtype=int)
+
+    @numba.njit
+    def mv_mult(value,other_value):
+        output = np.zeros(n_dims)
+        for ind,k in enumerate(k_list):
+            l = l_list[ind]
+            m = m_list[ind]
+            output[l] += value[k]*mult_table_vals[ind]*other_value[m]
+        return output
+    return mv_mult
 
 
 def _myDot(a, b):
@@ -531,6 +562,10 @@ class Layout(object):
                     # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
                     lcmt[i, :, j] = gmt[i, :, j]
 
+        self.gmt_func = get_mult_function(gmt,self.gaDims)
+        self.imt_func = get_mult_function(imt,self.gaDims)
+        self.omt_func = get_mult_function(omt,self.gaDims)
+        self.lcmt_func = get_mult_function(lcmt,self.gaDims)
         self.gmt = gmt
         self.imt = imt
         self.omt = omt
@@ -722,8 +757,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = np.dot(self.value, np.dot(
-                self.layout.gmt, other.value))
+            newValue = self.layout.gmt_func(self.value,other.value)
         else:
             newValue = other * self.value
 
@@ -739,8 +773,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = np.dot(other.value, np.dot(
-                self.layout.gmt, self.value))
+            newValue = self.layout.gmt_func(other.value,self.value)
         else:
             newValue = other*self.value
 
@@ -756,8 +789,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = np.dot(self.value, np.dot(
-                self.layout.omt, other.value))
+            newValue = self.layout.omt_func(self.value,other.value)
         else:
             newValue = other*self.value
 
@@ -773,8 +805,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = np.dot(other.value, np.dot(
-                self.layout.omt, self.value))
+            newValue = self.layout.omt_func(other.value,self.value)
         else:
             newValue = other * self.value
 
@@ -790,8 +821,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other)
 
         if mv:
-            newValue = np.dot(self.value, np.dot(
-                self.layout.imt, other.value))
+            newValue = self.layout.imt_func(self.value,other.value)
         else:
             return self._newMV()  # l * M = M * l = 0 for scalar l
 
@@ -1347,7 +1377,7 @@ class MultiVector(object):
 
         other, mv = self._checkOther(other, coerce=1)
 
-        newValue = np.dot(self.value, np.dot(self.layout.lcmt, other.value))
+        newValue = self.layout.lcmt_func(self.value,other.value)
 
         return self._newMV(newValue)
 
