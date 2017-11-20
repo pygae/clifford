@@ -360,6 +360,7 @@ class Layout(object):
 
         self._genEvenOdd()
         self._genTables()
+        self.comp_func = get_layout_comp_func(self.sig)
 
     def __repr__(self):
         s = ("Layout(%r, %r, firstIdx=%r, names=%r)" % (
@@ -368,7 +369,7 @@ class Layout(object):
         return s
 
     def __eq__(self,other):
-        return np.all(self.sig ==other.sig)
+        return self.comp_func(other.sig)
     
     def __ne__(self,other):
         return not self.__eq__(other)
