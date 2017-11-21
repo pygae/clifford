@@ -201,11 +201,11 @@ def _sign(seq, orig):
     sign = 1
     seq = list(seq)
 
-    for i,s_val in enumerate(seq):
-        if s_val != orig[i]:
-            j = seq.index(orig[i])
-            sign = -sign
-            s_val, seq[j] = seq[j], s_val
+    for i in range(len(seq)):
+            if seq[i] != orig[i]:
+                j = seq.index(orig[i])
+                sign = -sign
+                seq[i], seq[j] = seq[j], seq[i]
     return sign
 
 @numba.njit
