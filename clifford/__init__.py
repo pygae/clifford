@@ -192,6 +192,45 @@ _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
 
 
+def _sign(seq, orig):
+    """Determine {even,odd}-ness of permutation seq or orig.
+
+    Returns 1 if even; -1 if odd.
+    """
+
+    sign = 1
+    seq = list(seq)
+
+    for i,s_val in enumerate(seq):
+        if s_val != orig[i]:
+            j = seq.index(orig[i])
+            sign = -sign
+            s_val, seq[j] = seq[j], s_val
+    return sign
+
+@numba.njit
+def _containsDups(input_list):
+    for k in input_list:
+        if input_list.count(k) != 1:
+            return 1
+    return 0
+
+@numba.njit
+def modify_idx(idx, grade):
+    j = grade - 1
+    done = 0
+    while not done:
+        idx[j] = idx[j] + 1
+        while idx[j] == grade:
+            idx[j] = 0
+            j = j - 1
+            idx[j] = idx[j] + 1
+            if j == -1:
+                raise NoMorePermutations()
+        j = grade - 1
+        if not _containsDups(idx):
+            done = 1
+
 def get_layout_comp_func(layout_in_sig):
     '''
     Returns a partially completed function that compares layouts
@@ -374,29 +413,6 @@ class Layout(object):
     def __ne__(self,other):
         return not self.__eq__(other)
         
-    def _sign(self, seq, orig):
-        """Determine {even,odd}-ness of permutation seq or orig.
-
-        Returns 1 if even; -1 if odd.
-        """
-
-        sign = 1
-        seq = list(seq)
-
-        for i in range(len(seq)):
-            if seq[i] != orig[i]:
-                j = seq.index(orig[i])
-                sign = -sign
-                seq[i], seq[j] = seq[j], seq[i]
-        return sign
-
-    def _containsDups(self, list):
-        "Checks if list contains duplicates."
-
-        for k in list:
-            if list.count(k) != 1:
-                return 1
-        return 0
 
     def _genEvenOdd(self):
         "Make mappings of even and odd permutations to their canonical blades."
@@ -421,37 +437,15 @@ class Layout(object):
                 # general case, lifted from Chooser.py released on
                 # comp.lang.python by James Lehmann with permission.
                 idx = list(range(grade))
-
                 try:
                     for i in range(np.multiply.reduce(range(1, grade+1))):
                         # grade! permutations
 
-                        done = 0
-                        j = grade - 1
+                        # Whatever this does
+                        modify_idx(idx,grade)
+                        perm = tuple([blade[k] for k in idx])
 
-                        while not done:
-                            idx[j] = idx[j] + 1
-
-                            while idx[j] == grade:
-                                idx[j] = 0
-                                j = j - 1
-                                idx[j] = idx[j] + 1
-
-                                if j == -1:
-                                    raise NoMorePermutations()
-                            j = grade - 1
-
-                            if not self._containsDups(idx):
-                                done = 1
-
-                        perm = []
-
-                        for k in idx:
-                            perm.append(blade[k])
-
-                        perm = tuple(perm)
-
-                        if self._sign(perm, blade) == 1:
+                        if _sign(perm, blade) == 1:
                             self.even[perm] = blade
                         else:
                             self.odd[perm] = blade
