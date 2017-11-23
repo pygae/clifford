@@ -210,6 +210,9 @@ def _sign(seq, orig):
 
 @numba.njit
 def _containsDups(input_list):
+    """
+    Simply checks if the input list contains duplicates
+    """
     for k in input_list:
         if input_list.count(k) != 1:
             return 1
@@ -217,6 +220,10 @@ def _containsDups(input_list):
 
 @numba.njit
 def modify_idx(idx, grade):
+    """
+    This function is called during the even/odd grade algorithm
+    It is jitted to make it as fast as possible
+    """
     j = grade - 1
     done = 0
     while not done:
