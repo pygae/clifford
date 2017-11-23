@@ -4,6 +4,7 @@ dependencies:
     - python=3.5
     - ipython
     - numpy
+    - numba
     - scipy
     - matplotlib
     - nose
