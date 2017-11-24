@@ -244,7 +244,7 @@ def get_layout_comp_func(layout_in_sig):
     '''
     @numba.njit
     def layout_comp(other_layout_sig):
-        return np.all(layout_in_sig == other_layout_sig)
+        return np.any(layout_in_sig != other_layout_sig)
     return layout_comp
 
 def get_mult_function(mult_table,n_dims):
@@ -415,11 +415,10 @@ class Layout(object):
         return s
 
     def __eq__(self,other):
-        return self.comp_func(other.sig)
+        return not self.__ne__(other)
     
     def __ne__(self,other):
-        return not self.__eq__(other)
-        
+        return self.comp_func(other.sig)
 
     def _genEvenOdd(self):
         "Make mappings of even and odd permutations to their canonical blades."
