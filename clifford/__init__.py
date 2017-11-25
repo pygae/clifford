@@ -406,10 +406,9 @@ class Layout(object):
 
     def __eq__(self,other):
         return np.array_equal(self.sig,other.sig)
-    
+
     def __ne__(self,other):
-        return not self.__eq__(other)
-        
+        return not np.array_equal(self.sig,other.sig)
 
     def _genEvenOdd(self):
         "Make mappings of even and odd permutations to their canonical blades."
