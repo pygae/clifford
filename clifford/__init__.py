@@ -238,15 +238,6 @@ def modify_idx(idx, grade):
         if not _containsDups(idx):
             done = 1
 
-def get_layout_comp_func(layout_in_sig):
-    '''
-    Returns a partially completed function that compares layouts
-    '''
-    @numba.njit
-    def layout_comp(other_layout_sig):
-        return np.all(layout_in_sig == other_layout_sig)
-    return layout_comp
-
 def get_mult_function(mult_table,n_dims):
     ''' 
     Returns a function that implements the mult_table on two input multivectors
@@ -406,7 +397,6 @@ class Layout(object):
 
         self._genEvenOdd()
         self._genTables()
-        self.comp_func = get_layout_comp_func(self.sig)
 
     def __repr__(self):
         s = ("Layout(%r, %r, firstIdx=%r, names=%r)" % (
@@ -415,7 +405,7 @@ class Layout(object):
         return s
 
     def __eq__(self,other):
-        return self.comp_func(other.sig)
+        return np.array_equal(self.sig,other.sig)
     
     def __ne__(self,other):
         return not self.__eq__(other)
