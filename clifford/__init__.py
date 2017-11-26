@@ -185,10 +185,78 @@ from warnings import warn
 # Major library imports.
 import numpy as np
 from numpy import linalg, array
+import numba
 
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
+
+
+def _sign(seq, orig):
+    """Determine {even,odd}-ness of permutation seq or orig.
+
+    Returns 1 if even; -1 if odd.
+    """
+
+    sign = 1
+    seq = list(seq)
+
+    for i in range(len(seq)):
+            if seq[i] != orig[i]:
+                j = seq.index(orig[i])
+                sign = -sign
+                seq[i], seq[j] = seq[j], seq[i]
+    return sign
+
+@numba.njit
+def _containsDups(input_list):
+    """
+    Simply checks if the input list contains duplicates
+    """
+    for k in input_list:
+        if input_list.count(k) != 1:
+            return 1
+    return 0
+
+@numba.njit
+def modify_idx(idx, grade):
+    """
+    This function is called during the even/odd grade algorithm
+    It is jitted to make it as fast as possible
+    """
+    j = grade - 1
+    done = 0
+    while not done:
+        idx[j] = idx[j] + 1
+        while idx[j] == grade:
+            idx[j] = 0
+            j = j - 1
+            idx[j] = idx[j] + 1
+            if j == -1:
+                raise NoMorePermutations()
+        j = grade - 1
+        if not _containsDups(idx):
+            done = 1
+
+def get_mult_function(mult_table,n_dims):
+    ''' 
+    Returns a function that implements the mult_table on two input multivectors
+    '''
+    non_zero_indices = mult_table.nonzero()
+    k_list = non_zero_indices[0]
+    l_list = non_zero_indices[1]
+    m_list = non_zero_indices[2]
+    mult_table_vals = np.array([mult_table[k,l,m] for k,l,m in np.transpose(non_zero_indices)],dtype=int)
+
+    @numba.njit
+    def mv_mult(value,other_value):
+        output = np.zeros(n_dims)
+        for ind,k in enumerate(k_list):
+            l = l_list[ind]
+            m = m_list[ind]
+            output[l] += value[k]*mult_table_vals[ind]*other_value[m]
+        return output
+    return mv_mult
 
 
 def _myDot(a, b):
@@ -337,34 +405,10 @@ class Layout(object):
         return s
 
     def __eq__(self,other):
-        return np.all(self.sig ==other.sig)
-    
+        return np.array_equal(self.sig,other.sig)
+
     def __ne__(self,other):
-        return not self.__eq__(other)
-        
-    def _sign(self, seq, orig):
-        """Determine {even,odd}-ness of permutation seq or orig.
-
-        Returns 1 if even; -1 if odd.
-        """
-
-        sign = 1
-        seq = list(seq)
-
-        for i in range(len(seq)):
-            if seq[i] != orig[i]:
-                j = seq.index(orig[i])
-                sign = -sign
-                seq[i], seq[j] = seq[j], seq[i]
-        return sign
-
-    def _containsDups(self, list):
-        "Checks if list contains duplicates."
-
-        for k in list:
-            if list.count(k) != 1:
-                return 1
-        return 0
+        return not np.array_equal(self.sig,other.sig)
 
     def _genEvenOdd(self):
         "Make mappings of even and odd permutations to their canonical blades."
@@ -389,37 +433,15 @@ class Layout(object):
                 # general case, lifted from Chooser.py released on
                 # comp.lang.python by James Lehmann with permission.
                 idx = list(range(grade))
-
                 try:
                     for i in range(np.multiply.reduce(range(1, grade+1))):
                         # grade! permutations
 
-                        done = 0
-                        j = grade - 1
+                        # Whatever this does
+                        modify_idx(idx,grade)
+                        perm = tuple([blade[k] for k in idx])
 
-                        while not done:
-                            idx[j] = idx[j] + 1
-
-                            while idx[j] == grade:
-                                idx[j] = 0
-                                j = j - 1
-                                idx[j] = idx[j] + 1
-
-                                if j == -1:
-                                    raise NoMorePermutations()
-                            j = grade - 1
-
-                            if not self._containsDups(idx):
-                                done = 1
-
-                        perm = []
-
-                        for k in idx:
-                            perm.append(blade[k])
-
-                        perm = tuple(perm)
-
-                        if self._sign(perm, blade) == 1:
+                        if _sign(perm, blade) == 1:
                             self.even[perm] = blade
                         else:
                             self.odd[perm] = blade
@@ -531,6 +553,10 @@ class Layout(object):
                     # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
                     lcmt[i, :, j] = gmt[i, :, j]
 
+        self.gmt_func = get_mult_function(gmt,self.gaDims)
+        self.imt_func = get_mult_function(imt,self.gaDims)
+        self.omt_func = get_mult_function(omt,self.gaDims)
+        self.lcmt_func = get_mult_function(lcmt,self.gaDims)
         self.gmt = gmt
         self.imt = imt
         self.omt = omt
@@ -722,8 +748,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = np.dot(self.value, np.dot(
-                self.layout.gmt, other.value))
+            newValue = self.layout.gmt_func(self.value,other.value)
         else:
             newValue = other * self.value
 
@@ -739,8 +764,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = np.dot(other.value, np.dot(
-                self.layout.gmt, self.value))
+            newValue = self.layout.gmt_func(other.value,self.value)
         else:
             newValue = other*self.value
 
@@ -756,8 +780,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = np.dot(self.value, np.dot(
-                self.layout.omt, other.value))
+            newValue = self.layout.omt_func(self.value,other.value)
         else:
             newValue = other*self.value
 
@@ -773,8 +796,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = np.dot(other.value, np.dot(
-                self.layout.omt, self.value))
+            newValue = self.layout.omt_func(other.value,self.value)
         else:
             newValue = other * self.value
 
@@ -790,8 +812,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other)
 
         if mv:
-            newValue = np.dot(self.value, np.dot(
-                self.layout.imt, other.value))
+            newValue = self.layout.imt_func(self.value,other.value)
         else:
             return self._newMV()  # l * M = M * l = 0 for scalar l
 
@@ -1347,7 +1368,7 @@ class MultiVector(object):
 
         other, mv = self._checkOther(other, coerce=1)
 
-        newValue = np.dot(self.value, np.dot(self.layout.lcmt, other.value))
+        newValue = self.layout.lcmt_func(self.value,other.value)
 
         return self._newMV(newValue)
 

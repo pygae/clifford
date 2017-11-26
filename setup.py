@@ -20,6 +20,7 @@ setup(name='clifford',
 	packages=find_packages(),
 	install_requires = [
 		'numpy',
+		'numba',
         'future',
 		],
 	package_dir={'clifford':'clifford'},
