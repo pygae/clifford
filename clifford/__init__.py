@@ -238,6 +238,15 @@ def modify_idx(idx, grade):
         if not _containsDups(idx):
             done = 1
 
+def get_adjoint_function(gradeList):
+    grades = np.array(gradeList)
+    signs = np.power(-1, grades*(grades-1)/2)
+    @numba.njit
+    def adjoint_func(value):
+        return signs * value  # elementwise multiplication
+    return adjoint_func
+
+
 def get_mult_function(mult_table,n_dims):
     ''' 
     Returns a function that implements the mult_table on two input multivectors
@@ -397,6 +406,7 @@ class Layout(object):
 
         self._genEvenOdd()
         self._genTables()
+        self.adjoint_func = get_adjoint_function(self.gradeList)
 
     def __repr__(self):
         s = ("Layout(%r, %r, firstIdx=%r, names=%r)" % (
@@ -1012,13 +1022,7 @@ class MultiVector(object):
         adjoint() --> MultiVector
         """
         # The multivector created by reversing all multiplications
-
-        grades = np.array(self.layout.gradeList)
-        signs = np.power(-1, grades*(grades-1)/2)
-
-        newValue = signs * self.value  # elementwise multiplication
-
-        return self._newMV(newValue)
+        return self._newMV(self.layout.adjoint_func(self.value))
 
     __invert__ = adjoint
 
