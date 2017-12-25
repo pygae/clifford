@@ -44,6 +44,7 @@ Documentation
     SpaceTimeAlgebra
     InterfacingOtherMathSystems
     PredefinedGAs
+    PerformanceCliffordTutorial
     
 API
 ------
