@@ -20,6 +20,7 @@ setup(name='clifford',
 	packages=find_packages(),
 	install_requires = [
 		'numpy',
+		'llvmlite',
 		'numba',
         'future',
 		],
