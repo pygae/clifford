@@ -191,6 +191,22 @@ _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
 
+_sloppy_mode = False    # global sloppy/fast mode toggle
+
+def set_sloppy():
+    global _sloppy_mode
+    _sloppy_mode = True
+
+def clear_sloppy():
+    global _sloppy_mode
+    _sloppy_mode = False
+
+def sloppy(fn):
+    def ret_fn(*args,**kwargs):
+        set_sloppy()
+        return fn(*args,**kwargs)
+        clear_sloppy()
+    return ret_fn
 
 def _sign(seq, orig):
     """Determine {even,odd}-ness of permutation seq or orig.
@@ -758,12 +774,14 @@ class MultiVector(object):
         __and__(other) --> MultiVector
         """
 
-        other, mv = self._checkOther(other, coerce=0)
-
-        if mv:
+        if _sloppy_mode:
             newValue = self.layout.gmt_func(self.value,other.value)
         else:
-            newValue = other * self.value
+            other, mv = self._checkOther(other, coerce=0)
+            if mv:
+                newValue = self.layout.gmt_func(self.value,other.value)
+            else:
+                newValue = other * self.value
 
         return self._newMV(newValue)
 
@@ -774,12 +792,14 @@ class MultiVector(object):
         __rand__(other) --> MultiVector
         """
 
-        other, mv = self._checkOther(other, coerce=0)
-
-        if mv:
+        if _sloppy_mode:
             newValue = self.layout.gmt_func(other.value,self.value)
         else:
-            newValue = other*self.value
+            other, mv = self._checkOther(other, coerce=0)
+            if mv:
+                newValue = self.layout.gmt_func(other.value,self.value)
+            else:
+                newValue = other*self.value
 
         return self._newMV(newValue)
 
@@ -790,12 +810,15 @@ class MultiVector(object):
         __xor__(other) --> MultiVector
         """
 
-        other, mv = self._checkOther(other, coerce=0)
-
-        if mv:
+        if _sloppy_mode:
             newValue = self.layout.omt_func(self.value,other.value)
         else:
-            newValue = other*self.value
+            other, mv = self._checkOther(other, coerce=0)
+
+            if mv:
+                newValue = self.layout.omt_func(self.value,other.value)
+            else:
+                newValue = other*self.value
 
         return self._newMV(newValue)
 
@@ -806,12 +829,14 @@ class MultiVector(object):
         __rxor__(other) --> MultiVector
         """
 
-        other, mv = self._checkOther(other, coerce=0)
-
-        if mv:
+        if _sloppy_mode:
             newValue = self.layout.omt_func(other.value,self.value)
         else:
-            newValue = other * self.value
+            other, mv = self._checkOther(other, coerce=0)
+            if mv:
+                newValue = self.layout.omt_func(other.value,self.value)
+            else:
+                newValue = other * self.value
 
         return self._newMV(newValue)
 
@@ -821,13 +846,14 @@ class MultiVector(object):
         M | N
         __mul__(other) --> MultiVector
         """
-
-        other, mv = self._checkOther(other)
-
-        if mv:
+        if _sloppy_mode:
             newValue = self.layout.imt_func(self.value,other.value)
         else:
-            return self._newMV()  # l * M = M * l = 0 for scalar l
+            other, mv = self._checkOther(other)
+            if mv:
+                newValue = self.layout.imt_func(self.value,other.value)
+            else:
+                return self._newMV()  # l * M = M * l = 0 for scalar l
 
         return self._newMV(newValue)
 
@@ -877,14 +903,15 @@ class MultiVector(object):
         M / N --> M * N
         __div__(other) --> MultiVector
         """
-
-        other, mv = self._checkOther(other, coerce=0)
-
-        if mv:
+        if _sloppy_mode:
             return self * other.inv()
         else:
-            newValue = self.value / other
-            return self._newMV(newValue)
+            other, mv = self._checkOther(other, coerce=0)
+            if mv:
+                return self * other.inv()
+            else:
+                newValue = self.value / other
+                return self._newMV(newValue)
 
     def __rtruediv__(self, other):
         """Right-hand division
