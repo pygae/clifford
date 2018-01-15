@@ -204,8 +204,9 @@ def clear_sloppy():
 def sloppy(fn):
     def ret_fn(*args,**kwargs):
         set_sloppy()
-        return fn(*args,**kwargs)
+        result = fn(*args,**kwargs)
         clear_sloppy()
+        return result
     return ret_fn
 
 def _sign(seq, orig):
