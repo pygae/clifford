@@ -480,7 +480,7 @@ class Layout(object):
         blade_name_index_map = {name:index for index,name in enumerate(self.names)}
 
         # Clean up the input string a bit
-        cleaned_string = mv_string.strip('[()]')
+        cleaned_string = re.sub('[()]','',mv_string)
 
         # Apply the regex
         search_result = re.findall(_blade_pattern,cleaned_string)
@@ -490,6 +490,7 @@ class Layout(object):
         for res in search_result:
             # Clean up the search result
             cleaned_match = get_longest_string(res)
+
             # Split on the '^'
             stuff = cleaned_match.split('^')
 
