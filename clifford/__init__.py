@@ -191,7 +191,7 @@ import numba
 
 
 # The blade finding regex for parsing strings of mvs
-_blade_pattern =  "((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?\d+(\.\d+)?\^e\d+(\s|$))|((^|\+)\s?\d+(\.\d+)?\^e\d+(\s|$))"
+_blade_pattern =  "((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))"
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
