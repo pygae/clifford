@@ -175,6 +175,7 @@ from __future__ import print_function, unicode_literals
 from past.builtins import cmp, range
 from functools import reduce
 import sys
+import re
 
 # Standard library imports.
 import math
@@ -187,10 +188,20 @@ import numpy as np
 from numpy import linalg, array
 import numba
 
+
+
+# The blade finding regex for parsing strings of mvs
+_blade_pattern =  "((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?\d+(\.\d+)?\^e\d+(\s|$))|((^|\+)\s?\d+(\.\d+)?\^e\d+(\s|$))"
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
 
+
+def get_longest_string(string_array):
+    """
+    Return the longest string in a list of strings
+    """
+    return max(string_array,key=len)
 
 def _sign(seq, orig):
     """Determine {even,odd}-ness of permutation seq or orig.
@@ -464,6 +475,37 @@ class Layout(object):
 
                 self.even[blade] = blade
 
+    def parse_multivector(self,mv_string):
+        # Get the names of the canonical blades
+        blade_name_index_map = {name:index for index,name in enumerate(self.names)}
+
+        # Clean up the input string a bit
+        cleaned_string = mv_string.strip('[()]')
+
+        # Apply the regex
+        search_result = re.findall(_blade_pattern,cleaned_string)
+        
+        # Create a multivector
+        mv_out = MultiVector(self)
+        for res in search_result:
+            # Clean up the search result
+            cleaned_match = get_longest_string(res)
+            # Split on the '^'
+            stuff = cleaned_match.split('^')
+
+            if (len(stuff) == 2):
+                # Extract the value of the blade and the index of the blade
+                blade_val = float("".join(stuff[0].split()))
+                blade_index = blade_name_index_map[stuff[1].strip()]
+                mv_out[blade_index] = blade_val
+            else:
+                if(len(stuff) == 1):
+                    # Extract the value of the scalar
+                    blade_val = float("".join(stuff[0].split()))
+                    blade_index = 0;
+                    mv_out[blade_index] = blade_val
+        return mv_out
+
     def _checkList(self):
         "Ensure validity of arguments."
 
@@ -677,7 +719,7 @@ class MultiVector(object):
     * M[N] : blade projection
     """
 
-    def __init__(self, layout, value=None):
+    def __init__(self, layout, value=None, string=None):
         """Constructor.
 
         MultiVector(layout, value=None) --> MultiVector
@@ -686,7 +728,10 @@ class MultiVector(object):
         self.layout = layout
 
         if value is None:
-            self.value = np.zeros((self.layout.gaDims,), dtype=float)
+            if string is None:
+                self.value = np.zeros((self.layout.gaDims,), dtype=float)
+            else:
+                self.value = layout.parse_multivector(string).value
         else:
             self.value = np.array(value)
             if self.value.shape != (self.layout.gaDims,):
