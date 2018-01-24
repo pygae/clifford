@@ -261,7 +261,7 @@ def get_adjoint_function(gradeList):
     return adjoint_func
 
 
-def get_mult_function(mult_table,n_dims):
+def get_mult_function(mult_table,n_dims,gradeList,grades_a=None,grades_b=None):
     ''' 
     Returns a function that implements the mult_table on two input multivectors
     '''
@@ -270,6 +270,19 @@ def get_mult_function(mult_table,n_dims):
     l_list = non_zero_indices[1]
     m_list = non_zero_indices[2]
     mult_table_vals = np.array([mult_table[k,l,m] for k,l,m in np.transpose(non_zero_indices)],dtype=int)
+
+    if ((grades_a is not None) and (grades_b is not None)):
+        # Now filter out the sparseness
+        filter_mask = np.zeros(len(k_list), dtype=bool)
+        for i in range(len(filter_mask)):
+            if gradeList[k_list[i]] in grades_a:
+                if gradeList[m_list[i]] in grades_b:
+                    filter_mask[i] = 1
+
+        k_list = k_list[filter_mask]
+        l_list = l_list[filter_mask]
+        m_list = m_list[filter_mask]
+        mult_table_vals = mult_table_vals[filter_mask]
 
     @numba.njit
     def mv_mult(value,other_value):
@@ -609,10 +622,10 @@ class Layout(object):
                     # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
                     lcmt[i, :, j] = gmt[i, :, j]
 
-        self.gmt_func = get_mult_function(gmt,self.gaDims)
-        self.imt_func = get_mult_function(imt,self.gaDims)
-        self.omt_func = get_mult_function(omt,self.gaDims)
-        self.lcmt_func = get_mult_function(lcmt,self.gaDims)
+        self.gmt_func = get_mult_function(gmt,self.gaDims,self.gradeList)
+        self.imt_func = get_mult_function(imt,self.gaDims,self.gradeList)
+        self.omt_func = get_mult_function(omt,self.gaDims,self.gradeList)
+        self.lcmt_func = get_mult_function(lcmt,self.gaDims,self.gradeList)
         self.gmt = gmt
         self.imt = imt
         self.omt = omt
