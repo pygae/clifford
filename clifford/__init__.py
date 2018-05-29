@@ -261,7 +261,7 @@ def get_adjoint_function(gradeList):
     return adjoint_func
 
 
-def get_mult_function(mult_table,n_dims,gradeList,grades_a=None,grades_b=None):
+def get_mult_function(mult_table,n_dims,gradeList,grades_a=None,grades_b=None,filter_mask=None):
     ''' 
     Returns a function that implements the mult_table on two input multivectors
     '''
@@ -270,9 +270,25 @@ def get_mult_function(mult_table,n_dims,gradeList,grades_a=None,grades_b=None):
     l_list = non_zero_indices[1]
     m_list = non_zero_indices[2]
     mult_table_vals = np.array([mult_table[k,l,m] for k,l,m in np.transpose(non_zero_indices)],dtype=int)
-
-    if ((grades_a is not None) and (grades_b is not None)):
-        # Now filter out the sparseness
+    
+    if filter_mask is not None:
+        # We can pass the sparse filter mask directly
+        k_list = k_list[filter_mask]
+        l_list = l_list[filter_mask]
+        m_list = m_list[filter_mask]
+        mult_table_vals = mult_table_vals[filter_mask]
+        @numba.njit
+        def mv_mult(value,other_value):
+            output = np.zeros(n_dims)
+            for ind,k in enumerate(k_list):
+                m = m_list[ind]
+                l = l_list[ind]
+                output[l] += value[k]*mult_table_vals[ind]*other_value[m]
+            return output
+        return mv_mult
+        
+    elif ((grades_a is not None) and (grades_b is not None)):
+        # We can also specify sparseness by grade
         filter_mask = np.zeros(len(k_list), dtype=bool)
         for i in range(len(filter_mask)):
             if gradeList[k_list[i]] in grades_a:
@@ -283,14 +299,29 @@ def get_mult_function(mult_table,n_dims,gradeList,grades_a=None,grades_b=None):
         l_list = l_list[filter_mask]
         m_list = m_list[filter_mask]
         mult_table_vals = mult_table_vals[filter_mask]
+        
+        @numba.njit
+        def mv_mult(value,other_value):
+            output = np.zeros(n_dims)
+            for ind,k in enumerate(k_list):
+                m = m_list[ind]
+                l = l_list[ind]
+                output[l] += value[k]*mult_table_vals[ind]*other_value[m]
+            return output
+        return mv_mult
 
+    # This case we specify no sparseness in advance, the algorithm checks for zeros
     @numba.njit
     def mv_mult(value,other_value):
         output = np.zeros(n_dims)
         for ind,k in enumerate(k_list):
-            l = l_list[ind]
-            m = m_list[ind]
-            output[l] += value[k]*mult_table_vals[ind]*other_value[m]
+            v_val = value[k]
+            if v_val!=0.0:
+                m = m_list[ind]
+                ov_val = other_value[m]
+                if ov_val!=0.0:
+                    l = l_list[ind]
+                    output[l] += v_val*mult_table_vals[ind]*ov_val
         return output
     return mv_mult
 
