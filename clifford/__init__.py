@@ -365,7 +365,7 @@ def get_right_inverse_function(mult_table, n_dims, gradeList):
             m = m_list[ind]
             k = k_list[ind]
             intermed[k, m] += value[l]*newB_vals[ind]
-        sol = linalg.lstsq(intermed, identity)[0]
+        sol = linalg.solve(intermed, identity)[0]
         return sol
     return rightLaInv_func
 
