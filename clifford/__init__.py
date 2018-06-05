@@ -187,8 +187,6 @@ from warnings import warn
 import numpy as np
 from numpy import linalg, array
 import numba
-from scipy import stats
-
 
 # The blade finding regex for parsing strings of mvs
 _blade_pattern =  "((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))"
