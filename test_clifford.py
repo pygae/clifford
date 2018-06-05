@@ -2,7 +2,7 @@ from __future__ import absolute_import, division
 from __future__ import print_function, unicode_literals
 from past.builtins import range
 
-from clifford import Cl, randomMV, Frame, get_mult_function, conformalize
+from clifford import Cl, randomMV, Frame, get_mult_function, conformalize, grade_obj
 from clifford.tools import orthoFrames2Verser as of2v
 
 from numpy import exp, float64, testing
@@ -50,6 +50,14 @@ class CliffordTests(unittest.TestCase):
 
 
 class BasicAlgebraTests(unittest.TestCase):
+
+    def test_grade_obj(self):
+        algebras = [Cl(i) for i in [3, 4]] + [conformalize(Cl(3)[0])]
+        for alg in algebras:
+            layout = alg[0]
+            for i in range(len(layout.sig)+1):
+                mv = layout.randomMV()(i)
+                assert i == grade_obj(mv)
 
     def test_sparse_multiply(self):
         algebras = [Cl(i) for i in [3, 4]] + [conformalize(Cl(3)[0])]
