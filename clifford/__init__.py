@@ -188,8 +188,6 @@ import numpy as np
 from numpy import linalg, array
 import numba
 
-
-
 # The blade finding regex for parsing strings of mvs
 _blade_pattern =  "((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))"
 _eps = 1e-12            # float epsilon for float comparisons
@@ -324,6 +322,54 @@ def get_mult_function(mult_table,n_dims,gradeList,grades_a=None,grades_b=None,fi
                     output[l] += v_val*mult_table_vals[ind]*ov_val
         return output
     return mv_mult
+
+
+@numba.jit
+def grade_obj_func(objin_val, gradeList, threshold):
+    """ returns the modal grade of a multivector """
+    modal_value_count = np.zeros(objin_val.shape)
+    n = 0
+    for g in gradeList:
+        if np.abs(objin_val[n]) > threshold:
+            modal_value_count[g] += 1
+        n += 1
+    return np.argmax(modal_value_count)
+
+
+def grade_obj(objin, threshold=0.0000001):
+    """ returns the modal grade of a multivector """
+    return grade_obj_func(objin.value, objin.layout.gradeList, threshold)
+
+
+def get_right_inverse_function(mult_table, n_dims, gradeList):
+    '''
+    Returns a function that implements the right_inverse
+    '''
+
+    identity = np.zeros((n_dims,))
+    identity[gradeList.index(0)] = 1
+
+    tempAxes = (1,0,2)
+    newB = np.transpose(mult_table, tempAxes)
+
+    non_zero_indices = newB.nonzero()
+    k_list = non_zero_indices[0]
+    l_list = non_zero_indices[1]
+    m_list = non_zero_indices[2]
+    newB_vals = np.array([newB[k, l, m] for k, l, m in np.transpose(non_zero_indices)], dtype=int)
+
+    @numba.njit
+    def rightLaInv_func(value):
+        intermed = np.zeros((n_dims,n_dims))
+        for ind,l in enumerate(l_list):
+            m = m_list[ind]
+            k = k_list[ind]
+            intermed[k, m] += value[l]*newB_vals[ind]
+        sol = linalg.solve(intermed, identity)[0]
+        return sol
+    return rightLaInv_func
+
+
 
 
 def _myDot(a, b):
@@ -663,6 +709,7 @@ class Layout(object):
         self.imt_func = get_mult_function(imt,self.gaDims,self.gradeList)
         self.omt_func = get_mult_function(omt,self.gaDims,self.gradeList)
         self.lcmt_func = get_mult_function(lcmt,self.gaDims,self.gradeList)
+        self.rightLaInv_func = get_right_inverse_function(gmt, self.gaDims, self.gradeList)
         self.gmt = gmt
         self.imt = imt
         self.omt = omt
@@ -1593,18 +1640,7 @@ class MultiVector(object):
         M    where M * M  == 1
         rightLaInv() --> MultiVector
         """
-
-        identity = np.zeros((self.layout.gaDims,))
-        identity[self.layout.gradeList.index(0)] = 1
-
-        intermed = _myDot(self.value, self.layout.gmt)
-
-        if abs(linalg.det(intermed)) < _eps:
-            warn('Inverse might be inaccurate')
-            #raise ValueError("multivector has no right-inverse")
-
-        sol = linalg.solve(intermed, identity)
-
+        sol = self.layout.rightLaInv_func(self.value)
         return self._newMV(sol)
 
     def normalInv(self):
