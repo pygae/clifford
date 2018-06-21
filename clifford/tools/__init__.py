@@ -29,8 +29,8 @@ from functools import reduce
 
 from math import sqrt
 from numpy import eye, array, sign, zeros
-from . import Cl, gp, Frame
-from . import eps as global_eps
+from .. import Cl, gp, Frame
+from .. import eps as global_eps
 
 from warnings import warn
 

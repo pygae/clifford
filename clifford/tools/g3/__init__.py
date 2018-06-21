@@ -4,6 +4,8 @@ import clifford as cf
 import math
 import numpy as np
 
+I3 = e123
+
 
 def quaternion_to_rotor(quaternion):
     """
@@ -54,6 +56,85 @@ def rotor_to_rotation_matrix(R):
     q = rotor_to_quaternion(R)
     return quaternion_to_matrix(q)
 
+
+def rotation_matrix_to_quaternion(a):
+    """
+    Converts a rotation matrix into a quaternion
+    """
+    trace = a[0][0] + a[1][1] + a[2][2]
+    if( trace > 0 ):
+        s = 0.5 / math.sqrt(trace+ 1.0)
+        w = 0.25 / s
+        x = ( a[2][1] - a[1][2] ) * s
+        y = ( a[0][2] - a[2][0] ) * s
+        z = ( a[1][0] - a[0][1] ) * s
+    elif ( a[0][0] > a[1][1] and a[0][0] > a[2][2] ):
+        s = 2.0 * math.sqrt( 1.0 + a[0][0] - a[1][1] - a[2][2])
+        w = (a[2][1] - a[1][2] ) / s
+        x = 0.25 * s
+        y = (a[0][1] + a[1][0] ) / s
+        z = (a[0][2] + a[2][0] ) / s
+    elif (a[1][1] > a[2][2]):
+        s = 2.0 * math.sqrt( 1.0 + a[1][1] - a[0][0] - a[2][2])
+        w = (a[0][2] - a[2][0] ) / s
+        x = (a[0][1] + a[1][0] ) / s
+        y = 0.25 * s
+        z = (a[1][2] + a[2][1] ) / s
+    else:
+        s = 2.0 * math.sqrt( 1.0 + a[2][2] - a[0][0] - a[1][1] )
+        w = (a[1][0] - a[0][1] ) / s
+        x = (a[0][2] + a[2][0] ) / s
+        y = (a[1][2] + a[2][1] ) / s
+        z = 0.25 * s
+    return w,x,y,z
+
+
+def rotation_matrix_to_rotor(M):
+    """
+    Converts a rotation matrix into a rotor
+    """
+    Q = rotation_matrix_to_quaternion(M)
+    return quaternion_to_rotor(Q)
+
+
+def generate_rotation_rotor(theta, euc_vector_m, euc_vector_n):
+    """
+    Generates a rotation of angle theta in the m, n plane
+    """
+    euc_vector_n = euc_vector_n / abs(euc_vector_n)
+    euc_vector_m = euc_vector_m / abs(euc_vector_m)
+    bivector_B = (euc_vector_m ^ euc_vector_n)
+    bivector_B = bivector_B / (math.sqrt(-bivector_B * bivector_B))
+    rotor = math.cos(theta / 2) - bivector_B * math.sin(theta / 2)
+    return rotor
+
+
+def angle_between_vectors(v1, v2):
+    """
+    Returns the angle between two conformal vectors
+    """
+    clipped = np.clip( (v1 | v2)[0], -1.0, 1.0)
+    return math.acos(clipped)
+
+
+def to_euc_mv(np_in):
+    """ Converts a 3d numpy vector to a 3d GA point """
+    return np_in[0]*e1 + np_in[1]*e2 + np_in[2]*e3
+
+
+def euc_cross_prod(euc_a,euc_b):
+    """ Implements the cross product in GA """
+    return (-(euc_a^euc_b)*I3).normal()
+
+
+def random_unit_vector():
+    """ Creates a random unit vector """
+    return (to_euc_mv(np.random.randn(3))).normal()
+
+
+def random_euc_mv(l_max=10):
+    """ Creates a random vector of length uniform up to l_max """
+    return l_max*random_unit_vector()*np.random.rand()
 
 
 

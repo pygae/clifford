@@ -119,6 +119,51 @@ class FrameTests(unittest.TestCase):
             self.assertTrue(A.is_innermorphic_to(B))
 
 
+
+class G3ToolsTests(unittest.TestCase):
+
+    def test_quaternion_conversions(self):
+        """
+        Bidirectional rotor - quaternion test. This needs work but is a reasonable start
+        """
+        from clifford.g3c import layout
+        from clifford.tools.g3 import rotor_to_quaternion, quaternion_to_rotor
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        rotor = e1*e2
+        print(rotor)
+        quaternion = rotor_to_quaternion(rotor)
+        print(quaternion)
+        rotor_return = quaternion_to_rotor(quaternion)
+        print(rotor_return)
+        testing.assert_almost_equal(rotor.value, rotor_return.value)
+
+
+    def test_rotation_matrix_conversions(self):
+        """
+        Bidirectional rotor - rotation matrix test. This needs work but is a reasonable start
+        """
+        from clifford.g3c import layout
+        from clifford.tools.g3 import rotation_matrix_to_rotor, rotor_to_rotation_matrix
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+
+        rotor = e1*e2
+        print(rotor)
+        matrix = rotor_to_rotation_matrix(rotor)
+        print(matrix)
+        rotor_return = rotation_matrix_to_rotor(matrix)
+        print(rotor_return)
+        testing.assert_almost_equal(rotor.value, rotor_return.value)
+
+    def test_generate_rotation_rotor_and_angle(self):
+        import numpy as np
+        theta = np.random.randn()
+        euc_vector_m = np.random.randn(3)
+        generate_rotation_rotor(theta, euc_vector_m, euc_vector_n)
+
+
+
 @SkipTest
 class ToolsTests(unittest.TestCase):
 

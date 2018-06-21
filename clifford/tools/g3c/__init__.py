@@ -94,7 +94,12 @@ def point_pair_to_end_points(T):
     return A, B
 
 
-
+def euc_dist(conf_mv_a, conf_mv_b):
+    """ Returns the distance between two conformal points """
+    if (conf_mv_a|conf_mv_b)[0] < 0.0:
+        return math.sqrt(-2.0*((conf_mv_a|conf_mv_b)[0]))
+    else:
+        return 0.0
 
 
 
