@@ -160,7 +160,6 @@ class G3ToolsTests(unittest.TestCase):
         """
         Checks rotation rotor generation
         """
-        import numpy as np
         from clifford.tools.g3 import generate_rotation_rotor, random_unit_vector, angle_between_vectors
 
         euc_vector_m = random_unit_vector()
@@ -174,11 +173,27 @@ class G3ToolsTests(unittest.TestCase):
         theta_return = angle_between_vectors(v1, v2)
         print(theta_return)
 
-        np.testing.assert_almost_equal(theta_return, theta)
-        np.testing.assert_almost_equal(euc_vector_n.value, v2.value)
+        testing.assert_almost_equal(theta_return, theta)
+        testing.assert_almost_equal(euc_vector_n.value, v2.value)
 
-
-
+    @SkipTest
+    def test_find_rotor_aligning_vectors(self):
+        """
+        Currently fails, needs to be dug into
+        """
+        import numpy as np
+        from clifford.g3c import layout
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        from clifford.tools.g3 import random_euc_mv, random_rotation_rotor, rotor_align_vecs
+        u_list = [random_euc_mv() for i in range(50)]
+        for i in range(100):
+            r = random_rotation_rotor()
+            v_list = [r*u*~r for u in u_list]
+            r_2 = rotor_align_vecs(u_list, v_list)
+            print(r_2)
+            print(r)
+            testing.assert_almost_equal(r.value, r_2.value)
 
 
 @SkipTest

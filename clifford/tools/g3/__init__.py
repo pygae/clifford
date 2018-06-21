@@ -142,4 +142,48 @@ def random_euc_mv(l_max=10):
     return l_max*random_unit_vector()*np.random.rand()
 
 
+def random_rotation_rotor(max_angle=np.pi):
+    """ Creates a random rotation rotor """
+    return generate_rotation_rotor(max_angle * np.random.rand(), random_unit_vector(), random_unit_vector())
 
+
+def rotor_vector_to_vector(v1, v2):
+    """ Creates a rotor that takes one vector into another """
+    if np.sum(np.abs(v1.value - v2.value)) > 0.000001:
+        theta = angle_between_vectors(v1, v2)
+        return generate_rotation_rotor(theta, v1, v2)
+    else:
+        mv = cf.MultiVector(layout)
+        mv.value[0] = 1.0
+        return mv
+
+
+def correlation_matrix(u_list, v_list):
+    """ Creates a correlation matrix between vector lists """
+    F_output = np.zeros((3,3))
+    for i in range(3):
+        for j in range(3):
+            for ind in range(len(u_list)):
+                u = u_list[ind]
+                v = v_list[ind]
+                F_output[i,j]+= v[i+1]*u[j+1]
+    return F_output
+
+
+def GA_SVD(u_list, v_list):
+    """ Does SVD on a pair of GA vectors """
+    F_output = correlation_matrix(u_list, v_list)
+    u, s, vh = np.linalg.svd(F_output, full_matrices=True)
+    return u, s, vh
+
+
+def rotation_matrix_align_vecs(u_list, v_list):
+    """ Returns the rotation matrix that aligns the set of vectors u and v """
+    u, s, vh = GA_SVD(u_list, v_list)
+    return np.transpose(vh)@np.transpose(u)
+
+
+def rotor_align_vecs(u_list, v_list):
+    """ Returns the rotation rotor that aligns the set of vectors u and v """
+    M = rotation_matrix_align_vecs(u_list, v_list)
+    return rotation_matrix_to_rotor(M)
