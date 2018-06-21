@@ -117,9 +117,14 @@ def angle_between_vectors(v1, v2):
     return math.acos(clipped)
 
 
-def to_euc_mv(np_in):
+def np_to_euc_mv(np_in):
     """ Converts a 3d numpy vector to a 3d GA point """
     return np_in[0]*e1 + np_in[1]*e2 + np_in[2]*e3
+
+
+def euc_mv_to_np(euc_point):
+    """ Converts a 3d GA point to a 3d numpy vector """
+    return euc_point[1:4].copy()
 
 
 def euc_cross_prod(euc_a,euc_b):
@@ -129,7 +134,7 @@ def euc_cross_prod(euc_a,euc_b):
 
 def random_unit_vector():
     """ Creates a random unit vector """
-    return (to_euc_mv(np.random.randn(3))).normal()
+    return (np_to_euc_mv(np.random.randn(3))).normal()
 
 
 def random_euc_mv(l_max=10):

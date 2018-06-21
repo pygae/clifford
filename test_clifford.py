@@ -157,10 +157,25 @@ class G3ToolsTests(unittest.TestCase):
         testing.assert_almost_equal(rotor.value, rotor_return.value)
 
     def test_generate_rotation_rotor_and_angle(self):
+        """
+        Bidirectional rotor - rotation matrix test. This needs work but is a reasonable start
+        """
         import numpy as np
-        theta = np.random.randn()
-        euc_vector_m = np.random.randn(3)
-        generate_rotation_rotor(theta, euc_vector_m, euc_vector_n)
+        from clifford.tools.g3 import generate_rotation_rotor, random_unit_vector, angle_between_vectors
+
+        euc_vector_m = random_unit_vector()
+        euc_vector_n = random_unit_vector()
+        theta = angle_between_vectors(euc_vector_m, euc_vector_n)
+
+        rot_rotor = generate_rotation_rotor(theta, euc_vector_m, euc_vector_n)
+        v1 = euc_vector_m
+        v2 = rot_rotor*euc_vector_m*~rot_rotor
+        theta_return = angle_between_vectors(v1, v2)
+
+        np.testing.assert_almost_equal(theta_return, theta)
+        np.testing.assert_almost_equal(euc_vector_n.value, v2.value)
+
+
 
 
 
