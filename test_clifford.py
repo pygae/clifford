@@ -247,11 +247,11 @@ class G3CToolsTests(unittest.TestCase):
             testing.assert_almost_equal( (mv_normed|ninf)[0], -1.0)
 
     @SkipTest
-    def test_quaterion_and_vector_to_rotor(self):
+    def test_quaternion_and_vector_to_rotor(self):
         """
         TODO: IMPLEMENT THIS TEST
         """
-        # quaterion_and_vector_to_rotor(quaternion, vector)
+        # quaternion_and_vector_to_rotor(quaternion, vector)
 
     def test_get_properties_of_sphere(self):
         from clifford import g3c
@@ -282,6 +282,33 @@ class G3CToolsTests(unittest.TestCase):
             testing.assert_almost_equal(down(center).value, rand_trans.value)
             testing.assert_almost_equal(radius, scale_factor)
 
+    def test_point_pair_to_end_points(self):
+        from clifford.tools.g3c import random_conformal_point, point_pair_to_end_points
+        for i in range(100):
+            point_a = random_conformal_point()
+            point_b = random_conformal_point()
+            pp = (point_a^point_b).normal()
+            p_a, p_b = point_pair_to_end_points(pp)
+            testing.assert_almost_equal(p_a.value, point_a.value)
+            testing.assert_almost_equal(p_b.value, point_b.value)
+
+    def test_euc_distance(self):
+        from clifford import g3c
+        import numpy as np
+        layout = g3c.layout
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        ep, en, up, down, homo, E0, ninf, no = (g3c.stuff["ep"], g3c.stuff["en"],
+                                                g3c.stuff["up"], g3c.stuff["down"], g3c.stuff["homo"],
+                                                g3c.stuff["E0"], g3c.stuff["einf"], -g3c.stuff["eo"])
+        from clifford.tools.g3c import random_conformal_point, euc_dist
+        for i in range(100):
+            point_a = random_conformal_point()
+            point_b = random_conformal_point()
+            dist = euc_dist(point_a, point_b)
+            dist_alt = float(abs(down(point_a) - down(point_b)))
+            testing.assert_almost_equal(dist, dist_alt)
 
 
 @SkipTest

@@ -59,7 +59,7 @@ def normalise_n_minus_1(mv):
         raise ZeroDivisionError('Multivector has 0 einf component')
 
 
-def quaterion_and_vector_to_rotor(quaternion, vector):
+def quaternion_and_vector_to_rotor(quaternion, vector):
     """
     Takes in a quaternion and a vector and returns a conformal rotor that
     implements the transformation
@@ -92,19 +92,20 @@ def point_pair_to_end_points(T):
     """
     Extracts the end points of a point pair bivector
     """
-    beta = math.sqrt((T*T)[0])
-    F = T/beta
-    P = 0.5*(1+F)
-    P_twiddle = 0.5*(1-F)
-    A = -P_twiddle*(T|ninf)
-    B = P*(T|ninf)
+    beta = math.sqrt(abs((T * T)[0]))
+    F = T / beta
+    P = 0.5 * (1 + F)
+    P_twiddle = 0.5 * (1 - F)
+    A = normalise_n_minus_1(-P_twiddle * (T | ninf))
+    B = normalise_n_minus_1(P * (T | ninf))
     return A, B
 
 
 def euc_dist(conf_mv_a, conf_mv_b):
     """ Returns the distance between two conformal points """
-    if (conf_mv_a|conf_mv_b)[0] < 0.0:
-        return math.sqrt(-2.0*((conf_mv_a|conf_mv_b)[0]))
+    dot_result = (conf_mv_a|conf_mv_b)[0]
+    if dot_result < 0.0:
+        return math.sqrt(-2.0*dot_result)
     else:
         return 0.0
 
