@@ -138,7 +138,6 @@ class G3ToolsTests(unittest.TestCase):
         print(rotor_return)
         testing.assert_almost_equal(rotor.value, rotor_return.value)
 
-
     def test_rotation_matrix_conversions(self):
         """
         Bidirectional rotor - rotation matrix test. This needs work but is a reasonable start
@@ -194,6 +193,95 @@ class G3ToolsTests(unittest.TestCase):
             print(r_2)
             print(r)
             testing.assert_almost_equal(r.value, r_2.value)
+
+
+
+class G3CToolsTests(unittest.TestCase):
+
+    def test_generate_translation_rotor(self):
+        """ Tests translation rotor generation """
+        from clifford import g3c
+        layout = g3c.layout
+        locals().update(g3c.blades)
+        ep, en, up, down, homo, E0, ninf, no = (g3c.stuff["ep"], g3c.stuff["en"],
+                                                g3c.stuff["up"], g3c.stuff["down"], g3c.stuff["homo"],
+                                                g3c.stuff["E0"], g3c.stuff["einf"], -g3c.stuff["eo"])
+        from clifford.tools.g3 import random_euc_mv
+        from clifford.tools.g3c import generate_translation_rotor
+
+        for i in range(100):
+            rand = random_euc_mv()
+            starting_point = up(random_euc_mv())
+            r_trans = generate_translation_rotor(rand)
+            end_point = r_trans*starting_point*~r_trans
+            translation_vec = down(end_point) - down(starting_point)
+            testing.assert_almost_equal(translation_vec.value, rand.value)
+
+    def test_intersect_line_and_plane_to_point(self):
+        """ Intersection of a line and a plane """
+        from clifford import g3c
+        layout = g3c.layout
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        ep, en, up, down, homo, E0, ninf, no = (g3c.stuff["ep"], g3c.stuff["en"],
+                                                g3c.stuff["up"], g3c.stuff["down"], g3c.stuff["homo"],
+                                                g3c.stuff["E0"], g3c.stuff["einf"], -g3c.stuff["eo"])
+        from clifford.tools.g3c import intersect_line_and_plane_to_point
+        # First the case that they intersect
+        line = (up(e1)^up(e1+e3)^ninf).normal()
+        plane = (up(e3)^up(e3+e1)^up(e3+e2)^ninf).normal()
+        point_result = intersect_line_and_plane_to_point(line, plane)
+        testing.assert_almost_equal(down(point_result).value, (e3+e1).value)
+        # Next the case that the do not intersect
+        line = (up(0) ^ up(e1) ^ ninf).normal()
+        point_result = intersect_line_and_plane_to_point(line, plane)
+        assert point_result is None
+
+    def test_normalise_n_minus_1(self):
+        import numpy as np
+        from clifford.tools.g3c import random_conformal_point, normalise_n_minus_1, ninf
+        for i in range(500):
+            mv = np.random.rand()*random_conformal_point()
+            mv_normed = normalise_n_minus_1(mv)
+            testing.assert_almost_equal( (mv_normed|ninf)[0], -1.0)
+
+    @SkipTest
+    def test_quaterion_and_vector_to_rotor(self):
+        """
+        TODO: IMPLEMENT THIS TEST
+        """
+        # quaterion_and_vector_to_rotor(quaternion, vector)
+
+    def test_get_properties_of_sphere(self):
+        from clifford import g3c
+        import numpy as np
+        layout = g3c.layout
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        ep, en, up, down, homo, E0, ninf, no = (g3c.stuff["ep"], g3c.stuff["en"],
+                                                g3c.stuff["up"], g3c.stuff["down"], g3c.stuff["homo"],
+                                                g3c.stuff["E0"], g3c.stuff["einf"], -g3c.stuff["eo"])
+        from clifford.tools.g3 import random_euc_mv
+        from clifford.tools.g3c import get_radius_from_sphere, get_center_from_sphere, \
+            generate_translation_rotor
+
+        for i in range(100):
+            # Make a sphere
+            scale_factor = np.random.rand()
+            sphere = (up(scale_factor*e1)^up(-scale_factor*e1)^up(scale_factor*e3)^up(scale_factor*e2)).normal()
+            # Translate it
+            rand_trans = random_euc_mv()
+            trans_rot = generate_translation_rotor(rand_trans)
+            sphere = (trans_rot*sphere*~trans_rot).normal()
+
+            center = get_center_from_sphere(sphere)
+            radius = get_radius_from_sphere(sphere)
+
+            testing.assert_almost_equal(down(center).value, rand_trans.value)
+            testing.assert_almost_equal(radius, scale_factor)
+
 
 
 @SkipTest

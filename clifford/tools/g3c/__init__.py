@@ -1,7 +1,7 @@
 
 import math
 import numpy as np
-from clifford.tools.g3 import quaternion_to_rotor, rotor_to_quaternion
+from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv
 from clifford.g3c import *
 import clifford as cf
 
@@ -14,6 +14,12 @@ E = ninf ^ (no)
 I5 = e12345
 I3 = e123
 
+
+def random_conformal_point(l_max=10):
+    """
+    Creates a random conformal point
+    """
+    return up(random_euc_mv(l_max=l_max))
 
 
 def generate_translation_rotor(euc_vector_a):
@@ -78,6 +84,7 @@ def get_radius_from_sphere(sphere):
     Returns the radius of a sphere
     """
     dual_sphere = sphere * I5
+    dual_sphere = dual_sphere / (-dual_sphere | ninf)
     return math.sqrt(abs(dual_sphere * dual_sphere))
 
 
