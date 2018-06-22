@@ -310,6 +310,56 @@ class G3CToolsTests(unittest.TestCase):
             dist_alt = float(abs(down(point_a) - down(point_b)))
             testing.assert_almost_equal(dist, dist_alt)
 
+    def test_dilation_rotor(self):
+        from clifford.tools.g3c import random_sphere, generate_dilation_rotor, get_radius_from_sphere
+        import numpy as np
+        for i in range(100):
+            scale = 2*np.random.rand()
+            r = generate_dilation_rotor(scale)
+            sphere = random_sphere()
+            radius = get_radius_from_sphere(sphere)
+            sphere2 = (r*sphere*~r).normal()
+            radius2 = get_radius_from_sphere(sphere2)
+            testing.assert_almost_equal(scale, radius2/radius)
+
+    def test_rotor_between_objects(self):
+        from clifford import g3c
+        import numpy as np
+        layout = g3c.layout
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        ep, en, up, down, homo, E0, ninf, no = (g3c.stuff["ep"], g3c.stuff["en"],
+                                                g3c.stuff["up"], g3c.stuff["down"], g3c.stuff["homo"],
+                                                g3c.stuff["E0"], g3c.stuff["einf"], -g3c.stuff["eo"])
+        from clifford.tools.g3c import random_sphere, \
+            random_plane, random_line, random_circle, \
+            random_point_pair, rotor_between_objects
+
+        for i in range(600):
+            if i < 100:
+                C1 = random_sphere()
+                C2 = random_sphere()
+            elif i < 200:
+                C1 = random_plane()
+                C2 = random_plane()
+            elif i < 300:
+                C1 = random_line()
+                C2 = random_line()
+            elif i < 400:
+                C1 = random_circle()
+                C2 = random_circle()
+            elif i < 500:
+                C1 = random_point_pair()
+                C2 = random_point_pair()
+            R = rotor_between_objects(C1, C2)
+            C3 = (R*C1*~R).normal()
+            # NOTE this sign check should not be used in an ideal world, need something a bit better
+            if abs(C3 + C2) < 0.0001:
+                C3 = -C3
+            testing.assert_almost_equal(C2.value, C3.value)
+
+
 
 @SkipTest
 class ToolsTests(unittest.TestCase):
