@@ -278,8 +278,8 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
         A = [bv[k] for k in sorted(bv.keys())]
 
     # make copy of original frames, so we can rotate A
-    A = Frame(A[:])
-    B = Frame(B[:])
+    A = A[:]
+    B = B[:]
 
     if len(A) != len(B):
         raise ValueError('len(A)!=len(B)')
@@ -290,26 +290,33 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
     # Determine if we have a spinor
     spinor = False
     # store peudoscalar of frame B, in case known det (see end)
-    B_En = B.En
+    try:
+        B_En = B.En
+    except:
+        pass
     N = len(A)
 
     # Determine and remove scaling factors caused by homogenization
-    if remove_scaling is True:
+    if remove_scaling == True:
         lam = omoh(A, B)
         B = Frame([B[k] * lam[k] for k in range(N)])
 
-    # compute ratio of volumes for each frame. take Nth root
-    alpha = abs(B.En / A.En) ** (1. / N)
+    
+    try:
+        # compute ratio of volumes for each frame. take Nth root
+        A = Frame(A[:])
+        B = Frame(B[:])
+        alpha = abs(B.En / A.En) ** (1. / N)
 
-    if abs(alpha - 1) > eps:
-        spinor = True
-        # we have a spinor, remove the scaling (add it back in at the end)
-        B = [b / alpha for b in B]
-
-    # now that possible scaling has been removed, test for inner-morphism
-    if not A.is_innermorphic_to(B):
-        warn('A and B dont appear to be related by orthogonal transform')
-
+        if abs(alpha - 1) > eps:
+            spinor = True
+            # we have a spinor, remove the scaling (add it back in at the end)
+            B = [b / alpha for b in B]
+    except:
+        # probably  A and B are not pure vector correspondence
+        # whatever,  it might still work
+        pass
+   
     # Find the Verser
 
     # store each reflector/rotor  in a list,  make full verser at the
