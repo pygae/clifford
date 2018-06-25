@@ -735,7 +735,7 @@ class Layout(object):
     @property
     def pseudoScalar(self):
         '''
-        
+        the psuedoScalar
         '''
         return self.blades_list[-1]
 
@@ -777,7 +777,25 @@ class Layout(object):
     def basis_vectors_lst(self):
         d = self.basis_vectors
         return [d[k] for k in sorted(d.keys())]
-
+    
+    def blades_of_grade(self,grade):
+        '''
+        return all blades of a given grade, 
+        
+        Parameters 
+        ------------
+        grade: int 
+            the desired grade 
+        
+        Returns
+        --------
+        blades : list of MultiVectors
+        '''
+        if grade ==0:
+            return self.scalar
+        return  [k for k in self.blades_list[1:] if k.grades()==[grade]]
+        
+        
     @property
     def blades_list(self):
         '''
@@ -792,9 +810,6 @@ class Layout(object):
     def blades(self):
         return self.bases()
     
-    @property
-    def pseudoScalar(self):
-        return self.blades_list[-1]
 
     def bases(self, *args, **kw):
         '''
