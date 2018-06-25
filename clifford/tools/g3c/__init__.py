@@ -1,5 +1,6 @@
 
 import math
+import numba
 import numpy as np
 from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv
 from clifford.g3c import *
@@ -14,6 +15,9 @@ no = -eo
 E = ninf ^ (no)
 I5 = e12345
 I3 = e123
+
+adjoint_func = layout.adjoint_func
+gmt_func = layout.gmt_func
 
 
 def random_conformal_point(l_max=10):
@@ -298,3 +302,52 @@ def random_plane():
     """
     line_a = (random_circle() ^ ninf).normal()
     return line_a
+
+
+@numba.njit
+def val_apply_rotor(mv_val, rotor_val):
+    """ Applies rotor to multivector in a fast way - JITTED """
+    return gmt_func(rotor_val, gmt_func(mv_val, adjoint_func(rotor_val)))
+
+def apply_rotor(mv_in, rotor):
+    """ Applies rotor to multivector in a fast way """
+    return cf.MultiVector(layout, val_apply_rotor(mv_in.value, rotor.value))
+
+
+ninf_val = ninf.value
+@numba.njit
+def mult_with_ninf(mv):
+    """ Convenience function for multiplication with ninf """
+    return gmt_func(mv, ninf_val)
+
+
+imt_func= layout.imt_func
+no_val = no.value
+I3_val = I3.value
+@numba.njit
+def val_exp(B_val):
+    """ Fast implementation of the exp function - JITTED"""
+    t_val = imt_func(B_val, no_val)
+
+    phiP_val = B_val - mult_with_ninf(t_val)
+    phi = np.sqrt(-float(gmt_func(phiP_val, phiP_val)[0]))
+    P_val = phiP_val / phi
+
+    P_n_val = gmt_func(P_val, I3_val)
+    t_nor_val = gmt_func(imt_func(t_val, P_n_val), P_n_val)
+    t_par_val = t_val - t_nor_val
+
+    coef_val = np.sin(phi) * P_val
+    coef_val[0] += np.cos(phi)
+
+    R_val = coef_val + gmt_func(coef_val, mult_with_ninf(t_nor_val)) + \
+        np.sinc(phi/np.pi) * mult_with_ninf(t_par_val)
+    return R_val
+
+
+unit_scalar_mv = 1.0 + 0.0*e1
+def ga_exp(B):
+    """ Fast implementation of the exp function """
+    if np.sum(np.abs(B.value)) < np.finfo(float).eps:
+        return cf.MultiVector(layout, unit_scalar_mv.value)
+    return cf.MultiVector(layout, val_exp(B.value))

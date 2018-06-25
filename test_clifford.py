@@ -359,6 +359,144 @@ class G3CToolsTests(unittest.TestCase):
                 C3 = -C3
             testing.assert_almost_equal(C2.value, C3.value)
 
+    def test_estimate_rotor_lines(self):
+
+        from clifford import g3c
+        import numpy as np
+        layout = g3c.layout
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        ep, en, up, down, homo, E0, ninf, no = (g3c.stuff["ep"], g3c.stuff["en"],
+                                                g3c.stuff["up"], g3c.stuff["down"], g3c.stuff["homo"],
+                                                g3c.stuff["E0"], g3c.stuff["einf"], -g3c.stuff["eo"])
+        from clifford.tools.g3 import generate_rotation_rotor
+        from clifford.tools.g3c import random_line, generate_translation_rotor
+        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
+
+        for i in range(200):
+            line_list_a = [random_line().normal() for i in range(10)]
+            r = (generate_translation_rotor(0.3*e3)*generate_rotation_rotor(np.pi/8,e1+e2,e1)).normal()
+            line_list_b = [(r*l*~r).normal() for l in line_list_a]
+            r_est, costs = estimate_rotor_objects(line_list_a, line_list_b)
+            #self.assertTrue(np.all(np.abs(r.value - r_est.value) < 0.001))
+            for a, b in zip([(r_est*l*~r_est).normal() for l in line_list_a], line_list_b):
+                self.assertTrue(np.all(np.abs(a.value - b.value) < 0.01))
+            print(i)
+
+
+    def test_estimate_rotor_circles(self):
+
+        from clifford import g3c
+        import numpy as np
+        layout = g3c.layout
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        ep, en, up, down, homo, E0, ninf, no = (g3c.stuff["ep"], g3c.stuff["en"],
+                                                g3c.stuff["up"], g3c.stuff["down"], g3c.stuff["homo"],
+                                                g3c.stuff["E0"], g3c.stuff["einf"], -g3c.stuff["eo"])
+        from clifford.tools.g3 import generate_rotation_rotor
+        from clifford.tools.g3c import random_circle, generate_translation_rotor
+        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
+
+
+        for i in range(200):
+            circle_list_a = [random_circle().normal() for i in range(10)]
+            r = (generate_translation_rotor(0.3*e3)*generate_rotation_rotor(np.pi/8,e1+e2,e1)).normal()
+            circle_list_b = [(r*l*~r).normal() for l in circle_list_a]
+            r_est, costs = estimate_rotor_objects(circle_list_a, circle_list_b)
+            print(r)
+            print(r_est)
+            #self.assertTrue(np.all(np.abs(r.value - r_est.value) < 0.001))
+            for a, b in zip([(r_est*l*~r_est).normal() for l in circle_list_a], circle_list_b):
+                self.assertTrue(np.all(np.abs(a.value - b.value) < 0.01))
+            print(i)
+
+    @SkipTest
+    def test_estimate_rotor_point_pairs(self):
+        """
+        TODO: This fails some significant percentage of the time. I think it is simply early ending of the scipy optimiser
+        """
+
+        from clifford import g3c
+        import numpy as np
+        layout = g3c.layout
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        ep, en, up, down, homo, E0, ninf, no = (g3c.stuff["ep"], g3c.stuff["en"],
+                                                g3c.stuff["up"], g3c.stuff["down"], g3c.stuff["homo"],
+                                                g3c.stuff["E0"], g3c.stuff["einf"], -g3c.stuff["eo"])
+        from clifford.tools.g3 import generate_rotation_rotor
+        from clifford.tools.g3c import random_point_pair, generate_translation_rotor
+        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
+
+        for i in range(200):
+            pp_list_a = [random_point_pair().normal() for i in range(10)]
+            r = (generate_translation_rotor(0.2*e3)*generate_rotation_rotor(np.pi/8,e1+e2,e1)).normal()
+            pp_list_b = [(r*l*~r).normal() for l in pp_list_a]
+            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b, print_res=True)
+            print(r),
+            print(r_est)
+            #self.assertTrue(np.all(np.abs(r.value - r_est.value) < 0.000001))
+            for a, b in zip([(r_est*l*~r_est).normal() for l in pp_list_a], pp_list_b):
+                self.assertTrue(np.all(np.abs(a.value - b.value) < 0.01))
+            print(i)
+
+    def test_estimate_rotor_planes_gen(self):
+
+        from clifford import g3c
+        import numpy as np
+        layout = g3c.layout
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        ep, en, up, down, homo, E0, ninf, no = (g3c.stuff["ep"], g3c.stuff["en"],
+                                                g3c.stuff["up"], g3c.stuff["down"], g3c.stuff["homo"],
+                                                g3c.stuff["E0"], g3c.stuff["einf"], -g3c.stuff["eo"])
+        from clifford.tools.g3 import generate_rotation_rotor
+        from clifford.tools.g3c import random_plane, generate_translation_rotor
+        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
+
+        for i in range(200):
+            pp_list_a = [random_plane().normal() for i in range(10)]
+            r = (generate_translation_rotor(0.3*e3)*generate_rotation_rotor(np.pi/8,e1+e2,e1)).normal()
+            pp_list_b = [(r*l*~r).normal() for l in pp_list_a]
+            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
+            #self.assertTrue(np.all(np.abs(r.value - r_est.value) < 0.001))
+            for a, b in zip([(r_est*l*~r_est).normal() for l in pp_list_a], pp_list_b):
+                self.assertTrue(np.all(np.abs(a.value - b.value) < 0.01))
+            print(i)
+
+
+    def test_estimate_rotor_spheres_gen(self):
+
+        from clifford import g3c
+        import numpy as np
+        layout = g3c.layout
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        ep, en, up, down, homo, E0, ninf, no = (g3c.stuff["ep"], g3c.stuff["en"],
+                                                g3c.stuff["up"], g3c.stuff["down"], g3c.stuff["homo"],
+                                                g3c.stuff["E0"], g3c.stuff["einf"], -g3c.stuff["eo"])
+        from clifford.tools.g3 import generate_rotation_rotor
+        from clifford.tools.g3c import random_sphere, generate_translation_rotor
+        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
+
+        for i in range(200):
+            pp_list_a = [random_sphere().normal() for i in range(10)]
+            r = (generate_translation_rotor(0.3*e3)*generate_rotation_rotor(np.pi/8,e1+e2,e1)).normal()
+            pp_list_b = [(r*l*~r).normal() for l in pp_list_a]
+            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
+            #self.assertTrue(np.all(np.abs(r.value - r_est.value) < 0.001))
+            for a, b in zip([(r_est*l*~r_est).normal() for l in pp_list_a], pp_list_b):
+                self.assertTrue(np.all(np.abs(a.value - b.value) < 0.01))
+            print(i)
+
+
+
 
 
 @SkipTest
