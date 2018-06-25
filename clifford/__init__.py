@@ -1215,16 +1215,18 @@ class MultiVector(object):
         return self.layout.gaDims
 
     def __getitem__(self, key):
-        """If key is a blade tuple (e.g. (0,1) or (1,3)), then return
-        the (real) value of that blade's coefficient.
+        """If key is a blade tuple (e.g. (0,1) or (1,3)), or a blade,
+        (e.g. e12),  then return the (real) value of that blade's coefficient.
         Otherwise, treat key as an index into the list of coefficients.
 
+        
         M[blade] --> PyFloat | PyInt
         M[index] --> PyFloat | PyInt
         __getitem__(key) --> PyFloat | PyInt
         """
-
-        if key in self.layout.bladeTupList:
+        if isinstance(key, MultiVector):
+                return self.value[int(np.where(key.value)[0][0])]
+        elif key in self.layout.bladeTupList:
             return self.value[self.layout.bladeTupList.index(key)]
         elif key in self.layout.even:
             return self.value[self.layout.bladeTupList.index(
