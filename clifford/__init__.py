@@ -714,7 +714,32 @@ class Layout(object):
         self.imt = imt
         self.omt = omt
         self.lcmt = lcmt
+    
+    def MultiVector(self,*args,**kw):
+        '''
+        create a multivector in this layout
+        
+        convenience func to Multivector(layout)
+        '''
+        return MultiVector(layout=self, *args, **kw)
+    
+    @property
+    def scalar(self):
+        '''
+        the scalar of value 1, for this GA (a MultiVector object)
+        
+        useful for forcing a MultiVector type
+        '''
+        return self.MultiVector() +1
+    
+    @property
+    def pseudoScalar(self):
+        '''
+        
+        '''
+        return self.blades_list[-1]
 
+    
     def randomMV(self, n=1, **kw):
         '''
         Convenience method to create a random multivector.
