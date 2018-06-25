@@ -373,7 +373,6 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
     return R, r_list
 
 
-
 def orthoMat2Verser(A, eps=None, layout=None, is_complex=None):
     '''
     Translates an orthogonal (or unitary) matrix to a Verser

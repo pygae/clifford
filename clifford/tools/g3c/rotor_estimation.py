@@ -3,9 +3,11 @@ import numpy as np
 import numba
 from scipy.optimize import minimize
 from clifford import get_mult_function, grade_obj
-from . import rotor_between_objects, apply_rotor, val_exp
+from . import rotor_between_objects, apply_rotor, val_exp, normalised, square_roots_of_rotor
 from clifford.g3c import *
 import clifford as cf
+from clifford.tools import orthoFrames2Verser as cartan
+from scipy import e,rand
 
 imt_func = layout.imt_func
 gmt_func = layout.gmt_func
@@ -52,6 +54,10 @@ def val_rotor_cost_sparse(R_val):
     return a + b
 
 
+def rotor_cost(R):
+    return val_rotor_cost_sparse(R.value)
+
+
 def object_cost_function(obj_a,obj_b):
     """ Evaluates the rotor cost function between two objects """
     if grade_obj(obj_a) != grade_obj(obj_b):
@@ -95,3 +101,31 @@ def estimate_rotor_objects(object_list_a, object_list_b, maxfev=20000, print_res
     cost = object_set_cost_sum(object_set_a, object_list_b)
     return rotor, cost
 
+
+e123inf =e123*einf
+def cartans_lines(obj_list_a, obj_list_b):
+    """ Performs the extended cartans algorithm as suggested by Alex Arsenovic """
+    V_found,rs = cartan(A=obj_list_a,B=obj_list_b)
+    theta = ((V_found*~V_found)*e1234)(0)
+    V_found = e**(-theta/2*e123inf)*V_found
+    return V_found
+
+
+def sequential_object_rotor_estimation(obj_list_a, obj_list_b, n_iterations=500, cost_tolerance=10*(10**-16)):
+    """ Performs a sequential rotor estimation based on individual rotors between matching objects """
+    R_total = 1.0 + 0.0*e1
+    r_list = []
+    for j in range(n_iterations):
+        cost_sum = 0.0
+        for i in range(len(obj_list_a)):
+            C1 = normalised(apply_rotor(obj_list_a[i],R_total))
+            C2 = obj_list_b[i]
+            rroot = normalised(square_roots_of_rotor(rotor_between_objects(C1,C2))[0])
+            r_list.append(rroot)
+            R_total = normalised(rroot*R_total)
+            cost_sum += rotor_cost(rroot)
+        if cost_sum < cost_tolerance:
+            exit_flag = 0
+            return R_total, r_list, exit_flag
+    exit_flag = 1
+    return R_total, r_list, exit_flag
