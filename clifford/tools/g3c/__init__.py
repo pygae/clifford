@@ -1,3 +1,49 @@
+"""
+Tools for 3DCGA (g3c)
+
+3DCGA Tools
+==========================================================
+
+Generation Methods
+--------------------
+
+.. autosummary::
+    :toctree: generated/
+
+    generate_dilation_rotor
+    generate_translation_rotor
+    random_conformal_point
+
+Misc
+--------------------
+
+.. autosummary::
+    :toctree: generated/
+    
+    meet
+    intersect_line_and_plane_to_point
+    normalise_n_minus_1
+    quaternion_and_vector_to_rotor
+    get_center_from_sphere
+    get_radius_from_sphere
+    point_pair_to_end_points
+    euc_dist
+    dorst_norm_val
+
+Root Finding
+--------------------
+
+.. autosummary::
+    :toctree: generated/
+    
+    check_sigma_for_positive_root
+    check_sigma_for_negative_root
+    check_infinite_roots
+    positive_root
+    negative_root
+    pos_twiddle_root
+    neg_twiddle_root
+"""
 
 import math
 import numba
