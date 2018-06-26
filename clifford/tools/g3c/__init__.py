@@ -17,80 +17,13 @@ I5 = e12345
 I3 = e123
 E0_val = E0.value
 I5_val = I5.value
+ninf_val = ninf.value
 
 adjoint_func = layout.adjoint_func
 gmt_func = layout.gmt_func
 omt_func = layout.omt_func
 imt_func = layout.imt_func
 rightLaInv = layout.rightLaInv_func
-
-
-@numba.njit
-def val_normalInv(mv_val):
-    Madjoint_val = adjoint_func(mv_val)
-    MadjointM = gmt_func(Madjoint_val,mv_val)[0]
-    return Madjoint_val / MadjointM
-
-
-def normalInv(mv):
-    return cf.MultiVector(layout, val_normalInv(mv.value))
-
-
-@numba.njit
-def val_homo(mv_val):
-    return gmt_func(mv_val, val_normalInv(imt_func(-mv_val, ninf_val)))
-
-
-@numba.njit
-def val_up(mv_val):
-    temp = np.zeros(32)
-    temp[0] = 0.5
-    return mv_val - no_val + omt_func(temp, gmt_func(gmt_func(mv_val, mv_val), ninf_val))
-
-
-def fast_homo(mv):
-    return cf.MultiVector(layout, val_homo(mv.value))
-
-
-def fast_up(mv):
-    return cf.MultiVector(layout, val_up(mv.value))
-
-
-@numba.njit
-def val_down(mv_val):
-    return gmt_func(omt_func(val_homo(mv_val), E0_val), E0_val)
-
-
-def fast_down(mv):
-    return cf.MultiVector(layout, val_down(mv.value))
-
-
-@numba.njit
-def val_norm(mv_val):
-    return np.sqrt(np.abs(gmt_func(adjoint_func(mv_val), mv_val)[0]))
-
-
-def norm(mv):
-    return val_norm(mv.value)
-
-
-@numba.njit
-def val_normalised(mv_val):
-    return mv_val/val_norm(mv_val)
-
-
-def normalised(mv):
-    return cf.MultiVector(layout, val_normalised(mv.value))
-
-
-@numba.njit
-def dual_func(a_val):
-    return gmt_func(I5_val, a_val)
-
-
-def fast_dual(a):
-    return cf.MultiVector(layout, dual_func(a.value))
-
 
 
 @numba.njit
@@ -150,7 +83,7 @@ def intersect_line_and_plane_to_point(line, plane):
     Returns the point at the intersection of a line and plane
     If there is no intersection it returns None
     """
-    bivector = normalised(meet(line, plane))
+    bivector = (meet(line, plane)).normal()
     if (bivector*bivector)[0] > 0:
         return bivector | no
     else:
@@ -212,56 +145,6 @@ def point_pair_to_end_points(T):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-@numba.njit
-def dorst_norm_val(sigma_val):
-    """ Square Root of Rotors - Implements the norm of a rotor"""
-    g4 = project_val(sigma_val, 4)
-    return np.sqrt(sigma_val[0] ** 2 - gmt_func(g4,g4)[0])
-
-@numba.njit
-def check_sigma_for_positive_root_val(sigma_val):
-    return sigma_val[0] + dorst_norm_val(sigma_val) > 0
-
-@numba.njit
-def check_sigma_for_negative_root_val(sigma_val):
-    return sigma_val[0] - dorst_norm_val(sigma_val) > 0
-
-@numba.njit
-def check_infinite_roots_val(sigma_val):
-    return sigma_val[0] + dorst_norm_val(sigma_val) < 0.0000000000001
-
-@numba.njit
-def positive_root_val(sigma):
-    norm_s = dorst_norm_val(sigma)
-    denominator = (np.sqrt(2) * np.sqrt(sigma[0] + norm_s))
-    output = sigma.copy()
-    output[0] += norm_s
-    return output / denominator
-
-@numba.njit
-def negative_root_val(sigma):
-    norm_s = dorst_norm_val(sigma)
-    denominator = (np.sqrt(2) * np.sqrt(sigma[0] - norm_s))
-    output = sigma.copy()
-    output[0] -= norm_s
-    return output / denominator
-
-
-
-
-
 def euc_dist(conf_mv_a, conf_mv_b):
     """ Returns the distance between two conformal points """
     dot_result = (conf_mv_a|conf_mv_b)[0]
@@ -271,24 +154,26 @@ def euc_dist(conf_mv_a, conf_mv_b):
         return 0.0
 
 
-def dorst_norm(sigma):
+
+
+def dorst_norm_val(sigma):
     """ Square Root of Rotors - Implements the norm of a rotor"""
-    return dorst_norm_val(sigma.value)
+    return math.sqrt(sigma[0] ** 2 - (sigma(4) ** 2)[0])
 
 
 def check_sigma_for_positive_root(sigma):
     """ Square Root of Rotors - Checks for a positive root """
-    return check_sigma_for_positive_root_val(sigma.value)
+    return sigma[0] + dorst_norm_val(sigma) > 0
 
 
 def check_sigma_for_negative_root(sigma):
     """ Square Root of Rotors - Checks for a negative root """
-    return check_sigma_for_negative_root_val(sigma.value)
+    return sigma[0] - dorst_norm_val(sigma) > 0
 
 
 def check_infinite_roots(sigma):
     """ Square Root of Rotors - Checks for a infinite roots """
-    return check_infinite_roots_val(sigma.value)
+    return sigma[0] + dorst_norm_val(sigma) < 0.0000000001
 
 
 def positive_root(sigma):
@@ -296,80 +181,63 @@ def positive_root(sigma):
     Square Root of Rotors - Evaluates the positive root
     TODO: Dig out the full name of this paper and authors
     """
-    return cf.MultiVector(layout, positive_root_val(sigma.value))
+    norm_s = dorst_norm_val(sigma)
+    return (sigma + norm_s) / (math.sqrt(2) * math.sqrt(sigma[0] + norm_s))
 
 
 def negative_root(sigma):
     """ Square Root of Rotors - Evaluates the negative root """
-    return cf.MultiVector(layout, negative_root_val(sigma.value))
+    norm_s = dorst_norm_val(sigma)
+    return (sigma - norm_s) / (math.sqrt(2) * math.sqrt(sigma[0] - norm_s))
 
 
 def neg_twiddle_root(C):
     """
-    Square Root and Logarithm of Rotors
-    in 3D Conformal Geometric Algebra
-    Using Polar Decomposition
-    Leo Dorst and Robert Valkenburg
+    Hadfield and Lasenby AGACSE2018
+    Return a valid object from the addition result C
     """
     sigma = -(C * ~C)
     if check_sigma_for_positive_root(sigma):
         k = positive_root(sigma)
-        C3 = normalised(((1. / k) * C))
+        C3 = ((1. / k) * C).normal()
         return [C3]
     elif check_sigma_for_negative_root(sigma):
         k = positive_root(sigma)
-        C3 = normalised(((1. / k) * C))
+        C3 = ((1. / k) * C).normal()
 
         k2 = negative_root(sigma)
-        C4 = normalised(((1. / k2) * C))
+        C4 = ((1. / k2) * C).normal()
         return [C3, C4]
     elif check_infinite_roots(sigma):
         #warnings.warn('Infinite roots detected: sigma = ' + str(sigma), RuntimeWarning)
-        return [normalised(C)]
+        return [C.normal()]
     else:
-        raise ValueError('No root exists for ' + str(C))
-
-
-
-
-@numba.njit
-def pos_twiddle_root_val(C):
-    sigma_val = gmt_func(C, adjoint_func(C))
-    if check_sigma_for_positive_root_val(sigma_val):
-        k_val = positive_root_val(sigma_val)
-        C3_val = val_normalised(gmt_func(rightLaInv(k_val),C))
-        output = np.zeros((2, C.shape[0]))
-        output[0, :] = C3_val.copy()
-        return output
-    elif check_sigma_for_negative_root_val(sigma_val):
-        k_val = positive_root_val(sigma_val)
-        C3_val = val_normalised(gmt_func(rightLaInv(k_val),C))
-
-        k2_val = negative_root_val(sigma_val)
-        C4_val = val_normalised(gmt_func(rightLaInv(k2_val),C))
-        output = np.zeros((2,C.shape[0]))
-        output[0, :] = C3_val.copy()
-        output[1, :] = C4_val.copy()
-        return output
-    elif check_infinite_roots_val(sigma_val):
-        #warnings.warn('Infinite roots detected: sigma = ' + str(sigma.value), RuntimeWarning)
-        output = np.zeros((2, C.shape[0]))
-        output[0, :] = C.copy()
-        return output
-    else:
-        return np.zeros((2, C.shape[0]))
-
+        raise ValueError('No root exists')
 
 
 def pos_twiddle_root(C):
     """
-    Square Root and Logarithm of Rotors
-    in 3D Conformal Geometric Algebra
-    Using Polar Decomposition
-    Leo Dorst and Robert Valkenburg
+    Hadfield and Lasenby AGACSE2018
+    Return a valid rotor from the (1 + C2C1) result C
     """
-    root_val = pos_twiddle_root_val(C.value)
-    return [cf.MultiVector(layout, root_val[0, :]), cf.MultiVector(layout, root_val[1, :])]
+    sigma = (C * ~C)
+    if check_sigma_for_positive_root(sigma):
+        k = positive_root(sigma)
+        C3 = ((1. / k) * C).normal()
+        return [C3]
+    elif check_sigma_for_negative_root(sigma):
+        k = positive_root(sigma)
+        C3 = ((1. / k) * C).normal()
+
+        k2 = negative_root(sigma)
+        C4 = ((1. / k2) * C).normal()
+        return [C3, C4]
+    elif check_infinite_roots(sigma):
+        #warnings.warn('Infinite roots detected: sigma = ' + str(sigma), RuntimeWarning)
+        return [C.normal()]
+    else:
+        raise ValueError('No root exists')
+
 
 
 def square_roots_of_rotor(R):
@@ -388,7 +256,7 @@ def interp_objects_root(C1, C2, alpha):
     Directly linearly interpolates conformal objects
     """
     C = alpha * C1 + (1 - alpha) * C2
-    return neg_twiddle_root(C)
+    return (neg_twiddle_root(C)[0]).normal()
 
 
 def average_objects(obj_list):
@@ -397,26 +265,20 @@ def average_objects(obj_list):
     Directly averages conformal objects
     """
     C = sum(obj_list) / len(obj_list)
-    return normalised(neg_twiddle_root(C)[0])
+    return (neg_twiddle_root(C)[0]).normal()
 
 
 def rotor_between_objects(C1, C2):
     """
-        Hadfield and Lasenby AGACSE2018
-        For any two conformal objects C1 and C2 this returns a rotor that takes C1 to C2
-        Return a valid rotor from the (1 + C2C1) result C
-        """
-    if (gmt_func(C1.value, C1.value)[0]) > 0:
-        C_val = gmt_func(C2.value, C1.value)
-        C_val[0] += 1.0
-        root_val = pos_twiddle_root_val(C_val)
-        R = cf.MultiVector(layout, root_val[0,:])
+    Hadfield and Lasenby AGACSE2018
+    For any two conformal objects C1 and C2 this returns a rotor that takes C1 to C2
+    """
+    if float((C1 * C1)[0]) > 0:
+        C = 1 + (C2 * C1)
+        R = pos_twiddle_root(C)[0]
         return R
     else:
-        C_val = - gmt_func(C2.value, C1.value)
-        C_val[0] += 1.0
-        R = cf.MultiVector(layout, val_normalised(C_val))
-        return R
+        return (1 - (C2 * C1)).normal()
 
 
 def random_bivector():
@@ -437,7 +299,7 @@ def random_point_pair():
     """
     mv_a = random_euc_mv()
     mv_b = random_euc_mv()
-    pp = normalised((up(mv_a) ^ up(mv_b)))
+    pp = ((up(mv_a) ^ up(mv_b))).normal()
     return pp
 
 
@@ -447,7 +309,7 @@ def random_line():
     """
     mv_a = random_euc_mv()
     mv_b = random_euc_mv()
-    line_a = normalised((up(mv_a) ^ up(mv_b) ^ ninf))
+    line_a = ((up(mv_a) ^ up(mv_b) ^ ninf)).normal()
     return line_a
 
 
@@ -458,7 +320,7 @@ def random_circle():
     mv_a = random_euc_mv()
     mv_b = random_euc_mv()
     mv_c = random_euc_mv()
-    line_a = normalised((up(mv_a) ^ up(mv_b) ^ up(mv_c)))
+    line_a = ((up(mv_a) ^ up(mv_b) ^ up(mv_c))).normal()
     return line_a
 
 
@@ -470,7 +332,7 @@ def random_sphere():
     mv_b = random_euc_mv()
     mv_c = random_euc_mv()
     mv_d = random_euc_mv()
-    sphere = normalised((up(mv_a) ^ up(mv_b) ^ up(mv_c) ^ up(mv_d)))
+    sphere = ((up(mv_a) ^ up(mv_b) ^ up(mv_c) ^ up(mv_d))).normal()
     return sphere
 
 
@@ -478,7 +340,7 @@ def random_plane():
     """
     Creates a random plane
     """
-    line_a = normalised((random_circle() ^ ninf))
+    line_a = ((random_circle() ^ ninf)).normal()
     return line_a
 
 
@@ -492,7 +354,6 @@ def apply_rotor(mv_in, rotor):
     return cf.MultiVector(layout, val_apply_rotor(mv_in.value, rotor.value))
 
 
-ninf_val = ninf.value
 @numba.njit
 def mult_with_ninf(mv):
     """ Convenience function for multiplication with ninf """

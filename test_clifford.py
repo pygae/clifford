@@ -417,7 +417,7 @@ class G3CToolsTests(unittest.TestCase):
                 self.assertTrue(np.all(np.abs(a.value - b.value) < 0.01))
             print(i)
 
-    @SkipTest
+    #@SkipTest
     def test_estimate_rotor_point_pairs(self):
         """
         TODO: This fails some significant percentage of the time. I think it is simply early ending of the scipy optimiser
@@ -521,8 +521,8 @@ class G3CToolsTests(unittest.TestCase):
         from clifford.tools.g3c import random_line, generate_translation_rotor
         from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
 
-        for i in range(200):
-            object_list_a = [random_line().normal() for i in range(10)]
+        for i in range(20):
+            object_list_a = [random_line().normal() for i in range(100)]
             r = (generate_translation_rotor(random_euc_mv()) * generate_rotation_rotor(np.random.randn(),
                                                                                        random_euc_mv().normal(),
                                                                                        random_euc_mv().normal())).normal()
@@ -550,19 +550,19 @@ class G3CToolsTests(unittest.TestCase):
         from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
 
 
-        for i in range(200):
+        for i in range(20):
             object_list_a = [random_circle().normal() for i in range(10)]
-            r = (generate_translation_rotor(random_euc_mv()) * generate_rotation_rotor(np.random.randn(),
+            r = generate_translation_rotor(random_euc_mv()) * generate_rotation_rotor(np.random.randn(),
                                                                                       random_euc_mv().normal(),
-                                                                                      random_euc_mv().normal())).normal()
+                                                                                      random_euc_mv().normal())
             object_list_b = [(r * l * ~r).normal() for l in object_list_a]
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation(object_list_a, object_list_b)
+            r_est, r_list, exit_flag = sequential_object_rotor_estimation(object_list_a, object_list_b, random_sequence=True)
             # self.assertTrue(np.all(np.abs(r.value - r_est.value) < 0.001))
             for a, b in zip([(r_est * l * ~r_est).normal() for l in object_list_a], object_list_b):
                 self.assertTrue(np.all(np.abs(a.value - b.value) < 0.01))
             print(i)
 
-    @SkipTest
+    #@SkipTest
     def test_estimate_rotor_point_pairs_sequential(self):
         """
         TODO: This fails some significant percentage of the time. I think it is simply early ending of the scipy optimiser
@@ -581,8 +581,8 @@ class G3CToolsTests(unittest.TestCase):
         from clifford.tools.g3c import random_point_pair, generate_translation_rotor
         from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
 
-        for i in range(200):
-            object_list_a = [random_point_pair().normal() for i in range(10)]
+        for i in range(20):
+            object_list_a = [random_point_pair().normal() for i in range(100)]
             r = (generate_translation_rotor(random_euc_mv()) * generate_rotation_rotor(np.random.randn(),
                                                                                        random_euc_mv().normal(),
                                                                                        random_euc_mv().normal())).normal()
@@ -608,8 +608,8 @@ class G3CToolsTests(unittest.TestCase):
         from clifford.tools.g3c import random_plane, generate_translation_rotor
         from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
 
-        for i in range(200):
-            object_list_a = [random_plane().normal() for i in range(10)]
+        for i in range(20):
+            object_list_a = [random_plane().normal() for i in range(100)]
             r = (generate_translation_rotor(random_euc_mv()) * generate_rotation_rotor(np.random.randn(),
                                                                                        random_euc_mv().normal(),
                                                                                        random_euc_mv().normal())).normal()
@@ -636,14 +636,15 @@ class G3CToolsTests(unittest.TestCase):
         from clifford.tools.g3c import random_sphere, generate_translation_rotor
         from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
 
-        for i in range(200):
-            object_list_a = [random_sphere().normal() for i in range(10)]
+        for i in range(20):
+            object_list_a = [random_sphere().normal() for i in range(100)]
             r = (generate_translation_rotor(random_euc_mv()) * generate_rotation_rotor(np.random.randn(),
                                                                                        random_euc_mv().normal(),
                                                                                        random_euc_mv().normal())).normal()
             object_list_b = [(r * l * ~r).normal() for l in object_list_a]
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation(object_list_a, object_list_b)
+            r_est, r_list, exit_flag = sequential_object_rotor_estimation(object_list_a, object_list_b, random_sequence=True)
             # self.assertTrue(np.all(np.abs(r.value - r_est.value) < 0.001))
+            print(exit_flag)
             for a, b in zip([(r_est * l * ~r_est).normal() for l in object_list_a], object_list_b):
                 self.assertTrue(np.all(np.abs(a.value - b.value) < 0.01))
             print(i)

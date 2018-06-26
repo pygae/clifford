@@ -3,7 +3,7 @@ import numpy as np
 import numba
 from scipy.optimize import minimize
 from clifford import get_mult_function, grade_obj
-from . import rotor_between_objects, apply_rotor, val_exp, normalised, square_roots_of_rotor
+from . import rotor_between_objects, apply_rotor, val_exp, square_roots_of_rotor
 from clifford.g3c import *
 import clifford as cf
 from clifford.tools import orthoFrames2Verser as cartan
@@ -82,7 +82,7 @@ def estimate_rotor_objects(object_list_a, object_list_b, maxfev=20000, print_res
     x0 = np.finfo(float).eps * np.random.rand(6)
     def minimisation_func(x):
         R = rotorconversion(x)
-        object_set_a = [apply_rotor(l, R) for l in object_list_a]
+        object_set_a = [apply_rotor(l, R).normal() for l in object_list_a]
         return object_set_cost_sum(object_set_a, object_list_b)
     res = minimize(minimisation_func, x0, method='SLSQP', options={'ftol': 10.0 ** (-16), \
                                                                       'maxiter': 500, \
@@ -97,7 +97,7 @@ def estimate_rotor_objects(object_list_a, object_list_b, maxfev=20000, print_res
     if print_res:
         print(res)
     rotor = rotorconversion(res.x)
-    object_set_a = [apply_rotor(l, rotor) for l in object_list_a]
+    object_set_a = [apply_rotor(l, rotor).normal() for l in object_list_a]
     cost = object_set_cost_sum(object_set_a, object_list_b)
     return rotor, cost
 
@@ -110,19 +110,24 @@ def cartans_lines(obj_list_a, obj_list_b):
     V_found = e**(-theta/2*e123inf)*V_found
     return V_found
 
-
-def sequential_object_rotor_estimation(obj_list_a, obj_list_b, n_iterations=500, cost_tolerance=10*(10**-16)):
-    """ Performs a sequential rotor estimation based on individual rotors between matching objects """
+import random
+def sequential_object_rotor_estimation(obj_list_a, obj_list_b, n_iterations=100, cost_tolerance=10*(10**-16), random_sequence=False):
     R_total = 1.0 + 0.0*e1
     r_list = []
     for j in range(n_iterations):
         cost_sum = 0.0
-        for i in range(len(obj_list_a)):
-            C1 = normalised(apply_rotor(obj_list_a[i],R_total))
+        if random_sequence:
+            indices = random.sample(range(len(obj_list_a)), len(obj_list_a))
+        else:
+            indices = range(len(obj_list_a))
+        for i in indices:
+            C1 = (apply_rotor(obj_list_a[i],R_total)).normal()
             C2 = obj_list_b[i]
-            rroot = normalised(square_roots_of_rotor(rotor_between_objects(C1,C2))[0])
+            if abs(C1 + C2) < 0.0001:
+                C1 = -C1
+            rroot = (square_roots_of_rotor(rotor_between_objects(C1,C2))[0])
             r_list.append(rroot)
-            R_total = normalised(rroot*R_total)
+            R_total = (rroot*R_total).normal()
             cost_sum += rotor_cost(rroot)
         if cost_sum < cost_tolerance:
             exit_flag = 0
