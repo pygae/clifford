@@ -110,6 +110,7 @@ def cartans_lines(obj_list_a, obj_list_b):
     V_found = e**(-theta/2*e123inf)*V_found
     return V_found
 
+
 import random
 def sequential_object_rotor_estimation(obj_list_a, obj_list_b, n_iterations=100, cost_tolerance=10*(10**-16), random_sequence=False):
     R_total = 1.0 + 0.0*e1
