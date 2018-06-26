@@ -197,7 +197,7 @@ class G3ToolsTests(unittest.TestCase):
 
 class RotorEstimationTests(unittest.TestCase):
 
-    def run_rotor_estimation(self, object_generator, estimation_function, n_runs=50, n_objects_per_run=10):
+    def run_rotor_estimation(self, object_generator, estimation_function, n_runs=10, n_objects_per_run=10):
         from clifford import g3c
         import numpy as np
         layout = g3c.layout
@@ -339,7 +339,6 @@ class RotorEstimationTests(unittest.TestCase):
             return r_est
         self.run_rotor_estimation(random_plane, estimation_func)
 
-
     def test_estimate_rotor_spheres_sequential(self):
         from clifford.tools.g3c import random_sphere
         from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
@@ -389,7 +388,6 @@ class RotorEstimationTests(unittest.TestCase):
             return r_est
         self.run_rotor_estimation(random_plane, estimation_func)
 
-
     def test_estimate_rotor_spheres_sequential_convergence_estimation(self):
         from clifford.tools.g3c import random_sphere
         from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation_convergence_detection
@@ -398,8 +396,6 @@ class RotorEstimationTests(unittest.TestCase):
             print(exit_flag)
             return r_est
         self.run_rotor_estimation(random_sphere, estimation_func)
-
-
 
     def test_estimate_rotor_lines_cartans(self):
         from clifford.tools.g3c import random_line
