@@ -195,6 +195,237 @@ class G3ToolsTests(unittest.TestCase):
             testing.assert_almost_equal(r.value, r_2.value)
 
 
+class RotorEstimationTests(unittest.TestCase):
+
+    def run_rotor_estimation(self, object_generator, estimation_function, n_runs=50, n_objects_per_run=10):
+        from clifford import g3c
+        import numpy as np
+        layout = g3c.layout
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        ep, en, up, down, homo, E0, ninf, no = (g3c.stuff["ep"], g3c.stuff["en"],
+                                                g3c.stuff["up"], g3c.stuff["down"], g3c.stuff["homo"],
+                                                g3c.stuff["E0"], g3c.stuff["einf"], -g3c.stuff["eo"])
+        from clifford.tools.g3 import generate_rotation_rotor, random_euc_mv
+        from clifford.tools.g3c import generate_translation_rotor
+
+        error_count = 0
+        for i in range(n_runs):
+            pp_list_a = [object_generator().normal() for i in range(n_objects_per_run)]
+            r = (generate_translation_rotor(random_euc_mv(l_max=2)) * generate_rotation_rotor(np.random.randn(),
+                                                                                       random_euc_mv().normal(),
+                                                                                       random_euc_mv().normal())).normal()
+
+            pp_list_b = [(r * l * ~r).normal() for l in pp_list_a]
+            r_est = estimation_function(pp_list_a, pp_list_b)
+            error_flag = False
+            for a, b in zip([(r_est * l * ~r_est).normal() for l in pp_list_a], pp_list_b):
+                if abs(a+b) < 0.0001:
+                    c = -b
+                    print('SIGN FLIP')
+                else:
+                    c = b
+                if np.any(np.abs(a.value - c.value) > 0.01):
+                    error_flag = True
+            if error_flag:
+                error_count += 1
+            print(i, error_count)
+        print('\n\nESTIMATION SUMMARY')
+        print('OBJECTS ', n_objects_per_run)
+        print('RUNS ', n_runs)
+        print('ERRORS ', error_count)
+        print('ERROR percentage ', 100*error_count/float(n_runs), '%')
+
+    def test_estimate_rotor_lines_optimisation(self):
+        from clifford.tools.g3c import random_line
+        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
+        def estimation_func(pp_list_a,pp_list_b):
+            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
+            return r_est
+        self.run_rotor_estimation(random_line, estimation_func)
+
+
+
+    def test_estimate_rotor_circles_optimisation(self):
+        from clifford.tools.g3c import random_circle
+        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
+        def estimation_func(pp_list_a,pp_list_b):
+            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
+            return r_est
+        self.run_rotor_estimation(random_circle, estimation_func)
+
+    #@SkipTest
+    def test_estimate_rotor_point_pairs_optimisation(self):
+        from clifford.tools.g3c import random_point_pair
+        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
+        def estimation_func(pp_list_a,pp_list_b):
+            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
+            return r_est
+        self.run_rotor_estimation(random_point_pair, estimation_func)
+
+
+
+    def test_estimate_rotor_planes_optimisation(self):
+        from clifford.tools.g3c import random_plane
+        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
+        def estimation_func(pp_list_a,pp_list_b):
+            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
+            return r_est
+        self.run_rotor_estimation(random_plane, estimation_func)
+
+
+    def test_estimate_rotor_spheres_optimisation(self):
+        from clifford.tools.g3c import random_sphere
+        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
+            return r_est
+        self.run_rotor_estimation(random_sphere, estimation_func)
+
+
+    def test_estimate_rotor_lines_sequential(self):
+        from clifford.tools.g3c import random_line
+        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
+            print(exit_flag)
+            return r_est
+        self.run_rotor_estimation(random_line, estimation_func)
+
+
+    def test_estimate_rotor_circles_sequential(self):
+        from clifford.tools.g3c import random_circle
+        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
+
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
+            print(exit_flag)
+            return r_est
+        self.run_rotor_estimation(random_circle, estimation_func)
+
+    @SkipTest
+    def test_estimate_rotor_circles_sequential_then_opt(self):
+        from clifford.tools.g3c import random_circle, apply_rotor
+        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation, estimate_rotor_objects
+
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est_1, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
+            r_est_2 = 1.0
+            if exit_flag == 1:
+                object_set_a = [apply_rotor(l, r_est_1).normal() for l in pp_list_a]
+                r_est_2, costs = estimate_rotor_objects(object_set_a, pp_list_b)
+            return r_est_2*r_est_1
+        self.run_rotor_estimation(random_circle, estimation_func)
+
+
+    #@SkipTest
+    def test_estimate_rotor_point_pairs_sequential(self):
+        from clifford.tools.g3c import random_point_pair
+        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
+
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
+            print(exit_flag)
+            return r_est
+        self.run_rotor_estimation(random_point_pair, estimation_func)
+
+    def test_estimate_rotor_planes_sequential(self):
+        from clifford.tools.g3c import random_plane
+        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
+            print(exit_flag)
+            return r_est
+        self.run_rotor_estimation(random_plane, estimation_func)
+
+
+    def test_estimate_rotor_spheres_sequential(self):
+        from clifford.tools.g3c import random_sphere
+        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
+            print(exit_flag)
+            return r_est
+        self.run_rotor_estimation(random_sphere, estimation_func)
+
+    def test_estimate_rotor_lines_sequential_convergence_estimation(self):
+        from clifford.tools.g3c import random_line
+        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation_convergence_detection
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, r_list, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
+            print(exit_flag)
+            return r_est
+        self.run_rotor_estimation(random_line, estimation_func)
+
+
+    def test_estimate_rotor_circles_sequential_convergence_estimation(self):
+        from clifford.tools.g3c import random_circle
+        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation_convergence_detection
+
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, r_list, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
+            print(exit_flag)
+            return r_est
+        self.run_rotor_estimation(random_circle, estimation_func)
+
+    #@SkipTest
+    def test_estimate_rotor_point_pairs_sequential_convergence_estimation(self):
+        from clifford.tools.g3c import random_point_pair
+        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation_convergence_detection
+
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, r_list, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
+            print(exit_flag)
+            return r_est
+        self.run_rotor_estimation(random_point_pair, estimation_func)
+
+    def test_estimate_rotor_planes_sequential_convergence_estimation(self):
+        from clifford.tools.g3c import random_plane
+        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation_convergence_detection
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, r_list, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
+            print(exit_flag)
+            return r_est
+        self.run_rotor_estimation(random_plane, estimation_func)
+
+
+    def test_estimate_rotor_spheres_sequential_convergence_estimation(self):
+        from clifford.tools.g3c import random_sphere
+        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation_convergence_detection
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, r_list, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
+            print(exit_flag)
+            return r_est
+        self.run_rotor_estimation(random_sphere, estimation_func)
+
+
+
+    def test_estimate_rotor_lines_cartans(self):
+        from clifford.tools.g3c import random_line
+        from clifford.tools.g3c.rotor_estimation import cartans_lines
+        self.run_rotor_estimation(random_line, cartans_lines)
+
+    def test_estimate_rotor_circles_cartans(self):
+        from clifford.tools.g3c import random_circle
+        from clifford.tools.g3c.rotor_estimation import cartans_lines
+        self.run_rotor_estimation(random_circle, cartans_lines)
+
+    # @SkipTest
+    def test_estimate_rotor_point_pairs_cartans(self):
+        from clifford.tools.g3c import random_point_pair
+        from clifford.tools.g3c.rotor_estimation import cartans_lines
+        self.run_rotor_estimation(random_point_pair, cartans_lines)
+
+    def test_estimate_rotor_planes_cartans(self):
+        from clifford.tools.g3c import random_plane
+        from clifford.tools.g3c.rotor_estimation import cartans_lines
+        self.run_rotor_estimation(random_plane, cartans_lines)
+
+    def test_estimate_rotor_spheres_cartans(self):
+        from clifford.tools.g3c import random_sphere
+        from clifford.tools.g3c.rotor_estimation import cartans_lines
+        self.run_rotor_estimation(random_sphere, cartans_lines)
 
 class G3CToolsTests(unittest.TestCase):
 
@@ -358,173 +589,6 @@ class G3CToolsTests(unittest.TestCase):
             if abs(C3 + C2) < 0.0001:
                 C3 = -C3
             testing.assert_almost_equal(C2.value, C3.value)
-
-    def test_estimate_rotor_lines_optimisation(self):
-        from clifford.tools.g3c import random_line
-        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
-        def estimation_func(pp_list_a,pp_list_b):
-            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
-            return r_est
-        self.run_rotor_estimation(random_line, estimation_func)
-
-
-
-    def test_estimate_rotor_circles_optimisation(self):
-        from clifford.tools.g3c import random_circle
-        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
-        def estimation_func(pp_list_a,pp_list_b):
-            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
-            return r_est
-        self.run_rotor_estimation(random_circle, estimation_func)
-
-    #@SkipTest
-    def test_estimate_rotor_point_pairs_optimisation(self):
-        """
-        TODO: This fails some significant percentage of the time. I think it is simply early ending of the scipy optimiser
-        """
-        from clifford.tools.g3c import random_point_pair
-        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
-        def estimation_func(pp_list_a,pp_list_b):
-            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
-            return r_est
-        self.run_rotor_estimation(random_point_pair, estimation_func)
-
-
-
-    def run_rotor_estimation(self, object_generator, estimation_function):
-        from clifford import g3c
-        import numpy as np
-        layout = g3c.layout
-        e1 = layout.blades['e1']
-        e2 = layout.blades['e2']
-        e3 = layout.blades['e3']
-        ep, en, up, down, homo, E0, ninf, no = (g3c.stuff["ep"], g3c.stuff["en"],
-                                                g3c.stuff["up"], g3c.stuff["down"], g3c.stuff["homo"],
-                                                g3c.stuff["E0"], g3c.stuff["einf"], -g3c.stuff["eo"])
-        from clifford.tools.g3 import generate_rotation_rotor, random_euc_mv
-        from clifford.tools.g3c import generate_translation_rotor
-
-        n_runs = 200
-        n_objects_per_run = 10
-        error_count = 0
-        for i in range(n_runs):
-            pp_list_a = [object_generator().normal() for i in range(n_objects_per_run)]
-            r = (generate_translation_rotor(random_euc_mv()) * generate_rotation_rotor(np.random.randn(),
-                                                                                       random_euc_mv().normal(),
-                                                                                       random_euc_mv().normal())).normal()
-            pp_list_b = [(r * l * ~r).normal() for l in pp_list_a]
-            r_est = estimation_function(pp_list_a, pp_list_b)
-            error_flag = False
-            for a, b in zip([(r_est * l * ~r_est).normal() for l in pp_list_a], pp_list_b):
-                if abs(a+b) < 0.00000001:
-                    c = -b
-                    print('SIGN FLIP')
-                else:
-                    c = b
-                if np.any(np.abs(a.value - c.value) > 0.01):
-                    error_flag = True
-            if error_flag:
-                error_count += 1
-            print(i, error_count)
-        print('\n\nESTIMATION SUMMARY')
-        print('OBJECTS ', n_objects_per_run)
-        print('RUNS ', n_runs)
-        print('ERRORS ', error_count)
-        print('ERROR percentage ', 100*error_count/float(n_runs), '%')
-
-
-    def test_estimate_rotor_planes_optimisation(self):
-        from clifford.tools.g3c import random_plane
-        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
-        def estimation_func(pp_list_a,pp_list_b):
-            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
-            return r_est
-        self.run_rotor_estimation(random_plane, estimation_func)
-
-
-    def test_estimate_rotor_spheres_optimisation(self):
-        from clifford.tools.g3c import random_sphere
-        from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
-            return r_est
-        self.run_rotor_estimation(random_sphere, estimation_func)
-
-
-    def test_estimate_rotor_lines_sequential(self):
-        from clifford.tools.g3c import random_line
-        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
-            return r_est
-        self.run_rotor_estimation(random_line, estimation_func)
-
-
-    def test_estimate_rotor_circles_sequential(self):
-        from clifford.tools.g3c import random_circle
-        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
-            return r_est
-        self.run_rotor_estimation(random_circle, estimation_func)
-
-    #@SkipTest
-    def test_estimate_rotor_point_pairs_sequential(self):
-        """
-        TODO: This fails some significant percentage of the time. I think it is simply early ending of the scipy optimiser
-        """
-        from clifford.tools.g3c import random_point_pair
-        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
-            return r_est
-        self.run_rotor_estimation(random_point_pair, estimation_func)
-
-    def test_estimate_rotor_planes_sequential(self):
-        from clifford.tools.g3c import random_plane
-        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
-            return r_est
-        self.run_rotor_estimation(random_plane, estimation_func)
-
-
-    def test_estimate_rotor_spheres_sequential(self):
-        from clifford.tools.g3c import random_sphere
-        from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
-            return r_est
-        self.run_rotor_estimation(random_sphere, estimation_func)
-
-    def test_estimate_rotor_lines_cartans(self):
-        from clifford.tools.g3c import random_line
-        from clifford.tools.g3c.rotor_estimation import cartans_lines
-        self.run_rotor_estimation(random_line, cartans_lines)
-
-    def test_estimate_rotor_circles_cartans(self):
-        from clifford.tools.g3c import random_circle
-        from clifford.tools.g3c.rotor_estimation import cartans_lines
-        self.run_rotor_estimation(random_circle, cartans_lines)
-
-    # @SkipTest
-    def test_estimate_rotor_point_pairs_cartans(self):
-        """
-        TODO: This fails some significant percentage of the time. I think it is simply early ending of the scipy optimiser
-        """
-        from clifford.tools.g3c import random_point_pair
-        from clifford.tools.g3c.rotor_estimation import cartans_lines
-        self.run_rotor_estimation(random_point_pair, cartans_lines)
-
-    def test_estimate_rotor_planes_cartans(self):
-        from clifford.tools.g3c import random_plane
-        from clifford.tools.g3c.rotor_estimation import cartans_lines
-        self.run_rotor_estimation(random_plane, cartans_lines)
-
-    def test_estimate_rotor_spheres_cartans(self):
-        from clifford.tools.g3c import random_sphere
-        from clifford.tools.g3c.rotor_estimation import cartans_lines
-        self.run_rotor_estimation(random_sphere, cartans_lines)
 
 
 @SkipTest

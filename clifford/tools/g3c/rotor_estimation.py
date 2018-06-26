@@ -12,7 +12,7 @@ from scipy import e,rand
 imt_func = layout.imt_func
 gmt_func = layout.gmt_func
 adjoint_func = layout.adjoint_func
-e5_val = e5.value
+e4_val = e4.value
 ninf_val = einf.value
 
 sparse_cost_imt = get_mult_function(layout.imt, layout.gaDims, layout.gradeList, grades_a=[0, 2, 4], grades_b=[1])
@@ -48,7 +48,7 @@ def rotorconversion(x):
 def val_rotor_cost_sparse(R_val):
     rotation_val = R_val.copy()
     rotation_val[0] -= 1
-    translation_val = sparse_cost_imt(R_val, e5_val)
+    translation_val = sparse_cost_imt(R_val, e4_val)
     a = abs(float(sparse_cost_gmt(rotation_val, adjoint_func(rotation_val))[0]))
     b = abs(float(gmt_func(translation_val, adjoint_func(translation_val))[0]))
     return a + b
@@ -64,6 +64,14 @@ def object_cost_function(obj_a,obj_b):
         return np.finfo(float).max
     R = rotor_between_objects(obj_a, obj_b)
     return np.abs(val_rotor_cost_sparse(R.value))
+
+
+def object_set_log_cost_sum(object_set_a, object_set_b):
+    """ Evaluates the rotor cost function between two sets of objects """
+    sum_val = 0.0
+    for a, b in zip(object_set_a, object_set_b):
+        sum_val += np.log1p(object_cost_function(a, b))
+    return sum_val
 
 
 def object_set_cost_sum(object_set_a, object_set_b):
@@ -112,7 +120,7 @@ def cartans_lines(obj_list_a, obj_list_b):
 
 
 import random
-def sequential_object_rotor_estimation(obj_list_a, obj_list_b, n_iterations=100, cost_tolerance=10*(10**-16), random_sequence=False):
+def sequential_object_rotor_estimation(obj_list_a, obj_list_b, n_iterations=500, cost_tolerance=10*(10**-16), random_sequence=False):
     R_total = 1.0 + 0.0*e1
     r_list = []
     for j in range(n_iterations):
@@ -126,11 +134,36 @@ def sequential_object_rotor_estimation(obj_list_a, obj_list_b, n_iterations=100,
             C2 = obj_list_b[i]
             if abs(C1 + C2) < 0.0001:
                 C1 = -C1
-            rroot = (square_roots_of_rotor(rotor_between_objects(C1,C2))[0])
+            rroot = (square_roots_of_rotor(rotor_between_objects(C1,C2))[0]).normal()
             r_list.append(rroot)
             R_total = (rroot*R_total).normal()
             cost_sum += rotor_cost(rroot)
         if cost_sum < cost_tolerance:
+            exit_flag = 0
+            return R_total, r_list, exit_flag
+    exit_flag = 1
+    return R_total, r_list, exit_flag
+
+
+def sequential_object_rotor_estimation_convergence_detection(obj_list_a, obj_list_b, n_iterations=500, cost_tolerance=10*(10**-16), random_sequence=False):
+    R_total = 1.0 + 0.0*e1
+    r_list = []
+    for j in range(n_iterations):
+        r_set = 1.0 + 0.0*e1
+        if random_sequence:
+            indices = random.sample(range(len(obj_list_a)), len(obj_list_a))
+        else:
+            indices = range(len(obj_list_a))
+        for i in indices:
+            C1 = (apply_rotor(obj_list_a[i],R_total)).normal()
+            C2 = obj_list_b[i]
+            if abs(C1 + C2) < 0.0001:
+                C1 = -C1
+            rroot = (square_roots_of_rotor(rotor_between_objects(C1,C2))[0]).normal()
+            r_list.append(rroot)
+            r_set = (rroot*r_set).normal()
+            R_total = (rroot * R_total).normal()
+        if rotor_cost(r_set) < cost_tolerance:
             exit_flag = 0
             return R_total, r_list, exit_flag
     exit_flag = 1

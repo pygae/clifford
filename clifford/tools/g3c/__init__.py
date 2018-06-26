@@ -15,9 +15,14 @@ no = -eo
 E = ninf ^ (no)
 I5 = e12345
 I3 = e123
+E0 = ninf ^ -no
 E0_val = E0.value
 I5_val = I5.value
 ninf_val = ninf.value
+no_val = no.value
+I3_val = I3.value
+
+unit_scalar_mv = 1.0 + 0.0*e1
 
 adjoint_func = layout.adjoint_func
 gmt_func = layout.gmt_func
@@ -360,9 +365,6 @@ def mult_with_ninf(mv):
     return gmt_func(mv, ninf_val)
 
 
-imt_func= layout.imt_func
-no_val = no.value
-I3_val = I3.value
 @numba.njit
 def val_exp(B_val):
     """ Fast implementation of the exp function - JITTED"""
@@ -384,7 +386,6 @@ def val_exp(B_val):
     return R_val
 
 
-unit_scalar_mv = 1.0 + 0.0*e1
 def ga_exp(B):
     """ Fast implementation of the exp function """
     if np.sum(np.abs(B.value)) < np.finfo(float).eps:

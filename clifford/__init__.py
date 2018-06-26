@@ -1102,12 +1102,12 @@ class MultiVector(object):
         if other == 0:
             return 1
 
-        newMV_value = self.value.copy()
+        newMV = self._newMV(np.array(self.value))  # copy
 
         for i in range(1, other):
-            newMV_value = self.layout.gmt_func(newMV_value, self.value)
+            newMV = newMV * self
 
-        return self._newMV(newMV_value)
+            return newMV
 
     def __rpow__(self, other):
         """Exponentiation of a real by a multivector
@@ -1185,7 +1185,7 @@ class MultiVector(object):
         Note in mixed signature spaces this may be negative
         """
 
-        return self.layout.gmt_func(self.layout.adjoint_func(self.value), self.value)[0]
+        return (~self * self)[()]
 
     def __abs__(self):
         """Magnitude (modulus)
@@ -1652,7 +1652,7 @@ class MultiVector(object):
         normal() --> MultiVector
         """
 
-        return self / np.sqrt(np.abs(float(self.mag2())))
+        return self / np.sqrt(abs(self.mag2()))
 
     def leftLaInv(self):
         """Return left-inverse using a computational linear algebra method
