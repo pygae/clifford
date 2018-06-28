@@ -21,6 +21,7 @@ sparse_cost_gmt = get_mult_function(layout.gmt, layout.gaDims, layout.gradeList,
 
 @numba.njit
 def val_vec_repr_to_bivector(x):
+    """ Converts between the parameters of a bivector and the bivector itself """
     t_val = np.zeros(32)
     t_val[1] = x[0]
     t_val[2] = x[1]
@@ -41,11 +42,13 @@ def val_rotorconversion(x):
 
 
 def rotorconversion(x):
+    """ Converts between the parameters of a bivector and the rotor that it is generating """
     return cf.MultiVector(layout, val_rotorconversion(x))
 
 
 @numba.njit
 def val_rotor_cost_sparse(R_val):
+    """ Evaluates Eivind Eiede's cost function of a rotor """
     rotation_val = R_val.copy()
     rotation_val[0] -= 1
     translation_val = sparse_cost_imt(R_val, e4_val)
@@ -55,6 +58,7 @@ def val_rotor_cost_sparse(R_val):
 
 
 def rotor_cost(R):
+    """ Evaluates Eivind Eiede's cost function of a rotor """
     return val_rotor_cost_sparse(R.value)
 
 
@@ -121,6 +125,10 @@ def cartans_lines(obj_list_a, obj_list_b):
 
 import random
 def sequential_object_rotor_estimation(obj_list_a, obj_list_b, n_iterations=500, cost_tolerance=10*(10**-16), random_sequence=False):
+    """
+    Performs a sequential rotor update based on the rotors between individual objects
+    Exits when the sum of the cost of rotor updates through the list is very small
+    """
     R_total = 1.0 + 0.0*e1
     r_list = []
     for j in range(n_iterations):
@@ -146,6 +154,10 @@ def sequential_object_rotor_estimation(obj_list_a, obj_list_b, n_iterations=500,
 
 
 def sequential_object_rotor_estimation_convergence_detection(obj_list_a, obj_list_b, n_iterations=500, cost_tolerance=10*(10**-16), random_sequence=False):
+    """
+    Performs a sequential rotor update based on the rotors between individual objects
+    Exits when a full rotation through all objects produces a very small update of rotor
+    """
     R_total = 1.0 + 0.0*e1
     r_list = []
     for j in range(n_iterations):
@@ -168,3 +180,6 @@ def sequential_object_rotor_estimation_convergence_detection(obj_list_a, obj_lis
             return R_total, r_list, exit_flag
     exit_flag = 1
     return R_total, r_list, exit_flag
+
+
+
