@@ -1184,8 +1184,8 @@ class MultiVector(object):
 
         Note in mixed signature spaces this may be negative
         """
-
-        return (~self * self)[()]
+        mv_val = self.layout.gmt_func(self.layout.adjoint_func(self.value),self.value)
+        return MultiVector(self.layout, mv_val)[()]
 
     def __abs__(self):
         """Magnitude (modulus)

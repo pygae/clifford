@@ -433,7 +433,76 @@ def val_exp(B_val):
 
 
 def ga_exp(B):
-    """ Fast implementation of the exp function """
+    """
+    Fast implementation of the exp function
+    """
     if np.sum(np.abs(B.value)) < np.finfo(float).eps:
         return cf.MultiVector(layout, unit_scalar_mv.value)
     return cf.MultiVector(layout, val_exp(B.value))
+
+
+# def convert_2D_polar_line_to_conformal_line(rho, theta):
+#     a = np.cos(theta)
+#     b = np.sin(theta)
+#     x0 = a * rho
+#     y0 = b * rho
+#     x1 = int(x0 + 10000 * (-b))
+#     y1 = int(y0 + 10000 * (a))
+#     x2 = int(x0 - 10000 * (-b))
+#     y2 = int(y0 - 10000 * (a))
+#     return (convert_2D_point_to_conformal(x1,y1)^convert_2D_point_to_conformal(x2,y2)^ninf).normal()
+
+
+#@numba.njit
+def val_convert_2D_polar_line_to_conformal_line(rho, theta):
+    a = np.cos(theta)
+    b = np.sin(theta)
+    x0 = a * rho
+    y0 = b * rho
+    x1 = int(x0 + 10000 * (-b))
+    y1 = int(y0 + 10000 * (a))
+    x2 = int(x0 - 10000 * (-b))
+    y2 = int(y0 - 10000 * (a))
+    p1_val = val_convert_2D_point_to_conformal(x1,y1)
+    p2_val = val_convert_2D_point_to_conformal(x2,y2)
+    line_val = omt_func(omt_func(p1_val,p2_val),ninf_val)
+    line_val = line_val/abs(cf.MultiVector(layout,line_val))
+    return line_val
+
+
+def convert_2D_polar_line_to_conformal_line(rho, theta):
+    line_val = val_convert_2D_polar_line_to_conformal_line(rho, theta)
+    return cf.MultiVector(layout, line_val)
+
+
+@numba.njit
+def val_up(mv_val):
+    temp = np.zeros(32)
+    temp[0] = 0.5
+    return mv_val - no_val + omt_func(temp, gmt_func(gmt_func(mv_val, mv_val), ninf_val))
+
+
+def val_distance_point_to_line(point, line):
+    """
+    Returns the euclidean distance between a point and a line
+    """
+    return float(abs( cf.MultiVector(layout, omt_func(point,line) )  ))
+
+
+@numba.njit
+def val_convert_2D_point_to_conformal(x,y):
+    mv_val = np.zeros(32)
+    mv_val[1] = x
+    mv_val[2] = y
+    return val_up(mv_val)
+
+
+def convert_2D_point_to_conformal(x,y):
+    return cf.MultiVector(layout,val_convert_2D_point_to_conformal(x,y))
+
+
+def distance_polar_line_to_euc_point_2d(rho, theta, x, y):
+    point = val_convert_2D_point_to_conformal(x, y)
+    line = val_convert_2D_polar_line_to_conformal_line(rho, theta)
+    return val_distance_point_to_line(point, line)
+
