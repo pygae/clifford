@@ -455,6 +455,7 @@ def ga_exp(B):
 
 #@numba.njit
 def val_convert_2D_polar_line_to_conformal_line(rho, theta):
+    """ Converts a 2D polar line to a conformal line """
     a = np.cos(theta)
     b = np.sin(theta)
     x0 = a * rho
@@ -471,12 +472,14 @@ def val_convert_2D_polar_line_to_conformal_line(rho, theta):
 
 
 def convert_2D_polar_line_to_conformal_line(rho, theta):
+    """ Converts a 2D polar line to a conformal line """
     line_val = val_convert_2D_polar_line_to_conformal_line(rho, theta)
     return cf.MultiVector(layout, line_val)
 
 
 @numba.njit
 def val_up(mv_val):
+    """ Fast up mapping """
     temp = np.zeros(32)
     temp[0] = 0.5
     return mv_val - no_val + omt_func(temp, gmt_func(gmt_func(mv_val, mv_val), ninf_val))
@@ -490,7 +493,8 @@ def val_distance_point_to_line(point, line):
 
 
 @numba.njit
-def val_convert_2D_point_to_conformal(x,y):
+def val_convert_2D_point_to_conformal(x, y):
+    """ Convert a 2D point to conformal """
     mv_val = np.zeros(32)
     mv_val[1] = x
     mv_val[2] = y
@@ -498,10 +502,12 @@ def val_convert_2D_point_to_conformal(x,y):
 
 
 def convert_2D_point_to_conformal(x,y):
+    """ Convert a 2D point to conformal """
     return cf.MultiVector(layout,val_convert_2D_point_to_conformal(x,y))
 
 
 def distance_polar_line_to_euc_point_2d(rho, theta, x, y):
+    """ Return the distance between a polar line and a euclidean point in 2D """
     point = val_convert_2D_point_to_conformal(x, y)
     line = val_convert_2D_polar_line_to_conformal_line(rho, theta)
     return val_distance_point_to_line(point, line)

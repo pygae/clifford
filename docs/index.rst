@@ -45,6 +45,7 @@ Documentation
     InterfacingOtherMathSystems
     PredefinedGAs
     PerformanceCliffordTutorial
+    Example 1 Interpolating Conformal Objects
     
 API
 ------
@@ -72,7 +73,7 @@ Links
 
 * David Hestenes' (The man)  website:  http://geocalc.clas.asu.edu/
 
-
+* GAOnline - Conformal Geometric Algebra visualiser: http://gaonline.azurewebsites.net/
 
 
     
