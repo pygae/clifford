@@ -10,6 +10,6 @@ dependencies:
     - nose
     - future
     - pandoc
-    - nbconvert=4.2
+    - nbconvert
     - ipykernel
     - nbsphinx
