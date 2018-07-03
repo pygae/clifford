@@ -195,6 +195,146 @@ class G3ToolsTests(unittest.TestCase):
             testing.assert_almost_equal(r.value, r_2.value)
 
 
+class ObjectClusteringTests(unittest.TestCase):
+
+    def run_n_clusters(self, object_generator, n_clusters, n_objects_per_cluster, n_shotgunning):
+        from clifford.tools.g3c import generate_random_object_cluster
+        from clifford.tools.g3c.object_clustering import n_clusters_objects
+        from numpy import pi
+        centroids = [object_generator() for i in range(n_clusters)]
+        object_clusters = []
+        for i in range(n_clusters):
+            cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
+                                                             max_cluster_trans=0.5, max_cluster_rot=pi / 16)
+            object_clusters.append(cluster_objects)
+        all_objects = [item for sublist in object_clusters for item in sublist]
+        import time
+        t = time.time()
+        [new_labels, centroids, start_labels, start_centroids] = n_clusters_objects(n_clusters, all_objects,
+                                                                                    initial_centroids=centroids,
+                                                                                    n_shotgunning=n_shotgunning,
+                                                                                    averaging_method='unweighted')
+        print('Clustering took ', time.time() - t, ' seconds')
+        return all_objects, new_labels, centroids
+
+    def test_clustering_point_pairs(self):
+        from clifford.tools.g3c import random_point_pair
+        from clifford.tools.g3c.GAOnline import GAScene
+        object_generator = random_point_pair
+        n_clusters = 3
+        n_objects_per_cluster = 10
+        n_shotgunning = 30
+        all_objects, labels, centroids = self.run_n_clusters(object_generator, n_clusters,
+                                                             n_objects_per_cluster, n_shotgunning)
+        sc = GAScene()
+        for c in centroids:
+            sc.add_point_pair(c, 'rgb(255,0,0)')
+        for o in all_objects:
+            sc.add_point_pair(o, 'rgb(0,0,0)')
+        print(sc)
+
+    def test_clustering_lines(self):
+        from clifford.tools.g3c import random_line
+        from clifford.tools.g3c.GAOnline import GAScene
+        object_generator = random_line
+        n_clusters = 3
+        n_objects_per_cluster = 10
+        n_shotgunning = 30
+        all_objects, labels, centroids = self.run_n_clusters(object_generator, n_clusters,
+                                                             n_objects_per_cluster, n_shotgunning)
+        sc = GAScene()
+        for c in centroids:
+            sc.add_line(c, 'rgb(255,0,0)')
+        for o in all_objects:
+            sc.add_line(o, 'rgb(0,0,0)')
+        print(sc)
+
+    def test_clustering_circles(self):
+        from clifford.tools.g3c import random_circle
+        from clifford.tools.g3c.GAOnline import GAScene
+        object_generator = random_circle
+        n_clusters = 3
+        n_objects_per_cluster = 10
+        n_shotgunning = 30
+        all_objects, labels, centroids = self.run_n_clusters(object_generator, n_clusters,
+                                                             n_objects_per_cluster, n_shotgunning)
+        sc = GAScene()
+        for c in centroids:
+            sc.add_circle(c, 'rgb(255,0,0)')
+        for o in all_objects:
+            sc.add_circle(o, 'rgb(0,0,0)')
+        print(sc)
+
+    def test_clustering_spheres(self):
+        from clifford.tools.g3c import random_sphere
+        from clifford.tools.g3c.GAOnline import GAScene
+        object_generator = random_sphere
+        n_clusters = 3
+        n_objects_per_cluster = 10
+        n_shotgunning = 30
+        all_objects, labels, centroids = self.run_n_clusters(object_generator, n_clusters,
+                                                             n_objects_per_cluster, n_shotgunning)
+        sc = GAScene()
+        for c in centroids:
+            sc.add_sphere(c, 'rgb(255,0,0)')
+        for o in all_objects:
+            sc.add_sphere(o, 'rgb(0,0,0)')
+        print(sc)
+
+    def test_clustering_planes(self):
+        from clifford.tools.g3c import random_plane
+        from clifford.tools.g3c.GAOnline import GAScene
+        object_generator = random_plane
+        n_clusters = 3
+        n_objects_per_cluster = 10
+        n_shotgunning = 30
+        all_objects, labels, centroids = self.run_n_clusters(object_generator, n_clusters,
+                                                             n_objects_per_cluster, n_shotgunning)
+        sc = GAScene()
+        for c in centroids:
+            sc.add_plane(c, 'rgb(255,0,0)')
+        for o in all_objects:
+            sc.add_plane(o, 'rgb(0,0,0)')
+        print(sc)
+
+    def test_assign_objects_to_objects(self):
+        import numpy.testing as npt
+        import numpy as np
+        from clifford.tools.g3c import random_line, random_point_pair, random_plane, \
+            random_circle, random_sphere
+        from clifford.tools.g3c.object_clustering import assign_measurements_to_objects_matrix
+
+        # point_pairs
+        object_set_a = [random_point_pair() for i in range(20)]
+        object_set_b = [l for l in object_set_a]
+        label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+        npt.assert_equal(label_a, np.array(range(len(label_a))))
+
+        # Lines
+        object_set_a = [random_line() for i in range(20)]
+        object_set_b = [l for l in object_set_a]
+        label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+        npt.assert_equal(label_a, np.array(range(len(label_a))))
+
+        # circles
+        object_set_a = [random_circle() for i in range(20)]
+        object_set_b = [l for l in object_set_a]
+        label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+        npt.assert_equal(label_a, np.array(range(len(label_a))))
+
+        # planes
+        object_set_a = [random_plane() for i in range(20)]
+        object_set_b = [l for l in object_set_a]
+        label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+        npt.assert_equal(label_a, np.array(range(len(label_a))))
+
+        # spheres
+        object_set_a = [random_sphere() for i in range(20)]
+        object_set_b = [l for l in object_set_a]
+        label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+        npt.assert_equal(label_a, np.array(range(len(label_a))))
+
+
 class RotorEstimationTests(unittest.TestCase):
 
     def run_rotor_estimation(self, object_generator, estimation_function, n_runs=10, n_objects_per_run=10):
@@ -245,8 +385,6 @@ class RotorEstimationTests(unittest.TestCase):
             return r_est
         self.run_rotor_estimation(random_line, estimation_func)
 
-
-
     def test_estimate_rotor_circles_optimisation(self):
         from clifford.tools.g3c import random_circle
         from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
@@ -264,8 +402,6 @@ class RotorEstimationTests(unittest.TestCase):
             return r_est
         self.run_rotor_estimation(random_point_pair, estimation_func)
 
-
-
     def test_estimate_rotor_planes_optimisation(self):
         from clifford.tools.g3c import random_plane
         from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
@@ -273,7 +409,6 @@ class RotorEstimationTests(unittest.TestCase):
             r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
             return r_est
         self.run_rotor_estimation(random_plane, estimation_func)
-
 
     def test_estimate_rotor_spheres_optimisation(self):
         from clifford.tools.g3c import random_sphere
@@ -283,7 +418,6 @@ class RotorEstimationTests(unittest.TestCase):
             return r_est
         self.run_rotor_estimation(random_sphere, estimation_func)
 
-
     def test_estimate_rotor_lines_sequential(self):
         from clifford.tools.g3c import random_line
         from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
@@ -292,7 +426,6 @@ class RotorEstimationTests(unittest.TestCase):
             print(exit_flag)
             return r_est
         self.run_rotor_estimation(random_line, estimation_func)
-
 
     def test_estimate_rotor_circles_sequential(self):
         from clifford.tools.g3c import random_circle
@@ -317,7 +450,6 @@ class RotorEstimationTests(unittest.TestCase):
                 r_est_2, costs = estimate_rotor_objects(object_set_a, pp_list_b)
             return r_est_2*r_est_1
         self.run_rotor_estimation(random_circle, estimation_func)
-
 
     #@SkipTest
     def test_estimate_rotor_point_pairs_sequential(self):
@@ -356,7 +488,6 @@ class RotorEstimationTests(unittest.TestCase):
             print(exit_flag)
             return r_est
         self.run_rotor_estimation(random_line, estimation_func)
-
 
     def test_estimate_rotor_circles_sequential_convergence_estimation(self):
         from clifford.tools.g3c import random_circle

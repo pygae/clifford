@@ -1,89 +1,22 @@
-
+import random
+from scipy import e
 import numpy as np
-import numba
 from scipy.optimize import minimize
-from clifford import get_mult_function, grade_obj
-from . import rotor_between_objects, apply_rotor, val_exp, square_roots_of_rotor
-from clifford.g3c import *
-import clifford as cf
-from clifford.tools import orthoFrames2Verser as cartan
-from scipy import e,rand
 
+from .rotor_parameterisation import rotorconversion
+from . import rotor_between_objects, apply_rotor, square_roots_of_rotor
+from clifford.g3c import *
+from clifford.tools import orthoFrames2Verser as cartan
+from .cost_functions import object_set_cost_sum, rotor_cost
+
+
+I5 = e12345
 imt_func = layout.imt_func
 gmt_func = layout.gmt_func
 adjoint_func = layout.adjoint_func
 e4_val = e4.value
 ninf_val = einf.value
-
-sparse_cost_imt = get_mult_function(layout.imt, layout.gaDims, layout.gradeList, grades_a=[0, 2, 4], grades_b=[1])
-sparse_cost_gmt = get_mult_function(layout.gmt, layout.gaDims, layout.gradeList, grades_a=[0, 2, 4], grades_b=[0, 2, 4])
-
-
-@numba.njit
-def val_vec_repr_to_bivector(x):
-    """ Converts between the parameters of a bivector and the bivector itself """
-    t_val = np.zeros(32)
-    t_val[1] = x[0]
-    t_val[2] = x[1]
-    t_val[3] = x[2]
-    B_val = gmt_func(t_val, ninf_val)
-    B_val[6] += x[3]
-    B_val[7] += x[4]
-    B_val[10] += x[5]
-    return B_val
-
-
-@numba.njit
-def val_rotorconversion(x):
-    """ Converts between the parameters of a bivector and the rotor that it is generating """
-    B_val = val_vec_repr_to_bivector(x)
-    R_val = val_exp(B_val)
-    return R_val
-
-
-def rotorconversion(x):
-    """ Converts between the parameters of a bivector and the rotor that it is generating """
-    return cf.MultiVector(layout, val_rotorconversion(x))
-
-
-@numba.njit
-def val_rotor_cost_sparse(R_val):
-    """ Evaluates Eivind Eiede's cost function of a rotor """
-    rotation_val = R_val.copy()
-    rotation_val[0] -= 1
-    translation_val = sparse_cost_imt(R_val, e4_val)
-    a = abs(float(sparse_cost_gmt(rotation_val, adjoint_func(rotation_val))[0]))
-    b = abs(float(gmt_func(translation_val, adjoint_func(translation_val))[0]))
-    return a + b
-
-
-def rotor_cost(R):
-    """ Evaluates Eivind Eiede's cost function of a rotor """
-    return val_rotor_cost_sparse(R.value)
-
-
-def object_cost_function(obj_a,obj_b):
-    """ Evaluates the rotor cost function between two objects """
-    if grade_obj(obj_a) != grade_obj(obj_b):
-        return np.finfo(float).max
-    R = rotor_between_objects(obj_a, obj_b)
-    return np.abs(val_rotor_cost_sparse(R.value))
-
-
-def object_set_log_cost_sum(object_set_a, object_set_b):
-    """ Evaluates the rotor cost function between two sets of objects """
-    sum_val = 0.0
-    for a, b in zip(object_set_a, object_set_b):
-        sum_val += np.log1p(object_cost_function(a, b))
-    return sum_val
-
-
-def object_set_cost_sum(object_set_a, object_set_b):
-    """ Evaluates the rotor cost function between two sets of objects """
-    sum_val = 0.0
-    for a, b in zip(object_set_a, object_set_b):
-        sum_val += object_cost_function(a, b)
-    return sum_val
+e123inf =e123*einf
 
 
 def estimate_rotor_objects(object_list_a, object_list_b, maxfev=20000, print_res=False):
@@ -114,7 +47,6 @@ def estimate_rotor_objects(object_list_a, object_list_b, maxfev=20000, print_res
     return rotor, cost
 
 
-e123inf =e123*einf
 def cartans_lines(obj_list_a, obj_list_b):
     """ Performs the extended cartans algorithm as suggested by Alex Arsenovic """
     V_found,rs = cartan(A=obj_list_a,B=obj_list_b)
@@ -123,7 +55,6 @@ def cartans_lines(obj_list_a, obj_list_b):
     return V_found
 
 
-import random
 def sequential_object_rotor_estimation(obj_list_a, obj_list_b, n_iterations=500, cost_tolerance=10*(10**-16), random_sequence=False):
     """
     Performs a sequential rotor update based on the rotors between individual objects

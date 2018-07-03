@@ -48,7 +48,7 @@ Root Finding
 import math
 import numba
 import numpy as np
-from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv
+from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, random_rotation_rotor
 from clifford.g3c import *
 import clifford as cf
 import warnings
@@ -75,6 +75,27 @@ gmt_func = layout.gmt_func
 omt_func = layout.omt_func
 imt_func = layout.imt_func
 rightLaInv = layout.rightLaInv_func
+
+
+def generate_random_object_cluster(n_objects, object_generator, max_cluster_trans=1.0, max_cluster_rot=np.pi/8):
+    """ Creates a cluster of random objects """
+    ref_obj = object_generator()
+    cluster_objects = []
+    for i in range(n_objects):
+        r = random_rotation_translation_rotor(maximum_translation=max_cluster_trans, maximum_angle=max_cluster_rot)
+        new_obj = apply_rotor(ref_obj, r)
+        cluster_objects.append(new_obj)
+    return cluster_objects
+
+
+def random_translation_rotor(maximum_translation=10.0):
+    """ generate a random translation rotor """
+    return generate_translation_rotor(random_euc_mv(maximum_translation))
+
+
+def random_rotation_translation_rotor(maximum_translation=10.0, maximum_angle=np.pi):
+    """ generate a random combined rotation and translation rotor """
+    return (random_translation_rotor(maximum_translation)*random_rotation_rotor(maximum_angle)).normal()
 
 
 @numba.njit
@@ -194,8 +215,6 @@ def point_pair_to_end_points(T):
     return A, B
 
 
-
-
 def euc_dist(conf_mv_a, conf_mv_b):
     """ Returns the distance between two conformal points """
     dot_result = (conf_mv_a|conf_mv_b)[0]
@@ -203,8 +222,6 @@ def euc_dist(conf_mv_a, conf_mv_b):
         return math.sqrt(-2.0*dot_result)
     else:
         return 0.0
-
-
 
 
 def dorst_norm_val(sigma):
@@ -310,12 +327,15 @@ def interp_objects_root(C1, C2, alpha):
     return (neg_twiddle_root(C)[0]).normal()
 
 
-def average_objects(obj_list):
+def average_objects(obj_list, weights=[]):
     """
     Hadfield and Lasenby, Direct Linear Interpolation of Geometric Objects, AGACSE2018
     Directly averages conformal objects
     """
-    C = sum(obj_list) / len(obj_list)
+    if len(weights) == len(obj_list):
+        C = sum([o * w for o, w in zip(obj_list, weights)])
+    else:
+        C = sum(obj_list) / len(obj_list)
     return (neg_twiddle_root(C)[0]).normal()
 
 
@@ -400,6 +420,7 @@ def val_apply_rotor(mv_val, rotor_val):
     """ Applies rotor to multivector in a fast way - JITTED """
     return gmt_func(rotor_val, gmt_func(mv_val, adjoint_func(rotor_val)))
 
+
 def apply_rotor(mv_in, rotor):
     """ Applies rotor to multivector in a fast way """
     return cf.MultiVector(layout, val_apply_rotor(mv_in.value, rotor.value))
@@ -409,37 +430,6 @@ def apply_rotor(mv_in, rotor):
 def mult_with_ninf(mv):
     """ Convenience function for multiplication with ninf """
     return gmt_func(mv, ninf_val)
-
-
-@numba.njit
-def val_exp(B_val):
-    """ Fast implementation of the exp function - JITTED"""
-    t_val = imt_func(B_val, no_val)
-
-    phiP_val = B_val - mult_with_ninf(t_val)
-    phi = np.sqrt(-float(gmt_func(phiP_val, phiP_val)[0]))
-    P_val = phiP_val / phi
-
-    P_n_val = gmt_func(P_val, I3_val)
-    t_nor_val = gmt_func(imt_func(t_val, P_n_val), P_n_val)
-    t_par_val = t_val - t_nor_val
-
-    coef_val = np.sin(phi) * P_val
-    coef_val[0] += np.cos(phi)
-
-    R_val = coef_val + gmt_func(coef_val, mult_with_ninf(t_nor_val)) + \
-        np.sinc(phi/np.pi) * mult_with_ninf(t_par_val)
-    return R_val
-
-
-def ga_exp(B):
-    """
-    Fast implementation of the exp function
-    """
-    if np.sum(np.abs(B.value)) < np.finfo(float).eps:
-        return cf.MultiVector(layout, unit_scalar_mv.value)
-    return cf.MultiVector(layout, val_exp(B.value))
-
 
 # def convert_2D_polar_line_to_conformal_line(rho, theta):
 #     a = np.cos(theta)
