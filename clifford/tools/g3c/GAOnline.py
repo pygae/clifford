@@ -80,6 +80,19 @@ class GAScene():
         self.add(Sphere(mv,color))
     def add_point_pair(self,mv,color):
         self.add(PointPair(mv,color))
+    def add_object(self,mv,mv_type,color):
+        if mv_type == 'line':
+            self.add_line(mv, color)
+        elif mv_type == 'point_pair':
+            self.add_point_pair(mv, color)
+        elif mv_type == 'circle':
+            self.add_circle(mv, color)
+        elif mv_type == 'plane':
+            self.add_plane(mv, color)
+        elif mv_type == 'sphere':
+            self.add_sphere(mv, color)
+        else:
+            raise ValueError(str(mv_type) + ' is not a valid mv_type. You must specify a valid mv_type.')
     def save_to_file(self,filename):
         with open(filename,'w') as fobj:
             print(self,file=fobj)

@@ -6,6 +6,7 @@ import copy
 from .cost_functions import object_set_cost_matrix, object_set_cost_matrix_sum
 from . import average_objects
 from .rotor_estimation import estimate_rotor_objects
+from .GAOnline import GAScene
 
 
 def compare_labels(old_labels, new_labels):
@@ -128,3 +129,21 @@ def n_clusters_objects(n, objects_measurements, initial_centroids=None, \
         else:
             old_labels = [copy.deepcopy(l) for l in new_labels]
     return [new_labels, centroids, start_labels, start_centroids]
+
+
+def visualise_n_clusters(all_objects, centroids, labels, object_type='line',
+                         color_1=np.array([255,0,0]),color_2=np.array([0,255,0])):
+
+    alpha_list = np.linspace(0, 1, num=len(centroids))
+    sc = GAScene()
+    for ind, this_obj in enumerate(all_objects):
+        alpha = alpha_list[labels[ind]]
+        cluster_color = (alpha * color_1 + (1 - alpha) * color_2)
+        color_string = 'rgb' + str(tuple([int(c) for c in cluster_color]))
+        sc.add_object(this_obj, object_type, color_string)
+
+    for c in centroids:
+        sc.add_object(c, object_type, 'rgb(0,0,0)')
+
+    return sc
+

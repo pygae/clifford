@@ -5,6 +5,7 @@ from past.builtins import range
 from clifford import Cl, randomMV, Frame, get_mult_function, conformalize, grade_obj
 from clifford.tools import orthoFrames2Verser as of2v
 
+import numpy as np
 from numpy import exp, float64, testing
 import unittest
 import itertools
@@ -180,7 +181,6 @@ class G3ToolsTests(unittest.TestCase):
         """
         Currently fails, needs to be dug into
         """
-        import numpy as np
         from clifford.g3c import layout
         e1 = layout.blades['e1']
         e2 = layout.blades['e2']
@@ -219,87 +219,73 @@ class ObjectClusteringTests(unittest.TestCase):
 
     def test_clustering_point_pairs(self):
         from clifford.tools.g3c import random_point_pair
-        from clifford.tools.g3c.GAOnline import GAScene
+        from clifford.tools.g3c.object_clustering import visualise_n_clusters
         object_generator = random_point_pair
         n_clusters = 3
         n_objects_per_cluster = 10
-        n_shotgunning = 30
+        n_shotgunning = 60
         all_objects, labels, centroids = self.run_n_clusters(object_generator, n_clusters,
                                                              n_objects_per_cluster, n_shotgunning)
-        sc = GAScene()
-        for c in centroids:
-            sc.add_point_pair(c, 'rgb(255,0,0)')
-        for o in all_objects:
-            sc.add_point_pair(o, 'rgb(0,0,0)')
+
+        sc = visualise_n_clusters(all_objects, centroids, labels, object_type='point_pair',
+                             color_1=np.array([255, 0, 0]), color_2=np.array([0, 255, 0]))
         print(sc)
 
     def test_clustering_lines(self):
         from clifford.tools.g3c import random_line
-        from clifford.tools.g3c.GAOnline import GAScene
+        from clifford.tools.g3c.object_clustering import visualise_n_clusters
         object_generator = random_line
         n_clusters = 3
         n_objects_per_cluster = 10
-        n_shotgunning = 30
+        n_shotgunning = 60
         all_objects, labels, centroids = self.run_n_clusters(object_generator, n_clusters,
                                                              n_objects_per_cluster, n_shotgunning)
-        sc = GAScene()
-        for c in centroids:
-            sc.add_line(c, 'rgb(255,0,0)')
-        for o in all_objects:
-            sc.add_line(o, 'rgb(0,0,0)')
+        sc = visualise_n_clusters(all_objects, centroids, labels, object_type='line',
+                             color_1=np.array([255, 0, 0]), color_2=np.array([0, 255, 0]))
         print(sc)
 
     def test_clustering_circles(self):
         from clifford.tools.g3c import random_circle
-        from clifford.tools.g3c.GAOnline import GAScene
+        from clifford.tools.g3c.object_clustering import visualise_n_clusters
         object_generator = random_circle
         n_clusters = 3
         n_objects_per_cluster = 10
-        n_shotgunning = 30
+        n_shotgunning = 60
         all_objects, labels, centroids = self.run_n_clusters(object_generator, n_clusters,
                                                              n_objects_per_cluster, n_shotgunning)
-        sc = GAScene()
-        for c in centroids:
-            sc.add_circle(c, 'rgb(255,0,0)')
-        for o in all_objects:
-            sc.add_circle(o, 'rgb(0,0,0)')
+        sc = visualise_n_clusters(all_objects, centroids, labels, object_type='circle',
+                             color_1=np.array([255, 0, 0]), color_2=np.array([0, 255, 0]))
         print(sc)
 
     def test_clustering_spheres(self):
         from clifford.tools.g3c import random_sphere
-        from clifford.tools.g3c.GAOnline import GAScene
+        from clifford.tools.g3c.object_clustering import visualise_n_clusters
         object_generator = random_sphere
         n_clusters = 3
         n_objects_per_cluster = 10
-        n_shotgunning = 30
+        n_shotgunning = 60
         all_objects, labels, centroids = self.run_n_clusters(object_generator, n_clusters,
                                                              n_objects_per_cluster, n_shotgunning)
-        sc = GAScene()
-        for c in centroids:
-            sc.add_sphere(c, 'rgb(255,0,0)')
-        for o in all_objects:
-            sc.add_sphere(o, 'rgb(0,0,0)')
+        sc = visualise_n_clusters(all_objects, centroids, labels, object_type='sphere',
+                             color_1=np.array([255, 0, 0]), color_2=np.array([0, 255, 0]))
         print(sc)
 
     def test_clustering_planes(self):
         from clifford.tools.g3c import random_plane
-        from clifford.tools.g3c.GAOnline import GAScene
+        from clifford.tools.g3c.object_clustering import visualise_n_clusters
+
         object_generator = random_plane
         n_clusters = 3
         n_objects_per_cluster = 10
-        n_shotgunning = 30
+        n_shotgunning = 60
         all_objects, labels, centroids = self.run_n_clusters(object_generator, n_clusters,
                                                              n_objects_per_cluster, n_shotgunning)
-        sc = GAScene()
-        for c in centroids:
-            sc.add_plane(c, 'rgb(255,0,0)')
-        for o in all_objects:
-            sc.add_plane(o, 'rgb(0,0,0)')
+        sc = visualise_n_clusters(all_objects, centroids, labels, object_type='plane',
+                             color_1=np.array([255, 0, 0]), color_2=np.array([0, 255, 0]))
         print(sc)
 
     def test_assign_objects_to_objects(self):
         import numpy.testing as npt
-        import numpy as np
         from clifford.tools.g3c import random_line, random_point_pair, random_plane, \
             random_circle, random_sphere
         from clifford.tools.g3c.object_clustering import assign_measurements_to_objects_matrix
@@ -339,7 +325,6 @@ class RotorEstimationTests(unittest.TestCase):
 
     def run_rotor_estimation(self, object_generator, estimation_function, n_runs=10, n_objects_per_run=10):
         from clifford import g3c
-        import numpy as np
         layout = g3c.layout
         e1 = layout.blades['e1']
         e2 = layout.blades['e2']
@@ -597,7 +582,6 @@ class G3CToolsTests(unittest.TestCase):
         assert point_result is None
 
     def test_normalise_n_minus_1(self):
-        import numpy as np
         from clifford.tools.g3c import random_conformal_point, normalise_n_minus_1, ninf
         for i in range(500):
             mv = np.random.rand()*random_conformal_point()
@@ -613,7 +597,6 @@ class G3CToolsTests(unittest.TestCase):
 
     def test_get_properties_of_sphere(self):
         from clifford import g3c
-        import numpy as np
         layout = g3c.layout
         e1 = layout.blades['e1']
         e2 = layout.blades['e2']
@@ -652,7 +635,6 @@ class G3CToolsTests(unittest.TestCase):
 
     def test_euc_distance(self):
         from clifford import g3c
-        import numpy as np
         layout = g3c.layout
         e1 = layout.blades['e1']
         e2 = layout.blades['e2']
@@ -670,7 +652,6 @@ class G3CToolsTests(unittest.TestCase):
 
     def test_dilation_rotor(self):
         from clifford.tools.g3c import random_sphere, generate_dilation_rotor, get_radius_from_sphere
-        import numpy as np
         for i in range(100):
             scale = 2*np.random.rand()
             r = generate_dilation_rotor(scale)
@@ -682,7 +663,6 @@ class G3CToolsTests(unittest.TestCase):
 
     def test_rotor_between_objects(self):
         from clifford import g3c
-        import numpy as np
         layout = g3c.layout
         e1 = layout.blades['e1']
         e2 = layout.blades['e2']
