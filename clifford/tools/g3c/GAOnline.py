@@ -1,4 +1,6 @@
 
+from __future__ import print_function
+
 class Sphere():
     def __init__(self,mv,color):
         self.mv = mv
