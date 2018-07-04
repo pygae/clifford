@@ -270,53 +270,49 @@ def negative_root(sigma):
     return (sigma - norm_s) / (math.sqrt(2) * math.sqrt(sigma[0] - norm_s))
 
 
-def neg_twiddle_root(C):
+def general_root(sigma):
     """
-    Hadfield and Lasenby AGACSE2018
-    Return a valid object from the addition result C
+    Square Root and Logarithm of Rotors
+    in 3D Conformal Geometric Algebra
+    Using Polar Decomposition
+    Leo Dorst and Robert Valkenburg
     """
-    sigma = -(C * ~C)
     if check_sigma_for_positive_root(sigma):
         k = positive_root(sigma)
-        C3 = ((1. / k) * C).normal()
-        return [C3]
+        return [k]
     elif check_sigma_for_negative_root(sigma):
         k = positive_root(sigma)
-        C3 = ((1. / k) * C).normal()
-
         k2 = negative_root(sigma)
-        C4 = ((1. / k2) * C).normal()
-        return [C3, C4]
+        return [k, k2]
     elif check_infinite_roots(sigma):
-        #warnings.warn('Infinite roots detected: sigma = ' + str(sigma), RuntimeWarning)
-        return [C.normal()]
+        # warnings.warn('Infinite roots detected: sigma = ' + str(sigma), RuntimeWarning)
+        return [1.0]
     else:
         raise ValueError('No root exists')
+
+
+def neg_twiddle_root(C):
+    """
+    Square Root and Logarithm of Rotors
+    in 3D Conformal Geometric Algebra
+    Using Polar Decomposition
+    Leo Dorst and Robert Valkenburg
+    """
+    sigma = -(C * ~C)
+    k_list = general_root(sigma)
+    return [((1. / k) * C).normal() for k in k_list]
 
 
 def pos_twiddle_root(C):
     """
-    Hadfield and Lasenby AGACSE2018
-    Return a valid rotor from the (1 + C2C1) result C
+    Square Root and Logarithm of Rotors
+    in 3D Conformal Geometric Algebra
+    Using Polar Decomposition
+    Leo Dorst and Robert Valkenburg
     """
     sigma = (C * ~C)
-    if check_sigma_for_positive_root(sigma):
-        k = positive_root(sigma)
-        C3 = ((1. / k) * C).normal()
-        return [C3]
-    elif check_sigma_for_negative_root(sigma):
-        k = positive_root(sigma)
-        C3 = ((1. / k) * C).normal()
-
-        k2 = negative_root(sigma)
-        C4 = ((1. / k2) * C).normal()
-        return [C3, C4]
-    elif check_infinite_roots(sigma):
-        #warnings.warn('Infinite roots detected: sigma = ' + str(sigma), RuntimeWarning)
-        return [C.normal()]
-    else:
-        raise ValueError('No root exists')
-
+    k_list = general_root(sigma)
+    return [((1. / k) * C).normal() for k in k_list]
 
 
 def square_roots_of_rotor(R):
@@ -333,6 +329,7 @@ def interp_objects_root(C1, C2, alpha):
     """
     Hadfield and Lasenby, Direct Linear Interpolation of Geometric Objects, AGACSE2018
     Directly linearly interpolates conformal objects
+    Return a valid object from the addition result C
     """
     C = alpha * C1 + (1 - alpha) * C2
     return (neg_twiddle_root(C)[0]).normal()
@@ -342,6 +339,7 @@ def average_objects(obj_list, weights=[]):
     """
     Hadfield and Lasenby, Direct Linear Interpolation of Geometric Objects, AGACSE2018
     Directly averages conformal objects
+    Return a valid object from the addition result C
     """
     if len(weights) == len(obj_list):
         C = sum([o * w for o, w in zip(obj_list, weights)])
@@ -354,6 +352,7 @@ def rotor_between_objects(C1, C2):
     """
     Hadfield and Lasenby AGACSE2018
     For any two conformal objects C1 and C2 this returns a rotor that takes C1 to C2
+    Return a valid object from the addition result 1 + C2C1
     """
     if float((C1 * C1)[0]) > 0:
         C = 1 + (C2 * C1)
