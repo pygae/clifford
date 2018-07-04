@@ -180,7 +180,7 @@ def GA_SVD(u_list, v_list):
 def rotation_matrix_align_vecs(u_list, v_list):
     """ Returns the rotation matrix that aligns the set of vectors u and v """
     u, s, vh = GA_SVD(u_list, v_list)
-    return np.transpose(vh)@np.transpose(u)
+    return np.dot(np.transpose(vh), np.transpose(u))
 
 
 def rotor_align_vecs(u_list, v_list):
