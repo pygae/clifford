@@ -57,6 +57,8 @@ nbsphinx_execute = 'always'
 nbsphinx_allow_errors=True
 nbsphinx_kernel_name='python'
 
+nbsphinx_timeout = 60
+
 #autodoc_default_flags='members'
 autosummary_generate=['tools.rst','api.rst']
 numpydoc_show_class_members = False
