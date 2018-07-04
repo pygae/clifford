@@ -51,8 +51,10 @@ def fit_object_to_objects(object_start, objects, averaging_method='unweighted'):
         elif averaging_method == 'unweighted':
             final_object = average_objects(objects)
         elif averaging_method == 'weighted':
-            weights = (1.0 / (object_set_cost_matrix([object_start], objects) + 0.0001)).flatten()
-            final_object = average_objects(objects, weights=weights)
+            final_object = 1.0*object_start
+            for i in range(10):
+                weights = (1.0 / (object_set_cost_matrix([final_object], objects) + 0.0001)).flatten()
+                final_object = average_objects(objects, weights=weights)
     else:
         return 1.0*object_start
     return final_object
@@ -78,7 +80,7 @@ def n_clusters_objects(n, objects_measurements, initial_centroids=None, \
     Includes shotgunning for initial cluster position
     averaging_method flag determines if bivector parameterised optimisation or averaging of objects is used
     """
-    print("Initialising")
+    #print("Initialising")
     min_shotgun_cost = np.finfo(float).max
     for i in range(n_shotgunning):
         if initial_centroids is None:
@@ -107,7 +109,7 @@ def n_clusters_objects(n, objects_measurements, initial_centroids=None, \
             start_centroids = copy.deepcopy([c for c in centroids])
             start_labels = [copy.deepcopy(l) for l in old_labels]
 
-    print("Clustering")
+    #print("Clustering")
     for i in range(10000):
         # Optimise the centroids to fit better their respective clusters
         new_centroids = []

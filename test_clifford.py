@@ -198,23 +198,13 @@ class G3ToolsTests(unittest.TestCase):
 class ObjectClusteringTests(unittest.TestCase):
 
     def run_n_clusters(self, object_generator, n_clusters, n_objects_per_cluster, n_shotgunning):
-        from clifford.tools.g3c import generate_random_object_cluster
+        from clifford.tools.g3c import generate_n_clusters
         from clifford.tools.g3c.object_clustering import n_clusters_objects
-        from numpy import pi
-        centroids = [object_generator() for i in range(n_clusters)]
-        object_clusters = []
-        for i in range(n_clusters):
-            cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
-                                                             max_cluster_trans=0.5, max_cluster_rot=pi / 16)
-            object_clusters.append(cluster_objects)
-        all_objects = [item for sublist in object_clusters for item in sublist]
-        import time
-        t = time.time()
+        all_objects, object_clusters = generate_n_clusters( object_generator, n_clusters, n_objects_per_cluster )
         [new_labels, centroids, start_labels, start_centroids] = n_clusters_objects(n_clusters, all_objects,
-                                                                                    initial_centroids=centroids,
+                                                                                    initial_centroids=None,
                                                                                     n_shotgunning=n_shotgunning,
                                                                                     averaging_method='unweighted')
-        print('Clustering took ', time.time() - t, ' seconds')
         return all_objects, new_labels, centroids
 
     def test_clustering_point_pairs(self):

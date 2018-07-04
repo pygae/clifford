@@ -77,6 +77,17 @@ imt_func = layout.imt_func
 rightLaInv = layout.rightLaInv_func
 
 
+def generate_n_clusters( object_generator, n_clusters, n_objects_per_cluster ):
+    """ Creates n_clusters of random objects """
+    object_clusters = []
+    for i in range(n_clusters):
+        cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
+                                                         max_cluster_trans=0.5, max_cluster_rot=np.pi / 16)
+        object_clusters.append(cluster_objects)
+    all_objects = [item for sublist in object_clusters for item in sublist]
+    return all_objects, object_clusters
+
+
 def generate_random_object_cluster(n_objects, object_generator, max_cluster_trans=1.0, max_cluster_rot=np.pi/8):
     """ Creates a cluster of random objects """
     ref_obj = object_generator()
