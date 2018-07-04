@@ -195,6 +195,24 @@ class G3ToolsTests(unittest.TestCase):
             testing.assert_almost_equal(r.value, r_2.value)
 
 
+
+class SceneSimplificationTests(unittest.TestCase):
+
+    def test_simplify_scene(self):
+        from clifford.tools.g3c import generate_n_clusters, random_line
+        from clifford.tools.g3c.scene_simplification import simplify_scene
+        object_generator = random_line
+        n_clusters = 3
+        n_objects_per_cluster = 10
+        threshold = 0.5
+        all_objects, object_clusters = generate_n_clusters(object_generator,
+                                                           n_clusters,
+                                                           n_objects_per_cluster)
+        all_object_copy = [o for o in all_objects]
+        all_object_copy = simplify_scene(all_object_copy, threshold)
+        assert len(all_object_copy) == n_clusters
+
+
 class ObjectClusteringTests(unittest.TestCase):
 
     def run_n_clusters(self, object_generator, n_clusters, n_objects_per_cluster, n_shotgunning):
