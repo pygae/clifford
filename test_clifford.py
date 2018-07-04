@@ -313,15 +313,20 @@ class ObjectClusteringTests(unittest.TestCase):
 
 class RotorEstimationTests(unittest.TestCase):
 
-    def run_rotor_estimation(self, object_generator, estimation_function, n_runs=10, n_objects_per_run=10):
+    @classmethod
+    def setUpClass(self):
         from clifford import g3c
         layout = g3c.layout
-        e1 = layout.blades['e1']
-        e2 = layout.blades['e2']
-        e3 = layout.blades['e3']
-        ep, en, up, down, homo, E0, ninf, no = (g3c.stuff["ep"], g3c.stuff["en"],
-                                                g3c.stuff["up"], g3c.stuff["down"], g3c.stuff["homo"],
-                                                g3c.stuff["E0"], g3c.stuff["einf"], -g3c.stuff["eo"])
+        self.layout = layout
+        self.stuff = g3c.stuff
+        
+    def run_rotor_estimation(self, object_generator, estimation_function, n_runs=5, n_objects_per_run=10):
+        e1 = self.layout.blades['e1']
+        e2 = self.layout.blades['e2']
+        e3 = self.layout.blades['e3']
+        ep, en, up, down, homo, E0, ninf, no = (self.stuff["ep"], self.stuff["en"],
+                                                self.stuff["up"], self.stuff["down"], self.stuff["homo"],
+                                                self.stuff["E0"], self.stuff["einf"], -self.stuff["eo"])
         from clifford.tools.g3 import generate_rotation_rotor, random_euc_mv
         from clifford.tools.g3c import generate_translation_rotor
 
@@ -368,8 +373,9 @@ class RotorEstimationTests(unittest.TestCase):
             return r_est
         self.run_rotor_estimation(random_circle, estimation_func)
 
-    #@SkipTest
+    @SkipTest
     def test_estimate_rotor_point_pairs_optimisation(self):
+        """ Skip this one as it seems to take a fairly long time atm """
         from clifford.tools.g3c import random_point_pair
         from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
         def estimation_func(pp_list_a,pp_list_b):
@@ -426,8 +432,9 @@ class RotorEstimationTests(unittest.TestCase):
             return r_est_2*r_est_1
         self.run_rotor_estimation(random_circle, estimation_func)
 
-    #@SkipTest
+    @SkipTest
     def test_estimate_rotor_point_pairs_sequential(self):
+        """ Skip this one as it seems to take a fairly long time atm """ 
         from clifford.tools.g3c import random_point_pair
         from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
 
@@ -474,8 +481,9 @@ class RotorEstimationTests(unittest.TestCase):
             return r_est
         self.run_rotor_estimation(random_circle, estimation_func)
 
-    #@SkipTest
+    @SkipTest
     def test_estimate_rotor_point_pairs_sequential_convergence_estimation(self):
+        """ Skip this one as it seems to take a fairly long time atm """ 
         from clifford.tools.g3c import random_point_pair
         from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation_convergence_detection
 
