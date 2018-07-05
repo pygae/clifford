@@ -51,6 +51,7 @@ import numpy as np
 from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, random_rotation_rotor
 from clifford.g3c import *
 import clifford as cf
+from clifford import get_mult_function
 import warnings
 
 # Allow sytactic alternatives to the standard included in the clifford package
@@ -234,25 +235,32 @@ def euc_dist(conf_mv_a, conf_mv_b):
     else:
         return 0.0
 
-
-def dorst_norm_val(sigma):
+@numba.jit
+def dorst_norm_val(sigma_val):
     """ Square Root of Rotors - Implements the norm of a rotor"""
-    return math.sqrt(sigma[0] ** 2 - (sigma(4) ** 2)[0])
+    sigma_4 = project_val(sigma_val, 4)
+    sqrd_ans = sigma_val[0] ** 2 - gmt_func(sigma_4,sigma_4)[0]
+    return math.sqrt(sqrd_ans)
+
+@numba.njit
+def check_sigma_for_positive_root_val(sigma_val):
+    """ Square Root of Rotors - Checks for a positive root """
+    return (sigma_val[0] + dorst_norm_val(sigma_val)) > 0
 
 
 def check_sigma_for_positive_root(sigma):
     """ Square Root of Rotors - Checks for a positive root """
-    return sigma[0] + dorst_norm_val(sigma) > 0
+    return check_sigma_for_positive_root_val(sigma.value)
 
 
 def check_sigma_for_negative_root(sigma):
     """ Square Root of Rotors - Checks for a negative root """
-    return sigma[0] - dorst_norm_val(sigma) > 0
+    return (sigma[0] - dorst_norm_val(sigma.value)) > 0
 
 
 def check_infinite_roots(sigma):
     """ Square Root of Rotors - Checks for a infinite roots """
-    return sigma[0] + dorst_norm_val(sigma) < 0.0000000001
+    return (sigma[0] + dorst_norm_val(sigma.value)) < 0.0000000001
 
 
 def positive_root(sigma):
@@ -260,13 +268,13 @@ def positive_root(sigma):
     Square Root of Rotors - Evaluates the positive root
     TODO: Dig out the full name of this paper and authors
     """
-    norm_s = dorst_norm_val(sigma)
+    norm_s = dorst_norm_val(sigma.value)
     return (sigma + norm_s) / (math.sqrt(2) * math.sqrt(sigma[0] + norm_s))
 
 
 def negative_root(sigma):
     """ Square Root of Rotors - Evaluates the negative root """
-    norm_s = dorst_norm_val(sigma)
+    norm_s = dorst_norm_val(sigma.value)
     return (sigma - norm_s) / (math.sqrt(2) * math.sqrt(sigma[0] - norm_s))
 
 
@@ -286,7 +294,7 @@ def general_root(sigma):
         return [k, k2]
     elif check_infinite_roots(sigma):
         # warnings.warn('Infinite roots detected: sigma = ' + str(sigma), RuntimeWarning)
-        return [1.0]
+        return [1.0 + 0.0*e1]
     else:
         raise ValueError('No root exists')
 
@@ -310,7 +318,7 @@ def pos_twiddle_root(C):
     Using Polar Decomposition
     Leo Dorst and Robert Valkenburg
     """
-    sigma = (C * ~C)
+    sigma = cf.MultiVector(layout, gmt_func(C.value, adjoint_func(C.value)))
     k_list = general_root(sigma)
     return [((1. / k) * C).normal() for k in k_list]
 
@@ -354,12 +362,75 @@ def rotor_between_objects(C1, C2):
     For any two conformal objects C1 and C2 this returns a rotor that takes C1 to C2
     Return a valid object from the addition result 1 + C2C1
     """
-    if float((C1 * C1)[0]) > 0:
-        C = 1 + (C2 * C1)
-        R = pos_twiddle_root(C)[0]
-        return R
+    if float(gmt_func(C1.value, C1.value)[0]) > 0:
+        C = 1 + C2*C1
+        k = general_root(C * ~C)[0]
+        normalisation_factor = (1.0 - (k(4) / k[0])) / k[0]
+        return normalisation_factor * C
+        # C = 1 + cf.MultiVector(layout,gmt_func(C2.value, C1.value))
+        # R = pos_twiddle_root(C)[0]
+        # return R
     else:
-        return (1 - (C2 * C1)).normal()
+        return (1 - cf.MultiVector(layout,gmt_func(C2.value, C1.value))).normal()
+
+
+sparse_line_gmt = get_mult_function(
+    layout.gmt, layout.gaDims, layout.gradeList, grades_a=[3], grades_b=[3])
+
+
+
+
+@numba.njit
+def val_norm(mv_val):
+    return np.sqrt(np.abs(gmt_func(adjoint_func(mv_val), mv_val)[0]))
+
+
+def norm(mv):
+    return val_norm(mv.value)
+
+
+@numba.njit
+def val_normalised(mv_val):
+    return mv_val/val_norm(mv_val)
+
+
+def normalised(mv):
+    return cf.MultiVector(layout, val_normalised(mv.value))
+
+
+@numba.njit
+def val_rotor_between_lines(L1_val, L2_val):
+    """ Implements a very optimised rotor line to line extraction """
+    L21_val = sparse_line_gmt(L2_val, L1_val)
+    L12_val = sparse_line_gmt(L1_val, L2_val)
+    K_val = L21_val + L12_val
+    K_val[0] += 2.0
+    beta_val = project_val(K_val, 4)
+    alpha = 2 * K_val[0]
+
+    denominator = np.sqrt(alpha / 2)
+    numerator_val = -beta_val/alpha
+    numerator_val[0] += 1.0
+    normalisation_val = numerator_val/denominator
+
+    output_val = L21_val
+    output_val[0] += 1
+    return gmt_func(normalisation_val, output_val)
+
+
+def rotor_between_lines(L1, L2):
+    return cf.MultiVector(layout, val_rotor_between_lines(L1.value, L2.value))
+
+
+def rotor_between_planes(P1, P2):
+    return cf.MultiVector(layout, val_rotor_rotor_between_planes(P1.value, P2.value))
+
+
+@numba.njit
+def val_rotor_rotor_between_planes(P1_val, P2_val):
+    P21_val = -gmt_func(P2_val, P1_val)
+    P21_val[0] += 1
+    return val_normalised(P21_val)
 
 
 def random_bivector():
@@ -511,4 +582,3 @@ def distance_polar_line_to_euc_point_2d(rho, theta, x, y):
     point = val_convert_2D_point_to_conformal(x, y)
     line = val_convert_2D_polar_line_to_conformal_line(rho, theta)
     return val_distance_point_to_line(point, line)
-

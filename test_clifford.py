@@ -195,6 +195,191 @@ class G3ToolsTests(unittest.TestCase):
             testing.assert_almost_equal(r.value, r_2.value)
 
 
+class ModelMatchingTests(unittest.TestCase):
+
+    def test_iterative_model_match_line_optimised(self):
+        from clifford.tools.g3c import generate_random_object_cluster, \
+            random_line, random_rotation_translation_rotor, apply_rotor
+        from clifford.tools.g3c.model_matching import iterative_model_match
+
+        object_generator = random_line
+        n_objects_per_cluster = 20
+
+        # Make a cluster
+        cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
+                                                         max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
+        error_count = 0
+        n_runs = 50
+        for i in range(n_runs):
+            # Rotate and translate the cluster
+            disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi/8)
+            target = [apply_rotor(c, disturbance_rotor).normal() for c in cluster_objects]
+
+            labels, costs, r_est = iterative_model_match(target, cluster_objects, 30, object_type='lines')
+            try:
+                assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
+            except:
+                print(disturbance_rotor)
+                print(r_est)
+                error_count += 1
+        print('Correct fraction: ', 1.0 - error_count/n_runs)
+
+    def test_iterative_model_match(self):
+        from clifford.tools.g3c import generate_random_object_cluster, \
+            random_line, random_rotation_translation_rotor, apply_rotor, \
+            random_circle, random_point_pair
+        from clifford.tools.g3c.model_matching import iterative_model_match
+
+        object_generator = random_line
+        n_objects_per_cluster = 20
+
+        # Make a cluster
+        cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
+                                                         max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
+        error_count = 0
+        n_runs = 50
+        for i in range(n_runs):
+            # Rotate and translate the cluster
+            disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi/8)
+            target = [apply_rotor(c, disturbance_rotor).normal() for c in cluster_objects]
+
+            labels, costs, r_est = iterative_model_match(target, cluster_objects, 30, object_type='generic')
+            try:
+                assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
+            except:
+                print(disturbance_rotor)
+                print(r_est)
+                error_count += 1
+        print('Correct fraction: ', 1.0 - error_count/n_runs)
+
+    def test_iterative_model_match_sequential(self):
+        from clifford.tools.g3c import generate_random_object_cluster, \
+            random_line, random_rotation_translation_rotor, apply_rotor, \
+            random_circle, random_plane
+        from clifford.tools.g3c.model_matching import iterative_model_match_sequential
+
+        object_generator = random_line
+        n_objects_per_cluster = 20
+
+        # Make a cluster
+        cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
+                                                         max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
+        error_count = 0
+        n_runs = 50
+        for i in range(n_runs):
+            # Rotate and translate the cluster
+            disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi/8)
+            target = [apply_rotor(c, disturbance_rotor).normal() for c in cluster_objects]
+
+            labels, costs, r_est = iterative_model_match_sequential(target, cluster_objects, 30, object_type='generic')
+            try:
+                assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
+            except:
+                print(disturbance_rotor)
+                print(r_est)
+                error_count += 1
+        print('Correct fraction: ', 1.0 - error_count/n_runs)
+
+    def test_iterative_model_match_newton(self):
+        from clifford.tools.g3c import generate_random_object_cluster, \
+            random_line, random_rotation_translation_rotor, apply_rotor
+        from clifford.tools.g3c.model_matching import iterative_model_match
+
+        object_generator = random_line
+        n_objects_per_cluster = 20
+
+        # Make a cluster
+        cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
+                                                         max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
+        error_count = 0
+        n_runs = 50
+        for i in range(n_runs):
+            # Rotate and translate the cluster
+            disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi/8)
+            target = [apply_rotor(c, disturbance_rotor).normal() for c in cluster_objects]
+
+            labels, costs, r_est = iterative_model_match(target, cluster_objects, 30, rotor_newton=True)
+            try:
+                assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
+            except:
+                print(disturbance_rotor)
+                print(r_est)
+                error_count += 1
+        print('Correct fraction: ', 1.0 - error_count/n_runs)
+
+    @SkipTest
+    def test_REFORM(self):
+        from clifford.tools.g3c import generate_random_object_cluster, \
+            random_line, random_rotation_translation_rotor, apply_rotor
+        from clifford.tools.g3c.model_matching import REFORM
+
+        object_generator = random_line
+        n_objects_per_cluster = 20
+        objects_per_sample = 5
+        iterations = 30
+        pool_size = 8
+
+        n_samples = 32
+
+        error_count = 0
+        n_runs = 100
+        for i in range(n_runs):
+
+            # Make a cluster
+            cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
+                                                             max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
+
+            # Rotate and translate the cluster
+            disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi/8)
+            target = [apply_rotor(c, disturbance_rotor).normal() for c in cluster_objects]
+
+            labels, costs, r_est = REFORM(target, cluster_objects, n_samples, objects_per_sample,
+                                    iterations, covergence_threshold=0.00000001, pool_size=pool_size)
+            try:
+                assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
+            except:
+                print(disturbance_rotor)
+                print(r_est)
+                error_count += 1
+        print('Correct fraction: ', 1.0 - error_count/n_runs)
+
+    @SkipTest
+    def test_REFORM_line_optimised(self):
+        from clifford.tools.g3c import generate_random_object_cluster, \
+            random_line, random_rotation_translation_rotor, apply_rotor
+        from clifford.tools.g3c.model_matching import REFORM
+
+        object_generator = random_line
+        n_objects_per_cluster = 20
+        objects_per_sample = 5
+        iterations = 30
+        pool_size = 8
+
+        n_samples = pool_size
+
+        error_count = 0
+        n_runs = 100
+        for i in range(n_runs):
+
+            # Make a cluster
+            cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
+                                                             max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
+
+            # Rotate and translate the cluster
+            disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi/8)
+            target = [apply_rotor(c, disturbance_rotor).normal() for c in cluster_objects]
+
+            labels, costs, r_est = REFORM(target, cluster_objects, n_samples, objects_per_sample,
+                                    iterations, covergence_threshold=0.00000001, pool_size=pool_size,
+                                    object_type = 'lines')
+            try:
+                assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
+            except:
+                print(disturbance_rotor)
+                print(r_est)
+                error_count += 1
+        print('Correct fraction: ', 1.0 - error_count/n_runs)
+
 
 class SceneSimplificationTests(unittest.TestCase):
 
@@ -295,38 +480,71 @@ class ObjectClusteringTests(unittest.TestCase):
     def test_assign_objects_to_objects(self):
         import numpy.testing as npt
         from clifford.tools.g3c import random_line, random_point_pair, random_plane, \
-            random_circle, random_sphere
+            random_circle, random_sphere, random_rotation_translation_rotor
         from clifford.tools.g3c.object_clustering import assign_measurements_to_objects_matrix
 
-        # point_pairs
-        object_set_a = [random_point_pair() for i in range(20)]
-        object_set_b = [l for l in object_set_a]
-        label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
-        npt.assert_equal(label_a, np.array(range(len(label_a))))
+        for i in range(5):
+            # point_pairs
+            object_set_a = [random_point_pair() for i in range(20)]
+            object_set_b = [l for l in object_set_a]
+            label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+            npt.assert_equal(label_a, np.array(range(len(label_a))))
 
-        # Lines
-        object_set_a = [random_line() for i in range(20)]
-        object_set_b = [l for l in object_set_a]
-        label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
-        npt.assert_equal(label_a, np.array(range(len(label_a))))
+            # Lines
+            object_set_a = [random_line() for i in range(20)]
+            object_set_b = [l for l in object_set_a]
+            label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+            npt.assert_equal(label_a, np.array(range(len(label_a))))
 
-        # circles
-        object_set_a = [random_circle() for i in range(20)]
-        object_set_b = [l for l in object_set_a]
-        label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
-        npt.assert_equal(label_a, np.array(range(len(label_a))))
+            # circles
+            object_set_a = [random_circle() for i in range(20)]
+            object_set_b = [l for l in object_set_a]
+            label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+            npt.assert_equal(label_a, np.array(range(len(label_a))))
 
-        # planes
-        object_set_a = [random_plane() for i in range(20)]
-        object_set_b = [l for l in object_set_a]
-        label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
-        npt.assert_equal(label_a, np.array(range(len(label_a))))
+            # planes
+            object_set_a = [random_plane() for i in range(20)]
+            object_set_b = [l for l in object_set_a]
+            label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+            npt.assert_equal(label_a, np.array(range(len(label_a))))
 
-        # spheres
-        object_set_a = [random_sphere() for i in range(20)]
-        object_set_b = [l for l in object_set_a]
-        label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
-        npt.assert_equal(label_a, np.array(range(len(label_a))))
+            # spheres
+            object_set_a = [random_sphere() for i in range(20)]
+            object_set_b = [l for l in object_set_a]
+            label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+            npt.assert_equal(label_a, np.array(range(len(label_a))))
+
+        for i in range(10):
+            r = random_rotation_translation_rotor(0.001,np.pi/32)
+            # point_pairs
+            object_set_a = [random_point_pair() for i in range(20)]
+            object_set_b = [l for l in object_set_a]
+            label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+            npt.assert_equal(label_a, np.array(range(len(label_a))))
+
+            # Lines
+            object_set_a = [random_line() for i in range(20)]
+            object_set_b = [l for l in object_set_a]
+            label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+            npt.assert_equal(label_a, np.array(range(len(label_a))))
+
+            # circles
+            object_set_a = [random_circle() for i in range(20)]
+            object_set_b = [l for l in object_set_a]
+            label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+            npt.assert_equal(label_a, np.array(range(len(label_a))))
+
+            # planes
+            object_set_a = [random_plane() for i in range(20)]
+            object_set_b = [l for l in object_set_a]
+            label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+            npt.assert_equal(label_a, np.array(range(len(label_a))))
+
+            # spheres
+            object_set_a = [random_sphere() for i in range(20)]
+            object_set_b = [l for l in object_set_a]
+            label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+            npt.assert_equal(label_a, np.array(range(len(label_a))))
 
 
 class RotorEstimationTests(unittest.TestCase):
@@ -350,15 +568,15 @@ class RotorEstimationTests(unittest.TestCase):
 
         error_count = 0
         for i in range(n_runs):
-            pp_list_a = [object_generator().normal() for i in range(n_objects_per_run)]
-            r = (generate_translation_rotor(random_euc_mv(l_max=2)) * generate_rotation_rotor(np.random.randn(),
+            query_model = [object_generator().normal() for i in range(n_objects_per_run)]
+            r = (generate_translation_rotor(random_euc_mv(l_max=0.01)) * generate_rotation_rotor(np.random.randn()/10,
                                                                                        random_euc_mv().normal(),
                                                                                        random_euc_mv().normal())).normal()
 
-            pp_list_b = [(r * l * ~r).normal() for l in pp_list_a]
-            r_est = estimation_function(pp_list_a, pp_list_b)
+            reference_model = [(r * l * ~r).normal() for l in query_model]
+            r_est = estimation_function(reference_model, query_model)
             error_flag = False
-            for a, b in zip([(r_est * l * ~r_est).normal() for l in pp_list_a], pp_list_b):
+            for a, b in zip([(r_est * l * ~r_est).normal() for l in query_model], reference_model):
                 if abs(a+b) < 0.0001:
                     c = -b
                     print('SIGN FLIP')
@@ -391,7 +609,6 @@ class RotorEstimationTests(unittest.TestCase):
             return r_est
         self.run_rotor_estimation(random_circle, estimation_func)
 
-    @SkipTest
     def test_estimate_rotor_point_pairs_optimisation(self):
         """ Skip this one as it seems to take a fairly long time atm """
         from clifford.tools.g3c import random_point_pair
@@ -710,6 +927,7 @@ class G3CToolsTests(unittest.TestCase):
             C3 = (R*C1*~R).normal()
             # NOTE this sign check should not be used in an ideal world, need something a bit better
             if abs(C3 + C2) < 0.0001:
+                print('SIGN FLIP')
                 C3 = -C3
             testing.assert_almost_equal(C2.value, C3.value)
 

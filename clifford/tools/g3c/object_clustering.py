@@ -21,11 +21,11 @@ def compare_labels(old_labels, new_labels):
     return True
 
 
-def assign_measurements_to_objects_matrix(objects, objects_measurements):
+def assign_measurements_to_objects_matrix(objects, objects_measurements, object_type='generic'):
     """
     Assigns each object in objects_measurements to one in objects based on minimum cost
     """
-    matrix = object_set_cost_matrix(objects, objects_measurements)
+    matrix = object_set_cost_matrix(objects, objects_measurements, object_type=object_type)
     labels = np.nanargmin(matrix, axis=0)
     costs = np.array([matrix[l, i] for i, l in enumerate(labels)])
     return [labels, costs]

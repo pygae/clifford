@@ -53,6 +53,42 @@ def ga_exp(B):
     return cf.MultiVector(layout, val_exp(B.value))
 
 
+def interpolate_rotors(R_n_plus_1, R_n, interpolation_fraction):
+    """
+    Mesh Vertex Pose and Position Interpolation using Geometric Algebra.
+    Rich Wareham and Joan Lasenby
+    """
+    if interpolation_fraction < np.finfo(float).eps:
+        return R_n
+    delta_R = R_n_plus_1 * ~R_n
+    delta_bivector = ga_log(delta_R)
+    R_n_lambda = ga_exp(interpolation_fraction * delta_bivector) * R_n
+    return R_n_lambda
+
+
+def extractRotorComponents(R):
+    phi = np.arccos(float(R[0]))             #scalar
+    phi2 = phi * phi                  #scalar
+    #Notice: np.sinc(pi * x)/(pi x)
+    phi_sinc = np.sinc(phi/np.pi)             #scalar
+    phiP = ((R(2)*ninf)|ep)/(phi_sinc)
+    t_normal_n = -((phiP * R(4))/(phi2 * phi_sinc))
+    t_perpendicular_n = -(phiP * (phiP * R(2))(2))/(phi2 * phi_sinc)
+    return phiP, t_normal_n, t_perpendicular_n
+
+
+def ga_log(R):
+    """
+    R must be a displacement rotor. grades in [0, 2, 4]
+
+    Presented by R. Wareham (Applications of CGA)
+
+
+    WARNING: DOES NOT COMMUTE log(A * B) != log(A) + log(B)
+    """
+    phiP, t_normal_n, t_perpendicular_n = extractRotorComponents(R)
+    return phiP + t_normal_n + t_perpendicular_n
+
 
 @numba.njit
 def val_vec_repr_to_bivector(x):
