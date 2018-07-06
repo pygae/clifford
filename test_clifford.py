@@ -319,7 +319,7 @@ class ModelMatchingTests(unittest.TestCase):
         iterations = 30
         pool_size = 8
 
-        n_samples = 32
+        n_samples = 8
 
         error_count = 0
         n_runs = 100
@@ -610,7 +610,7 @@ class RotorEstimationTests(unittest.TestCase):
         self.run_rotor_estimation(random_circle, estimation_func)
 
     def test_estimate_rotor_point_pairs_optimisation(self):
-        """ Skip this one as it seems to take a fairly long time atm """
+        #""" Skip this one as it seems to take a fairly long time atm """
         from clifford.tools.g3c import random_point_pair
         from clifford.tools.g3c.rotor_estimation import estimate_rotor_objects
         def estimation_func(pp_list_a,pp_list_b):

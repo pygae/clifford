@@ -263,13 +263,24 @@ def check_infinite_roots(sigma):
     return (sigma[0] + dorst_norm_val(sigma.value)) < 0.0000000001
 
 
+@numba.njit
+def positive_root_val(sigma_val):
+    """
+    Square Root of Rotors - Evaluates the positive root
+    """
+    norm_s = dorst_norm_val(sigma_val)
+    denominator = (math.sqrt(2) * math.sqrt(sigma_val[0] + norm_s))
+    result = sigma_val/denominator
+    result[0] += norm_s/denominator
+    return result
+
+
 def positive_root(sigma):
     """
     Square Root of Rotors - Evaluates the positive root
-    TODO: Dig out the full name of this paper and authors
     """
-    norm_s = dorst_norm_val(sigma.value)
-    return (sigma + norm_s) / (math.sqrt(2) * math.sqrt(sigma[0] + norm_s))
+    res_val = positive_root_val(sigma.value)
+    return cf.MultiVector(layout, res_val)
 
 
 def negative_root(sigma):
@@ -294,7 +305,7 @@ def general_root(sigma):
         return [k, k2]
     elif check_infinite_roots(sigma):
         # warnings.warn('Infinite roots detected: sigma = ' + str(sigma), RuntimeWarning)
-        return [1.0 + 0.0*e1]
+        return [unit_scalar_mv]
     else:
         raise ValueError('No root exists')
 
@@ -306,9 +317,20 @@ def neg_twiddle_root(C):
     Using Polar Decomposition
     Leo Dorst and Robert Valkenburg
     """
-    sigma = -(C * ~C)
+    sigma = cf.MultiVector(layout, -gmt_func(C.value, adjoint_func(C.value)))
     k_list = general_root(sigma)
-    return [((1. / k) * C).normal() for k in k_list]
+    return [annhilate_k(k, C) for k in k_list]
+
+
+@numba.njit
+def val_annhilate_k(K_val, C_val):
+    k_4 = -project_val(K_val, 4)/(K_val[0]**2)
+    k_4[0] += 1.0/K_val[0]
+    return val_normalised(gmt_func(k_4,C_val))
+
+
+def annhilate_k(K, C):
+    return cf.MultiVector(layout, val_annhilate_k(K.value, C.value))
 
 
 def pos_twiddle_root(C):
@@ -320,7 +342,7 @@ def pos_twiddle_root(C):
     """
     sigma = cf.MultiVector(layout, gmt_func(C.value, adjoint_func(C.value)))
     k_list = general_root(sigma)
-    return [((1. / k) * C).normal() for k in k_list]
+    return [annhilate_k(k, C) for k in k_list]
 
 
 def square_roots_of_rotor(R):
@@ -363,13 +385,9 @@ def rotor_between_objects(C1, C2):
     Return a valid object from the addition result 1 + C2C1
     """
     if float(gmt_func(C1.value, C1.value)[0]) > 0:
-        C = 1 + C2*C1
-        k = general_root(C * ~C)[0]
-        normalisation_factor = (1.0 - (k(4) / k[0])) / k[0]
-        return normalisation_factor * C
-        # C = 1 + cf.MultiVector(layout,gmt_func(C2.value, C1.value))
-        # R = pos_twiddle_root(C)[0]
-        # return R
+        C = 1 + cf.MultiVector(layout,gmt_func(C2.value, C1.value))
+        R = pos_twiddle_root(C)[0]
+        return R
     else:
         return (1 - cf.MultiVector(layout,gmt_func(C2.value, C1.value))).normal()
 
