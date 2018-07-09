@@ -324,9 +324,9 @@ def neg_twiddle_root(C):
 
 @numba.njit
 def val_annhilate_k(K_val, C_val):
-    k_4 = -project_val(K_val, 4)/(K_val[0]**2)
-    k_4[0] += 1.0/K_val[0]
-    return val_normalised(gmt_func(k_4,C_val))
+    k_4 = -project_val(K_val, 4)
+    k_4[0] += K_val[0]
+    return val_normalised(gmt_func(k_4, C_val))
 
 
 def annhilate_k(K, C):
