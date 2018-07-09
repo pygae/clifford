@@ -6,7 +6,7 @@ import multiprocessing
 from scipy.optimize import minimize
 
 from .rotor_parameterisation import rotorconversion
-from . import rotor_between_objects, apply_rotor, square_roots_of_rotor, rotor_between_lines
+from . import rotor_between_objects, apply_rotor, square_roots_of_rotor, rotor_between_lines, normalised
 from clifford.g3c import *
 from clifford.tools import orthoFrames2Verser as cartan
 from .cost_functions import object_set_cost_sum, rotor_cost
@@ -148,17 +148,17 @@ def sequential_object_rotor_estimation_convergence_detection(reference_model, qu
         else:
             indices = range(len(query_model))
         for i in indices:
-            C1 = (apply_rotor(query_model[i],R_total)).normal()
+            C1 = normalised(apply_rotor(query_model[i],R_total))
             C2 = reference_model[i]
             if abs(C1 + C2) < 0.0001:
                 C1 = -C1
             if object_type == 'lines':
-                rroot = (square_roots_of_rotor(rotor_between_lines(C1, C2))[0]).normal()
+                rroot = normalised(square_roots_of_rotor(rotor_between_lines(C1, C2))[0])
             else:
-                rroot = (square_roots_of_rotor(rotor_between_objects(C1,C2))[0]).normal()
+                rroot = normalised(square_roots_of_rotor(rotor_between_objects(C1,C2))[0])
             r_list.append(rroot)
-            r_set = (rroot*r_set).normal()
-            R_total = (rroot * R_total).normal()
+            r_set = normalised(rroot*r_set)
+            R_total = normalised(rroot * R_total)
         if rotor_cost(r_set) < cost_tolerance:
             exit_flag = 0
             return R_total, r_list, exit_flag

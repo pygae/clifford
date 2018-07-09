@@ -70,6 +70,7 @@ no_val = no.value
 I3_val = I3.value
 
 unit_scalar_mv = 1.0 + 0.0*e1
+unit_scalar_mv_val = unit_scalar_mv.value
 
 adjoint_func = layout.adjoint_func
 gmt_func = layout.gmt_func
@@ -235,12 +236,14 @@ def euc_dist(conf_mv_a, conf_mv_b):
     else:
         return 0.0
 
+
 @numba.jit
 def dorst_norm_val(sigma_val):
     """ Square Root of Rotors - Implements the norm of a rotor"""
     sigma_4 = project_val(sigma_val, 4)
     sqrd_ans = sigma_val[0] ** 2 - gmt_func(sigma_4,sigma_4)[0]
     return math.sqrt(sqrd_ans)
+
 
 @numba.njit
 def check_sigma_for_positive_root_val(sigma_val):
@@ -253,14 +256,26 @@ def check_sigma_for_positive_root(sigma):
     return check_sigma_for_positive_root_val(sigma.value)
 
 
+@numba.njit
+def check_sigma_for_negative_root_val(sigma_value):
+    """ Square Root of Rotors - Checks for a negative root """
+    return (sigma_value[0] - dorst_norm_val(sigma_value)) > 0
+
+
 def check_sigma_for_negative_root(sigma):
     """ Square Root of Rotors - Checks for a negative root """
-    return (sigma[0] - dorst_norm_val(sigma.value)) > 0
+    return check_sigma_for_negative_root_val(sigma.value)
+
+
+@numba.njit
+def check_infinite_roots_val(sigma_value):
+    """ Square Root of Rotors - Checks for a infinite roots """
+    return (sigma_value[0] + dorst_norm_val(sigma_value)) < 0.0000000001
 
 
 def check_infinite_roots(sigma):
     """ Square Root of Rotors - Checks for a infinite roots """
-    return (sigma[0] + dorst_norm_val(sigma.value)) < 0.0000000001
+    return check_infinite_roots_val(sigma.value)
 
 
 @numba.njit
@@ -275,6 +290,18 @@ def positive_root_val(sigma_val):
     return result
 
 
+@numba.njit
+def negative_root_val(sigma_val):
+    """
+    Square Root of Rotors - Evaluates the positive root
+    """
+    norm_s = dorst_norm_val(sigma_val)
+    denominator = (math.sqrt(2) * math.sqrt(sigma_val[0] - norm_s))
+    result = sigma_val/denominator
+    result[0] -= norm_s/denominator
+    return result
+
+
 def positive_root(sigma):
     """
     Square Root of Rotors - Evaluates the positive root
@@ -285,29 +312,62 @@ def positive_root(sigma):
 
 def negative_root(sigma):
     """ Square Root of Rotors - Evaluates the negative root """
-    norm_s = dorst_norm_val(sigma.value)
-    return (sigma - norm_s) / (math.sqrt(2) * math.sqrt(sigma[0] - norm_s))
+    res_val = negative_root_val(sigma.value)
+    return cf.MultiVector(layout, res_val)
+
+#
+# def general_root(sigma):
+#     """
+#     Square Root and Logarithm of Rotors
+#     in 3D Conformal Geometric Algebra
+#     Using Polar Decomposition
+#     Leo Dorst and Robert Valkenburg
+#     """
+#     if check_sigma_for_positive_root(sigma):
+#         k = positive_root(sigma)
+#         return [k]
+#     elif check_sigma_for_negative_root(sigma):
+#         k = positive_root(sigma)
+#         k2 = negative_root(sigma)
+#         return [k, k2]
+#     elif check_infinite_roots(sigma):
+#         # warnings.warn('Infinite roots detected: sigma = ' + str(sigma), RuntimeWarning)
+#         return [unit_scalar_mv]
+#     else:
+#         raise ValueError('No root exists')
 
 
-def general_root(sigma):
+@numba.njit
+def general_root_val(sigma_value):
     """
     Square Root and Logarithm of Rotors
     in 3D Conformal Geometric Algebra
     Using Polar Decomposition
     Leo Dorst and Robert Valkenburg
     """
-    if check_sigma_for_positive_root(sigma):
-        k = positive_root(sigma)
-        return [k]
-    elif check_sigma_for_negative_root(sigma):
-        k = positive_root(sigma)
-        k2 = negative_root(sigma)
-        return [k, k2]
-    elif check_infinite_roots(sigma):
-        # warnings.warn('Infinite roots detected: sigma = ' + str(sigma), RuntimeWarning)
-        return [unit_scalar_mv]
+    if check_sigma_for_positive_root_val(sigma_value):
+        k = positive_root_val(sigma_value)
+        output = np.zeros((2, sigma_value.shape[0]))
+        output[0, :] = k.copy()
+        return output
+    elif check_sigma_for_negative_root_val(sigma_value):
+        k = positive_root_val(sigma_value)
+        k2 = negative_root_val(sigma_value)
+        output = np.zeros((2, sigma_value.shape[0]))
+        output[0, :] = k.copy()
+        output[1, :] = k2.copy()
+        return output
+    elif check_infinite_roots_val(sigma_value):
+        output = np.zeros((2, sigma_value.shape[0]))
+        output[0, :] = 1.0
+        return output
     else:
         raise ValueError('No root exists')
+
+
+def general_root(sigma):
+    output = general_root_val(sigma.value)
+    return [cf.MultiVector(layout, output[0, :].copy()), cf.MultiVector(layout, output[1, :].copy())]
 
 
 def neg_twiddle_root(C):
