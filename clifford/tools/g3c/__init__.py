@@ -327,27 +327,6 @@ def negative_root(sigma):
     res_val = negative_root_val(sigma.value)
     return cf.MultiVector(layout, res_val)
 
-#
-# def general_root(sigma):
-#     """
-#     Square Root and Logarithm of Rotors
-#     in 3D Conformal Geometric Algebra
-#     Using Polar Decomposition
-#     Leo Dorst and Robert Valkenburg
-#     """
-#     if check_sigma_for_positive_root(sigma):
-#         k = positive_root(sigma)
-#         return [k]
-#     elif check_sigma_for_negative_root(sigma):
-#         k = positive_root(sigma)
-#         k2 = negative_root(sigma)
-#         return [k, k2]
-#     elif check_infinite_roots(sigma):
-#         # warnings.warn('Infinite roots detected: sigma = ' + str(sigma), RuntimeWarning)
-#         return [unit_scalar_mv]
-#     else:
-#         raise ValueError('No root exists')
-
 
 @numba.njit
 def general_root_val(sigma_value):
@@ -382,18 +361,6 @@ def general_root(sigma):
     return [cf.MultiVector(layout, output[0, :].copy()), cf.MultiVector(layout, output[1, :].copy())]
 
 
-def neg_twiddle_root(C):
-    """
-    Square Root and Logarithm of Rotors
-    in 3D Conformal Geometric Algebra
-    Using Polar Decomposition
-    Leo Dorst and Robert Valkenburg
-    """
-    sigma = cf.MultiVector(layout, -gmt_func(C.value, adjoint_func(C.value)))
-    k_list = general_root(sigma)
-    return [annhilate_k(k, C) for k in k_list]
-
-
 @numba.njit
 def val_annhilate_k(K_val, C_val):
     k_4 = -project_val(K_val, 4)
@@ -405,6 +372,38 @@ def annhilate_k(K, C):
     return cf.MultiVector(layout, val_annhilate_k(K.value, C.value))
 
 
+@numba.njit
+def pos_twiddle_root_val(C_value):
+    """
+    Square Root and Logarithm of Rotors
+    in 3D Conformal Geometric Algebra
+    Using Polar Decomposition
+    Leo Dorst and Robert Valkenburg
+    """
+    sigma_val = gmt_func(C_value, adjoint_func(C_value))
+    k_value = general_root_val(sigma_val)
+    output = np.zeros((2,32))
+    output[0, :] = val_annhilate_k(k_value[0, :], C_value)
+    output[1, :] = val_annhilate_k(k_value[1, :], C_value)
+    return output
+
+
+@numba.njit
+def neg_twiddle_root_val(C_value):
+    """
+    Square Root and Logarithm of Rotors
+    in 3D Conformal Geometric Algebra
+    Using Polar Decomposition
+    Leo Dorst and Robert Valkenburg
+    """
+    sigma_val = -gmt_func(C_value, adjoint_func(C_value))
+    k_value = general_root_val(sigma_val)
+    output = np.zeros((2, 32))
+    output[0, :] = val_annhilate_k(k_value[0, :], C_value)
+    output[1, :] = val_annhilate_k(k_value[1, :], C_value)
+    return output
+
+
 def pos_twiddle_root(C):
     """
     Square Root and Logarithm of Rotors
@@ -412,9 +411,19 @@ def pos_twiddle_root(C):
     Using Polar Decomposition
     Leo Dorst and Robert Valkenburg
     """
-    sigma = cf.MultiVector(layout, gmt_func(C.value, adjoint_func(C.value)))
-    k_list = general_root(sigma)
-    return [annhilate_k(k, C) for k in k_list]
+    output = pos_twiddle_root_val(C.value)
+    return [cf.MultiVector(layout, output[0, :]), cf.MultiVector(layout, output[1, :])]
+
+
+def neg_twiddle_root(C):
+    """
+    Square Root and Logarithm of Rotors
+    in 3D Conformal Geometric Algebra
+    Using Polar Decomposition
+    Leo Dorst and Robert Valkenburg
+    """
+    output = neg_twiddle_root_val(C.value)
+    return [cf.MultiVector(layout, output[0, :]), cf.MultiVector(layout, output[1, :])]
 
 
 def square_roots_of_rotor(R):

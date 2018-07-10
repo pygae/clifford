@@ -3,6 +3,7 @@ import numba
 import numpy as np
 from clifford import get_mult_function, grade_obj
 from clifford.g3c import *
+import clifford as cf
 from . import rotor_between_objects, rotor_between_lines, val_normalised
 
 imt_func = layout.imt_func
@@ -36,6 +37,21 @@ def rotor_cost(R):
     return val_rotor_cost_sparse(R.value)
 
 
+gradeList = layout.gradeList
+grade_obj_func = cf.grade_obj_func
+def val_object_cost_function(obj_a_val, obj_b_val):
+    """
+    Evaluates the rotor cost function between two objects
+    """
+    grade_a = grade_obj_func(obj_a_val, gradeList, 0.0000001)
+    grade_b = grade_obj_func(obj_b_val, gradeList, 0.0000001)
+    if grade_a != grade_b:
+        return np.finfo(float).max
+    else:
+        R = rotor_between_objects(cf.MultiVector(layout, obj_a_val), cf.MultiVector(layout, obj_b_val))
+        return np.abs(val_rotor_cost_sparse(R.value))
+
+
 def object_cost_function(obj_a,obj_b):
     """
     Evaluates the rotor cost function between two objects
@@ -44,18 +60,6 @@ def object_cost_function(obj_a,obj_b):
         return np.finfo(float).max
     R = rotor_between_objects(obj_a, obj_b)
     return np.abs(val_rotor_cost_sparse(R.value))
-
-
-def object_cost_cheating(obj_a,obj_b):
-    """
-    Evaluates the rotor cost function between two objects
-    Doesn't bother stripping off k...
-    """
-    if grade_obj(obj_a) != grade_obj(obj_b):
-        return np.finfo(float).max
-    R_val = gmt_func(obj_b.value, obj_a.value)
-    R_val[0] += 1.0
-    return np.abs(val_rotor_cost_sparse(R_val))
 
 
 def object_set_log_cost_sum(object_set_a, object_set_b, object_type='generic'):

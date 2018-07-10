@@ -1,6 +1,7 @@
 
 
 import numpy as np
+import numba.cuda
 import numba
 import math
 
@@ -78,7 +79,7 @@ def project_val_cuda(val, output, grade):
 
 
 @numba.cuda.jit(device=True)
-def rotor_line_to_line_device(L1, L2, rotor):
+def rotor_between_lines_device(L1, L2, rotor):
     L21_val = numba.cuda.local.array(32, dtype=numba.float64)
     L12_val = numba.cuda.local.array(32, dtype=numba.float64)
 
@@ -117,7 +118,7 @@ def rotor_line_to_line_kernel(value, other_value, output):
     # This does elementwise gp with the input arrays into the ouput array
     i = numba.cuda.grid(1)
     if i < value.shape[0]:
-        rotor_line_to_line_device(value[i, :], other_value[i, :], output[i, :])
+        rotor_between_lines_device(value[i, :], other_value[i, :], output[i, :])
 
 
 @numba.cuda.jit(device=True)
@@ -155,7 +156,7 @@ def rotor_cost_device(R_val):
 @numba.cuda.jit(device=True)
 def cost_line_to_line_device(L1, L2):
     R_val = numba.cuda.local.array(32, dtype=numba.float64)
-    rotor_line_to_line_device(L1, L2, R_val)
+    rotor_between_lines_device(L1, L2, R_val)
     return rotor_cost_device(R_val)
 
 
@@ -175,7 +176,7 @@ def line_set_cost_kernel(line_set_a, line_set_b, cost_matrix):
             cost_matrix[a_ind, b_ind] = cost_line_to_line_device(line_set_a[a_ind, :], line_set_b[b_ind, :])
 
 
-def line_set_cost_cuda(line_set_a, line_set_b):
+def line_set_cost_cuda_value(line_set_a, line_set_b):
     threadsperblock = (16, 16)
     blockspergrid_x = math.ceil(line_set_a.shape[0] / threadsperblock[0])
     blockspergrid_y = math.ceil(line_set_b.shape[0] / threadsperblock[1])
@@ -188,13 +189,7 @@ def line_set_cost_cuda(line_set_a, line_set_b):
 def line_set_cost_cuda_mvs(line_set_a, line_set_b):
     line_set_a_vals = np.array([l.value for l in line_set_a])
     line_set_b_vals = np.array([l.value for l in line_set_b])
-    threadsperblock = (16, 16)
-    blockspergrid_x = math.ceil(line_set_a_vals.shape[0] / threadsperblock[0])
-    blockspergrid_y = math.ceil(line_set_b_vals.shape[0] / threadsperblock[1])
-    blockspergrid = (blockspergrid_x, blockspergrid_y)
-    cost_matrix = np.zeros((line_set_a_vals.shape[0], line_set_b_vals.shape[0]))
-    line_set_cost_kernel[blockspergrid, threadsperblock](line_set_a_vals, line_set_b_vals, cost_matrix)
-    return cost_matrix
+    return line_set_cost_cuda_value(line_set_a_vals, line_set_b_vals)
 
 
 @numba.cuda.jit(device=True)
