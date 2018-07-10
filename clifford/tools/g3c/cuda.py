@@ -78,6 +78,86 @@ def project_val_cuda(val, output, grade):
         output[31] = val[31]
 
 
+@numba.njit
+def calc_norm_device(mv_val):
+    adj_value = numba.cuda.local.array(32, dtype=numba.float64)
+    output_value = numba.cuda.local.array(32, dtype=numba.float64)
+    adjoint_device(mv_val, adj_value)
+    gp_device(adj_value, mv_val, output_value)
+    return math.sqrt(abs(output_value[0]))
+
+
+@numba.njit(device=True)
+def normalise_mv_device(mv_val):
+    norm = calc_norm_device(mv_val)
+    for i in range(32):
+        mv_val[i] = mv_val[i]/norm
+
+
+@numba.cuda.jit
+def normalise_mvs_kernel(value_array):
+    i = numba.cuda.grid(1)
+    if i < value_array.shape[0]:
+        normalise_mv_device(value_array[i, :])
+
+
+@numba.cuda.jit(device=True)
+def annhilate_k_device(K_val, C_val, output):
+    k_4 = numba.cuda.local.array(32, dtype=numba.float64)
+    project_val_cuda(K_val, k_4, 4)
+    for i in range(32):
+        k_4[i] = -k_4[i]
+    k_4[0] += K_val[0]
+    gp_device(k_4, C_val, output)
+    normalise_mv_device(output)
+
+
+@numba.jit(device=True)
+def dorst_norm_val_device(sigma_val):
+    """ Square Root of Rotors - Implements the norm of a rotor"""
+    s_4 = numba.cuda.local.array(32, dtype=numba.float64)
+    s_4_sqrd = numba.cuda.local.array(32, dtype=numba.float64)
+    project_val_cuda(sigma_val, s_4, 4)
+    gp_device(s_4, s_4, s_4_sqrd)
+    sqrd_ans = sigma_val[0] * sigma_val[0] - s_4_sqrd[0]
+    return math.sqrt(sqrd_ans)
+
+
+@numba.cuda.jit(device=True)
+def positive_root_device(sigma_val, result):
+    """
+    Square Root of Rotors - Evaluates the positive root
+    """
+    norm_s = dorst_norm_val_device(sigma_val)
+    denominator = (math.sqrt(2.0) * math.sqrt(sigma_val[0] + norm_s))
+    for i in range(32):
+        result[i] = sigma_val[i]/denominator
+    result[0] = result[0] + norm_s/denominator
+
+
+@numba.cuda.jit(device=True)
+def rotor_between_objects_device(L1, L2, k_value):
+    C_val = numba.cuda.local.array(32, dtype=numba.float64)
+    sigma_val = numba.cuda.local.array(32, dtype=numba.float64)
+    #k_value = numba.cuda.local.array(32, dtype=numba.float64)
+    gp_device(L2, L1, C_val)
+    C_val[0] += 1.0
+    gp_mult_with_adjoint(C_val, sigma_val)
+    positive_root_device(sigma_val, k_value)
+    # annhilate_k_device(k_value, C_val, rotor)
+
+
+@numba.cuda.jit
+def rotor_between_object_sets_kernel(value, other_value, output):
+    i = numba.cuda.grid(1)
+    if i < value.shape[0]:
+        rotor_between_objects_device(value[i, :], other_value[i, :], output[i, :])
+
+
+
+
+
+
 @numba.cuda.jit(device=True)
 def rotor_between_lines_device(L1, L2, rotor):
     L21_val = numba.cuda.local.array(32, dtype=numba.float64)
@@ -114,15 +194,14 @@ def rotor_between_lines_device(L1, L2, rotor):
 
 
 @numba.cuda.jit
-def rotor_line_to_line_kernel(value, other_value, output):
-    # This does elementwise gp with the input arrays into the ouput array
+def rotor_between_line_sets_kernel(value, other_value, output):
     i = numba.cuda.grid(1)
     if i < value.shape[0]:
         rotor_between_lines_device(value[i, :], other_value[i, :], output[i, :])
 
 
 @numba.cuda.jit(device=True)
-def gp_mult_with_adjoint(value):
+def gp_mult_with_adjoint_to_scalar(value):
     other_value = numba.cuda.local.array(32, dtype=numba.float64)
     adjoint_device(value, other_value)
     return value[0] * other_value[0] + value[3] * other_value[3] + value[4] * other_value[4] - value[5] * other_value[
@@ -137,6 +216,13 @@ def gp_mult_with_adjoint(value):
 
 
 @numba.cuda.jit(device=True)
+def gp_mult_with_adjoint(value, output):
+    other_value = numba.cuda.local.array(32, dtype=numba.float64)
+    adjoint_device(value, other_value)
+    gp_device(value, other_value, output)
+
+
+@numba.cuda.jit(device=True)
 def rotor_cost_device(R_val):
     translation_val = numba.cuda.local.array(32, dtype=numba.float64)
     rotation_val = numba.cuda.local.array(32, dtype=numba.float64)
@@ -148,8 +234,8 @@ def rotor_cost_device(R_val):
     for i in range(32):
         rotation_val[i] = R_val[i]
     rotation_val[0] -= 1
-    a = abs(gp_mult_with_adjoint(rotation_val))
-    b = abs(gp_mult_with_adjoint(translation_val))
+    a = abs(gp_mult_with_adjoint_to_scalar(rotation_val))
+    b = abs(gp_mult_with_adjoint_to_scalar(translation_val))
     return a + b
 
 

@@ -27,7 +27,7 @@ class CUDATESTS(unittest.TestCase):
         import math
         import time
         from clifford.tools.g3c import random_line, val_rotor_between_lines
-        from clifford.tools.g3c.cuda import rotor_line_to_line_kernel
+        from clifford.tools.g3c.cuda import rotor_between_line_sets_kernel
 
         # Make a big array of data
         n_mvs = 500
@@ -41,7 +41,7 @@ class CUDATESTS(unittest.TestCase):
         t = time.time()
         blockdim = 64
         griddim = int(math.ceil(n_mvs / blockdim))
-        rotor_line_to_line_kernel[griddim, blockdim](mv_a_array, mv_b_array, mv_c_array)
+        rotor_between_line_sets_kernel[griddim, blockdim](mv_a_array, mv_b_array, mv_c_array)
         end_time = time.time() - t
         print('Kernel finished')
         print(end_time)
@@ -50,6 +50,74 @@ class CUDATESTS(unittest.TestCase):
         t = time.time()
         for i in range(mv_a_array.shape[0]):
             mv_d_array[i, :] = val_rotor_between_lines(mv_a_array[i, :], mv_b_array[i, :])
+        print(time.time() - t)
+
+        np.testing.assert_almost_equal(mv_c_array, mv_d_array)
+
+    def test_normalise_mvs_kernel(self):
+        import math
+        import time
+        import clifford as cf
+        from clifford.tools.g3c import random_line
+        from clifford.tools.g3c.cuda import normalise_mvs_kernel
+
+        # Make a big array of data
+        n_mvs = 500
+        mv_a_array = np.pi*np.array([random_line() for i in range(n_mvs)])
+        mv_d_array = np.zeros(mv_a_array.shape)
+        mv_b_array = mv_a_array.copy()
+
+        print('Starting kernel')
+        t = time.time()
+        blockdim = 64
+        griddim = int(math.ceil(n_mvs / blockdim))
+        normalise_mvs_kernel[griddim, blockdim](mv_a_array)
+        end_time = time.time() - t
+        print('Kernel finished')
+        print(end_time)
+
+        # Now do the non cuda kernel
+        t = time.time()
+        for i in range(mv_a_array.shape[0]):
+            mv_a = cf.MultiVector(self.layout, mv_b_array[i, :])
+            mv_d_array[i, :] = mv_a.normal().value
+        print(time.time() - t)
+
+        np.testing.assert_almost_equal(mv_a_array, mv_d_array)
+
+    def test_rotor_between_objects(self):
+        import math
+        import time
+        import clifford as cf
+        from clifford.tools.g3c import random_line, rotor_between_objects, general_root_val
+        from clifford.tools.g3c.cuda import rotor_between_object_sets_kernel
+
+        # Make a big array of data
+        n_mvs = 500
+        mv_a_array = np.array([random_line() for i in range(n_mvs)])
+        mv_b_array = np.array([random_line() for i in range(n_mvs)])
+
+        mv_c_array = np.zeros(mv_b_array.shape)
+        mv_d_array = np.zeros(mv_b_array.shape)
+
+        print('Starting kernel')
+        t = time.time()
+        blockdim = 64
+        griddim = int(math.ceil(n_mvs / blockdim))
+        rotor_between_object_sets_kernel[griddim, blockdim](mv_a_array, mv_b_array, mv_c_array)
+        end_time = time.time() - t
+        print('Kernel finished')
+        print(end_time)
+
+        # Now do the non cuda kernel
+        t = time.time()
+        for i in range(mv_a_array.shape[0]):
+            mv_a = cf.MultiVector(self.layout, mv_a_array[i, :])
+            mv_b = cf.MultiVector(self.layout, mv_b_array[i, :])
+            C = 1 + cf.MultiVector(self.layout, self.layout.gmt_func(mv_a.value, mv_b.value))
+            sigma = C*~C
+            k_value = general_root_val(sigma.value)[0, :]
+            mv_d_array[i, :] = k_value
         print(time.time() - t)
 
         np.testing.assert_almost_equal(mv_c_array, mv_d_array)
