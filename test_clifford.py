@@ -458,7 +458,7 @@ class ModelMatchingTests(unittest.TestCase):
         print('Correct fraction: ', 1.0 - error_count/n_runs)
 
 
-
+    @SkipTest
     def test_iterative_model_match_incomplete_query(self):
         from clifford.tools.g3c import generate_random_object_cluster, \
             random_line, random_rotation_translation_rotor, apply_rotor, \
@@ -496,7 +496,7 @@ class ModelMatchingTests(unittest.TestCase):
                 error_count += 1
         print('Correct fraction: ', 1.0 - error_count/n_runs)
 
-
+    @SkipTest
     def test_REFORM_incomplete_query(self):
         from clifford.tools.g3c import generate_random_object_cluster, \
             random_line, random_rotation_translation_rotor, apply_rotor
