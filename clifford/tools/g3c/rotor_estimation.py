@@ -64,7 +64,6 @@ def estimate_rotor_lines(reference_model, query_model, maxfev=20000, print_res=F
 def estimate_rotor_objects(reference_model, query_model, maxfev=20000, print_res=False, object_type='generic'):
     """
     Estimates the rotor that takes one set of objects to another
-    TODO improve convergence for point pairs, maybe change optimisation framework
     """
     x0 = np.finfo(float).eps * np.random.rand(6)
 

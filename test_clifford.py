@@ -13,6 +13,83 @@ import itertools
 from nose.plugins.skip import SkipTest
 
 
+class ConformalArrayTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(self):
+        from clifford import g3c
+        layout = g3c.layout
+        self.layout = layout
+        self.stuff = g3c.stuff
+
+    def test_up_down(self):
+        from clifford.tools.g3c import ConformalMVArray
+        from clifford.tools.g3 import random_euc_mv
+
+        ep, en, up, down, homo, E0, ninf, no = (self.stuff["ep"], self.stuff["en"],
+                                                self.stuff["up"], self.stuff["down"], self.stuff["homo"],
+                                                self.stuff["E0"], self.stuff["einf"], -self.stuff["eo"])
+        mv = []
+        up_mv = []
+        for i in range(100):
+            p = random_euc_mv()
+            mv.append(p)
+            up_mv.append(up(p))
+        test_array = ConformalMVArray(mv)
+        up_array = test_array.up()
+        down_array = up_array.down()
+        for a, b in zip(up_array, up_mv):
+            np.testing.assert_almost_equal(a.value, b.value)
+            np.testing.assert_almost_equal(a.value, b.value)
+        for a, b in zip(down_array, mv):
+            np.testing.assert_almost_equal(a.value, b.value)
+
+    def test_apply_rotor(self):
+
+        from clifford.tools.g3c import ConformalMVArray, apply_rotor
+        from clifford.tools.g3 import random_euc_mv
+
+        mv = []
+        for i in range(100):
+            p = random_euc_mv()
+            mv.append(p)
+        test_array = ConformalMVArray(mv)
+        up_array = test_array.up()
+
+        # Test apply rotor
+        for i in range(100):
+            R = ConformalMVArray([self.layout.randomRotor()])
+            rotated_array = up_array.apply_rotor(R)
+            for i, v in enumerate(rotated_array):
+                np.testing.assert_almost_equal(v.value, apply_rotor(up_array[i], R[0]).value)
+
+    def test_dual(self):
+        from clifford.tools.g3c import ConformalMVArray
+        from clifford.tools.g3 import random_euc_mv
+        mv = []
+        for i in range(100):
+            p = random_euc_mv()
+            mv.append(p)
+        test_array = ConformalMVArray(mv)
+        up_array = test_array.up()
+        I5 = self.layout.blades['e12345']
+
+        np.testing.assert_almost_equal((up_array * ConformalMVArray([I5])).value,
+                                       ConformalMVArray([i * I5 for i in up_array]).value)
+
+    def test_from_value_array(self):
+        from clifford.tools.g3c import ConformalMVArray
+        from clifford.tools.g3 import random_euc_mv
+        mv = []
+        for i in range(100):
+            p = random_euc_mv()
+            mv.append(p)
+        test_array = ConformalMVArray(mv)
+        up_array = test_array.up()
+        new_mv_array = ConformalMVArray.from_value_array(up_array.value)
+        np.testing.assert_almost_equal(new_mv_array.value, up_array.value)
+
+
 class CliffordTests(unittest.TestCase):
 
     def setUp(self):
@@ -315,14 +392,14 @@ class ModelMatchingTests(unittest.TestCase):
 
         object_generator = random_line
         n_objects_per_cluster = 20
-        objects_per_sample = 5
+        objects_per_sample = 10
         iterations = 30
         pool_size = 8
 
         n_samples = 8
 
         error_count = 0
-        n_runs = 100
+        n_runs = 50
         for i in range(n_runs):
 
             # Make a cluster
@@ -379,6 +456,90 @@ class ModelMatchingTests(unittest.TestCase):
                 print(r_est)
                 error_count += 1
         print('Correct fraction: ', 1.0 - error_count/n_runs)
+
+
+
+    def test_iterative_model_match_incomplete_query(self):
+        from clifford.tools.g3c import generate_random_object_cluster, \
+            random_line, random_rotation_translation_rotor, apply_rotor, \
+            random_circle, random_point_pair
+        from clifford.tools.g3c.model_matching import iterative_model_match, \
+            iterative_model_match_sequential
+        import random
+
+        # Set the generator
+        object_generator = random_line
+        n_objects_per_cluster = 100
+        n_keep = 50
+
+        # Make a cluster
+        cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
+                                                         max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
+        error_count = 0
+        n_runs = 50
+        for i in range(n_runs):
+
+            # Rotate and translate the cluster
+            disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi/8)
+            target = [apply_rotor(c, disturbance_rotor).normal() for c in cluster_objects]
+
+            # Keep only a fixed number of the query model objects
+            sample_indices = random.sample(range(n_objects_per_cluster), n_keep)
+            query_model = [cluster_objects[i] for i in sample_indices]
+
+            labels, costs, r_est = iterative_model_match(target, query_model, 30, object_type='generic')
+            try:
+                assert np.sum(labels == sample_indices) == n_keep
+            except:
+                print(disturbance_rotor)
+                print(r_est)
+                error_count += 1
+        print('Correct fraction: ', 1.0 - error_count/n_runs)
+
+
+    def test_REFORM_incomplete_query(self):
+        from clifford.tools.g3c import generate_random_object_cluster, \
+            random_line, random_rotation_translation_rotor, apply_rotor
+        from clifford.tools.g3c.model_matching import REFORM
+        import random
+
+        object_generator = random_line
+        n_objects_per_cluster = 100
+        n_keep = 50
+
+        objects_per_sample = 10
+        iterations = 30
+        pool_size = 8
+
+
+        n_samples = pool_size*10
+
+        error_count = 0
+        n_runs = 50
+        for i in range(n_runs):
+
+            # Make a cluster
+            cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
+                                                             max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
+
+            # Rotate and translate the cluster
+            disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi/8)
+            target = [apply_rotor(c, disturbance_rotor).normal() for c in cluster_objects]
+
+            # Keep only a fixed number of the query model objects
+            sample_indices = random.sample(range(n_objects_per_cluster), n_keep)
+            query_model = [cluster_objects[i] for i in sample_indices]
+
+            labels, costs, r_est = REFORM(target, query_model, n_samples, objects_per_sample,
+                                    iterations, covergence_threshold=0.00000001, pool_size=pool_size)
+            try:
+                assert np.sum(labels == sample_indices) == n_keep
+            except:
+                print(disturbance_rotor)
+                print(r_est)
+                error_count += 1
+        print('Correct fraction: ', 1.0 - error_count/n_runs)
+
 
 
 class SceneSimplificationTests(unittest.TestCase):

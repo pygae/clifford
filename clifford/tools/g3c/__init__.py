@@ -79,6 +79,8 @@ imt_func = layout.imt_func
 rightLaInv = layout.rightLaInv_func
 
 
+
+
 def generate_n_clusters( object_generator, n_clusters, n_objects_per_cluster ):
     """ Creates n_clusters of random objects """
     object_clusters = []
@@ -156,11 +158,21 @@ def generate_translation_rotor(euc_vector_a):
     return (1 + ninf * euc_vector_a / 2)
 
 
+@numba.njit
+def meet_val(a_val, b_val):
+    """
+    The meet algorithm as described in "A Covariant Approach to Geometry"
+    I5*((I5*A) ^ (I5*B))
+    """
+    return dual_func(omt_func(dual_func(a_val), dual_func(b_val)))
+
+
 def meet(A, B):
     """
     The meet algorithm as described in "A Covariant Approach to Geometry"
+    I5*((I5*A) ^ (I5*B))
     """
-    return I5*((I5*A) ^ (I5*B))
+    return cf.MultiVector(layout, meet_val(A.value, B.value))
 
 
 def intersect_line_and_plane_to_point(line, plane):
@@ -586,6 +598,18 @@ def apply_rotor(mv_in, rotor):
 
 
 @numba.njit
+def val_apply_rotor_inv(mv_val, rotor_val, rotor_val_inv):
+    """ Applies rotor to multivector in a fast way takes pre computed adjoint"""
+    return gmt_func(rotor_val, gmt_func(mv_val, rotor_val_inv))
+
+
+def apply_rotor_inv(mv_in, rotor, rotor_inv):
+    """ Applies rotor to multivector in a fast way takes pre computed adjoint"""
+    return cf.MultiVector(layout, val_apply_rotor_inv(mv_in.value, rotor.value, rotor_inv.value))
+
+
+
+@numba.njit
 def mult_with_ninf(mv):
     """ Convenience function for multiplication with ninf """
     return gmt_func(mv, ninf_val)
@@ -634,6 +658,32 @@ def val_up(mv_val):
     return mv_val - no_val + omt_func(temp, gmt_func(gmt_func(mv_val, mv_val), ninf_val))
 
 
+def fast_up(mv):
+    """ Fast up mapping """
+    return cf.MultiVector(layout, val_up(mv.value))
+
+
+@numba.njit
+def val_normalInv(mv_val):
+    Madjoint_val = adjoint_func(mv_val)
+    MadjointM = gmt_func(Madjoint_val,mv_val)[0]
+    return Madjoint_val / MadjointM
+
+
+@numba.njit
+def val_homo(mv_val):
+    return gmt_func(mv_val, val_normalInv(imt_func(-mv_val, ninf_val)))
+
+
+@numba.njit
+def val_down(mv_val):
+    return gmt_func(omt_func(val_homo(mv_val), E0_val), E0_val)
+
+
+def fast_down(mv):
+    return cf.MultiVector(layout, val_down(mv.value))
+
+
 def val_distance_point_to_line(point, line):
     """
     Returns the euclidean distance between a point and a line
@@ -660,3 +710,52 @@ def distance_polar_line_to_euc_point_2d(rho, theta, x, y):
     point = val_convert_2D_point_to_conformal(x, y)
     line = val_convert_2D_polar_line_to_conformal_line(rho, theta)
     return val_distance_point_to_line(point, line)
+
+
+
+
+
+class ConformalMVArray(cf.MVArray):
+
+    def up(self):
+        return v_up(self)
+
+    def down(self):
+        return v_down(self)
+
+    def dual(self):
+        return v_dual(self)
+
+    def apply_rotor(self, R):
+        R_inv = ~R
+        return v_apply_rotor_inv(self, R, R_inv)
+
+    def apply_rotor_inv(self, R, R_inv):
+        return v_apply_rotor_inv(self, R, R_inv)
+
+    @property
+    def value(self):
+        return np.array([mv.value for mv in self])
+
+    @staticmethod
+    def from_value_array(value_array):
+        return ConformalMVArray(v_new_mv(value_array))
+
+dual_gmt_func = get_mult_function(layout.gmt, layout.gaDims, layout.gradeList, grades_a=[
+                                  5], grades_b=[0, 1, 2, 3, 4, 5])
+
+@numba.njit
+def dual_func(a_val):
+    return dual_gmt_func(I5_val, a_val)
+
+
+def fast_dual(a):
+    return cf.MultiVector(layout, dual_func(a.value))
+
+
+v_dual = np.vectorize(fast_dual, otypes=[ConformalMVArray])
+v_new_mv = np.vectorize(lambda v: cf.MultiVector(layout, v), otypes=[ConformalMVArray], signature='(n)->()')
+v_up = np.vectorize(fast_up, otypes=[ConformalMVArray])
+v_down = np.vectorize(fast_down, otypes=[ConformalMVArray])
+v_apply_rotor_inv = np.vectorize(apply_rotor_inv, otypes=[ConformalMVArray])
+v_meet = np.vectorize(meet, otypes=[ConformalMVArray], signature='(),()->()')
