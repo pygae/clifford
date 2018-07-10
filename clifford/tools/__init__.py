@@ -29,19 +29,18 @@ from functools import reduce
 
 from math import sqrt
 from numpy import eye, array, sign, zeros
-from . import Cl, gp, Frame
-from . import eps as global_eps
+from .. import Cl, gp, Frame
+from .. import eps as global_eps
 
 from warnings import warn
 
 
-
-def omoh(A,B):
+def omoh(A, B):
     '''
     Determines homogenzation scaling for two Frames related by a Rotor
-    
-    This is used as part of the frames2Versor algorithm, when the 
-    frames are given in CGA. It is requried because the model assumes, 
+
+    This is used as part of the frames2Versor algorithm, when the
+    frames are given in CGA. It is requried because the model assumes,
 
         `B = R*A*~R`
     but if data is given in the original space, only
@@ -49,42 +48,42 @@ def omoh(A,B):
         `lambda*B' == homo(B)`
 
     is observable. We need  to determine lambda before the Cartan-based
-    algorithm can be used. The name of this function is inverses of 
+    algorithm can be used. The name of this function is inverses of
     `homo`, which is the method used to homogenize
-    
-    Parameters 
+
+    Parameters
     --------------
     A : list of vectors, or clifford.Frame
         the set of  vectors before the transform
-    B : list of vectors, or clifford.Frame 
+    B : list of vectors, or clifford.Frame
         the set of  vectors after the transform, and homogenzation.
         ie B=(B/B|einf)
-        
-        
+
+
     Returns
     ---------
     out : list of floats
-        weights on `B`, which produce inhomogenous versions  of `B`. If 
+        weights on `B`, which produce inhomogenous versions  of `B`. If
         you multiply the input `B` by `lam`, it will fulfill `B = R*A*~R`
-    
+
     Examples
     ----------
     lam = ohom(A,B):
     B_ohom = Frame([B[k]*lam[k] for k in range(len(B)])
     '''
-    if len(A)!=len(B) or len(A)<3:
+    if len(A) != len(B) or len(A) < 3:
         raise ValueError('input must be >=3 long and len(a)==len(b)')
-    
-    idx = range(len(A))   
+
+    idx = range(len(A))
     lam = zeros(len(A))
-    
+
     for i in idx:
-        j,k = [p for p in idx if p!=i][:2]
+        j, k = [p for p in idx if p != i][:2]
         lam[i] = \
-           float((A[i]*A[j])(0) * (A[i]*A[k])(0) * (B[j]*B[k])(0)) /\
-           float((B[i]*B[j])(0) * (B[i]*B[k])(0) * (A[j]*A[k])(0))
+            float((A[i] * A[j])(0) * (A[i] * A[k])(0) * (B[j] * B[k])(0)) / \
+            float((B[i] * B[j])(0) * (B[i] * B[k])(0) * (A[j] * A[k])(0))
         lam[i] = sqrt(float(lam[i]))
-        
+
     return lam
 
 
@@ -119,8 +118,8 @@ def mat2Frame(A, layout=None, is_complex=None):
         else:
             is_complex = False
     if is_complex:
-        N = N*2
-        M = M*2
+        N = N * 2
+        M = M * 2
 
     if layout is None:
         layout, blades = Cl(M)
@@ -129,7 +128,7 @@ def mat2Frame(A, layout=None, is_complex=None):
 
     e_ = [e_['e%i' % k] for k in range(layout.firstIdx, layout.firstIdx + M)]
 
-    a = [0 ^ e_[0]]*N
+    a = [0 ^ e_[0]] * N
 
     if not is_complex:
         for n in range(N):
@@ -137,15 +136,15 @@ def mat2Frame(A, layout=None, is_complex=None):
                 a[n] = (a[n]) + ((A[m, n]) ^ e_[m])
 
     else:
-        for n in range(N//2):
-            n_ = 2*n
-            for m in range(M//2):
-                m_ = 2*m
+        for n in range(N // 2):
+            n_ = 2 * n
+            for m in range(M // 2):
+                m_ = 2 * m
 
                 a[n_] = (a[n_]) + ((A[m, n].real) ^ e_[m_]) \
-                                + ((A[m, n].imag) ^ e_[m_+1])
-                a[n_+1] = (a[n_+1]) + ((-A[m, n].imag) ^ e_[m_]) \
-                                    + ((A[m, n].real) ^ e_[m_+1])
+                        + ((A[m, n].imag) ^ e_[m_ + 1])
+                a[n_ + 1] = (a[n_ + 1]) + ((-A[m, n].imag) ^ e_[m_]) \
+                            + ((A[m, n].real) ^ e_[m_ + 1])
     return a, layout
 
 
@@ -193,23 +192,23 @@ def orthoFrames2Verser_dist(A, B, eps=None):
     r_list = []
 
     # find the vector pair with the largest distance
-    dist = [abs((a - b)**2) for a, b in zip(A, B)]
+    dist = [abs((a - b) ** 2) for a, b in zip(A, B)]
     k = dist.index(max(dist))
 
     while dist[k] >= eps:
-        r = (A[k] - B[k])/abs(A[k] - B[k])  # determine reflector
-        r_list.append(r)                   # append to our list
-        A = A[1:]               # remove current vector pair
+        r = (A[k] - B[k]) / abs(A[k] - B[k])  # determine reflector
+        r_list.append(r)  # append to our list
+        A = A[1:]  # remove current vector pair
         B = B[1:]
 
         if len(A) == 0:
             break
         # reflect remaining vectors
         for j in range(len(A)):
-            A[j] = -r*A[j]*r
+            A[j] = -r * A[j] * r
 
         # find the next pair based on current distance
-        dist = [abs((a - b)**2) for a, b in zip(A, B)]
+        dist = [abs((a - b) ** 2) for a, b in zip(A, B)]
         k = dist.index(max(dist))
 
     # print(str(len(r_list)) + ' reflections found')
@@ -226,42 +225,42 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
     Based on [1,2]. This works  in Euclidean spaces and, under special
     circumstances in other signatures. see [1] for limitaions/details
 
-    Parameters 
+    Parameters
     -----------
-    B : list of vectors, or clifford.Frame 
+    B : list of vectors, or clifford.Frame
         the set of  vectors after the transform, and homogenzation.
         ie B=(B/B|einf)
-    
+
     A : list of vectors, or clifford.Frame
-        the set of  vectors before the transform. If `None` we assume A is  
+        the set of  vectors before the transform. If `None` we assume A is
         the basis given B.layout.basis_vectors
-    
-    delta : float 
+
+    delta : float
         Tolerance for reflection/rotation determination. If the normalized
-        distance between A[i] and B[i] is larger than delta, we use 
-        reflection, otherwise use rotation. 
-    
+        distance between A[i] and B[i] is larger than delta, we use
+        reflection, otherwise use rotation.
+
     eps: float
         Tolerance on spinor determination. if pseudoscalar of A  differs
-        in magnitude from pseudoscalar of B by eps, then we have spinor. 
-        If `None`, use the `clifford.eps()` global eps. 
+        in magnitude from pseudoscalar of B by eps, then we have spinor.
+        If `None`, use the `clifford.eps()` global eps.
     det : [+1,-1,None]
         The sign of the determinant of the versor, if known. If  it is
         known a-priori that the versor is a rotation vs a reflection, this
-        fact might be needed to correctly append an additional reflection 
-        which leaves transformed points invariant. See 4.6.3 [2]. 
+        fact might be needed to correctly append an additional reflection
+        which leaves transformed points invariant. See 4.6.3 [2].
     remove_scaling : Bool
         Remove the effects of homogenzation from frame B. This is needed
-        if you are working in CGA, but the input data is given in the 
+        if you are working in CGA, but the input data is given in the
         original space. See `omoh` method  for more. See 4.6.2 of [2]
 
     Returns
     ---------
     R :  clifford.Multivector
-        the Versor. 
+        the Versor.
     rs : list of clifford.Multivectors
-        ordered list of found reflectors/rotors. 
-            
+        ordered list of found reflectors/rotors.
+
 
     References
     ------------
@@ -279,13 +278,11 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
         A = [bv[k] for k in sorted(bv.keys())]
 
     # make copy of original frames, so we can rotate A
-    A = Frame(A[:])
-    B = Frame(B[:])
-    
-    
+    A = A[:]
+    B = B[:]
+
     if len(A) != len(B):
         raise ValueError('len(A)!=len(B)')
-    
 
     if eps is None:
         eps = global_eps()
@@ -293,27 +290,33 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
     # Determine if we have a spinor
     spinor = False
     # store peudoscalar of frame B, in case known det (see end)
-    B_En = B.En 
+    try:
+        B_En = B.En
+    except:
+        pass
     N = len(A)
-    
+
     # Determine and remove scaling factors caused by homogenization
-    if remove_scaling is True:
-        lam = omoh(A,B)
-        B= Frame([B[k]*lam[k] for k in range(N)])
+    if remove_scaling == True:
+        lam = omoh(A, B)
+        B = Frame([B[k] * lam[k] for k in range(N)])
+
     
-    
-    # compute ratio of volumes for each frame. take Nth root
-    alpha = abs(B.En/A.En)**(1./N)
+    try:
+        # compute ratio of volumes for each frame. take Nth root
+        A = Frame(A[:])
+        B = Frame(B[:])
+        alpha = abs(B.En / A.En) ** (1. / N)
 
-    if abs(alpha - 1) > eps:
-        spinor = True
-        # we have a spinor, remove the scaling (add it back in at the end)
-        B = [b/alpha for b in B]
-
-    # now that possible scaling has been removed, test for inner-morphism
-    if not A.is_innermorphic_to(B):
-        warn('A and B dont appear to be related by orthogonal transform')
-
+        if abs(alpha - 1) > eps:
+            spinor = True
+            # we have a spinor, remove the scaling (add it back in at the end)
+            B = [b / alpha for b in B]
+    except:
+        # probably  A and B are not pure vector correspondence
+        # whatever,  it might still work
+        pass
+   
     # Find the Verser
 
     # store each reflector/rotor  in a list,  make full verser at the
@@ -322,50 +325,50 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
 
     for k in range(N):
         a, b = A[0], B[0]
-        r = a - b                       # determine reflector
-        if abs(b**2) > eps:          
-            d = abs(r**2)/abs(b**2)     # conditional rotation tolerance
+        r = a - b  # determine reflector
+        if abs(b ** 2) > eps:
+            d = abs(r ** 2) / abs(b ** 2)  # conditional rotation tolerance
         else:
             # probably b is a null vector, make our best guess for tol!
-            d =abs(r**2)
+            d = abs(r ** 2)
 
         if d >= delta:
             # reflection  part
             r_list.append(r)
-            A = A[1:]               # remove current vector pair
+            A = A[1:]  # remove current vector pair
             B = B[1:]
             for j in range(len(A)):
-                A[j] = -r*A[j]*r.inv()
+                A[j] = -r * A[j] * r.inv()
 
         else:
             #  rotation part
             # if k==N:                # see paper for explaination
             #     break
 
-            R = b*(a+b)
-            if abs(R) > eps: #  abs(R) can be <eps in null space 
-                r_list.append(R)       # append to our list
-            A = A[1:]               # remove current vector pair
+            R = b * (a + b)
+            if abs(R) > eps:  # abs(R) can be <eps in null space
+                r_list.append(R)  # append to our list
+            A = A[1:]  # remove current vector pair
             B = B[1:]
             for j in range(len(A)):
-                A[j] = R*A[j]*R.inv()
-    
+                A[j] = R * A[j] * R.inv()
+
     R = reduce(gp, r_list[::-1])
-    
+
     # if det is known a priori check to see if it's correct, if not add
     # an extra reflection which leaves all points in B invarianct
     if det is not None:
         I = R.pseudoScalar()
-        our_det = (R*I*~R*I.inv())(0)
+        our_det = (R * I * ~R * I.inv())(0)
         if sign(float(our_det)) != det:
-            R = B_En.dual()*R
-            
-    if abs(R)<eps:
+            R = B_En.dual() * R
+
+    if abs(R) < eps:
         warn('abs(R)<eps. likely to be inaccurate')
-    R = R/abs(R)
-    
+    R = R / abs(R)
+
     if spinor:
-        R = R*sqrt(alpha)
+        R = R * sqrt(alpha)
 
     return R, r_list
 
@@ -392,39 +395,39 @@ def orthoMat2Verser(A, eps=None, layout=None, is_complex=None):
     return orthoFrames2Verser(A=A, B=B, eps=eps)
 
 
-def rotor_decomp(V,x):
+def rotor_decomp(V, x):
     '''
     Rotor decomposition of rotor V
-    
-    Given a rotor V, and a vector x, this will decompose V into  a 
+
+    Given a rotor V, and a vector x, this will decompose V into  a
     series of two rotations, U  and H, where U leaves x
     invariant and H contains x.
-    
+
     Limited to 4D for now
-    
+
     Parameters
     ---------------
     V : clifford.MultiVector
-        rotor 
-    x : clifford.MultiVector 
-        vector 
-    
+        rotor
+    x : clifford.MultiVector
+        vector
+
     Returns
     -------
     H : clifford.Multivector
-        rotor which contains x 
+        rotor which contains x
     U : clifford.Multivector
         rotor which leaves x invariant
-        
+
     References
     ----------------
     [1] : Space Time Algebra, D. Hestenes. AppendixB, Theroem 4
-    
-    '''
-    H2 = V*x*~V*x.inv() # inv needed to handle signatures
-    H = (1+H2)/sqrt(abs(float(2*(1+H2(0)))))
-    U = H*x*V*x.inv()
-    return H,U
 
-    
+    '''
+    H2 = V * x * ~V * x.inv()  # inv needed to handle signatures
+    H = (1 + H2) / sqrt(abs(float(2 * (1 + H2(0)))))
+    U = H * x * V * x.inv()
+    return H, U
+
+
 

@@ -5,5 +5,5 @@ matplotlib
 scipy
 sphinx>=1.4
 ipykernel
--e git+https://github.com/arsenovic/nbsphinx.git@master#egg=nbsphinx
+nbsphinx
 numba

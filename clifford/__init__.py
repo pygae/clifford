@@ -714,7 +714,32 @@ class Layout(object):
         self.imt = imt
         self.omt = omt
         self.lcmt = lcmt
+    
+    def MultiVector(self,*args,**kw):
+        '''
+        create a multivector in this layout
+        
+        convenience func to Multivector(layout)
+        '''
+        return MultiVector(layout=self, *args, **kw)
+    
+    @property
+    def scalar(self):
+        '''
+        the scalar of value 1, for this GA (a MultiVector object)
+        
+        useful for forcing a MultiVector type
+        '''
+        return self.MultiVector() +1
+    
+    @property
+    def pseudoScalar(self):
+        '''
+        the psuedoScalar
+        '''
+        return self.blades_list[-1]
 
+    
     def randomMV(self, n=1, **kw):
         '''
         Convenience method to create a random multivector.
@@ -752,7 +777,25 @@ class Layout(object):
     def basis_vectors_lst(self):
         d = self.basis_vectors
         return [d[k] for k in sorted(d.keys())]
-
+    
+    def blades_of_grade(self,grade):
+        '''
+        return all blades of a given grade, 
+        
+        Parameters 
+        ------------
+        grade: int 
+            the desired grade 
+        
+        Returns
+        --------
+        blades : list of MultiVectors
+        '''
+        if grade ==0:
+            return self.scalar
+        return  [k for k in self.blades_list[1:] if k.grades()==[grade]]
+        
+        
     @property
     def blades_list(self):
         '''
@@ -767,9 +810,6 @@ class Layout(object):
     def blades(self):
         return self.bases()
     
-    @property
-    def pseudoScalar(self):
-        return self.blades_list[-1]
 
     def bases(self, *args, **kw):
         '''
@@ -1067,7 +1107,7 @@ class MultiVector(object):
         for i in range(1, other):
             newMV = newMV * self
 
-        return newMV
+            return newMV
 
     def __rpow__(self, other):
         """Exponentiation of a real by a multivector
@@ -1144,8 +1184,8 @@ class MultiVector(object):
 
         Note in mixed signature spaces this may be negative
         """
-
-        return (~self * self)[()]
+        mv_val = self.layout.gmt_func(self.layout.adjoint_func(self.value),self.value)
+        return MultiVector(self.layout, mv_val)[()]
 
     def __abs__(self):
         """Magnitude (modulus)
@@ -1215,16 +1255,18 @@ class MultiVector(object):
         return self.layout.gaDims
 
     def __getitem__(self, key):
-        """If key is a blade tuple (e.g. (0,1) or (1,3)), then return
-        the (real) value of that blade's coefficient.
+        """If key is a blade tuple (e.g. (0,1) or (1,3)), or a blade,
+        (e.g. e12),  then return the (real) value of that blade's coefficient.
         Otherwise, treat key as an index into the list of coefficients.
 
+        
         M[blade] --> PyFloat | PyInt
         M[index] --> PyFloat | PyInt
         __getitem__(key) --> PyFloat | PyInt
         """
-
-        if key in self.layout.bladeTupList:
+        if isinstance(key, MultiVector):
+                return self.value[int(np.where(key.value)[0][0])]
+        elif key in self.layout.bladeTupList:
             return self.value[self.layout.bladeTupList.index(key)]
         elif key in self.layout.even:
             return self.value[self.layout.bladeTupList.index(

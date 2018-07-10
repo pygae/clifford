@@ -6,3 +6,6 @@ python:
 
 python:
    setup_py_install: true
+
+# Don't build any extra formats
+formats: []
