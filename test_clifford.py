@@ -13,255 +13,6 @@ import itertools
 from nose.plugins.skip import SkipTest
 
 
-@SkipTest
-class CUDATESTS(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(self):
-        from clifford import g3c
-        layout = g3c.layout
-        self.layout = layout
-        self.stuff = g3c.stuff
-
-    def test_rotor_between_lines(self):
-        import math
-        import time
-        from clifford.tools.g3c import random_line, val_rotor_between_lines
-        from clifford.tools.g3c.cuda import rotor_between_line_sets_kernel
-
-        # Make a big array of data
-        n_mvs = 500
-        mv_a_array = np.array([random_line() for i in range(n_mvs)])
-        mv_b_array = np.array([random_line() for i in range(n_mvs)])
-
-        mv_c_array = np.zeros(mv_b_array.shape)
-        mv_d_array = np.zeros(mv_b_array.shape)
-
-        print('Starting kernel')
-        t = time.time()
-        blockdim = 64
-        griddim = int(math.ceil(n_mvs / blockdim))
-        rotor_between_line_sets_kernel[griddim, blockdim](mv_a_array, mv_b_array, mv_c_array)
-        end_time = time.time() - t
-        print('Kernel finished')
-        print(end_time)
-
-        # Now do the non cuda kernel
-        t = time.time()
-        for i in range(mv_a_array.shape[0]):
-            mv_d_array[i, :] = val_rotor_between_lines(mv_a_array[i, :], mv_b_array[i, :])
-        print(time.time() - t)
-
-        np.testing.assert_almost_equal(mv_c_array, mv_d_array)
-
-    def test_normalise_mvs_kernel(self):
-        import math
-        import time
-        import clifford as cf
-        from clifford.tools.g3c import random_line
-        from clifford.tools.g3c.cuda import normalise_mvs_kernel
-
-        # Make a big array of data
-        n_mvs = 500
-        mv_a_array = np.pi*np.array([random_line() for i in range(n_mvs)])
-        mv_d_array = np.zeros(mv_a_array.shape)
-        mv_b_array = mv_a_array.copy()
-
-        print('Starting kernel')
-        t = time.time()
-        blockdim = 64
-        griddim = int(math.ceil(n_mvs / blockdim))
-        normalise_mvs_kernel[griddim, blockdim](mv_a_array)
-        end_time = time.time() - t
-        print('Kernel finished')
-        print(end_time)
-
-        # Now do the non cuda kernel
-        t = time.time()
-        for i in range(mv_a_array.shape[0]):
-            mv_a = cf.MultiVector(self.layout, mv_b_array[i, :])
-            mv_d_array[i, :] = mv_a.normal().value
-        print(time.time() - t)
-
-        np.testing.assert_almost_equal(mv_a_array, mv_d_array)
-
-    def test_rotor_between_objects(self):
-        import math
-        import time
-        import clifford as cf
-        from clifford.tools.g3c import random_line, rotor_between_objects, general_root_val
-        from clifford.tools.g3c.cuda import rotor_between_object_sets_kernel
-
-        # Make a big array of data
-        n_mvs = 500
-        mv_a_array = np.array([random_line() for i in range(n_mvs)])
-        mv_b_array = np.array([random_line() for i in range(n_mvs)])
-
-        mv_c_array = np.zeros(mv_b_array.shape)
-        mv_d_array = np.zeros(mv_b_array.shape)
-
-        print('Starting kernel')
-        t = time.time()
-        blockdim = 64
-        griddim = int(math.ceil(n_mvs / blockdim))
-        rotor_between_object_sets_kernel[griddim, blockdim](mv_a_array, mv_b_array, mv_c_array)
-        end_time = time.time() - t
-        print('Kernel finished')
-        print(end_time)
-
-        # Now do the non cuda kernel
-        t = time.time()
-        for i in range(mv_a_array.shape[0]):
-            mv_a = cf.MultiVector(self.layout, mv_a_array[i, :])
-            mv_b = cf.MultiVector(self.layout, mv_b_array[i, :])
-            C = 1 + cf.MultiVector(self.layout, self.layout.gmt_func(mv_a.value, mv_b.value))
-            sigma = C*~C
-            k_value = general_root_val(sigma.value)[0, :]
-            mv_d_array[i, :] = k_value
-        print(time.time() - t)
-
-        np.testing.assert_almost_equal(mv_c_array, mv_d_array)
-
-    def test_gp(self):
-
-        from clifford.tools.g3c.cuda import gp_kernel
-        import math
-        import time
-
-        # Make a big array of data
-        n_mvs = 500
-        mv_a_array = np.array([self.layout.randomMV().value for i in range(n_mvs)])
-        mv_b_array = np.array([self.layout.randomMV().value for i in range(n_mvs)])
-
-        mv_c_array = np.zeros(mv_b_array.shape)
-        mv_d_array = np.zeros(mv_b_array.shape)
-
-        print('Starting kernel')
-        t = time.time()
-        blockdim = 64
-        griddim = int(math.ceil(n_mvs/blockdim))
-        gp_kernel[griddim, blockdim](mv_a_array, mv_b_array, mv_c_array)
-        end_time = time.time() - t
-        print('Kernel finished')
-        print(end_time)
-
-        # Now do the non cuda kernel
-        t = time.time()
-        for i in range(mv_a_array.shape[0]):
-            mv_d_array[i,:] = self.layout.gmt_func(mv_a_array[i,:],mv_b_array[i,:])
-        print(time.time() - t)
-
-        np.testing.assert_almost_equal(mv_c_array, mv_d_array)
-
-    def test_ip(self):
-
-        from clifford.tools.g3c.cuda import ip_kernel
-        import math
-        import time
-
-        # Make a big array of data
-        n_mvs = 500
-        mv_a_array = np.array([self.layout.randomMV().value for i in range(n_mvs)])
-        mv_b_array = np.array([self.layout.randomMV().value for i in range(n_mvs)])
-
-        mv_c_array = np.zeros(mv_b_array.shape)
-        mv_d_array = np.zeros(mv_b_array.shape)
-
-        print('Starting kernel')
-        t = time.time()
-        blockdim = 64
-        griddim = int(math.ceil(n_mvs / blockdim))
-        ip_kernel[griddim, blockdim](mv_a_array, mv_b_array, mv_c_array)
-        end_time = time.time() - t
-        print('Kernel finished')
-        print(end_time)
-
-        # Now do the non cuda kernel
-        t = time.time()
-        for i in range(mv_a_array.shape[0]):
-            mv_d_array[i, :] = self.layout.imt_func(mv_a_array[i, :], mv_b_array[i, :])
-        print(time.time() - t)
-
-        np.testing.assert_almost_equal(mv_c_array, mv_d_array)
-
-    def test_adjoint(self):
-        import math
-        from clifford.tools.g3c.cuda import adjoint_kernel
-
-        n_mvs = 1000
-        mv_a_array = np.array([self.layout.randomMV().value for i in range(n_mvs)])
-        mv_d_array = np.zeros(mv_a_array.shape)
-        mv_c_array = np.zeros(mv_a_array.shape)
-        blockdim = 64
-        griddim = int(math.ceil(n_mvs / blockdim))
-        adjoint_kernel[griddim, blockdim](mv_a_array, mv_c_array)
-        for i in range(mv_a_array.shape[0]):
-            mv_d_array[i, :] = self.layout.adjoint_func(mv_a_array[i, :])
-
-        np.testing.assert_almost_equal(mv_c_array, mv_d_array, 5)
-
-    def test_rotor_cost(self):
-        from clifford.tools.g3c import random_line
-        from clifford.tools.g3c.cost_functions import val_object_cost_function
-        from clifford.tools.g3c.cuda import cost_line_to_line_kernel
-        import time
-        import math
-
-        # Make a big array of data
-        n_mvs = 500
-        mv_a_array = np.array([random_line() for i in range(n_mvs)])
-        mv_b_array = np.array([random_line() for i in range(n_mvs)])
-
-        mv_c_array = np.zeros(n_mvs)
-        mv_d_array = np.zeros(n_mvs)
-
-        # Multiply together a load of them and see how long it takes
-
-        print('Starting kernel')
-        t = time.time()
-        blockdim = 64
-        griddim = int(math.ceil(n_mvs / blockdim))
-        cost_line_to_line_kernel[griddim, blockdim](mv_a_array, mv_b_array, mv_c_array)
-        end_time = time.time() - t
-        print('Kernel finished')
-        print(end_time)
-
-        # Now do the non cuda kernel
-        t = time.time()
-        for i in range(mv_a_array.shape[0]):
-            mv_d_array[i] = val_object_cost_function(mv_a_array[i, :], mv_b_array[i, :])
-        print(time.time() - t)
-
-        np.testing.assert_almost_equal(mv_c_array, mv_d_array, 5)
-
-    def test_line_set_cost(self):
-        from clifford.tools.g3c import random_line
-        from clifford.tools.g3c.cost_functions import object_set_cost_matrix
-        from clifford.tools.g3c.cuda import line_set_cost_cuda_mvs
-        import time
-        n_mvs = 50
-        mv_a_array = [random_line() for i in range(n_mvs)]
-        mv_b_array = [random_line() for i in range(n_mvs)]
-        print(mv_a_array)
-        print('Starting kernel')
-        t = time.time()
-        mv_c_array = line_set_cost_cuda_mvs(mv_a_array, mv_b_array)
-        end_time = time.time() - t
-        print('Kernel finished')
-        print(end_time)
-
-        t = time.time()
-        mv_d_array = object_set_cost_matrix(mv_a_array, mv_b_array, object_type='generic')
-        print(time.time() - t)
-        try:
-            np.testing.assert_almost_equal(mv_c_array, mv_d_array, 3)
-        except:
-            print(mv_c_array[0,:])
-            print(mv_d_array[0,:])
-            np.testing.assert_almost_equal(mv_c_array, mv_d_array, 3)
-
-
-
 class ConformalArrayTests(unittest.TestCase):
 
     @classmethod
@@ -578,6 +329,37 @@ class ModelMatchingTests(unittest.TestCase):
                 error_count += 1
         print('Correct fraction: ', 1.0 - error_count/n_runs)
 
+    @SkipTest
+    def test_iterative_model_match_cuda(self):
+        from clifford.tools.g3c import generate_random_object_cluster, \
+            random_line, random_rotation_translation_rotor, apply_rotor, \
+            random_circle, random_point_pair
+        from clifford.tools.g3c.model_matching import iterative_model_match
+
+        object_generator = random_line
+        n_objects_per_cluster = 20
+
+        # Make a cluster
+        cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
+                                                         max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
+        error_count = 0
+        n_runs = 10
+        for i in range(n_runs):
+            # Rotate and translate the cluster
+            disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi/8)
+            target = [apply_rotor(c, disturbance_rotor).normal() for c in cluster_objects]
+
+            labels, costs, r_est = iterative_model_match(target, cluster_objects, 30,
+                                                         object_type='generic', cuda=True)
+            try:
+                assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
+            except:
+                print(disturbance_rotor)
+                print(r_est)
+                error_count += 1
+        print('Correct fraction: ', 1.0 - error_count/n_runs)
+
+
     def test_iterative_model_match_sequential(self):
         from clifford.tools.g3c import generate_random_object_cluster, \
             random_line, random_rotation_translation_rotor, apply_rotor, \
@@ -605,6 +387,37 @@ class ModelMatchingTests(unittest.TestCase):
                 print(r_est)
                 error_count += 1
         print('Correct fraction: ', 1.0 - error_count/n_runs)
+
+    @SkipTest
+    def test_iterative_model_match_sequential_cuda(self):
+        from clifford.tools.g3c import generate_random_object_cluster, \
+            random_line, random_rotation_translation_rotor, apply_rotor, \
+            random_circle, random_plane
+        from clifford.tools.g3c.model_matching import iterative_model_match_sequential
+
+        object_generator = random_line
+        n_objects_per_cluster = 20
+
+        # Make a cluster
+        cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
+                                                         max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
+        error_count = 0
+        n_runs = 10
+        for i in range(n_runs):
+            # Rotate and translate the cluster
+            disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi/8)
+            target = [apply_rotor(c, disturbance_rotor).normal() for c in cluster_objects]
+
+            labels, costs, r_est = iterative_model_match_sequential(target, cluster_objects, 30,
+                                                                    object_type='generic', cuda=True)
+            try:
+                assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
+            except:
+                print(disturbance_rotor)
+                print(r_est)
+                error_count += 1
+        print('Correct fraction: ', 1.0 - error_count/n_runs)
+
 
     def test_iterative_model_match_newton(self):
         from clifford.tools.g3c import generate_random_object_cluster, \
@@ -660,6 +473,42 @@ class ModelMatchingTests(unittest.TestCase):
             target = [apply_rotor(c, disturbance_rotor).normal() for c in cluster_objects]
 
             labels, costs, r_est = REFORM(target, cluster_objects, n_samples, objects_per_sample,
+                                    iterations, covergence_threshold=0.00000001, pool_size=pool_size)
+            try:
+                assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
+            except:
+                print(disturbance_rotor)
+                print(r_est)
+                error_count += 1
+        print('Correct fraction: ', 1.0 - error_count/n_runs)
+
+    @SkipTest
+    def test_REFORM_sequential(self):
+        from clifford.tools.g3c import generate_random_object_cluster, \
+            random_line, random_rotation_translation_rotor, apply_rotor
+        from clifford.tools.g3c.model_matching import REFORM, REFORM_sequential
+
+        object_generator = random_line
+        n_objects_per_cluster = 20
+        objects_per_sample = 10
+        iterations = 30
+        pool_size = 8
+
+        n_samples = 8
+
+        error_count = 0
+        n_runs = 10
+        for i in range(n_runs):
+
+            # Make a cluster
+            cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
+                                                             max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
+
+            # Rotate and translate the cluster
+            disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi/8)
+            target = [apply_rotor(c, disturbance_rotor).normal() for c in cluster_objects]
+
+            labels, costs, r_est = REFORM_sequential(target, cluster_objects, n_samples, objects_per_sample,
                                     iterations, covergence_threshold=0.00000001, pool_size=pool_size)
             try:
                 assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
@@ -749,7 +598,7 @@ class ModelMatchingTests(unittest.TestCase):
     def test_REFORM_incomplete_query(self):
         from clifford.tools.g3c import generate_random_object_cluster, \
             random_line, random_rotation_translation_rotor, apply_rotor
-        from clifford.tools.g3c.model_matching import REFORM
+        from clifford.tools.g3c.model_matching import REFORM, REFORM_sequential
         import random
 
         object_generator = random_line
@@ -761,7 +610,7 @@ class ModelMatchingTests(unittest.TestCase):
         pool_size = 8
 
 
-        n_samples = pool_size*10
+        n_samples = 8
 
         error_count = 0
         n_runs = 10
@@ -779,7 +628,7 @@ class ModelMatchingTests(unittest.TestCase):
             sample_indices = random.sample(range(n_objects_per_cluster), n_keep)
             query_model = [cluster_objects[i] for i in sample_indices]
 
-            labels, costs, r_est = REFORM(target, query_model, n_samples, objects_per_sample,
+            labels, costs, r_est = REFORM_sequential(target, query_model, n_samples, objects_per_sample,
                                     iterations, covergence_threshold=0.00000001, pool_size=pool_size)
             try:
                 assert np.sum(labels == sample_indices) == n_keep

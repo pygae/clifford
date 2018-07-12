@@ -57,6 +57,30 @@ def estimate_rotor_objects_subsample(reference_model, query_model, n_repeats, ob
     return min_rotor, min_cost
 
 
+
+def estimate_rotor_objects_subsample_sequential(reference_model, query_model, n_repeats, objects_per_sample,
+                                     maxfev=20000, print_res=False, pool_size=1, object_type='generic'):
+    """
+    Estimates the rotor that takes one set of objects to another
+    """
+    min_cost = np.finfo(float).max
+    min_rotor = 1.0 + 0.0 * e1
+    for i in range(n_repeats):
+        indices = random.sample(range(len(reference_model)), objects_per_sample)
+        object_sample_reference = [reference_model[j] for j in indices]
+        object_sample_query = [query_model[j] for j in indices]
+        rotor, r_list, e_flag = sequential_object_rotor_estimation(object_sample_reference, object_sample_query,
+                                                             object_type=object_type)
+        query_model_remapped = [apply_rotor(l, rotor).normal() for l in object_sample_query]
+        new_cost = object_set_cost_sum(reference_model, query_model_remapped, object_type=object_type)
+        if new_cost < min_cost:
+            min_cost = new_cost
+            min_rotor = rotor
+        print('SAMPLE: ', i, '  cost  ', min_cost)
+    return min_rotor, min_cost
+
+
+
 def estimate_rotor_lines(reference_model, query_model, maxfev=20000, print_res=False):
     return estimate_rotor_objects(reference_model, query_model, maxfev=maxfev, print_res=print_res, object_type='lines')
 

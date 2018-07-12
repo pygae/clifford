@@ -294,6 +294,7 @@ def check_infinite_roots(sigma):
 def positive_root_val(sigma_val):
     """
     Square Root of Rotors - Evaluates the positive root
+    Square Root of Rotors - Evaluates the positive root
     """
     norm_s = dorst_norm_val(sigma_val)
     denominator = (math.sqrt(2) * math.sqrt(sigma_val[0] + norm_s))
