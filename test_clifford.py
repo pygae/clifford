@@ -1008,6 +1008,65 @@ class RotorEstimationTests(unittest.TestCase):
 
 class G3CToolsTests(unittest.TestCase):
 
+
+    def test_random_point_pair_at_origin(self):
+        from clifford.tools.g3c import random_point_pair_at_origin
+        from clifford.tools.g3c.GAOnline import GAScene
+
+        pp_list = [random_point_pair_at_origin() for i in range(10)]
+
+        sc = GAScene()
+        for pp in pp_list:
+            sc.add_point_pair(pp)
+        print(sc)
+
+
+    def test_random_line_at_origin(self):
+        from clifford.tools.g3c import random_line_at_origin
+        from clifford.tools.g3c.GAOnline import GAScene
+
+        pp_list = [random_line_at_origin() for i in range(10)]
+
+        sc = GAScene()
+        for pp in pp_list:
+            sc.add_line(pp)
+        print(sc)
+
+    def test_random_circle_at_origin(self):
+        from clifford.tools.g3c import random_circle_at_origin
+        from clifford.tools.g3c.GAOnline import GAScene
+
+        pp_list = [random_circle_at_origin() for i in range(10)]
+
+        sc = GAScene()
+        for pp in pp_list:
+            sc.add_circle(pp)
+        print(sc)
+
+    def test_random_sphere_at_origin(self):
+        from clifford.tools.g3c import random_sphere_at_origin
+        from clifford.tools.g3c.GAOnline import GAScene
+
+        pp_list = [random_sphere_at_origin() for i in range(10)]
+
+        sc = GAScene()
+        for pp in pp_list:
+            sc.add_sphere(pp)
+        print(sc)
+
+    def test_random_plane_at_origin(self):
+        from clifford.tools.g3c import random_plane_at_origin
+        from clifford.tools.g3c.GAOnline import GAScene
+
+        pp_list = [random_plane_at_origin() for i in range(10)]
+
+        sc = GAScene()
+        for pp in pp_list:
+            sc.add_plane(pp)
+        print(sc)
+
+
+
     def test_generate_translation_rotor(self):
         """ Tests translation rotor generation """
         from clifford import g3c

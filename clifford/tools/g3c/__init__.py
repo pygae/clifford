@@ -48,7 +48,8 @@ Root Finding
 import math
 import numba
 import numpy as np
-from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, random_rotation_rotor
+from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
+    random_rotation_rotor, generate_rotation_rotor
 from clifford.g3c import *
 import clifford as cf
 from clifford import get_mult_function
@@ -79,6 +80,10 @@ imt_func = layout.imt_func
 rightLaInv = layout.rightLaInv_func
 
 
+def disturb_object(mv_object, maximum_translation=0.01, maximum_angle=0.01):
+    """ Disturbs an object by a random rotor """
+    r = random_rotation_translation_rotor(maximum_translation=maximum_translation, maximum_angle=maximum_angle)
+    return (r*mv_object*~r).normal()
 
 
 def generate_n_clusters( object_generator, n_clusters, n_objects_per_cluster ):
@@ -545,13 +550,41 @@ def random_bivector():
     return a * I3 + c * ninf
 
 
+def standard_point_pair_at_origin():
+    return (up(-0.5*e1)^up(0.5*e1)).normal()
+
+
+def random_point_pair_at_origin():
+    """
+    Creates a random point pair bivector object at the origin
+    """
+    mv_a = random_euc_mv()
+    plane_a = (mv_a*I3).normal()
+
+    mv_b = plane_a*mv_a*plane_a
+    pp = (up(mv_a) ^ up(mv_b)).normal()
+    return pp
+
+
 def random_point_pair():
     """
     Creates a random point pair bivector object
     """
     mv_a = random_euc_mv()
     mv_b = random_euc_mv()
-    pp = ((up(mv_a) ^ up(mv_b))).normal()
+    pp = (up(mv_a) ^ up(mv_b)).normal()
+    return pp
+
+
+def standard_line_at_origin():
+    return (standard_point_pair_at_origin()^einf).normal()
+
+
+def random_line_at_origin():
+    """
+    Creates a random line at the origin
+    """
+    pp = (random_point_pair_at_origin()^einf).normal()
     return pp
 
 
@@ -565,6 +598,19 @@ def random_line():
     return line_a
 
 
+def random_circle_at_origin():
+    """
+    Creates a random circle at the origin
+    """
+    mv_a = random_euc_mv()
+    mv_r = random_euc_mv()
+    r = generate_rotation_rotor(np.pi/2, mv_a, mv_r)
+    mv_b = r*mv_a*~r
+    mv_c = r * mv_b * ~r
+    pp = (up(mv_a) ^ up(mv_b) ^ up(mv_c) ).normal()
+    return pp
+
+
 def random_circle():
     """
     Creates a random circle
@@ -574,6 +620,15 @@ def random_circle():
     mv_c = random_euc_mv()
     line_a = ((up(mv_a) ^ up(mv_b) ^ up(mv_c))).normal()
     return line_a
+
+
+def random_sphere_at_origin():
+    """
+    Creates a random sphere at the origin
+    """
+    pp = random_point_pair_at_origin()
+    sphere = (I5*pp).normal()
+    return sphere
 
 
 def random_sphere():
@@ -586,6 +641,15 @@ def random_sphere():
     mv_d = random_euc_mv()
     sphere = ((up(mv_a) ^ up(mv_b) ^ up(mv_c) ^ up(mv_d))).normal()
     return sphere
+
+
+def random_plane_at_origin():
+    """
+    Creates a random plane at the origin
+    """
+    c = random_circle_at_origin()
+    plane = (c ^ einf).normal()
+    return plane
 
 
 def random_plane():
