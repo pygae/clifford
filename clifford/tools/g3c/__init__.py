@@ -80,6 +80,44 @@ imt_func = layout.imt_func
 rightLaInv = layout.rightLaInv_func
 
 
+
+def get_circle_in_euc(circle):
+    """ Extracts all the normal stuff for a circle """
+    Ic = (circle^ninf).normal()
+    GAnormal = get_plane_normal(Ic)
+    inPlaneDual = circle*Ic
+    mag = float((inPlaneDual|ninf)[0])
+    inPlaneDual = -inPlaneDual/mag
+    radius = math.sqrt((inPlaneDual*inPlaneDual)[0])
+    #GAcentre = down(circle*ninf*circle)
+    GAcentre = down(inPlaneDual*(1+0.5*inPlaneDual*ninf))
+    return [GAcentre,GAnormal,radius]
+
+
+def line_to_point_and_direction(line):
+    """ 
+    converts a line to the conformal nearest point to the origin and a 
+    euc direction vector in direction of the line 
+    """
+    L_star = line*I5
+    T = L_star|no
+    mhat = -(L_star - T*ninf)*I3
+    p = (T^mhat)*I3
+    return [p,mhat]
+
+def get_plane_origin_distance(plane):
+    """ Get the distance between a given plane and the origin """
+    return float(((plane*I5)|no)[0])
+
+def get_plane_normal(plane):
+    """ Get the normal to the plane """
+    return (plane*I5 - get_plane_origin_distance(plane)*ninf)
+
+def get_nearest_plane_point(plane):
+    """ Get the nearest point to the origin on the plane """
+    return get_plane_normal(plane)*get_plane_origin_distance(plane)
+
+
 def disturb_object(mv_object, maximum_translation=0.01, maximum_angle=0.01):
     """ Disturbs an object by a random rotor """
     r = random_rotation_translation_rotor(maximum_translation=maximum_translation, maximum_angle=maximum_angle)

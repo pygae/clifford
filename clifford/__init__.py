@@ -512,6 +512,13 @@ class Layout(object):
         self._genTables()
         self.adjoint_func = get_adjoint_function(self.gradeList)
 
+    def dict_to_multivector(self, dict_in):
+      constructed_values = np.zeros(self.gaDims)
+      for k in list(dict_in.keys()):
+          constructed_values[int(k)] = dict_in[k]
+      return MultiVector(self, constructed_values)
+
+
     def __repr__(self):
         s = ("Layout(%r, %r, firstIdx=%r, names=%r)" % (
                 list(self.sig),
