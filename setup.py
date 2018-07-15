@@ -5,7 +5,7 @@
 from setuptools import setup, find_packages
 from distutils.core import Extension
 
-VERSION = '0.82'
+VERSION = '0.83'
 LONG_DESCRIPTION = """
 A numerical geometric algebra module for python. BSD License.
 """
