@@ -5,7 +5,7 @@
 from setuptools import setup, find_packages
 from distutils.core import Extension
 
-VERSION = '0.81'
+VERSION = '0.83'
 LONG_DESCRIPTION = """
 A numerical geometric algebra module for python. BSD License.
 """
@@ -20,7 +20,9 @@ setup(name='clifford',
 	packages=find_packages(),
 	install_requires = [
 		'numpy',
-        'future',
+		'scipy',
+		'numba',
+		'future',
 		],
 	package_dir={'clifford':'clifford'},
 	

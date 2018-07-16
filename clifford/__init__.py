@@ -175,6 +175,7 @@ from __future__ import print_function, unicode_literals
 from past.builtins import cmp, range
 from functools import reduce
 import sys
+import re
 
 # Standard library imports.
 import math
@@ -185,14 +186,192 @@ from warnings import warn
 # Major library imports.
 import numpy as np
 from numpy import linalg, array
+import numba
 
-# internal imports 
-from . import caching  
 
-# constants
+# The blade finding regex for parsing strings of mvs
+_blade_pattern =  "((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))"
+
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
+
+
+def get_longest_string(string_array):
+    """
+    Return the longest string in a list of strings
+    """
+    return max(string_array,key=len)
+
+def _sign(seq, orig):
+    """Determine {even,odd}-ness of permutation seq or orig.
+
+    Returns 1 if even; -1 if odd.
+    """
+
+    sign = 1
+    seq = list(seq)
+
+    for i in range(len(seq)):
+            if seq[i] != orig[i]:
+                j = seq.index(orig[i])
+                sign = -sign
+                seq[i], seq[j] = seq[j], seq[i]
+    return sign
+
+@numba.njit
+def _containsDups(input_list):
+    """
+    Simply checks if the input list contains duplicates
+    """
+    for k in input_list:
+        if input_list.count(k) != 1:
+            return 1
+    return 0
+
+@numba.njit
+def modify_idx(idx, grade):
+    """
+    This function is called during the even/odd grade algorithm
+    It is jitted to make it as fast as possible
+    """
+    j = grade - 1
+    done = 0
+    while not done:
+        idx[j] = idx[j] + 1
+        while idx[j] == grade:
+            idx[j] = 0
+            j = j - 1
+            idx[j] = idx[j] + 1
+            if j == -1:
+                raise NoMorePermutations()
+        j = grade - 1
+        if not _containsDups(idx):
+            done = 1
+
+def get_adjoint_function(gradeList):
+    '''
+    This function returns a fast jitted adjoint function
+    '''
+    grades = np.array(gradeList)
+    signs = np.power(-1, grades*(grades-1)/2)
+    @numba.njit
+    def adjoint_func(value):
+        return signs * value  # elementwise multiplication
+    return adjoint_func
+
+
+def get_mult_function(mult_table,n_dims,gradeList,grades_a=None,grades_b=None,filter_mask=None):
+    ''' 
+    Returns a function that implements the mult_table on two input multivectors
+    '''
+    non_zero_indices = mult_table.nonzero()
+    k_list = non_zero_indices[0]
+    l_list = non_zero_indices[1]
+    m_list = non_zero_indices[2]
+    mult_table_vals = np.array([mult_table[k,l,m] for k,l,m in np.transpose(non_zero_indices)],dtype=int)
+    
+    if filter_mask is not None:
+        # We can pass the sparse filter mask directly
+        k_list = k_list[filter_mask]
+        l_list = l_list[filter_mask]
+        m_list = m_list[filter_mask]
+        mult_table_vals = mult_table_vals[filter_mask]
+        @numba.njit
+        def mv_mult(value,other_value):
+            output = np.zeros(n_dims)
+            for ind,k in enumerate(k_list):
+                m = m_list[ind]
+                l = l_list[ind]
+                output[l] += value[k]*mult_table_vals[ind]*other_value[m]
+            return output
+        return mv_mult
+        
+    elif ((grades_a is not None) and (grades_b is not None)):
+        # We can also specify sparseness by grade
+        filter_mask = np.zeros(len(k_list), dtype=bool)
+        for i in range(len(filter_mask)):
+            if gradeList[k_list[i]] in grades_a:
+                if gradeList[m_list[i]] in grades_b:
+                    filter_mask[i] = 1
+
+        k_list = k_list[filter_mask]
+        l_list = l_list[filter_mask]
+        m_list = m_list[filter_mask]
+        mult_table_vals = mult_table_vals[filter_mask]
+        
+        @numba.njit
+        def mv_mult(value,other_value):
+            output = np.zeros(n_dims)
+            for ind,k in enumerate(k_list):
+                m = m_list[ind]
+                l = l_list[ind]
+                output[l] += value[k]*mult_table_vals[ind]*other_value[m]
+            return output
+        return mv_mult
+
+    # This case we specify no sparseness in advance, the algorithm checks for zeros
+    @numba.njit
+    def mv_mult(value,other_value):
+        output = np.zeros(n_dims)
+        for ind,k in enumerate(k_list):
+            v_val = value[k]
+            if v_val!=0.0:
+                m = m_list[ind]
+                ov_val = other_value[m]
+                if ov_val!=0.0:
+                    l = l_list[ind]
+                    output[l] += v_val*mult_table_vals[ind]*ov_val
+        return output
+    return mv_mult
+
+
+@numba.jit
+def grade_obj_func(objin_val, gradeList, threshold):
+    """ returns the modal grade of a multivector """
+    modal_value_count = np.zeros(objin_val.shape)
+    n = 0
+    for g in gradeList:
+        if np.abs(objin_val[n]) > threshold:
+            modal_value_count[g] += 1
+        n += 1
+    return np.argmax(modal_value_count)
+
+
+def grade_obj(objin, threshold=0.0000001):
+    """ returns the modal grade of a multivector """
+    return grade_obj_func(objin.value, objin.layout.gradeList, threshold)
+
+
+def get_right_inverse_function(mult_table, n_dims, gradeList):
+    '''
+    Returns a function that implements the right_inverse
+    '''
+
+    identity = np.zeros((n_dims,))
+    identity[gradeList.index(0)] = 1
+
+    tempAxes = (1,0,2)
+    newB = np.transpose(mult_table, tempAxes)
+
+    non_zero_indices = newB.nonzero()
+    k_list = non_zero_indices[0]
+    l_list = non_zero_indices[1]
+    m_list = non_zero_indices[2]
+    newB_vals = np.array([newB[k, l, m] for k, l, m in np.transpose(non_zero_indices)], dtype=int)
+
+    @numba.njit
+    def rightLaInv_func(value):
+        intermed = np.zeros((n_dims,n_dims))
+        for ind,l in enumerate(l_list):
+            m = m_list[ind]
+            k = k_list[ind]
+            intermed[k, m] += value[l]*newB_vals[ind]
+        sol = linalg.solve(intermed, identity)
+        return sol
+    return rightLaInv_func
+
+
 
 
 def _myDot(a, b):
@@ -333,6 +512,14 @@ class Layout(object):
 
         self._genEvenOdd()
         self._genTables()
+        self.adjoint_func = get_adjoint_function(self.gradeList)
+
+    def dict_to_multivector(self, dict_in):
+      constructed_values = np.zeros(self.gaDims)
+      for k in list(dict_in.keys()):
+          constructed_values[int(k)] = dict_in[k]
+      return MultiVector(self, constructed_values)
+
 
     def __repr__(self):
         s = ("Layout(%r, %r, firstIdx=%r, names=%r)" % (
@@ -341,34 +528,16 @@ class Layout(object):
         return s
 
     def __eq__(self,other):
-        return np.all(self.sig ==other.sig)
-    
+        if other is not self:
+            return np.array_equal(self.sig,other.sig)
+        else:
+            return True
+
     def __ne__(self,other):
-        return not self.__eq__(other)
-        
-    def _sign(self, seq, orig):
-        """Determine {even,odd}-ness of permutation seq or orig.
-
-        Returns 1 if even; -1 if odd.
-        """
-
-        sign = 1
-        seq = list(seq)
-
-        for i in range(len(seq)):
-            if seq[i] != orig[i]:
-                j = seq.index(orig[i])
-                sign = -sign
-                seq[i], seq[j] = seq[j], seq[i]
-        return sign
-
-    def _containsDups(self, list):
-        "Checks if list contains duplicates."
-
-        for k in list:
-            if list.count(k) != 1:
-                return 1
-        return 0
+        if other is self:
+            return False
+        else:
+            return not np.array_equal(self.sig,other.sig)
 
     def _genEvenOdd(self):
         "Make mappings of even and odd permutations to their canonical blades."
@@ -393,37 +562,15 @@ class Layout(object):
                 # general case, lifted from Chooser.py released on
                 # comp.lang.python by James Lehmann with permission.
                 idx = list(range(grade))
-
                 try:
                     for i in range(np.multiply.reduce(range(1, grade+1))):
                         # grade! permutations
 
-                        done = 0
-                        j = grade - 1
+                        # Whatever this does
+                        modify_idx(idx,grade)
+                        perm = tuple([blade[k] for k in idx])
 
-                        while not done:
-                            idx[j] = idx[j] + 1
-
-                            while idx[j] == grade:
-                                idx[j] = 0
-                                j = j - 1
-                                idx[j] = idx[j] + 1
-
-                                if j == -1:
-                                    raise NoMorePermutations()
-                            j = grade - 1
-
-                            if not self._containsDups(idx):
-                                done = 1
-
-                        perm = []
-
-                        for k in idx:
-                            perm.append(blade[k])
-
-                        perm = tuple(perm)
-
-                        if self._sign(perm, blade) == 1:
+                        if _sign(perm, blade) == 1:
                             self.even[perm] = blade
                         else:
                             self.odd[perm] = blade
@@ -432,6 +579,38 @@ class Layout(object):
                     pass
 
                 self.even[blade] = blade
+
+    def parse_multivector(self,mv_string):
+        # Get the names of the canonical blades
+        blade_name_index_map = {name:index for index,name in enumerate(self.names)}
+
+        # Clean up the input string a bit
+        cleaned_string = re.sub('[()]','',mv_string)
+
+        # Apply the regex
+        search_result = re.findall(_blade_pattern,cleaned_string)
+        
+        # Create a multivector
+        mv_out = MultiVector(self)
+        for res in search_result:
+            # Clean up the search result
+            cleaned_match = get_longest_string(res)
+
+            # Split on the '^'
+            stuff = cleaned_match.split('^')
+
+            if (len(stuff) == 2):
+                # Extract the value of the blade and the index of the blade
+                blade_val = float("".join(stuff[0].split()))
+                blade_index = blade_name_index_map[stuff[1].strip()]
+                mv_out[blade_index] = blade_val
+            else:
+                if(len(stuff) == 1):
+                    # Extract the value of the scalar
+                    blade_val = float("".join(stuff[0].split()))
+                    blade_index = 0;
+                    mv_out[blade_index] = blade_val
+        return mv_out
 
     def _checkList(self):
         "Ensure validity of arguments."
@@ -535,11 +714,41 @@ class Layout(object):
                     # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
                     lcmt[i, :, j] = gmt[i, :, j]
 
+        self.gmt_func = get_mult_function(gmt,self.gaDims,self.gradeList)
+        self.imt_func = get_mult_function(imt,self.gaDims,self.gradeList)
+        self.omt_func = get_mult_function(omt,self.gaDims,self.gradeList)
+        self.lcmt_func = get_mult_function(lcmt,self.gaDims,self.gradeList)
+        self.rightLaInv_func = get_right_inverse_function(gmt, self.gaDims, self.gradeList)
         self.gmt = gmt
         self.imt = imt
         self.omt = omt
         self.lcmt = lcmt
+    
+    def MultiVector(self,*args,**kw):
+        '''
+        create a multivector in this layout
+        
+        convenience func to Multivector(layout)
+        '''
+        return MultiVector(layout=self, *args, **kw)
+    
+    @property
+    def scalar(self):
+        '''
+        the scalar of value 1, for this GA (a MultiVector object)
+        
+        useful for forcing a MultiVector type
+        '''
+        return self.MultiVector() +1
+    
+    @property
+    def pseudoScalar(self):
+        '''
+        the psuedoScalar
+        '''
+        return self.blades_list[-1]
 
+    
     def randomMV(self, n=1, **kw):
         '''
         Convenience method to create a random multivector.
@@ -577,7 +786,25 @@ class Layout(object):
     def basis_vectors_lst(self):
         d = self.basis_vectors
         return [d[k] for k in sorted(d.keys())]
-
+    
+    def blades_of_grade(self,grade):
+        '''
+        return all blades of a given grade, 
+        
+        Parameters 
+        ------------
+        grade: int 
+            the desired grade 
+        
+        Returns
+        --------
+        blades : list of MultiVectors
+        '''
+        if grade ==0:
+            return self.scalar
+        return  [k for k in self.blades_list[1:] if k.grades()==[grade]]
+        
+        
     @property
     def blades_list(self):
         '''
@@ -592,9 +819,6 @@ class Layout(object):
     def blades(self):
         return self.bases()
     
-    @property
-    def pseudoScalar(self):
-        return self.blades_list[-1]
 
     def bases(self, *args, **kw):
         '''
@@ -642,7 +866,7 @@ class MultiVector(object):
     * M[N] : blade projection
     """
 
-    def __init__(self, layout, value=None):
+    def __init__(self, layout, value=None, string=None):
         """Constructor.
 
         MultiVector(layout, value=None) --> MultiVector
@@ -651,7 +875,10 @@ class MultiVector(object):
         self.layout = layout
 
         if value is None:
-            self.value = np.zeros((self.layout.gaDims,), dtype=float)
+            if string is None:
+                self.value = np.zeros((self.layout.gaDims,), dtype=float)
+            else:
+                self.value = layout.parse_multivector(string).value
         else:
             self.value = np.array(value)
             if self.value.shape != (self.layout.gaDims,):
@@ -726,8 +953,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = np.dot(self.value, np.dot(
-                self.layout.gmt, other.value))
+            newValue = self.layout.gmt_func(self.value,other.value)
         else:
             newValue = other * self.value
 
@@ -743,8 +969,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = np.dot(other.value, np.dot(
-                self.layout.gmt, self.value))
+            newValue = self.layout.gmt_func(other.value,self.value)
         else:
             newValue = other*self.value
 
@@ -760,8 +985,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = np.dot(self.value, np.dot(
-                self.layout.omt, other.value))
+            newValue = self.layout.omt_func(self.value,other.value)
         else:
             newValue = other*self.value
 
@@ -777,8 +1001,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = np.dot(other.value, np.dot(
-                self.layout.omt, self.value))
+            newValue = self.layout.omt_func(other.value,self.value)
         else:
             newValue = other * self.value
 
@@ -794,8 +1017,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other)
 
         if mv:
-            newValue = np.dot(self.value, np.dot(
-                self.layout.imt, other.value))
+            newValue = self.layout.imt_func(self.value,other.value)
         else:
             return self._newMV()  # l * M = M * l = 0 for scalar l
 
@@ -894,7 +1116,7 @@ class MultiVector(object):
         for i in range(1, other):
             newMV = newMV * self
 
-        return newMV
+            return newMV
 
     def __rpow__(self, other):
         """Exponentiation of a real by a multivector
@@ -971,8 +1193,8 @@ class MultiVector(object):
 
         Note in mixed signature spaces this may be negative
         """
-
-        return (~self * self)[()]
+        mv_val = self.layout.gmt_func(self.layout.adjoint_func(self.value),self.value)
+        return MultiVector(self.layout, mv_val)[()]
 
     def __abs__(self):
         """Magnitude (modulus)
@@ -995,13 +1217,7 @@ class MultiVector(object):
         adjoint() --> MultiVector
         """
         # The multivector created by reversing all multiplications
-
-        grades = np.array(self.layout.gradeList)
-        signs = np.power(-1, grades*(grades-1)/2)
-
-        newValue = signs * self.value  # elementwise multiplication
-
-        return self._newMV(newValue)
+        return self._newMV(self.layout.adjoint_func(self.value))
 
     __invert__ = adjoint
 
@@ -1048,16 +1264,18 @@ class MultiVector(object):
         return self.layout.gaDims
 
     def __getitem__(self, key):
-        """If key is a blade tuple (e.g. (0,1) or (1,3)), then return
-        the (real) value of that blade's coefficient.
+        """If key is a blade tuple (e.g. (0,1) or (1,3)), or a blade,
+        (e.g. e12),  then return the (real) value of that blade's coefficient.
         Otherwise, treat key as an index into the list of coefficients.
 
+        
         M[blade] --> PyFloat | PyInt
         M[index] --> PyFloat | PyInt
         __getitem__(key) --> PyFloat | PyInt
         """
-
-        if key in self.layout.bladeTupList:
+        if isinstance(key, MultiVector):
+                return self.value[int(np.where(key.value)[0][0])]
+        elif key in self.layout.bladeTupList:
             return self.value[self.layout.bladeTupList.index(key)]
         elif key in self.layout.even:
             return self.value[self.layout.bladeTupList.index(
@@ -1351,7 +1569,7 @@ class MultiVector(object):
 
         other, mv = self._checkOther(other, coerce=1)
 
-        newValue = np.dot(self.value, np.dot(self.layout.lcmt, other.value))
+        newValue = self.layout.lcmt_func(self.value,other.value)
 
         return self._newMV(newValue)
 
@@ -1473,18 +1691,7 @@ class MultiVector(object):
         M    where M * M  == 1
         rightLaInv() --> MultiVector
         """
-
-        identity = np.zeros((self.layout.gaDims,))
-        identity[self.layout.gradeList.index(0)] = 1
-
-        intermed = _myDot(self.value, self.layout.gmt)
-
-        if abs(linalg.det(intermed)) < _eps:
-            warn('Inverse might be inaccurate')
-            #raise ValueError("multivector has no right-inverse")
-
-        sol = linalg.solve(intermed, identity)
-
+        sol = self.layout.rightLaInv_func(self.value)
         return self._newMV(sol)
 
     def normalInv(self):

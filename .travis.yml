@@ -14,10 +14,6 @@ matrix:
     - os: linux
       python: '3.6'
       env: CONDA=true
-    - os: linux
-      python: '2.7'
-      env: CONDA=false
-
 
 
 before_install:
@@ -25,12 +21,22 @@ before_install:
 
 install:
   - if [[ "${CONDA}" == "true" ]]; then
-      PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-linux}" source auto_version/travis_install_conda.sh future numpy scipy  pip nose;
+      PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-linux}" source auto_version/travis_install_conda.sh future numpy scipy numba pip nose;
     fi
+  - pip install coverage
+  - pip install python-coveralls
   - python setup.py install
 
 script:
-  - nosetests test_clifford.py
+  - nosetests --with-coverage --cover-package=clifford test_clifford.py
 
-#after_success:
-#  - coveralls
+after_success:
+  - coveralls
+
+deploy:
+  provider: pypi
+  user: arsenovic
+  password:
+    secure: ieUd3c2DjrZQE+3FlqmU5FQObNWIDiL9E9G6aLs0ksEKAi5Z1t7fefXic1XHsHOZZYteycef/lZkUYg3ijwfZg2xzELeTdLef29GgUrxYuGL4MJ706UFj450Xlv9l1oH5D32OEKT2EwfxMqdrw39+N8zD5ehVyQbYM6Z3lwtCvg=
+  on:
+    tags: true
