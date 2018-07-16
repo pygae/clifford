@@ -191,7 +191,6 @@ import numba
 
 # The blade finding regex for parsing strings of mvs
 _blade_pattern =  "((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))"
-
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
@@ -2444,9 +2443,11 @@ def conformalize(layout, added_sig=[1,-1]):
     return layout_c, blades_c, stuff
 
 
+## TODO: fix caching to work
 ## generate pre-defined algebras and cache them
-sigs = [(1,1,0),(2,0,0),(3,1,0),(3,0,0),(3,2,0),(4,0,0)]
-current_module = sys.modules[__name__]
-caching.build_or_read_cache_and_attach_submods(current_module,sigs=sigs)
+
+#sigs = [(1,1,0),(2,0,0),(3,1,0),(3,0,0),(3,2,0),(4,0,0)]
+#current_module = sys.modules[__name__]
+#caching.build_or_read_cache_and_attach_submods(current_module,sigs=sigs)
 
 

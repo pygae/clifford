@@ -28,7 +28,8 @@ from __future__ import print_function, unicode_literals
 from functools import reduce
 
 from math import sqrt
-from numpy import eye, array, sign, zeros
+from numpy import eye, array, sign, zeros, sin,arccos
+import itertools
 from .. import Cl, gp, Frame
 from .. import eps as global_eps
 
@@ -291,6 +292,7 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
     spinor = False
     # store peudoscalar of frame B, in case known det (see end)
     try:
+        B = Frame(B)
         B_En = B.En
     except:
         pass
@@ -430,4 +432,18 @@ def rotor_decomp(V, x):
     return H, U
 
 
+def sinc(x):
+    return sin(x)/x
 
+def log_rotor(V):
+    '''
+    Logarithm of a simple rotor
+    '''
+    if (V(2)**2).grades() !=[0]:
+        print(V)
+        #raise ValueError('Bivector is not a Blade.')
+    if abs(V(2))<global_eps():
+        return log(float(V(0)))
+    # numpy's trig correctly chooses hyperbolic or not with Complex args
+    theta = arccos(complex(V(0)))
+    return V(2)/sinc(theta).real
