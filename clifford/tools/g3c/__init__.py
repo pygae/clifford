@@ -864,10 +864,11 @@ def dual_func(a_val):
 def fast_dual(a):
     return cf.MultiVector(layout, dual_func(a.value))
 
-
+'''
 v_dual = np.vectorize(fast_dual, otypes=[ConformalMVArray])
 v_new_mv = np.vectorize(lambda v: cf.MultiVector(layout, v), otypes=[ConformalMVArray], signature='(n)->()')
 v_up = np.vectorize(fast_up, otypes=[ConformalMVArray])
 v_down = np.vectorize(fast_down, otypes=[ConformalMVArray])
 v_apply_rotor_inv = np.vectorize(apply_rotor_inv, otypes=[ConformalMVArray])
 v_meet = np.vectorize(meet, otypes=[ConformalMVArray], signature='(),()->()')
+'''

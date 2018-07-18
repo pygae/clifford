@@ -185,7 +185,7 @@ from warnings import warn
 
 # Major library imports.
 import numpy as np
-from numpy import linalg, array
+from numpy import linalg, array,zeros
 import numba
 
 
@@ -2427,14 +2427,26 @@ def conformalize(layout, added_sig=[1,-1]):
     I_ga = layout_c.pseudoScalar*E0
     #  some  convenience functions
     def up(x):
+        if x.layout == layout:
+            # vector is in original space, map it into conformal space
+            old_val = x.value
+            new_val = zeros(layout_c.gaDims)
+            new_val[:len(old_val)] = old_val
+            x = layout_c.MultiVector(value=new_val)
+            
+        # then up-project into a null vector
         return x + (.5 ^ ((x**2)*einf)) + eo
 
     def homo(x):
         return x*(-x | einf).normalInv()  # homogenise conformal vector
 
     def down(x):
-        return (homo(x) ^ E0)*E0
-
+        x_down =  (homo(x) ^ E0)*E0
+        new_val = x_down.value[:layout.gaDims]
+        # create vector in layout (not cga)
+        x_down = layout.MultiVector(value=new_val)
+        return x_down
+        
     stuff = {}
     stuff.update({
         'ep': ep, 'en': en, 'eo': eo, 'einf': einf, 'E0': E0,
