@@ -10,7 +10,7 @@ class Sphere(object):
         self.layout = cga.layout # note: self.layout is the cga layout
         
         if len(args) ==0:    
-            # generate sphere
+            # generate highest dimension sphere
             points = [self.cga.lower_vector() for k in range(self.layout.dims-1)]
             points = map(self.cga.up, points)
             self.mv = reduce(op,points) 
@@ -32,6 +32,7 @@ class Sphere(object):
             
             # verify points are points
             self.mv = reduce(op,points) 
+        
         self.mv = self.mv.normal()
         
     def from_center_radius(self,center, radius):
