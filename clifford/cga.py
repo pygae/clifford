@@ -11,16 +11,15 @@ class Round(object):
         
         if len(args) ==0:    
             # generate highest dimension sphere
-            points = [self.cga.lower_vector() for k in range(self.layout.dims-1)]
-            points = map(self.cga.up, points)
-            self.mv = reduce(op,points) 
+            nulls = [self.cga.null_vector() for k in range(self.layout.dims-1)]
+            self.mv = reduce(op,nulls) 
         
         elif len(args)==1:
             if isinstance(args[0], MultiVector):
                 self.mv = args[0]
             if isinstance(args[0], int):
                 dim = args[0]
-                points = [self.cga.lower_vector() for k in range(dim+2)]
+                points = [self.cga.base_vector() for k in range(dim+2)]
                 points = map(self.cga.up, points)
                 self.mv = reduce(op,points)
                 
@@ -35,13 +34,15 @@ class Round(object):
         center = self.cga.null_vector(center)
         self.mv = center - .5*radius**2*einf
     
+    def __repr__(self):
+        return '%i-Round'%self.dim
     @property
     def dim(self):
-        return self.layout.dims 
+        return self.mv.grades()[0]
     
     @property
     def center(self):
-        return self.mv * self.cga.einf*self.mv
+        return self.mv * self.cga.einf * self.mv
     
     @property
     def center_down(self):
@@ -55,7 +56,7 @@ class Round(object):
 
     @property 
     def dual(self):
-        return self.mv* self.layout.pseudoScalar
+        return self.mv* self.layout.I
         
 class CGAOperator(object):
     def __call__(self, other):
@@ -72,7 +73,7 @@ class Translation(CGAOperator):
         
         if len(args) ==0:    
             # generate generator!
-            mv = 1 - self.cga.lower_vector()*self.cga.einf/2.
+            mv = 1 - self.cga.base_vector()*self.cga.einf/2.
         
         elif len(args)==1:
             arg = args[0]
@@ -85,7 +86,9 @@ class Translation(CGAOperator):
             raise ValueError('bad input')
             
         self.mv = mv
-    
+    def __repr__(self):
+        return 'Translation'
+        
 class CGA(object):
     def __init__(self, layout_orig):
         '''
@@ -95,18 +98,18 @@ class CGA(object):
         methods and for objects/operators
         '''
         if isinstance( layout_orig,int):
-            layout_orig = Cl(layout_orig)
+            layout_orig,blades = Cl(layout_orig)
         self.layout_orig = layout_orig
         self.layout, self.blades, stuff = conformalize(layout_orig)
         self.__dict__.update(stuff)
     
     
     ## Objects
-    def lower_vector(self):
+    def base_vector(self):
         '''
         random vector in the lower(original) space
         '''
-        return self.I_base.project(self.randomV())
+        return self.I_base.project(self.layout.randomV())
     
     def null_vector(self,x=None):
         '''
@@ -117,7 +120,7 @@ class CGA(object):
         a null vector will lay on the horisphere
         '''
         if x is None:
-            return self.up(self.lower_vector())
+            return self.up(self.base_vector())
         else:
             if x^self.I_base ==0:
                 return self.up(x)
