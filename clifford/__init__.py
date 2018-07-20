@@ -746,7 +746,8 @@ class Layout(object):
         the psuedoScalar
         '''
         return self.blades_list[-1]
-
+    
+    I = pseudoScalar
     
     def randomMV(self, n=1, **kw):
         '''
@@ -1571,16 +1572,18 @@ class MultiVector(object):
         newValue = self.layout.lcmt_func(self.value,other.value)
 
         return self._newMV(newValue)
-
+    
+    @property
     def pseudoScalar(self):
         "Returns a MultiVector that is the pseudoscalar of this space."
         return self.layout.pseudoScalar
-        
+    
+    I = pseudoScalar
 
     def invPS(self):
         "Returns the inverse of the pseudoscalar of the algebra."
 
-        ps = self.pseudoScalar()
+        ps = self.pseudoScalar
 
         return ps.inv()
 

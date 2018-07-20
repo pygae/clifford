@@ -1,9 +1,9 @@
 from functools import reduce
-from . import conformalize, op,gp, MultiVector
+from . import conformalize, op,gp, MultiVector,Cl
 from numpy import zeros,e
 import math
     
-class Sphere(object):
+class Round(object):
     # could inherent some generic CGAObject class
     def __init__(self,cga, *args):
         self.cga = cga
@@ -26,19 +26,13 @@ class Sphere(object):
                 
                 
         else:
-            points = args
-            #if points[0].layout == self.cga.layout_orig:
-            if points[0]^self.cga.I_ga ==0:
-                points = map(self.cga.up,points)
-            
-            # verify points are points
-            self.mv = reduce(op,points) 
+            nulls = map(self.cga.null_vector,args)
+            self.mv = reduce(op,nulls) 
         
         self.mv = self.mv.normal()
         
     def from_center_radius(self,center, radius):
-        if center.layout == self.cga.layout_orig:
-            center = self.cga.up(center)
+        center = self.cga.null_vector(center)
         self.mv = center - .5*radius**2*einf
     
     @property
@@ -52,6 +46,7 @@ class Sphere(object):
     @property
     def center_down(self):
         return self.cga.down(self.center)
+    
     @property
     def radius(self):
         dual_sphere = self.dual 
@@ -77,7 +72,7 @@ class Translation(CGAOperator):
         
         if len(args) ==0:    
             # generate generator!
-            mv = 1 - self.cga.lower_vector_hi()*self.cga.einf/2.
+            mv = 1 - self.cga.lower_vector()*self.cga.einf/2.
         
         elif len(args)==1:
             arg = args[0]
@@ -85,6 +80,7 @@ class Translation(CGAOperator):
                 if arg.grades()==[1]:
                     # we have vector 
                     mv = 1 - self.cga.straight_up(arg)*self.cga.einf/2.     
+        
         else:
             raise ValueError('bad input')
             
@@ -98,41 +94,47 @@ class CGA(object):
         conformalizes the layout_orig,  and provides several
         methods and for objects/operators
         '''
+        if isinstance( layout_orig,int):
+            layout_orig = Cl(layout_orig)
         self.layout_orig = layout_orig
-        self.layout, self.blafdes, stuff = conformalize(layout_orig)
+        self.layout, self.blades, stuff = conformalize(layout_orig)
         self.__dict__.update(stuff)
+    
     
     ## Objects
     def lower_vector(self):
         '''
         random vector in the lower(original) space
         '''
-        return self.layout_orig.randomV()
+        return self.I_base.project(self.randomV())
     
-    def null_vector(self):
+    def null_vector(self,x=None):
         '''
-        up projected random vector from original space 
-        will lay on horisphere
+        generates random null vector if x is None, or
+        returns a null vector from base vector x, if  x^self.I_base ==0 
+        returns x, 
+        
+        a null vector will lay on the horisphere
         '''
-        return self.up(self.lower_vector())
+        if x is None:
+            return self.up(self.lower_vector())
+        else:
+            if x^self.I_base ==0:
+                return self.up(x)
+            return x
     
     def straight_up(self, x):
         '''
-        copy of lower vector x in this cga, (without  added dims)
+        place a vector from layout_orig into this CGA, without up()
         '''
-        return self.I_ga.project(self.up(x))
-    
-    def lower_vector_hi(self):
-        '''
-        a random lower vector straight_up projected into this cga
-        '''
-        return self.straight_up(self.layout.randomV())
+        return self.I_base.project(self.up(x))
     
     
-    def sphere(self, *args):
-        
-        return Sphere(self,*args) 
+    def round(self, *args):
+        return Round(self,*args) 
     
     ##  Operators
     def translation(self, *args):
         return Translation(self, *args)
+
+    
