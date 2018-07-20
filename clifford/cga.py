@@ -27,7 +27,8 @@ class Sphere(object):
                 
         else:
             points = args
-            if points[0].layout == self.cga.layout_orig:
+            #if points[0].layout == self.cga.layout_orig:
+            if points[0]^self.cga.I_ga ==0:
                 points = map(self.cga.up,points)
             
             # verify points are points

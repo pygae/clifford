@@ -2384,12 +2384,12 @@ def conformalize(layout, added_sig=[1,-1]):
     Parameters
     -------------
     layout: `clifford.Layout`
-         layout of the GA to conformalize
+         layout of the GA to conformalize (the base)
 
     Returns
     ---------
     layout_c:  `clifford.Layout`
-        layout of the conformalized GA
+        layout of the base GA
     blades_c: dict
         blades for the CGA
     stuff: dict
@@ -2399,7 +2399,7 @@ def conformalize(layout, added_sig=[1,-1]):
             * eo - zero vector of null basis (=.5*(en-ep))
             * einf - infinity vector of null basis (=en+ep)
             * E0 - minkowski bivector (=einf^eo)
-            * I_ga - pseudoscalar for conformalized GA in new layout
+            * base - pseudoscalar for base ga, in cga layout
             * up - up-project a vector from GA to CGA
             * down - down-project a vector from CGA to GA
             * homo - homogenize a CGA vector
@@ -2424,7 +2424,7 @@ def conformalize(layout, added_sig=[1,-1]):
     eo = .5 ^ (en - ep)
     einf = en + ep
     E0 = einf ^ eo
-    I_ga = layout_c.pseudoScalar*E0
+    I_base = layout_c.pseudoScalar*E0
     #  some  convenience functions
     def up(x):
         if x.layout == layout:
@@ -2450,7 +2450,7 @@ def conformalize(layout, added_sig=[1,-1]):
     stuff = {}
     stuff.update({
         'ep': ep, 'en': en, 'eo': eo, 'einf': einf, 'E0': E0,
-        'up': up, 'down': down, 'homo': homo,'I_ga':I_ga})
+        'up': up, 'down': down, 'homo': homo,'I_base':I_base})
 
     return layout_c, blades_c, stuff
 
