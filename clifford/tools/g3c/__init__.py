@@ -422,18 +422,21 @@ def general_root_val(sigma_value):
 
 
 def general_root(sigma):
+    """ The general case of the root of a grade 0,4 multivector """
     output = general_root_val(sigma.value)
     return [cf.MultiVector(layout, output[0, :].copy()), cf.MultiVector(layout, output[1, :].copy())]
 
 
 @numba.njit
 def val_annhilate_k(K_val, C_val):
+    """ Removes K from C = KX via (K[0] - K[4])*C """
     k_4 = -project_val(K_val, 4)
     k_4[0] += K_val[0]
     return val_normalised(gmt_func(k_4, C_val))
 
 
 def annhilate_k(K, C):
+    """ Removes K from C = KX via (K[0] - K[4])*C """
     return cf.MultiVector(layout, val_annhilate_k(K.value, C.value))
 
 
@@ -546,19 +549,23 @@ sparse_line_gmt = get_mult_function(
 
 @numba.njit
 def val_norm(mv_val):
+    """ Returns sqrt(abs(~A*A)) """
     return np.sqrt(np.abs(gmt_func(adjoint_func(mv_val), mv_val)[0]))
 
 
 def norm(mv):
+    """ Returns sqrt(abs(~A*A)) """
     return val_norm(mv.value)
 
 
 @numba.njit
 def val_normalised(mv_val):
+    """ Returns A/sqrt(abs(~A*A)) """
     return mv_val/val_norm(mv_val)
 
 
 def normalised(mv):
+    """ fast version of the normal() function """
     return cf.MultiVector(layout, val_normalised(mv.value))
 
 
@@ -583,15 +590,18 @@ def val_rotor_between_lines(L1_val, L2_val):
 
 
 def rotor_between_lines(L1, L2):
+    """ return the rotor between two lines """
     return cf.MultiVector(layout, val_rotor_between_lines(L1.value, L2.value))
 
 
 def rotor_between_planes(P1, P2):
+    """ return the rotor between two planes """
     return cf.MultiVector(layout, val_rotor_rotor_between_planes(P1.value, P2.value))
 
 
 @numba.njit
 def val_rotor_rotor_between_planes(P1_val, P2_val):
+    """ return the rotor between two planes """
     P21_val = -gmt_func(P2_val, P1_val)
     P21_val[0] += 1
     return val_normalised(P21_val)
@@ -610,6 +620,7 @@ def random_bivector():
 
 
 def standard_point_pair_at_origin():
+    """ Creates a standard point pair at the origin """
     return (up(-0.5*e1)^up(0.5*e1)).normal()
 
 
@@ -741,22 +752,10 @@ def apply_rotor_inv(mv_in, rotor, rotor_inv):
     return cf.MultiVector(layout, val_apply_rotor_inv(mv_in.value, rotor.value, rotor_inv.value))
 
 
-
 @numba.njit
 def mult_with_ninf(mv):
     """ Convenience function for multiplication with ninf """
     return gmt_func(mv, ninf_val)
-
-# def convert_2D_polar_line_to_conformal_line(rho, theta):
-#     a = np.cos(theta)
-#     b = np.sin(theta)
-#     x0 = a * rho
-#     y0 = b * rho
-#     x1 = int(x0 + 10000 * (-b))
-#     y1 = int(y0 + 10000 * (a))
-#     x2 = int(x0 - 10000 * (-b))
-#     y2 = int(y0 - 10000 * (a))
-#     return (convert_2D_point_to_conformal(x1,y1)^convert_2D_point_to_conformal(x2,y2)^ninf).normal()
 
 
 #@numba.njit
@@ -785,7 +784,7 @@ def convert_2D_polar_line_to_conformal_line(rho, theta):
 
 @numba.njit
 def val_up(mv_val):
-    """ Fast up mapping """
+    """ Fast jitted up mapping """
     temp = np.zeros(32)
     temp[0] = 0.5
     return mv_val - no_val + omt_func(temp, gmt_func(gmt_func(mv_val, mv_val), ninf_val))
@@ -798,6 +797,7 @@ def fast_up(mv):
 
 @numba.njit
 def val_normalInv(mv_val):
+    """ A fast, jitted version of normalInv """
     Madjoint_val = adjoint_func(mv_val)
     MadjointM = gmt_func(Madjoint_val,mv_val)[0]
     return Madjoint_val / MadjointM
@@ -805,15 +805,18 @@ def val_normalInv(mv_val):
 
 @numba.njit
 def val_homo(mv_val):
+    """ A fast, jitted version of homo() """
     return gmt_func(mv_val, val_normalInv(imt_func(-mv_val, ninf_val)))
 
 
 @numba.njit
 def val_down(mv_val):
+    """ A fast, jitted version of down() """
     return gmt_func(omt_func(val_homo(mv_val), E0_val), E0_val)
 
 
 def fast_down(mv):
+    """ A fast version of down() """
     return cf.MultiVector(layout, val_down(mv.value))
 
 
@@ -845,47 +848,74 @@ def distance_polar_line_to_euc_point_2d(rho, theta, x, y):
     return val_distance_point_to_line(point, line)
 
 
-
-
-
-class ConformalMVArray(cf.MVArray):
-
-    def up(self):
-        return v_up(self)
-
-    def down(self):
-        return v_down(self)
-
-    def dual(self):
-        return v_dual(self)
-
-    def apply_rotor(self, R):
-        R_inv = ~R
-        return v_apply_rotor_inv(self, R, R_inv)
-
-    def apply_rotor_inv(self, R, R_inv):
-        return v_apply_rotor_inv(self, R, R_inv)
-
-    @property
-    def value(self):
-        return np.array([mv.value for mv in self])
-
-    @staticmethod
-    def from_value_array(value_array):
-        return ConformalMVArray(v_new_mv(value_array))
-
 dual_gmt_func = get_mult_function(layout.gmt, layout.gaDims, layout.gradeList, grades_a=[
                                   5], grades_b=[0, 1, 2, 3, 4, 5])
 
 @numba.njit
 def dual_func(a_val):
+    """
+    Fast dual
+    """
     return dual_gmt_func(I5_val, a_val)
 
 
 def fast_dual(a):
+    """
+    Fast dual
+    """
     return cf.MultiVector(layout, dual_func(a.value))
 
 
+class ConformalMVArray(cf.MVArray):
+    """
+    This class is for storing arrays of conformal multivectors
+    """
+    def up(self):
+        """
+        Up mapping
+        """
+        return v_up(self)
+
+    def down(self):
+        """
+        Down mapping
+        """
+        return v_down(self)
+
+    def dual(self):
+        """
+        Dualisation
+        """
+        return v_dual(self)
+
+    def apply_rotor(self, R):
+        """
+        Application of a rotor
+        """
+        R_inv = ~R
+        return v_apply_rotor_inv(self, R, R_inv)
+
+    def apply_rotor_inv(self, R, R_inv):
+        """
+        Application of a rotor with precomputed inverse
+        """
+        return v_apply_rotor_inv(self, R, R_inv)
+
+    @property
+    def value(self):
+        """
+        Return an np array of the values of multivectors
+        """
+        return np.array([mv.value for mv in self])
+
+    @staticmethod
+    def from_value_array(value_array):
+        """
+        Constructs an array of mvs from a value array
+        """
+        return ConformalMVArray(v_new_mv(value_array))
+
+# This is the vectorisation of functions to allow the conformal mv array to work
 v_dual = np.vectorize(fast_dual, otypes=[ConformalMVArray])
 v_new_mv = np.vectorize(lambda v: cf.MultiVector(layout, v), otypes=[ConformalMVArray], signature='(n)->()')
 v_up = np.vectorize(fast_up, otypes=[ConformalMVArray])
