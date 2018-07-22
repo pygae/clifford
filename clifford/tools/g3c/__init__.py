@@ -13,6 +13,27 @@ Generation Methods
     generate_dilation_rotor
     generate_translation_rotor
     random_conformal_point
+    quaternion_and_vector_to_rotor
+    generate_n_clusters
+    generate_random_object_cluster
+    random_translation_rotor
+    random_rotation_translation_rotor
+
+
+Conversion to and from the dual form of objects
+--------------------
+
+.. autosummary::
+    :toctree: generated/
+
+    get_circle_in_euc
+    line_to_point_and_direction
+    get_plane_origin_distance
+    get_plane_normal
+    get_nearest_plane_point
+    get_center_from_sphere
+    get_radius_from_sphere
+    point_pair_to_end_points
 
 Misc
 --------------------
@@ -21,12 +42,9 @@ Misc
     :toctree: generated/
     
     meet
+    disturb_object
     intersect_line_and_plane_to_point
     normalise_n_minus_1
-    quaternion_and_vector_to_rotor
-    get_center_from_sphere
-    get_radius_from_sphere
-    point_pair_to_end_points
     euc_dist
     dorst_norm_val
 
@@ -105,13 +123,16 @@ def line_to_point_and_direction(line):
     p = (T^mhat)*I3
     return [p,mhat]
 
+
 def get_plane_origin_distance(plane):
     """ Get the distance between a given plane and the origin """
     return float(((plane*I5)|no)[0])
 
+
 def get_plane_normal(plane):
     """ Get the normal to the plane """
     return (plane*I5 - get_plane_origin_distance(plane)*ninf)
+
 
 def get_nearest_plane_point(plane):
     """ Get the nearest point to the origin on the plane """
