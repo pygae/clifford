@@ -23,6 +23,7 @@ Helper Functions
 
     Cl
     conformalize
+    grade_obj
     bases
     randomMV
     pretty
@@ -337,7 +338,9 @@ def grade_obj_func(objin_val, gradeList, threshold):
 
 
 def grade_obj(objin, threshold=0.0000001):
-    """ returns the modal grade of a multivector """
+    '''
+    Returns the modal grade of a multivector
+    '''
     return grade_obj_func(objin.value, objin.layout.gradeList, threshold)
 
 
