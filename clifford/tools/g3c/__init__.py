@@ -10,30 +10,52 @@ Generation Methods
 .. autosummary::
     :toctree: generated/
 
-    generate_dilation_rotor
-    generate_translation_rotor
-    random_conformal_point
-    quaternion_and_vector_to_rotor
+    random_bivector
+    standard_point_pair_at_origin
+    random_point_pair_at_origin
+    random_point_pair
+    standard_line_at_origin
+    random_line_at_origin
+    random_line
+    random_circle_at_origin
+    random_circle
+    random_sphere_at_origin
+    random_sphere
+    random_plane_at_origin
+    random_plane
+
     generate_n_clusters
     generate_random_object_cluster
     random_translation_rotor
     random_rotation_translation_rotor
+    random_conformal_point
+    generate_dilation_rotor
+    generate_translation_rotor
 
 
-Conversion to and from the dual form of objects
+Geometry Methods
 --------------------
 
 .. autosummary::
     :toctree: generated/
 
+    intersect_line_and_plane_to_point
+    quaternion_and_vector_to_rotor
+    get_center_from_sphere
+    get_radius_from_sphere
+    point_pair_to_end_points
     get_circle_in_euc
     line_to_point_and_direction
     get_plane_origin_distance
     get_plane_normal
     get_nearest_plane_point
-    get_center_from_sphere
-    get_radius_from_sphere
-    point_pair_to_end_points
+    val_convert_2D_polar_line_to_conformal_line
+    convert_2D_polar_line_to_conformal_line
+    val_convert_2D_point_to_conformal
+    convert_2D_point_to_conformal
+    val_distance_point_to_line
+    distance_polar_line_to_euc_point_2d
+
 
 Misc
 --------------------
@@ -41,12 +63,31 @@ Misc
 .. autosummary::
     :toctree: generated/
     
+    
+    meet_val
     meet
-    disturb_object
-    intersect_line_and_plane_to_point
     normalise_n_minus_1
+    val_apply_rotor
+    apply_rotor
+    val_apply_rotor_inv
+    apply_rotor_inv
     euc_dist
-    dorst_norm_val
+    mult_with_ninf
+    val_norm
+    norm
+    val_normalised
+    normalised
+    val_up
+    fast_up
+    val_normalInv
+    val_homo
+    val_down
+    fast_down
+    dual_func
+    fast_dual
+    disturb_object
+    project_val
+
 
 Root Finding
 --------------------
@@ -54,13 +95,34 @@ Root Finding
 .. autosummary::
     :toctree: generated/
     
+    dorst_norm_val
+    check_sigma_for_positive_root_val
     check_sigma_for_positive_root
+    check_sigma_for_negative_root_val
     check_sigma_for_negative_root
+    check_infinite_roots_val
     check_infinite_roots
+    positive_root_val
+    negative_root_val
     positive_root
     negative_root
+    general_root_val
+    general_root
+    val_annhilate_k
+    annhilate_k
+    pos_twiddle_root_val
+    neg_twiddle_root_val
     pos_twiddle_root
     neg_twiddle_root
+    square_roots_of_rotor
+    interp_objects_root
+    average_objects
+    rotor_between_objects
+    val_rotor_between_lines
+    rotor_between_lines
+    rotor_between_planes
+    val_rotor_rotor_between_planes
+
 """
 
 import math
