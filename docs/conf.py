@@ -53,10 +53,10 @@ extensions = [
 
 import clifford
 import nbsphinx
-nbsphinx_execute = 'always'
+nbsphinx_execute = 'never'
 nbsphinx_allow_errors=True
 nbsphinx_kernel_name='python'
-
+napoleon_include_init_with_doc= False
 nbsphinx_timeout = 60
 
 #autodoc_default_flags='members'

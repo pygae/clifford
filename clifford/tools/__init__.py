@@ -1,5 +1,17 @@
 """
+.. currentmodule:: clifford.tools
+========================================
+tools (:mod:`clifford.tools`)
+========================================
+
 Algorithms and tools of various kinds.
+
+
+.. autosummary::
+    :toctree: generated/
+    
+    g3c
+
 
 Determining Rotors From Frame Pairs or Orthogonal Matrices
 ==========================================================
