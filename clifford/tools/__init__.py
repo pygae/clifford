@@ -1,5 +1,6 @@
 """
 .. currentmodule:: clifford.tools
+
 ========================================
 tools (:mod:`clifford.tools`)
 ========================================
@@ -7,14 +8,18 @@ tools (:mod:`clifford.tools`)
 Algorithms and tools of various kinds.
 
 
+Tools for specific ga's
+---------------------------------
+
 .. autosummary::
     :toctree: generated/
     
+    g3
     g3c
 
 
 Determining Rotors From Frame Pairs or Orthogonal Matrices
-==========================================================
+-----------------------------------------------------------
 
 Given two frames that are related by a orthogonal transform, we seek a rotor
 which enacts the transform. Details of the mathematics and psuedo-code used the

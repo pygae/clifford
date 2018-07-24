@@ -56,12 +56,15 @@ import nbsphinx
 nbsphinx_execute = 'never'
 nbsphinx_allow_errors=True
 nbsphinx_kernel_name='python'
+
 napoleon_include_init_with_doc= False
 nbsphinx_timeout = 60
 
 #autodoc_default_flags='members'
-autosummary_generate=['tools.rst','api.rst']
-numpydoc_show_class_members = False
+# you have to list all files with automodule here due to bug in sphinx and nbsphinx
+# https://github.com/spatialaudio/nbsphinx/issues/14
+autosummary_generate=['clifford','tools','cga']
+numpydoc_show_class_members = True
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
