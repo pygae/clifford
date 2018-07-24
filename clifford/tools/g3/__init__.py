@@ -1,3 +1,50 @@
+"""
+Tools for 3DGA (g3)
+
+3DGA Tools
+==========================================================
+
+Rotation Conversion Methods
+--------------------
+
+.. autosummary::
+    :toctree: generated/
+
+    quaternion_to_rotor
+    rotor_to_quaternion
+    quaternion_to_matrix
+    rotation_matrix_to_quaternion
+
+
+Generation Methods
+--------------------
+
+.. autosummary::
+    :toctree: generated/
+
+    random_unit_vector
+    random_euc_mv
+    generate_rotation_rotor
+    random_rotation_rotor
+
+
+Misc
+--------------------
+
+.. autosummary::
+    :toctree: generated/
+
+    angle_between_vectors
+    np_to_euc_mv
+    euc_mv_to_np
+    euc_cross_prod
+    rotor_vector_to_vector
+    correlation_matrix
+    GA_SVD
+    rotation_matrix_align_vecs
+    rotor_align_vecs
+s
+"""
 
 from clifford.g3c import *
 import clifford as cf
@@ -97,6 +144,16 @@ def rotation_matrix_to_rotor(M):
     return quaternion_to_rotor(Q)
 
 
+def random_unit_vector():
+    """ Creates a random unit vector """
+    return (np_to_euc_mv(np.random.randn(3))).normal()
+
+
+def random_euc_mv(l_max=10):
+    """ Creates a random vector of length uniform up to l_max """
+    return l_max*random_unit_vector()*np.random.rand()
+
+
 def generate_rotation_rotor(theta, euc_vector_m, euc_vector_n):
     """
     Generates a rotation of angle theta in the m, n plane
@@ -107,6 +164,11 @@ def generate_rotation_rotor(theta, euc_vector_m, euc_vector_n):
     bivector_B = bivector_B / (math.sqrt(-bivector_B * bivector_B))
     rotor = math.cos(theta / 2) - bivector_B * math.sin(theta / 2)
     return rotor
+
+
+def random_rotation_rotor(max_angle=np.pi):
+    """ Creates a random rotation rotor """
+    return generate_rotation_rotor(max_angle * np.random.rand(), random_unit_vector(), random_unit_vector())
 
 
 def angle_between_vectors(v1, v2):
@@ -130,21 +192,6 @@ def euc_mv_to_np(euc_point):
 def euc_cross_prod(euc_a,euc_b):
     """ Implements the cross product in GA """
     return (-(euc_a^euc_b)*I3).normal()
-
-
-def random_unit_vector():
-    """ Creates a random unit vector """
-    return (np_to_euc_mv(np.random.randn(3))).normal()
-
-
-def random_euc_mv(l_max=10):
-    """ Creates a random vector of length uniform up to l_max """
-    return l_max*random_unit_vector()*np.random.rand()
-
-
-def random_rotation_rotor(max_angle=np.pi):
-    """ Creates a random rotation rotor """
-    return generate_rotation_rotor(max_angle * np.random.rand(), random_unit_vector(), random_unit_vector())
 
 
 def rotor_vector_to_vector(v1, v2):
