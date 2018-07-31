@@ -1117,7 +1117,7 @@ class MultiVector(object):
         for i in range(1, other):
             newMV = newMV * self
 
-            return newMV
+        return newMV
 
     def __rpow__(self, other):
         """Exponentiation of a real by a multivector
