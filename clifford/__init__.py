@@ -218,35 +218,6 @@ def _sign(seq, orig):
                 seq[i], seq[j] = seq[j], seq[i]
     return sign
 
-@numba.njit
-def _containsDups(input_list):
-    """
-    Simply checks if the input list contains duplicates
-    """
-    for k in input_list:
-        if input_list.count(k) != 1:
-            return 1
-    return 0
-
-@numba.njit
-def modify_idx(idx, grade):
-    """
-    This function is called during the even/odd grade algorithm
-    It is jitted to make it as fast as possible
-    """
-    j = grade - 1
-    done = 0
-    while not done:
-        idx[j] = idx[j] + 1
-        while idx[j] == grade:
-            idx[j] = 0
-            j = j - 1
-            idx[j] = idx[j] + 1
-            if j == -1:
-                raise NoMorePermutations()
-        j = grade - 1
-        if not _containsDups(idx):
-            done = 1
 
 def get_adjoint_function(gradeList):
     '''
@@ -560,26 +531,13 @@ class Layout(object):
                 self.odd[(blade[1], blade[0])] = blade
                 continue
             else:
-                # general case, lifted from Chooser.py released on
-                # comp.lang.python by James Lehmann with permission.
-                idx = list(range(grade))
-                try:
-                    for i in range(np.multiply.reduce(range(1, grade+1))):
-                        # grade! permutations
-
-                        # Whatever this does
-                        modify_idx(idx,grade)
-                        perm = tuple([blade[k] for k in idx])
-
-                        if _sign(perm, blade) == 1:
-                            self.even[perm] = blade
-                        else:
-                            self.odd[perm] = blade
-
-                except NoMorePermutations:
-                    pass
-
+                for perm in itertools.permutations(blade):
+                    if _sign(perm, blade) == 1:
+                        self.even[perm] = blade
+                    else:
+                        self.odd[perm] = blade
                 self.even[blade] = blade
+
 
     def parse_multivector(self,mv_string):
         # Get the names of the canonical blades
