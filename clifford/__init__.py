@@ -202,22 +202,6 @@ def get_longest_string(string_array):
     """
     return max(string_array,key=len)
 
-def _sign(seq, orig):
-    """Determine {even,odd}-ness of permutation seq or orig.
-
-    Returns 1 if even; -1 if odd.
-    """
-
-    sign = 1
-    seq = list(seq)
-
-    for i in range(len(seq)):
-            if seq[i] != orig[i]:
-                j = seq.index(orig[i])
-                sign = -sign
-                seq[i], seq[j] = seq[j], seq[i]
-    return sign
-
 
 def get_adjoint_function(gradeList):
     '''
@@ -517,6 +501,22 @@ class Layout(object):
         self.even = {}
         self.odd = {}
 
+        if self.dims <= 16:
+            # 16 is currently the largest hard-coded factorial below
+            def sign(i):
+                exponent = i + i//2 + i//24 + i//720 + i//40320 + i//3628800 + i//479001600 + i//87178291200 + i//20922789888000
+                if exponent%2 == 0:
+                    return 1
+                return -1
+        else:
+            factorials = np.array([int(math.factorial(i)) for i in range(0, self.dims, 2)])
+            def sign(i):
+                exponent = (i//factorials).sum()
+                if exponent%2 == 0:
+                    return 1
+                return -1
+
+
         for i in range(self.gaDims):
             blade = self.bladeTupList[i]
             grade = self.gradeList[i]
@@ -531,11 +531,14 @@ class Layout(object):
                 self.odd[(blade[1], blade[0])] = blade
                 continue
             else:
-                for perm in itertools.permutations(blade):
-                    if _sign(perm, blade) == 1:
+                iterator = enumerate(itertools.permutations(blade))
+                for i, perm in iterator:
+                    if sign(i) == 1:
                         self.even[perm] = blade
+                        self.odd[next(iterator)[1]] = blade
                     else:
                         self.odd[perm] = blade
+                        self.even[next(iterator)[1]] = blade
                 self.even[blade] = blade
 
 
