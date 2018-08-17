@@ -17,11 +17,13 @@ from nose.plugins.skip import SkipTest
 class InitialisationSpeedTests(unittest.TestCase):
 
     def test_speed(self):
-        algebras = [2,3,4,5,6,7,8]
-        t_start = time.time()
+        algebras = range(2,9)
+        print()  # So that the first number is on a new line
         for i in algebras:
+            t_start = time.time()
             Cl(i)
-            print(time.time() - t_start)
+            t_end = time.time()
+            print(i, t_end - t_start)
 
 if __name__ == '__main__':
     unittest.main()
