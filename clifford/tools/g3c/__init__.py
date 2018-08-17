@@ -157,8 +157,6 @@ adjoint_func = layout.adjoint_func
 gmt_func = layout.gmt_func
 omt_func = layout.omt_func
 imt_func = layout.imt_func
-rightLaInv = layout.rightLaInv_func
-
 
 
 def get_circle_in_euc(circle):
@@ -349,7 +347,7 @@ def get_radius_from_sphere(sphere):
     Returns the radius of a sphere
     """
     dual_sphere = sphere * I5
-    dual_sphere = dual_sphere / (-dual_sphere | ninf)
+    dual_sphere = dual_sphere / (-dual_sphere | ninf)[0]
     return math.sqrt(abs(dual_sphere * dual_sphere))
 
 

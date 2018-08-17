@@ -320,38 +320,6 @@ def grade_obj(objin, threshold=0.0000001):
     return grade_obj_func(objin.value, objin.layout.gradeList, threshold)
 
 
-def get_right_inverse_function(mult_table, n_dims, gradeList):
-    '''
-    Returns a function that implements the right_inverse
-    '''
-
-    return -1
-    # identity = np.zeros((n_dims,))
-    # identity[gradeList.index(0)] = 1
-    #
-    # tempAxes = (1,0,2)
-    # newB = np.transpose(mult_table, tempAxes)
-    #
-    # non_zero_indices = newB.nonzero()
-    # k_list = non_zero_indices[0]
-    # l_list = non_zero_indices[1]
-    # m_list = non_zero_indices[2]
-    # newB_vals = np.array([newB[k, l, m] for k, l, m in np.transpose(non_zero_indices)], dtype=int)
-    #
-    # @numba.njit
-    # def rightLaInv_func(value):
-    #     intermed = np.zeros((n_dims,n_dims))
-    #     for ind,l in enumerate(l_list):
-    #         m = m_list[ind]
-    #         k = k_list[ind]
-    #         intermed[k, m] += value[l]*newB_vals[ind]
-    #     sol = linalg.solve(intermed, identity)
-    #     return sol
-    # return rightLaInv_func
-
-
-
-
 def _myDot(a, b):
     """Returns the inner product as *I* learned it.
 
@@ -701,7 +669,6 @@ class Layout(object):
         self.imt_func = get_mult_function(imt_nzs,self.gaDims,self.gradeList)
         self.omt_func = get_mult_function(omt_nzs,self.gaDims,self.gradeList)
         self.lcmt_func = get_mult_function(lcmt_nzs,self.gaDims,self.gradeList)
-        self.rightLaInv_func = get_right_inverse_function(gmt_nzs, self.gaDims, self.gradeList)
         self.gmt = gmt_nzs
         self.imt = imt_nzs
         self.omt = omt_nzs
@@ -1657,7 +1624,15 @@ class MultiVector(object):
         identity = np.zeros((self.layout.gaDims,))
         identity[self.layout.gradeList.index(0)] = 1
 
-        intermed = np.dot(self.layout.gmt, self.value)
+        intermed = np.zeros((self.layout.gaDims,self.layout.gaDims))
+
+        for i in range(self.layout.gaDims):
+            for j in range(self.layout.gaDims):
+                for k in range(self.layout.gaDims):
+                    ind = tuple([i, j, k])
+                    if ind in self.layout.gmt.keys():
+                        intermed[i, j] += self.layout.gmt[ind] * self.value[k]
+
         intermed = np.transpose(intermed)
 
         if abs(linalg.det(intermed)) < _eps:
@@ -1665,16 +1640,6 @@ class MultiVector(object):
 
         sol = linalg.solve(intermed, identity)
 
-        return self._newMV(sol)
-
-    def rightLaInv(self):
-        """Return right-inverse using a computational linear algebra method
-        proposed by Christian Perwass.
-         -1              -1
-        M    where M * M  == 1
-        rightLaInv() --> MultiVector
-        """
-        sol = self.layout.rightLaInv_func(self.value)
         return self._newMV(sol)
 
     def normalInv(self):
@@ -1694,7 +1659,7 @@ class MultiVector(object):
             raise ValueError("no inverse exists for this multivector")
 
     leftInv = leftLaInv
-    inv = rightInv = rightLaInv
+    inv = rightInv = leftLaInv
     # inv= normalInv
 
     def dual(self, I=None):
