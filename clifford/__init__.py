@@ -231,32 +231,34 @@ def get_adjoint_function(gradeList):
     return adjoint_func
 
 
-def get_mult_function(mult_table,n_dims,gradeList,grades_a=None,grades_b=None,filter_mask=None):
-    ''' 
+def get_mult_function(sparse_mult, n_dims, gradeList, grades_a=None, grades_b=None, filter_mask=None):
+    '''
     Returns a function that implements the mult_table on two input multivectors
     '''
-    non_zero_indices = mult_table.nonzero()
+    non_zero_indices =  np.transpose(np.array(list(sparse_mult.keys())))
     k_list = non_zero_indices[0]
     l_list = non_zero_indices[1]
     m_list = non_zero_indices[2]
-    mult_table_vals = np.array([mult_table[k,l,m] for k,l,m in np.transpose(non_zero_indices)],dtype=int)
-    
+    mult_table_vals = np.array([sparse_mult[k, l, m] for k, l, m in np.transpose(non_zero_indices)], dtype=int)
+
     if filter_mask is not None:
         # We can pass the sparse filter mask directly
         k_list = k_list[filter_mask]
         l_list = l_list[filter_mask]
         m_list = m_list[filter_mask]
         mult_table_vals = mult_table_vals[filter_mask]
+
         @numba.njit
-        def mv_mult(value,other_value):
+        def mv_mult(value, other_value):
             output = np.zeros(n_dims)
-            for ind,k in enumerate(k_list):
+            for ind, k in enumerate(k_list):
                 m = m_list[ind]
                 l = l_list[ind]
-                output[l] += value[k]*mult_table_vals[ind]*other_value[m]
+                output[l] += value[k] * mult_table_vals[ind] * other_value[m]
             return output
+
         return mv_mult
-        
+
     elif ((grades_a is not None) and (grades_b is not None)):
         # We can also specify sparseness by grade
         filter_mask = np.zeros(len(k_list), dtype=bool)
@@ -269,31 +271,34 @@ def get_mult_function(mult_table,n_dims,gradeList,grades_a=None,grades_b=None,fi
         l_list = l_list[filter_mask]
         m_list = m_list[filter_mask]
         mult_table_vals = mult_table_vals[filter_mask]
-        
+
         @numba.njit
-        def mv_mult(value,other_value):
+        def mv_mult(value, other_value):
             output = np.zeros(n_dims)
-            for ind,k in enumerate(k_list):
+            for ind, k in enumerate(k_list):
                 m = m_list[ind]
                 l = l_list[ind]
-                output[l] += value[k]*mult_table_vals[ind]*other_value[m]
+                output[l] += value[k] * mult_table_vals[ind] * other_value[m]
             return output
+
         return mv_mult
 
     # This case we specify no sparseness in advance, the algorithm checks for zeros
     @numba.njit
-    def mv_mult(value,other_value):
+    def mv_mult(value, other_value):
         output = np.zeros(n_dims)
-        for ind,k in enumerate(k_list):
+        for ind, k in enumerate(k_list):
             v_val = value[k]
-            if v_val!=0.0:
+            if v_val != 0.0:
                 m = m_list[ind]
                 ov_val = other_value[m]
-                if ov_val!=0.0:
+                if ov_val != 0.0:
                     l = l_list[ind]
-                    output[l] += v_val*mult_table_vals[ind]*ov_val
+                    output[l] += v_val * mult_table_vals[ind] * ov_val
         return output
+
     return mv_mult
+
 
 
 @numba.jit
@@ -320,28 +325,29 @@ def get_right_inverse_function(mult_table, n_dims, gradeList):
     Returns a function that implements the right_inverse
     '''
 
-    identity = np.zeros((n_dims,))
-    identity[gradeList.index(0)] = 1
-
-    tempAxes = (1,0,2)
-    newB = np.transpose(mult_table, tempAxes)
-
-    non_zero_indices = newB.nonzero()
-    k_list = non_zero_indices[0]
-    l_list = non_zero_indices[1]
-    m_list = non_zero_indices[2]
-    newB_vals = np.array([newB[k, l, m] for k, l, m in np.transpose(non_zero_indices)], dtype=int)
-
-    @numba.njit
-    def rightLaInv_func(value):
-        intermed = np.zeros((n_dims,n_dims))
-        for ind,l in enumerate(l_list):
-            m = m_list[ind]
-            k = k_list[ind]
-            intermed[k, m] += value[l]*newB_vals[ind]
-        sol = linalg.solve(intermed, identity)
-        return sol
-    return rightLaInv_func
+    return -1
+    # identity = np.zeros((n_dims,))
+    # identity[gradeList.index(0)] = 1
+    #
+    # tempAxes = (1,0,2)
+    # newB = np.transpose(mult_table, tempAxes)
+    #
+    # non_zero_indices = newB.nonzero()
+    # k_list = non_zero_indices[0]
+    # l_list = non_zero_indices[1]
+    # m_list = non_zero_indices[2]
+    # newB_vals = np.array([newB[k, l, m] for k, l, m in np.transpose(non_zero_indices)], dtype=int)
+    #
+    # @numba.njit
+    # def rightLaInv_func(value):
+    #     intermed = np.zeros((n_dims,n_dims))
+    #     for ind,l in enumerate(l_list):
+    #         m = m_list[ind]
+    #         k = k_list[ind]
+    #         intermed[k, m] += value[l]*newB_vals[ind]
+    #     sol = linalg.solve(intermed, identity)
+    #     return sol
+    # return rightLaInv_func
 
 
 
@@ -366,6 +372,13 @@ def _myDot(a, b):
 
     # innerproduct sums over the *last* axes of *both* arguments
     return np.inner(a, newB)
+
+
+def generate_blade_tup_map(bladeTupList):
+    blade_map = {}
+    for ind,blade in enumerate(bladeTupList):
+        blade_map[blade] = ind
+    return blade_map
 
 
 class NoMorePermutations(Exception):
@@ -596,7 +609,7 @@ class Layout(object):
     def _gmtElement(self, a, b):
         "Element of the geometric multiplication table given blades a, b."
 
-        mul = 1         # multiplier
+        mul = 1  # multiplier
 
         newBlade = list(a) + list(b)
 
@@ -605,12 +618,12 @@ class Layout(object):
             for i in range(len(newBlade)):
                 index = newBlade[i]
                 if newBlade.count(index) != 1:
-                    delta = newBlade[i+1:].index(index)
-                    eo = 1 - 2*(delta % 2)
+                    delta = newBlade[i + 1:].index(index)
+                    eo = 1 - 2 * (delta % 2)
                     # eo == 1 if the elements are an even number of flips away
                     # eo == -1 otherwise
 
-                    del newBlade[i+delta+1]
+                    del newBlade[i + delta + 1]
                     del newBlade[i]
 
                     mul = eo * mul * self.sig[index - self.firstIdx]
@@ -621,14 +634,14 @@ class Layout(object):
         newBlade = tuple(newBlade)
 
         if newBlade in self.bladeTupList:
-            idx = self.bladeTupList.index(newBlade)
+            idx = self.bladeTupMap[newBlade]
             # index of the product blade in the bladeTupList
         elif newBlade in self.even.keys():
             # even permutation
-            idx = self.bladeTupList.index(self.even[newBlade])
+            idx = self.bladeTupMap[self.even[newBlade]]
         else:
             # odd permutation
-            idx = self.bladeTupList.index(self.odd[newBlade])
+            idx = self.bladeTupMap[self.odd[newBlade]]
             mul = -mul
 
         element = np.zeros((self.gaDims,), dtype=int)
@@ -639,50 +652,61 @@ class Layout(object):
     def _genTables(self):
         "Generate the multiplication tables."
 
-        # geometric multiplication table
-        gmt = np.zeros((self.gaDims, self.gaDims, self.gaDims), dtype=int)
-        # inner product table
-        imt = np.zeros((self.gaDims, self.gaDims, self.gaDims), dtype=int)
-        # outer product table
-        omt = np.zeros((self.gaDims, self.gaDims, self.gaDims), dtype=int)
-        # left-contraction table
-        lcmt = np.zeros((self.gaDims, self.gaDims, self.gaDims), dtype=int)
+        self.bladeTupMap = generate_blade_tup_map(self.bladeTupList)
+
+        # sparse geometric multiplication table
+        gmt_nzs = {}
+        imt_nzs = {}
+        omt_nzs = {}
+        lcmt_nzs = {}
 
         for i in range(self.gaDims):
+            grade_list_i = self.gradeList[i]
+            blade_tup_list_i = list(self.bladeTupList[i])
             for j in range(self.gaDims):
-                gmt[i, :, j], idx = self._gmtElement(
-                        list(self.bladeTupList[i]), list(self.bladeTupList[j]))
+                grade_list_j = self.gradeList[j]
+
+                gmt_list, idx = self._gmtElement(
+                        blade_tup_list_i, list(self.bladeTupList[j]))
+
+                for v in np.array(np.nonzero(gmt_list)).flatten():
+                    gmt_nzs[tuple([i,v,j])] = gmt_list[v]
+
+                grade_list_idx = self.gradeList[idx]
 
                 if (
-                        self.gradeList[idx] == abs(
-                            self.gradeList[i] - self.gradeList[j]) and
-                        self.gradeList[i] != 0 and self.gradeList[j] != 0):
+                        grade_list_idx == abs(
+                    grade_list_i - grade_list_j) and
+                        grade_list_i != 0 and grade_list_j != 0):
 
                     # A_r . B_s = <A_r B_s>_|r-s|
                     # if r,s != 0
-                    imt[i, :, j] = gmt[i, :, j]
+                    for v in np.array(np.nonzero(gmt_list)).flatten():
+                        imt_nzs[tuple([i, v, j])] = gmt_nzs[tuple([i,v,j])]
 
-                if self.gradeList[idx] == (
-                        self.gradeList[i] + self.gradeList[j]):
+                if grade_list_idx == (
+                        grade_list_i + grade_list_j):
 
                     # A_r ^ B_s = <A_r B_s>_|r+s|
-                    omt[i, :, j] = gmt[i, :, j]
+                    for v in np.array(np.nonzero(gmt_list)).flatten():
+                        omt_nzs[tuple([i, v, j])] = gmt_nzs[tuple([i,v,j])]
 
-                if self.gradeList[idx] == (
-                        self.gradeList[j] - self.gradeList[i]):
+                if grade_list_idx == (
+                        grade_list_j - grade_list_i):
                     # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
-                    lcmt[i, :, j] = gmt[i, :, j]
+                    for v in np.array(np.nonzero(gmt_list)).flatten():
+                        lcmt_nzs[tuple([i, v, j])] = gmt_nzs[tuple([i,v,j])]
 
-        self.gmt_func = get_mult_function(gmt,self.gaDims,self.gradeList)
-        self.imt_func = get_mult_function(imt,self.gaDims,self.gradeList)
-        self.omt_func = get_mult_function(omt,self.gaDims,self.gradeList)
-        self.lcmt_func = get_mult_function(lcmt,self.gaDims,self.gradeList)
-        self.rightLaInv_func = get_right_inverse_function(gmt, self.gaDims, self.gradeList)
-        self.gmt = gmt
-        self.imt = imt
-        self.omt = omt
-        self.lcmt = lcmt
-    
+        self.gmt_func = get_mult_function(gmt_nzs,self.gaDims,self.gradeList)
+        self.imt_func = get_mult_function(imt_nzs,self.gaDims,self.gradeList)
+        self.omt_func = get_mult_function(omt_nzs,self.gaDims,self.gradeList)
+        self.lcmt_func = get_mult_function(lcmt_nzs,self.gaDims,self.gradeList)
+        self.rightLaInv_func = get_right_inverse_function(gmt_nzs, self.gaDims, self.gradeList)
+        self.gmt = gmt_nzs
+        self.imt = imt_nzs
+        self.omt = omt_nzs
+        self.lcmt = lcmt_nzs
+
     def MultiVector(self,*args,**kw):
         '''
         create a multivector in this layout
