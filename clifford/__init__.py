@@ -202,6 +202,7 @@ def get_longest_string(string_array):
     """
     return max(string_array,key=len)
 
+
 def _sign(seq, orig):
     """Determine {even,odd}-ness of permutation seq or orig.
 
@@ -349,6 +350,75 @@ def generate_blade_tup_map(bladeTupList):
     return blade_map
 
 
+@numba.njit
+def count_set_bits(bitmap):
+    bmp = bitmap
+    count = 0
+    n = 1
+    while bmp > 0:
+        if bmp & 1:
+            count += 1
+        bmp = bmp >> 1
+        n = n + 1
+    return count
+
+
+@numba.njit
+def canonical_reordering_sign_euclidean(bitmap_a, bitmap_b):
+    a = bitmap_a >> 1
+    sum_value = 0
+    while a != 0:
+        sum_value = sum_value + count_set_bits(a & bitmap_b)
+        a = a >> 1
+    if (sum_value & 1) == 0:
+        return 1
+    else:
+        return -1
+
+
+@numba.njit
+def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
+    bitmap = bitmap_a & bitmap_b
+    output_sign = canonical_reordering_sign_euclidean(bitmap_a, bitmap_b)
+    i = 0
+    while (bitmap != 0):
+        if ((bitmap & 1) != 0):
+            output_sign *= metric[i]
+        i = i + 1
+        bitmap = bitmap >> 1
+    return output_sign
+
+
+def compute_reordering_sign_and_canonical_form(blade, metric):
+    blade_out = blade[0]
+    s = 1
+    for b in blade[1:]:
+        s = s*canonical_reordering_sign(blade_out, b, metric)
+    return s, compute_blade_representation(compute_bitmap_representation(blade))
+
+
+def compute_bitmap_representation(blade):
+    if len(blade) > 0:
+        bitmap = 1 << (blade[0]-1)
+        if len(blade) > 1:
+            for b in blade[1:]:
+                bitmap = bitmap ^ (1 << (b-1))
+        return bitmap
+    else:
+        return 0
+
+def compute_blade_representation(bitmap):
+    bmp = bitmap
+    blade = []
+    n = 1
+    while bmp > 0:
+        if (bmp & 1):
+            blade.append(n)
+        bmp = bmp >> 1
+        n = n + 1
+    return tuple(blade)
+
+
 class NoMorePermutations(Exception):
     """ No more permutations can be generated.
     """
@@ -463,7 +533,6 @@ class Layout(object):
                 "names list of length %i needs to be of length %i" %
                 (len(names), self.gaDims))
 
-        self._genEvenOdd()
         self._genTables()
         self.adjoint_func = get_adjoint_function(self.gradeList)
 
@@ -491,34 +560,6 @@ class Layout(object):
             return False
         else:
             return not np.array_equal(self.sig,other.sig)
-
-    def _genEvenOdd(self):
-        "Make mappings of even and odd permutations to their canonical blades."
-
-        self.even = {}
-        self.odd = {}
-
-        for i in range(self.gaDims):
-            blade = self.bladeTupList[i]
-            grade = self.gradeList[i]
-
-            if grade in (0, 1):
-                # handled easy cases
-                self.even[blade] = blade
-                continue
-            elif grade == 2:
-                # another easy case
-                self.even[blade] = blade
-                self.odd[(blade[1], blade[0])] = blade
-                continue
-            else:
-                for perm in itertools.permutations(blade):
-                    if _sign(perm, blade) == 1:
-                        self.even[perm] = blade
-                    else:
-                        self.odd[perm] = blade
-                self.even[blade] = blade
-
 
     def parse_multivector(self,mv_string):
         # Get the names of the canonical blades
@@ -574,48 +615,16 @@ class Layout(object):
         except (ValueError, TypeError):
             raise ValueError("invalid bladeTupList; must be a list of tuples")
 
+
     def _gmtElement(self, a, b):
         "Element of the geometric multiplication table given blades a, b."
-
-        mul = 1  # multiplier
-
-        newBlade = list(a) + list(b)
-
-        unique = 0
-        while unique == 0:
-            for i in range(len(newBlade)):
-                index = newBlade[i]
-                if newBlade.count(index) != 1:
-                    delta = newBlade[i + 1:].index(index)
-                    eo = 1 - 2 * (delta % 2)
-                    # eo == 1 if the elements are an even number of flips away
-                    # eo == -1 otherwise
-
-                    del newBlade[i + delta + 1]
-                    del newBlade[i]
-
-                    mul = eo * mul * self.sig[index - self.firstIdx]
-                    break
-            else:
-                unique = 1
-
-        newBlade = tuple(newBlade)
-
-        if newBlade in self.bladeTupList:
-            idx = self.bladeTupMap[newBlade]
-            # index of the product blade in the bladeTupList
-        elif newBlade in self.even.keys():
-            # even permutation
-            idx = self.bladeTupMap[self.even[newBlade]]
-        else:
-            # odd permutation
-            idx = self.bladeTupMap[self.odd[newBlade]]
-            mul = -mul
-
-        element = np.zeros((self.gaDims,), dtype=int)
-        element[idx] = mul
-
-        return element, idx
+        bitmap_a = compute_bitmap_representation(a)
+        bitmap_b = compute_bitmap_representation(b)
+        output_sign = canonical_reordering_sign(bitmap_a, bitmap_b, np.array(self.sig))
+        output_bitmap = bitmap_a^bitmap_b
+        newBlade = compute_blade_representation(output_bitmap)
+        idx = self.bladeTupMap[newBlade]
+        return idx, output_sign
 
     def _genTables(self):
         "Generate the multiplication tables."
@@ -634,13 +643,12 @@ class Layout(object):
             for j in range(self.gaDims):
                 grade_list_j = self.gradeList[j]
 
-                gmt_list, idx = self._gmtElement(
+                v, mul = self._gmtElement(
                         blade_tup_list_i, list(self.bladeTupList[j]))
 
-                for v in np.array(np.nonzero(gmt_list)).flatten():
-                    gmt_nzs[tuple([i,v,j])] = gmt_list[v]
+                gmt_nzs[tuple([i,v,j])] = mul
 
-                grade_list_idx = self.gradeList[idx]
+                grade_list_idx = self.gradeList[v]
 
                 if (
                         grade_list_idx == abs(
@@ -649,21 +657,18 @@ class Layout(object):
 
                     # A_r . B_s = <A_r B_s>_|r-s|
                     # if r,s != 0
-                    for v in np.array(np.nonzero(gmt_list)).flatten():
-                        imt_nzs[tuple([i, v, j])] = gmt_nzs[tuple([i,v,j])]
+                    imt_nzs[tuple([i,v,j])] = mul
 
                 if grade_list_idx == (
                         grade_list_i + grade_list_j):
 
                     # A_r ^ B_s = <A_r B_s>_|r+s|
-                    for v in np.array(np.nonzero(gmt_list)).flatten():
-                        omt_nzs[tuple([i, v, j])] = gmt_nzs[tuple([i,v,j])]
+                    omt_nzs[tuple([i,v,j])] = mul
 
                 if grade_list_idx == (
                         grade_list_j - grade_list_i):
                     # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
-                    for v in np.array(np.nonzero(gmt_list)).flatten():
-                        lcmt_nzs[tuple([i, v, j])] = gmt_nzs[tuple([i,v,j])]
+                    lcmt_nzs[tuple([i,v,j])] = mul
 
         self.gmt_func = get_mult_function(gmt_nzs,self.gaDims,self.gradeList)
         self.imt_func = get_mult_function(imt_nzs,self.gaDims,self.gradeList)
@@ -1225,16 +1230,12 @@ class MultiVector(object):
         """
         if isinstance(key, MultiVector):
                 return self.value[int(np.where(key.value)[0][0])]
-        elif key in self.layout.bladeTupList:
-            return self.value[self.layout.bladeTupList.index(key)]
-        elif key in self.layout.even:
-            return self.value[self.layout.bladeTupList.index(
-                self.layout.even[key])]
-        elif key in self.layout.odd:
-            return -self.value[self.layout.bladeTupList.index(
-                self.layout.odd[key])]
-        else:
-            return self.value[key]
+        elif key in self.layout.bladeTupMap.keys():
+            return self.value[self.layout.bladeTupMap[key]]
+        elif isinstance(key, tuple):
+            sign, blade = compute_reordering_sign_and_canonical_form(key, np.array(self.layout.sig))
+            return sign*self.value[self.layout.bladeTupMap[blade]]
+        return self.value[key]
 
     def __setitem__(self, key, value):
         """If key is a blade tuple (e.g. (0,1) or (1,3)), then set
@@ -1245,15 +1246,11 @@ class MultiVector(object):
         M[index] = PyFloat | PyInt
         __setitem__(key, value)
         """
-
-        if key in self.layout.bladeTupList:
-            self.value[self.layout.bladeTupList.index(key)] = value
-        elif key in self.layout.even:
-            self.value[self.layout.bladeTupList.index(
-                self.layout.even[key])] = value
-        elif key in self.layout.odd:
-            self.value[self.layout.bladeTupList.index(
-                self.layout.odd[key])] = -value
+        if key in self.layout.bladeTupMap.keys():
+            self.value[self.layout.bladeTupMap[key]] = value
+        elif isinstance(key, tuple):
+            sign, blade = compute_reordering_sign_and_canonical_form(key, np.array(self.layout.sig))
+            self.value[self.layout.bladeTupMap[blade]] = sign*value
         else:
             self.value[key] = value
 
@@ -1265,14 +1262,11 @@ class MultiVector(object):
         __delitem__(key)
         """
 
-        if key in self.layout.bladeTupList:
-            self.value[self.layout.bladeTupList.index(key)] = 0
-        elif key in self.layout.even:
-            self.value[self.layout.bladeTupList.index(
-                self.layout.even[key])] = 0
-        elif key in self.layout.odd:
-            self.value[self.layout.bladeTupList.index(
-                self.layout.odd[key])] = 0
+        if key in self.layout.bladeTupMap.keys():
+            self.value[self.layout.bladeTupMap[key]] = 0
+        elif isinstance(key, tuple):
+            sign, blade = compute_reordering_sign_and_canonical_form(key, np.array(self.layout.sig))
+            self.value[self.layout.bladeTupMap[blade]] = 0
         else:
             self.value[key] = 0
 
