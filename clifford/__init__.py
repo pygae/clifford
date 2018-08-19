@@ -203,23 +203,6 @@ def get_longest_string(string_array):
     return max(string_array,key=len)
 
 
-def _sign(seq, orig):
-    """Determine {even,odd}-ness of permutation seq or orig.
-
-    Returns 1 if even; -1 if odd.
-    """
-
-    sign = 1
-    seq = list(seq)
-
-    for i in range(len(seq)):
-            if seq[i] != orig[i]:
-                j = seq.index(orig[i])
-                sign = -sign
-                seq[i], seq[j] = seq[j], seq[i]
-    return sign
-
-
 def get_adjoint_function(gradeList):
     '''
     This function returns a fast jitted adjoint function
@@ -319,28 +302,6 @@ def grade_obj(objin, threshold=0.0000001):
     Returns the modal grade of a multivector
     '''
     return grade_obj_func(objin.value, objin.layout.gradeList, threshold)
-
-
-def _myDot(a, b):
-    """Returns the inner product as *I* learned it.
-
-    a_i...k * b_k...m = c_i...m     in summation notation with the ...'s
-                                    representing arbitrary, omitted indices
-
-    The sum is over the last axis of the first argument and the first axis
-    of the last axis.
-
-    _myDot(a, b) --> NumPy array
-    """
-
-    a = np.asarray(a)
-    b = np.asarray(b)
-
-    tempAxes = tuple(list(range(1, len(b.shape))) + [0])
-    newB = np.transpose(b, tempAxes)
-
-    # innerproduct sums over the *last* axes of *both* arguments
-    return np.inner(a, newB)
 
 
 def generate_blade_tup_map(bladeTupList):
