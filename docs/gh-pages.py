@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 """Script to commit the doc build outputs into the github-pages repo.
 
+After you have built docs locally,  with `make html`
 Use:
 
   gh-pages.py [tag]
 
-If no tag is given, the current output of 'git describe' is used.  If given,
+If no tag is given, the major version of 'git describe' is used.  If given,
 that is how the resulting directory will be named.
 
 In practice, you should use either actual clean tags from a current build or
@@ -29,7 +30,7 @@ from subprocess import Popen, PIPE, CalledProcessError, check_call
 pages_dir = 'gh-pages'
 html_dir = '_build/html'
 pdf_dir = '_build/latex'
-pages_repo = 'git@github.com:arsenovic/docs.git'
+pages_repo = 'git@github.com:pygae/docs.git'
 
 #-----------------------------------------------------------------------------
 # Functions
