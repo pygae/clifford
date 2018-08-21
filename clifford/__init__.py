@@ -305,6 +305,10 @@ def grade_obj(objin, threshold=0.0000001):
 
 
 def generate_blade_tup_map(bladeTupList):
+    """
+    Generates a mapping from blade tuple to linear index into
+    multivector
+    """
     blade_map = {}
     for ind,blade in enumerate(bladeTupList):
         blade_map[blade] = ind
@@ -313,6 +317,9 @@ def generate_blade_tup_map(bladeTupList):
 
 @numba.njit
 def count_set_bits(bitmap):
+    """
+    Counts the number of bits set to 1 in bitmap
+    """
     bmp = bitmap
     count = 0
     n = 1
@@ -326,6 +333,10 @@ def count_set_bits(bitmap):
 
 @numba.njit
 def canonical_reordering_sign_euclidean(bitmap_a, bitmap_b):
+    """
+    Computes the sign for the product of bitmap_a and bitmap_b
+    assuming a euclidean metric
+    """
     a = bitmap_a >> 1
     sum_value = 0
     while a != 0:
@@ -339,6 +350,10 @@ def canonical_reordering_sign_euclidean(bitmap_a, bitmap_b):
 
 @numba.njit
 def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
+    """
+    Computes the sign for the product of bitmap_a and bitmap_b
+    given the supplied metric
+    """
     bitmap = bitmap_a & bitmap_b
     output_sign = canonical_reordering_sign_euclidean(bitmap_a, bitmap_b)
     i = 0
@@ -351,6 +366,10 @@ def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
 
 
 def compute_reordering_sign_and_canonical_form(blade, metric):
+    """
+    Takes a tuple blade representation and converts it to a canonical
+    tuple blade representation
+    """
     blade_out = blade[0]
     s = 1
     for b in blade[1:]:
@@ -359,6 +378,10 @@ def compute_reordering_sign_and_canonical_form(blade, metric):
 
 
 def compute_bitmap_representation(blade):
+    """
+    Takes a tuple blade representation and converts it to the
+    bitmap representation
+    """
     if len(blade) > 0:
         bitmap = 1 << (blade[0]-1)
         if len(blade) > 1:
@@ -369,6 +392,10 @@ def compute_bitmap_representation(blade):
         return 0
 
 def compute_blade_representation(bitmap):
+    """
+    Takes a bitmap representation and converts it to the tuple
+    blade representation
+    """
     bmp = bitmap
     blade = []
     n = 1
@@ -498,10 +525,11 @@ class Layout(object):
         self.adjoint_func = get_adjoint_function(self.gradeList)
 
     def dict_to_multivector(self, dict_in):
-      constructed_values = np.zeros(self.gaDims)
-      for k in list(dict_in.keys()):
+        """ Takes a dictionary of coefficient values and converts it into a MultiVector object """
+        constructed_values = np.zeros(self.gaDims)
+        for k in list(dict_in.keys()):
           constructed_values[int(k)] = dict_in[k]
-      return MultiVector(self, constructed_values)
+        return MultiVector(self, constructed_values)
 
 
     def __repr__(self):
@@ -523,6 +551,7 @@ class Layout(object):
             return not np.array_equal(self.sig,other.sig)
 
     def parse_multivector(self,mv_string):
+        """ Parses a multivector string into a MultiVector object """
         # Get the names of the canonical blades
         blade_name_index_map = {name:index for index,name in enumerate(self.names)}
 
@@ -631,10 +660,13 @@ class Layout(object):
                     # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
                     lcmt_nzs[tuple([i,v,j])] = mul
 
+        # This generates the functions that will perform the various products
         self.gmt_func = get_mult_function(gmt_nzs,self.gaDims,self.gradeList)
         self.imt_func = get_mult_function(imt_nzs,self.gaDims,self.gradeList)
         self.omt_func = get_mult_function(omt_nzs,self.gaDims,self.gradeList)
         self.lcmt_func = get_mult_function(lcmt_nzs,self.gaDims,self.gradeList)
+
+        # We store the sparse objects in the layout object
         self.gmt = gmt_nzs
         self.imt = imt_nzs
         self.omt = omt_nzs
