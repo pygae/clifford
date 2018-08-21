@@ -1,7 +1,10 @@
 """
+.. currentmodule:: clifford
+========================================
+clifford (:mod:`clifford`)
+========================================
 
-Two classes, Layout and MultiVector, and several helper functions are
-provided to implement the algebras.
+The Main Module. Provides two classes, Layout and MultiVector, and several helper functions  to implement the algebras.
 
 
 Classes
@@ -14,7 +17,7 @@ Classes
     Layout
     Frame
 
-Helper Functions
+Functions
 ================
 
 
@@ -30,145 +33,6 @@ Helper Functions
     ugly
     eps
 
-
-
-
-
-Issues
-======
-
- * Currently, algebras over 6 dimensions are very slow. this is because
-   this module was written for *pedagogical* purposes. However, because the
-   syntax for this module is so attractive, we plan to fix the
-   perfomance problems,  in the future...
-
- * Due to Python's order of operations, the bit operators ^ << follow
-   the normal arithmetic operators + - * /, so
-
-     1^e0 + 2^e1  !=  (1^e0) + (2^e1)
-
-   as is probably intended.  Additionally,
-
-     M = MultiVector(layout2D)  # null multivector
-     M << 1^e0 << 2^e1 == 10.0^e1 + 1.0^e01
-     M == 1.0
-     e0 == 2 + 1^e0
-
-   as is definitely not intended.  However,
-
-     M = MultiVector(layout2D)
-     M << (2^e0) << e1 << (3^e01) == M == 2^e0 + 1^e1 + 3^e01
-     e0 == 1^e0
-     e1 == 1^e1
-     e01 == 1^e01
-
- * Since * is the inner product and the inner product with a scalar
-   vanishes by definition, an expression like
-
-     1|e0 + 2|e1
-
-   is null.  Use the outer product or full geometric product, to
-   multiply scalars with MultiVectors.  This can cause problems if
-   one has code that mixes Python numbers and MultiVectors.  If the
-   code multiplies two values that can each be either type without
-   checking, one can run into problems as "1 | 2" has a very different
-   result from the same multiplication with scalar MultiVectors.
-
- * Taking the inverse of a MultiVector will use a method proposed by
-   Christian Perwass that involves the solution of a matrix equation.
-   A description of that method follows:
-
-   Representing multivectors as 2**dims vectors (in the matrix sense),
-   we can carry out the geometric product with a multiplication table.
-   In pseudo-tensorish language (using summation notation):
-
-     m_i * g_ijk * n_k = v_j
-
-   Suppose m_i are known (M is the vector we are taking the inverse of),
-   the g_ijk have been computed for this algebra, and v_j = 1 if the
-   j'th element is the scalar element and 0 otherwise, we can compute the
-   dot product m_i * g_ijk.  This yields a rank-2 matrix.  We can
-   then use well-established computational linear algebra techniques
-   to solve this matrix equation for n_k.  The laInv method does precisely
-   that.
-
-   The usual, analytic, method for computing inverses [M**-1 = ~M/(M*~M) iff
-   M*~M == |M|**2] fails for those multivectors where M*~M is not a scalar.
-   It is only used if the inv method is manually set to point to normalInv.
-
-   My testing suggests that laInv works.  In the cases where normalInv works,
-   laInv returns the same result (within _eps).  In all cases,
-   M * M.laInv() == 1.0 (within _eps).  Use whichever you feel comfortable
-   with.
-
-   Of course, a new issue arises with this method.  The inverses found
-   are sometimes dependant on the order of multiplication.  That is:
-
-     M.laInv() * M == 1.0
-     M * M.laInv() != 1.0
-
-   XXX Thus, there are two other methods defined, leftInv and rightInv which
-   point to leftLaInv and rightLaInv.  The method inv points to rightInv.
-   Should the user choose, leftInv and rightInv will both point to normalInv,
-   which yields a left- and right-inverse that are the same should either exist
-   (the proof is fairly simple).
-
- * The basis vectors of any algebra will be orthonormal unless you supply
-   your own multiplication tables (which you are free to do after the Layout
-   constructor is called).  A derived class could be made to calculate these
-   tables for you (and include methods for generating reciprocal bases and the
-   like).
-
- * No care is taken to preserve the dtype of the arrays.  The purpose
-   of this module is pedagogical.  If your application requires so many
-   multivectors that storage becomes important, the class structure here
-   is unsuitable for you anyways.  Instead, use the algorithms from this
-   module and implement application-specific data structures.
-
- * Conversely, explicit typecasting is rare.  MultiVectors will have
-   integer coefficients if you instantiate them that way.  Dividing them
-   by Python integers will have the same consequences as normal integer
-   division.  Public outcry will convince me to add the explicit casts
-   if this becomes a problem.
-
-
-Acknowledgements
-+++++++++++++++++
-Konrad Hinsen fixed a few bugs in the conversion to numpy and adding some unit
-tests.
-
-
-ChangeLog
-=========
-
-Changes 0.6-0.7
-+++++++++++++++++
-
- * Added a real license.
- * Convert to numpy instead of Numeric.
-
-Changes 0.5-0.6
-+++++++++++++++++
-
- * join() and meet() actually work now, but have numerical accuracy problems
- * added clean() to MultiVector
- * added leftInv() and rightInv() to MultiVector
- * moved pseudoScalar() and invPS() to MultiVector (so we can derive
-   new classes from MultiVector)
- * changed all of the instances of creating a new MultiVector to create
-   an instance of self.__class__ for proper inheritance
- * fixed bug in laInv()
- * fixed the massive confusion about how dot() works
- * added left-contraction
- * fixed embarassing bug in gmt generation
- * added normal() and anticommutator() methods
- * fixed dumb bug in elements() that limited it to 4 dimensions
-
-Happy hacking!
-
-Robert Kern
-
-robert.kern@gmail.com
 """
 
 from __future__ import absolute_import, division
@@ -186,8 +50,9 @@ from warnings import warn
 
 # Major library imports.
 import numpy as np
-from numpy import linalg, array
+from numpy import linalg, array,zeros
 import numba
+
 
 # The blade finding regex for parsing strings of mvs
 _blade_pattern =  "((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))"
@@ -699,7 +564,8 @@ class Layout(object):
         the psuedoScalar
         '''
         return self.blades_list[-1]
-
+    
+    I = pseudoScalar
     
     def randomMV(self, n=1, **kw):
         '''
@@ -1513,16 +1379,18 @@ class MultiVector(object):
         newValue = self.layout.lcmt_func(self.value,other.value)
 
         return self._newMV(newValue)
-
+    
+    @property
     def pseudoScalar(self):
         "Returns a MultiVector that is the pseudoscalar of this space."
         return self.layout.pseudoScalar
-        
+    
+    I = pseudoScalar
 
     def invPS(self):
         "Returns the inverse of the pseudoscalar of the algebra."
 
-        ps = self.pseudoScalar()
+        ps = self.pseudoScalar
 
         return ps.inv()
 
@@ -2324,12 +2192,12 @@ def conformalize(layout, added_sig=[1,-1]):
     Parameters
     -------------
     layout: `clifford.Layout`
-         layout of the GA to conformalize
+         layout of the GA to conformalize (the base)
 
     Returns
     ---------
     layout_c:  `clifford.Layout`
-        layout of the conformalized GA
+        layout of the base GA
     blades_c: dict
         blades for the CGA
     stuff: dict
@@ -2339,7 +2207,7 @@ def conformalize(layout, added_sig=[1,-1]):
             * eo - zero vector of null basis (=.5*(en-ep))
             * einf - infinity vector of null basis (=en+ep)
             * E0 - minkowski bivector (=einf^eo)
-            * I_ga - pseudoscalar for conformalized GA in new layout
+            * base - pseudoscalar for base ga, in cga layout
             * up - up-project a vector from GA to CGA
             * down - down-project a vector from CGA to GA
             * homo - homogenize a CGA vector
@@ -2364,20 +2232,47 @@ def conformalize(layout, added_sig=[1,-1]):
     eo = .5 ^ (en - ep)
     einf = en + ep
     E0 = einf ^ eo
-    I_ga = layout_c.pseudoScalar*E0
+    I_base = layout_c.pseudoScalar*E0
     #  some  convenience functions
     def up(x):
+        try:
+            if x.layout == layout:
+                # vector is in original space, map it into conformal space
+                old_val = x.value
+                new_val = zeros(layout_c.gaDims)
+                new_val[:len(old_val)] = old_val
+                x = layout_c.MultiVector(value=new_val)
+        except(AttributeError):
+            # if x is a scalar it doesnt have layout but following 
+            # will still work
+            pass
+            
+        # then up-project into a null vector
         return x + (.5 ^ ((x**2)*einf)) + eo
 
     def homo(x):
         return x*(-x | einf).normalInv()  # homogenise conformal vector
 
     def down(x):
-        return (homo(x) ^ E0)*E0
-
+        x_down =  (homo(x) ^ E0)*E0
+        #new_val = x_down.value[:layout.gaDims]
+        # create vector in layout (not cga)
+        #x_down = layout.MultiVector(value=new_val)
+        return x_down
+        
     stuff = {}
     stuff.update({
         'ep': ep, 'en': en, 'eo': eo, 'einf': einf, 'E0': E0,
-        'up': up, 'down': down, 'homo': homo,'I_ga':I_ga})
+        'up': up, 'down': down, 'homo': homo,'I_base':I_base})
 
     return layout_c, blades_c, stuff
+
+
+## TODO: fix caching to work
+## generate pre-defined algebras and cache them
+
+#sigs = [(1,1,0),(2,0,0),(3,1,0),(3,0,0),(3,2,0),(4,0,0)]
+#current_module = sys.modules[__name__]
+#caching.build_or_read_cache_and_attach_submods(current_module,sigs=sigs)
+
+

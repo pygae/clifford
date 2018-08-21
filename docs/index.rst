@@ -31,39 +31,23 @@ If you think Geometric Algebra looks interesting and want to learn more, check o
 * Geometric Algebra for Computer Science, by Dorst, Fontijne and Mann
 * New Foundations for Classical Mechanics, by David Hestenes
 
-Documentation
-------------------
-.. toctree::
-    :maxdepth: 1
-    
-    Installation
-    QuickStartG2
-    TheAlgebraOfSpaceG3
-    EulerAngles
-    ConformalGeometricAlgebra
-    SpaceTimeAlgebra
-    InterfacingOtherMathSystems
-    PredefinedGAs
-    PerformanceCliffordTutorial
-    Example 1 Interpolating Conformal Objects
-    Example 2 Clustering Geometric Objects
-    
-API
-------
+Docs
+====
 
-    
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
+    
+    tutorials
+    
+
+
+.. toctree::
+    :maxdepth: 2
     
     api
-
-Tools
-------
-
-.. toctree::
-    :maxdepth: 1
     
-    tools
+
+    
 
 Links
 --------
