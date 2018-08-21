@@ -981,4 +981,4 @@ v_up = np.vectorize(fast_up, otypes=[ConformalMVArray])
 v_down = np.vectorize(fast_down, otypes=[ConformalMVArray])
 v_apply_rotor_inv = np.vectorize(apply_rotor_inv, otypes=[ConformalMVArray])
 v_meet = np.vectorize(meet, otypes=[ConformalMVArray], signature='(),()->()')
-'''
+
