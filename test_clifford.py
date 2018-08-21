@@ -177,10 +177,6 @@ class BasicConformalTests(unittest.TestCase):
         t[0] = -1
         np.testing.assert_almost_equal(t, (e12*e12).value)
 
-    def test_up(self):
-        layout = Cl(4, 1)[0]
-        e1 = layout.blades['e1']
-
 
 class BasicAlgebraTests(unittest.TestCase):
 

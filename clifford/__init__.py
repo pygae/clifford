@@ -607,7 +607,11 @@ class Layout(object):
 
 
     def _gmtElement(self, a, b):
-        "Element of the geometric multiplication table given blades a, b."
+        """
+        Element of the geometric multiplication table given blades a, b.
+        The implementation used here is described in chapter 19 of
+        Leo Dorst's book, Geometric Algebra For Computer Science
+        """
         bitmap_a = compute_bitmap_representation(a)
         bitmap_b = compute_bitmap_representation(b)
         output_sign = canonical_reordering_sign(bitmap_a, bitmap_b, np.array(self.sig))
