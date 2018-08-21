@@ -2235,12 +2235,17 @@ def conformalize(layout, added_sig=[1,-1]):
     I_base = layout_c.pseudoScalar*E0
     #  some  convenience functions
     def up(x):
-        if x.layout == layout:
-            # vector is in original space, map it into conformal space
-            old_val = x.value
-            new_val = zeros(layout_c.gaDims)
-            new_val[:len(old_val)] = old_val
-            x = layout_c.MultiVector(value=new_val)
+        try:
+            if x.layout == layout:
+                # vector is in original space, map it into conformal space
+                old_val = x.value
+                new_val = zeros(layout_c.gaDims)
+                new_val[:len(old_val)] = old_val
+                x = layout_c.MultiVector(value=new_val)
+        except(AttributeError):
+            # if x is a scalar it doesnt have layout but following 
+            # will still work
+            pass
             
         # then up-project into a null vector
         return x + (.5 ^ ((x**2)*einf)) + eo
