@@ -116,6 +116,17 @@ class CliffordTests(unittest.TestCase):
         e1 = blades['e1']
         R*e1*~R
 
+    def test_indexing(self):
+        layout, blades = self.algebras[0]
+        e12 = blades['e12']
+        e1 = blades['e1']
+        e2 = blades['e2']
+        e3 = blades['e3']
+        self.assertAlmostEqual(e12[e12],1)
+        self.assertAlmostEqual(e12[e3], 0)
+        self.assertAlmostEqual(e12[(2,1)], -1)
+
+
     def test_add_float64(self):
         '''
         test array_wrap method to take control addition from numpy array
@@ -127,7 +138,60 @@ class CliffordTests(unittest.TestCase):
         self.assertEqual(1 + e1, float64(1) + e1)
 
 
+class BasicConformalTests(unittest.TestCase):
+    def test_metric(self):
+        layout = Cl(4, 1)[0]
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        e4 = layout.blades['e4']
+        e5 = layout.blades['e5']
+
+        self.assertAlmostEqual((e1 * e1)[0], 1)
+        self.assertAlmostEqual((e2 * e2)[0], 1)
+        self.assertAlmostEqual((e3 * e3)[0], 1)
+        self.assertAlmostEqual((e4 * e4)[0], 1)
+        self.assertAlmostEqual((e5 * e5)[0], -1)
+
+
+    def test_gp_op_ip(self):
+        layout = Cl(4, 1)[0]
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        e4 = layout.blades['e4']
+        e5 = layout.blades['e5']
+
+        e123 = layout.blades['e123']
+        np.testing.assert_almost_equal(e123.value, (e1 ^ e2 ^ e3).value)
+        np.testing.assert_almost_equal(e123.value, (e1 * e2 * e3).value)
+
+        e12345 = layout.blades['e12345']
+        np.testing.assert_almost_equal(e12345.value, (e1 ^ e2 ^ e3 ^ e4 ^ e5).value)
+        np.testing.assert_almost_equal(e12345.value, (e1 * e2 * e3 * e4 * e5).value)
+
+        e12 = layout.blades['e12']
+        np.testing.assert_almost_equal(-e12.value, (e2 ^ e1).value)
+
+        t = np.zeros(32)
+        t[0] = -1
+        np.testing.assert_almost_equal(t, (e12*e12).value)
+
+
 class BasicAlgebraTests(unittest.TestCase):
+
+    def test_gp_op_ip(self):
+        layout = Cl(3)[0]
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+
+        e123 = layout.blades['e123']
+        np.testing.assert_almost_equal(e123.value, (e1 ^ e2 ^ e3).value)
+        np.testing.assert_almost_equal(e123.value, (e1 * e2 * e3).value)
+
+        e12 = layout.blades['e12']
+        np.testing.assert_almost_equal(-e12.value, (e2 ^ e1).value)
 
     def test_grade_obj(self):
         algebras = [Cl(i) for i in [3, 4]] + [conformalize(Cl(3)[0])]
