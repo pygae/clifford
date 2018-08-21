@@ -980,7 +980,7 @@ class MultiVector(object):
         for i in range(1, other):
             newMV = newMV * self
 
-            return newMV
+        return newMV
 
     def __rpow__(self, other):
         """Exponentiation of a real by a multivector
@@ -2309,9 +2309,9 @@ def conformalize(layout, added_sig=[1,-1]):
 
     def down(x):
         x_down =  (homo(x) ^ E0)*E0
-        new_val = x_down.value[:layout.gaDims]
+        #new_val = x_down.value[:layout.gaDims]
         # create vector in layout (not cga)
-        x_down = layout.MultiVector(value=new_val)
+        #x_down = layout.MultiVector(value=new_val)
         return x_down
         
     stuff = {}
