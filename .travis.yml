@@ -28,7 +28,7 @@ install:
   - python setup.py install
 
 script:
-  - nosetests --with-coverage --cover-package=clifford test_clifford.py
+  - nosetests --with-coverage --cover-package=clifford -w test
 
 after_success:
   - coveralls

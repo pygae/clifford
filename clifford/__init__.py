@@ -231,7 +231,7 @@ def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
     return output_sign
 
 
-def compute_reordering_sign_and_canonical_form(blade, metric):
+def compute_reordering_sign_and_canonical_form(blade, metric, firstIdx):
     """
     Takes a tuple blade representation and converts it to a canonical
     tuple blade representation
@@ -240,31 +240,31 @@ def compute_reordering_sign_and_canonical_form(blade, metric):
     s = 1
     for b in blade[1:]:
         s = s*canonical_reordering_sign(blade_out, b, metric)
-    return s, compute_blade_representation(compute_bitmap_representation(blade))
+    return s, compute_blade_representation(compute_bitmap_representation(blade, firstIdx), firstIdx)
 
 
-def compute_bitmap_representation(blade):
+def compute_bitmap_representation(blade, firstIdx):
     """
     Takes a tuple blade representation and converts it to the
     bitmap representation
     """
     if len(blade) > 0:
-        bitmap = 1 << (blade[0]-1)
+        bitmap = 1 << (blade[0]-firstIdx)
         if len(blade) > 1:
             for b in blade[1:]:
-                bitmap = bitmap ^ (1 << (b-1))
+                bitmap = bitmap ^ (1 << (b-firstIdx))
         return bitmap
     else:
         return 0
 
-def compute_blade_representation(bitmap):
+def compute_blade_representation(bitmap, firstIdx):
     """
     Takes a bitmap representation and converts it to the tuple
     blade representation
     """
     bmp = bitmap
     blade = []
-    n = 1
+    n = firstIdx
     while bmp > 0:
         if (bmp & 1):
             blade.append(n)
@@ -478,11 +478,11 @@ class Layout(object):
         The implementation used here is described in chapter 19 of
         Leo Dorst's book, Geometric Algebra For Computer Science
         """
-        bitmap_a = compute_bitmap_representation(a)
-        bitmap_b = compute_bitmap_representation(b)
+        bitmap_a = compute_bitmap_representation(a, self.firstIdx)
+        bitmap_b = compute_bitmap_representation(b, self.firstIdx)
         output_sign = canonical_reordering_sign(bitmap_a, bitmap_b, np.array(self.sig))
         output_bitmap = bitmap_a^bitmap_b
-        newBlade = compute_blade_representation(output_bitmap)
+        newBlade = compute_blade_representation(output_bitmap, self.firstIdx)
         idx = self.bladeTupMap[newBlade]
         return idx, output_sign
 
@@ -1097,7 +1097,8 @@ class MultiVector(object):
         elif key in self.layout.bladeTupMap.keys():
             return self.value[self.layout.bladeTupMap[key]]
         elif isinstance(key, tuple):
-            sign, blade = compute_reordering_sign_and_canonical_form(key, np.array(self.layout.sig))
+            sign, blade = compute_reordering_sign_and_canonical_form(key, np.array(self.layout.sig),
+                                                                     self.layout.firstIdx)
             return sign*self.value[self.layout.bladeTupMap[blade]]
         return self.value[key]
 
@@ -1113,7 +1114,8 @@ class MultiVector(object):
         if key in self.layout.bladeTupMap.keys():
             self.value[self.layout.bladeTupMap[key]] = value
         elif isinstance(key, tuple):
-            sign, blade = compute_reordering_sign_and_canonical_form(key, np.array(self.layout.sig))
+            sign, blade = compute_reordering_sign_and_canonical_form(key, np.array(self.layout.sig),
+                                                                     self.layout.firstIdx)
             self.value[self.layout.bladeTupMap[blade]] = sign*value
         else:
             self.value[key] = value
@@ -1129,7 +1131,8 @@ class MultiVector(object):
         if key in self.layout.bladeTupMap.keys():
             self.value[self.layout.bladeTupMap[key]] = 0
         elif isinstance(key, tuple):
-            sign, blade = compute_reordering_sign_and_canonical_form(key, np.array(self.layout.sig))
+            sign, blade = compute_reordering_sign_and_canonical_form(key, np.array(self.layout.sig),
+                                                                     self.layout.firstIdx)
             self.value[self.layout.bladeTupMap[blade]] = 0
         else:
             self.value[key] = 0
