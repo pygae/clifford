@@ -5,6 +5,7 @@ from past.builtins import range
 
 import numpy as np
 from numpy import exp, float64, testing
+import numba.cuda
 import unittest
 import itertools
 
@@ -22,12 +23,12 @@ from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimati
 
 from clifford.tools.g3c.model_matching import REFORM_cuda, iterative_model_match_sequential
 
-@SkipTest
 class CUDATESTS(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-
+        if not numba.cuda.is_available():
+            raise SkipTest('CUDA is unavailable, skipping tests')
         layout = g3c.layout
         self.layout = layout
         self.stuff = g3c.stuff
