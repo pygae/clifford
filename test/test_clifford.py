@@ -105,7 +105,7 @@ class BasicSpaceTimeTests(unittest.TestCase):
     def test_initialise(self):
 
         # Dirac Algebra  `D`
-        D, D_blades = Cl(1, 3, firstIdx=0, names='d')
+        D, D_blades = Cl(1, 3, names='d', firstIdx=0)
 
         # Pauli Algebra  `P`
         P, P_blades = Cl(3, names='p')
