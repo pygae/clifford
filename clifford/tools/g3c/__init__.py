@@ -45,6 +45,7 @@ Geometry Methods
     get_radius_from_sphere
     point_pair_to_end_points
     get_circle_in_euc
+    circle_to_sphere
     line_to_point_and_direction
     get_plane_origin_distance
     get_plane_normal
@@ -170,6 +171,15 @@ def get_circle_in_euc(circle):
     #GAcentre = down(circle*ninf*circle)
     GAcentre = down(inPlaneDual*(1+0.5*inPlaneDual*ninf))
     return [GAcentre,GAnormal,radius]
+
+
+def circle_to_sphere(C):
+    """
+    returns the sphere for which the input circle is the perimeter
+    """
+    Ic = (C ^ einf).normal()
+    sphere = C * Ic * I5
+    return sphere
 
 
 def line_to_point_and_direction(line):
