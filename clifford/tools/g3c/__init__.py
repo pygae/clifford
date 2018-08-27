@@ -792,8 +792,8 @@ def random_sphere_at_origin():
     """
     Creates a random sphere at the origin
     """
-    pp = random_point_pair_at_origin()
-    sphere = (I5*pp).normal()
+    C = random_circle_at_origin()
+    sphere = circle_to_sphere(C)
     return sphere
 
 
