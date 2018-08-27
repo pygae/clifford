@@ -14,7 +14,6 @@ from nose.plugins.skip import SkipTest
 
 class InitialisationSpeedTests(unittest.TestCase):
 
-    @SkipTest
     def test_speed(self):
         algebras = range(2,9)
         print()  # So that the first number is on a new line
@@ -24,7 +23,6 @@ class InitialisationSpeedTests(unittest.TestCase):
             t_end = time.time()
             print(i, t_end - t_start)
 
-    @SkipTest
     def test_sparse_multiply(self):
         algebras = [Cl(i) for i in [3, 4]] + [conformalize(Cl(3)[0])]
         # For all the algebras we are interested in

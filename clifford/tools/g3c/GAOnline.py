@@ -1,5 +1,10 @@
 
 from __future__ import print_function
+from clifford import grade_obj
+
+def interpolate_colors(alpha, rgb_a, rgb_b):
+    rgb_c = (1-alpha)*rgb_a + alpha*rgb_b
+    return 'rgb(' + str(int(rgb_c[0])) + ',' + str(int(rgb_c[1])) + ',' + str(int(rgb_c[2])) + ')'
 
 
 class Sphere():
@@ -88,21 +93,33 @@ class GAScene():
         return s
 
     def add_euc_point(self,mv,color='rgb(0,0,0)'):
+        if grade_obj(mv) != 1:
+            raise ValueError('Input is not a euc_point')
         self.add(EucPoint(mv,color))
 
     def add_circle(self,mv,color='rgb(0,0,0)'):
+        if grade_obj(mv) != 3:
+            raise ValueError('Input is not a circle')
         self.add(Circle(mv,color))
 
     def add_line(self,mv,color='rgb(0,0,0)'):
+        if grade_obj(mv) != 3:
+            raise ValueError('Input is not a line')
         self.add(Line(mv,color))
 
     def add_plane(self,mv,color='rgb(0,0,0)'):
+        if grade_obj(mv) != 4:
+            raise ValueError('Input is not a plane')
         self.add(Plane(mv,color))
 
     def add_sphere(self,mv,color='rgb(0,0,0)'):
+        if grade_obj(mv) != 4:
+            raise ValueError('Input is not a sphere')
         self.add(Sphere(mv,color))
 
     def add_point_pair(self,mv,color='rgb(0,0,0)'):
+        if grade_obj(mv) != 2:
+            raise ValueError('Input is not a point_pair')
         self.add(PointPair(mv,color))
 
     def add_object(self,mv,mv_type,color='rgb(0,0,0)'):
@@ -119,9 +136,20 @@ class GAScene():
         else:
             raise ValueError(str(mv_type) + ' is not a valid mv_type. You must specify a valid mv_type.')
 
+    def add_object_array(self,mv_array,mv_type,color='rgb(0,0,0)'):
+        for mv in mv_array:
+            self.add_object(mv, mv_type, color=color)
+
     def save_to_file(self,filename):
         with open(filename,'w') as fobj:
             print(self,file=fobj)
+
+
+def draw_objects(mv_array, mv_type, color='rgb(0,0,0)'):
+    sc = GAScene()
+    sc.add_object_array(mv_array, mv_type, color=color)
+    print(sc)
+
 
 class GAAnimation():
     def __init__(self):

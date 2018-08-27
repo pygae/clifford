@@ -92,6 +92,55 @@ class ConformalArrayTests(unittest.TestCase):
 
 class G3CToolsTests(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(self):
+        from clifford import g3c
+        layout = g3c.layout
+        self.layout = layout
+        self.stuff = g3c.stuff
+
+    def test_general_object_interpolation(self):
+        from clifford.tools.g3c.GAOnline import draw_objects
+        from clifford.tools.g3c import general_object_interpolation, \
+            random_circle, generate_rotation_rotor, generate_dilation_rotor, \
+            generate_translation_rotor
+
+        e1 = self.layout.blades['e1']
+        e2 = self.layout.blades['e2']
+        e3 = self.layout.blades['e3']
+        R_r = generate_rotation_rotor(np.pi/16,e2,e3)*generate_rotation_rotor(np.pi/4,e1,e2)
+        R_d = generate_dilation_rotor(1.5)
+        R_t = generate_translation_rotor(e3)
+        R = (R_t*R_r*R_d).normal()
+        up = self.stuff['up']
+
+        #C1 = (up(0+3*e1)^up(2*e1+3*e1)).normal()
+        C1 = (up(0 + 3 * e1) ^ up(2 * e1 + 3 * e1) ^ up(e1 + e3 + 3 * e1)).normal()
+        C2 = (R*C1*~R).normal()
+        C3 = (R*C2*~R).normal()
+        C4 = (R * C3 * ~R).normal()
+        C5 = (R * C4 * ~R).normal()
+        object_list = [C1,C2,C3,C4,C5]
+
+        object_alpha_array = np.array([0.0,0.25,0.5,0.75,1.0])
+        new_alpha_array = np.linspace(0.0, 1.0)
+        new_object_list = general_object_interpolation(object_alpha_array, object_list, new_alpha_array, kind='quadratic')
+
+        draw_objects(object_list, 'circle', color='rgb(255,0,0)')
+        draw_objects(new_object_list, 'circle', color='rgb(0,255,0)')
+
+        import time; time.sleep(1)
+
+
+    def test_n_th_root(self):
+        from clifford.tools.g3c import n_th_rotor_root, rotor_between_objects, random_point_pair
+        for i in range(200):
+            a = random_point_pair()
+            b = random_point_pair()
+            R = rotor_between_objects(a,b)
+            for n in [1,2,4,8,16,32]:
+                R_n = n_th_rotor_root(R,n)
+                np.testing.assert_almost_equal((R_n**n).value,R.value)
 
     def test_random_point_pair_at_origin(self):
         from clifford.tools.g3c import random_point_pair_at_origin
@@ -103,7 +152,6 @@ class G3CToolsTests(unittest.TestCase):
         for pp in pp_list:
             sc.add_point_pair(pp)
         print(sc)
-
 
     def test_random_line_at_origin(self):
         from clifford.tools.g3c import random_line_at_origin
