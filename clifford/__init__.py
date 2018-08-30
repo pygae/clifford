@@ -1,7 +1,10 @@
 """
+.. currentmodule:: clifford
+========================================
+clifford (:mod:`clifford`)
+========================================
 
-Two classes, Layout and MultiVector, and several helper functions are
-provided to implement the algebras.
+The Main Module. Provides two classes, Layout and MultiVector, and several helper functions  to implement the algebras.
 
 
 Classes
@@ -14,7 +17,7 @@ Classes
     Layout
     Frame
 
-Helper Functions
+Functions
 ================
 
 
@@ -30,145 +33,6 @@ Helper Functions
     ugly
     eps
 
-
-
-
-
-Issues
-======
-
- * Currently, algebras over 6 dimensions are very slow. this is because
-   this module was written for *pedagogical* purposes. However, because the
-   syntax for this module is so attractive, we plan to fix the
-   perfomance problems,  in the future...
-
- * Due to Python's order of operations, the bit operators ^ << follow
-   the normal arithmetic operators + - * /, so
-
-     1^e0 + 2^e1  !=  (1^e0) + (2^e1)
-
-   as is probably intended.  Additionally,
-
-     M = MultiVector(layout2D)  # null multivector
-     M << 1^e0 << 2^e1 == 10.0^e1 + 1.0^e01
-     M == 1.0
-     e0 == 2 + 1^e0
-
-   as is definitely not intended.  However,
-
-     M = MultiVector(layout2D)
-     M << (2^e0) << e1 << (3^e01) == M == 2^e0 + 1^e1 + 3^e01
-     e0 == 1^e0
-     e1 == 1^e1
-     e01 == 1^e01
-
- * Since * is the inner product and the inner product with a scalar
-   vanishes by definition, an expression like
-
-     1|e0 + 2|e1
-
-   is null.  Use the outer product or full geometric product, to
-   multiply scalars with MultiVectors.  This can cause problems if
-   one has code that mixes Python numbers and MultiVectors.  If the
-   code multiplies two values that can each be either type without
-   checking, one can run into problems as "1 | 2" has a very different
-   result from the same multiplication with scalar MultiVectors.
-
- * Taking the inverse of a MultiVector will use a method proposed by
-   Christian Perwass that involves the solution of a matrix equation.
-   A description of that method follows:
-
-   Representing multivectors as 2**dims vectors (in the matrix sense),
-   we can carry out the geometric product with a multiplication table.
-   In pseudo-tensorish language (using summation notation):
-
-     m_i * g_ijk * n_k = v_j
-
-   Suppose m_i are known (M is the vector we are taking the inverse of),
-   the g_ijk have been computed for this algebra, and v_j = 1 if the
-   j'th element is the scalar element and 0 otherwise, we can compute the
-   dot product m_i * g_ijk.  This yields a rank-2 matrix.  We can
-   then use well-established computational linear algebra techniques
-   to solve this matrix equation for n_k.  The laInv method does precisely
-   that.
-
-   The usual, analytic, method for computing inverses [M**-1 = ~M/(M*~M) iff
-   M*~M == |M|**2] fails for those multivectors where M*~M is not a scalar.
-   It is only used if the inv method is manually set to point to normalInv.
-
-   My testing suggests that laInv works.  In the cases where normalInv works,
-   laInv returns the same result (within _eps).  In all cases,
-   M * M.laInv() == 1.0 (within _eps).  Use whichever you feel comfortable
-   with.
-
-   Of course, a new issue arises with this method.  The inverses found
-   are sometimes dependant on the order of multiplication.  That is:
-
-     M.laInv() * M == 1.0
-     M * M.laInv() != 1.0
-
-   XXX Thus, there are two other methods defined, leftInv and rightInv which
-   point to leftLaInv and rightLaInv.  The method inv points to rightInv.
-   Should the user choose, leftInv and rightInv will both point to normalInv,
-   which yields a left- and right-inverse that are the same should either exist
-   (the proof is fairly simple).
-
- * The basis vectors of any algebra will be orthonormal unless you supply
-   your own multiplication tables (which you are free to do after the Layout
-   constructor is called).  A derived class could be made to calculate these
-   tables for you (and include methods for generating reciprocal bases and the
-   like).
-
- * No care is taken to preserve the dtype of the arrays.  The purpose
-   of this module is pedagogical.  If your application requires so many
-   multivectors that storage becomes important, the class structure here
-   is unsuitable for you anyways.  Instead, use the algorithms from this
-   module and implement application-specific data structures.
-
- * Conversely, explicit typecasting is rare.  MultiVectors will have
-   integer coefficients if you instantiate them that way.  Dividing them
-   by Python integers will have the same consequences as normal integer
-   division.  Public outcry will convince me to add the explicit casts
-   if this becomes a problem.
-
-
-Acknowledgements
-+++++++++++++++++
-Konrad Hinsen fixed a few bugs in the conversion to numpy and adding some unit
-tests.
-
-
-ChangeLog
-=========
-
-Changes 0.6-0.7
-+++++++++++++++++
-
- * Added a real license.
- * Convert to numpy instead of Numeric.
-
-Changes 0.5-0.6
-+++++++++++++++++
-
- * join() and meet() actually work now, but have numerical accuracy problems
- * added clean() to MultiVector
- * added leftInv() and rightInv() to MultiVector
- * moved pseudoScalar() and invPS() to MultiVector (so we can derive
-   new classes from MultiVector)
- * changed all of the instances of creating a new MultiVector to create
-   an instance of self.__class__ for proper inheritance
- * fixed bug in laInv()
- * fixed the massive confusion about how dot() works
- * added left-contraction
- * fixed embarassing bug in gmt generation
- * added normal() and anticommutator() methods
- * fixed dumb bug in elements() that limited it to 4 dimensions
-
-Happy hacking!
-
-Robert Kern
-
-robert.kern@gmail.com
 """
 
 from __future__ import absolute_import, division
@@ -186,8 +50,10 @@ from warnings import warn
 
 # Major library imports.
 import numpy as np
-from numpy import linalg, array
+from numpy import linalg, array,zeros
 import numba
+
+__version__ = '1.0.0'
 
 # The blade finding regex for parsing strings of mvs
 _blade_pattern =  "((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))"
@@ -202,51 +68,6 @@ def get_longest_string(string_array):
     """
     return max(string_array,key=len)
 
-def _sign(seq, orig):
-    """Determine {even,odd}-ness of permutation seq or orig.
-
-    Returns 1 if even; -1 if odd.
-    """
-
-    sign = 1
-    seq = list(seq)
-
-    for i in range(len(seq)):
-            if seq[i] != orig[i]:
-                j = seq.index(orig[i])
-                sign = -sign
-                seq[i], seq[j] = seq[j], seq[i]
-    return sign
-
-@numba.njit
-def _containsDups(input_list):
-    """
-    Simply checks if the input list contains duplicates
-    """
-    for k in input_list:
-        if input_list.count(k) != 1:
-            return 1
-    return 0
-
-@numba.njit
-def modify_idx(idx, grade):
-    """
-    This function is called during the even/odd grade algorithm
-    It is jitted to make it as fast as possible
-    """
-    j = grade - 1
-    done = 0
-    while not done:
-        idx[j] = idx[j] + 1
-        while idx[j] == grade:
-            idx[j] = 0
-            j = j - 1
-            idx[j] = idx[j] + 1
-            if j == -1:
-                raise NoMorePermutations()
-        j = grade - 1
-        if not _containsDups(idx):
-            done = 1
 
 def get_adjoint_function(gradeList):
     '''
@@ -260,32 +81,34 @@ def get_adjoint_function(gradeList):
     return adjoint_func
 
 
-def get_mult_function(mult_table,n_dims,gradeList,grades_a=None,grades_b=None,filter_mask=None):
-    ''' 
+def get_mult_function(sparse_mult, n_dims, gradeList, grades_a=None, grades_b=None, filter_mask=None):
+    '''
     Returns a function that implements the mult_table on two input multivectors
     '''
-    non_zero_indices = mult_table.nonzero()
+    non_zero_indices =  np.transpose(np.array(list(sparse_mult.keys())))
     k_list = non_zero_indices[0]
     l_list = non_zero_indices[1]
     m_list = non_zero_indices[2]
-    mult_table_vals = np.array([mult_table[k,l,m] for k,l,m in np.transpose(non_zero_indices)],dtype=int)
-    
+    mult_table_vals = np.array([sparse_mult[k, l, m] for k, l, m in np.transpose(non_zero_indices)], dtype=int)
+
     if filter_mask is not None:
         # We can pass the sparse filter mask directly
         k_list = k_list[filter_mask]
         l_list = l_list[filter_mask]
         m_list = m_list[filter_mask]
         mult_table_vals = mult_table_vals[filter_mask]
+
         @numba.njit
-        def mv_mult(value,other_value):
+        def mv_mult(value, other_value):
             output = np.zeros(n_dims)
-            for ind,k in enumerate(k_list):
+            for ind, k in enumerate(k_list):
                 m = m_list[ind]
                 l = l_list[ind]
-                output[l] += value[k]*mult_table_vals[ind]*other_value[m]
+                output[l] += value[k] * mult_table_vals[ind] * other_value[m]
             return output
+
         return mv_mult
-        
+
     elif ((grades_a is not None) and (grades_b is not None)):
         # We can also specify sparseness by grade
         filter_mask = np.zeros(len(k_list), dtype=bool)
@@ -298,31 +121,34 @@ def get_mult_function(mult_table,n_dims,gradeList,grades_a=None,grades_b=None,fi
         l_list = l_list[filter_mask]
         m_list = m_list[filter_mask]
         mult_table_vals = mult_table_vals[filter_mask]
-        
+
         @numba.njit
-        def mv_mult(value,other_value):
+        def mv_mult(value, other_value):
             output = np.zeros(n_dims)
-            for ind,k in enumerate(k_list):
+            for ind, k in enumerate(k_list):
                 m = m_list[ind]
                 l = l_list[ind]
-                output[l] += value[k]*mult_table_vals[ind]*other_value[m]
+                output[l] += value[k] * mult_table_vals[ind] * other_value[m]
             return output
+
         return mv_mult
 
     # This case we specify no sparseness in advance, the algorithm checks for zeros
     @numba.njit
-    def mv_mult(value,other_value):
+    def mv_mult(value, other_value):
         output = np.zeros(n_dims)
-        for ind,k in enumerate(k_list):
+        for ind, k in enumerate(k_list):
             v_val = value[k]
-            if v_val!=0.0:
+            if v_val != 0.0:
                 m = m_list[ind]
                 ov_val = other_value[m]
-                if ov_val!=0.0:
+                if ov_val != 0.0:
                     l = l_list[ind]
-                    output[l] += v_val*mult_table_vals[ind]*ov_val
+                    output[l] += v_val * mult_table_vals[ind] * ov_val
         return output
+
     return mv_mult
+
 
 
 @numba.jit
@@ -344,57 +170,107 @@ def grade_obj(objin, threshold=0.0000001):
     return grade_obj_func(objin.value, objin.layout.gradeList, threshold)
 
 
-def get_right_inverse_function(mult_table, n_dims, gradeList):
-    '''
-    Returns a function that implements the right_inverse
-    '''
-
-    identity = np.zeros((n_dims,))
-    identity[gradeList.index(0)] = 1
-
-    tempAxes = (1,0,2)
-    newB = np.transpose(mult_table, tempAxes)
-
-    non_zero_indices = newB.nonzero()
-    k_list = non_zero_indices[0]
-    l_list = non_zero_indices[1]
-    m_list = non_zero_indices[2]
-    newB_vals = np.array([newB[k, l, m] for k, l, m in np.transpose(non_zero_indices)], dtype=int)
-
-    @numba.njit
-    def rightLaInv_func(value):
-        intermed = np.zeros((n_dims,n_dims))
-        for ind,l in enumerate(l_list):
-            m = m_list[ind]
-            k = k_list[ind]
-            intermed[k, m] += value[l]*newB_vals[ind]
-        sol = linalg.solve(intermed, identity)
-        return sol
-    return rightLaInv_func
-
-
-
-
-def _myDot(a, b):
-    """Returns the inner product as *I* learned it.
-
-    a_i...k * b_k...m = c_i...m     in summation notation with the ...'s
-                                    representing arbitrary, omitted indices
-
-    The sum is over the last axis of the first argument and the first axis
-    of the last axis.
-
-    _myDot(a, b) --> NumPy array
+def generate_blade_tup_map(bladeTupList):
     """
+    Generates a mapping from blade tuple to linear index into
+    multivector
+    """
+    blade_map = {}
+    for ind,blade in enumerate(bladeTupList):
+        blade_map[blade] = ind
+    return blade_map
 
-    a = np.asarray(a)
-    b = np.asarray(b)
 
-    tempAxes = tuple(list(range(1, len(b.shape))) + [0])
-    newB = np.transpose(b, tempAxes)
+@numba.njit
+def count_set_bits(bitmap):
+    """
+    Counts the number of bits set to 1 in bitmap
+    """
+    bmp = bitmap
+    count = 0
+    n = 1
+    while bmp > 0:
+        if bmp & 1:
+            count += 1
+        bmp = bmp >> 1
+        n = n + 1
+    return count
 
-    # innerproduct sums over the *last* axes of *both* arguments
-    return np.inner(a, newB)
+
+@numba.njit
+def canonical_reordering_sign_euclidean(bitmap_a, bitmap_b):
+    """
+    Computes the sign for the product of bitmap_a and bitmap_b
+    assuming a euclidean metric
+    """
+    a = bitmap_a >> 1
+    sum_value = 0
+    while a != 0:
+        sum_value = sum_value + count_set_bits(a & bitmap_b)
+        a = a >> 1
+    if (sum_value & 1) == 0:
+        return 1
+    else:
+        return -1
+
+
+@numba.njit
+def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
+    """
+    Computes the sign for the product of bitmap_a and bitmap_b
+    given the supplied metric
+    """
+    bitmap = bitmap_a & bitmap_b
+    output_sign = canonical_reordering_sign_euclidean(bitmap_a, bitmap_b)
+    i = 0
+    while (bitmap != 0):
+        if ((bitmap & 1) != 0):
+            output_sign *= metric[i]
+        i = i + 1
+        bitmap = bitmap >> 1
+    return output_sign
+
+
+def compute_reordering_sign_and_canonical_form(blade, metric, firstIdx):
+    """
+    Takes a tuple blade representation and converts it to a canonical
+    tuple blade representation
+    """
+    blade_out = blade[0]
+    s = 1
+    for b in blade[1:]:
+        s = s*canonical_reordering_sign(blade_out, b, metric)
+    return s, compute_blade_representation(compute_bitmap_representation(blade, firstIdx), firstIdx)
+
+
+def compute_bitmap_representation(blade, firstIdx):
+    """
+    Takes a tuple blade representation and converts it to the
+    bitmap representation
+    """
+    if len(blade) > 0:
+        bitmap = 1 << (blade[0]-firstIdx)
+        if len(blade) > 1:
+            for b in blade[1:]:
+                bitmap = bitmap ^ (1 << (b-firstIdx))
+        return bitmap
+    else:
+        return 0
+
+def compute_blade_representation(bitmap, firstIdx):
+    """
+    Takes a bitmap representation and converts it to the tuple
+    blade representation
+    """
+    bmp = bitmap
+    blade = []
+    n = firstIdx
+    while bmp > 0:
+        if (bmp & 1):
+            blade.append(n)
+        bmp = bmp >> 1
+        n = n + 1
+    return tuple(blade)
 
 
 class NoMorePermutations(Exception):
@@ -511,15 +387,15 @@ class Layout(object):
                 "names list of length %i needs to be of length %i" %
                 (len(names), self.gaDims))
 
-        self._genEvenOdd()
         self._genTables()
         self.adjoint_func = get_adjoint_function(self.gradeList)
 
     def dict_to_multivector(self, dict_in):
-      constructed_values = np.zeros(self.gaDims)
-      for k in list(dict_in.keys()):
+        """ Takes a dictionary of coefficient values and converts it into a MultiVector object """
+        constructed_values = np.zeros(self.gaDims)
+        for k in list(dict_in.keys()):
           constructed_values[int(k)] = dict_in[k]
-      return MultiVector(self, constructed_values)
+        return MultiVector(self, constructed_values)
 
 
     def __repr__(self):
@@ -540,48 +416,8 @@ class Layout(object):
         else:
             return not np.array_equal(self.sig,other.sig)
 
-    def _genEvenOdd(self):
-        "Make mappings of even and odd permutations to their canonical blades."
-
-        self.even = {}
-        self.odd = {}
-
-        for i in range(self.gaDims):
-            blade = self.bladeTupList[i]
-            grade = self.gradeList[i]
-
-            if grade in (0, 1):
-                # handled easy cases
-                self.even[blade] = blade
-                continue
-            elif grade == 2:
-                # another easy case
-                self.even[blade] = blade
-                self.odd[(blade[1], blade[0])] = blade
-                continue
-            else:
-                # general case, lifted from Chooser.py released on
-                # comp.lang.python by James Lehmann with permission.
-                idx = list(range(grade))
-                try:
-                    for i in range(np.multiply.reduce(range(1, grade+1))):
-                        # grade! permutations
-
-                        # Whatever this does
-                        modify_idx(idx,grade)
-                        perm = tuple([blade[k] for k in idx])
-
-                        if _sign(perm, blade) == 1:
-                            self.even[perm] = blade
-                        else:
-                            self.odd[perm] = blade
-
-                except NoMorePermutations:
-                    pass
-
-                self.even[blade] = blade
-
     def parse_multivector(self,mv_string):
+        """ Parses a multivector string into a MultiVector object """
         # Get the names of the canonical blades
         blade_name_index_map = {name:index for index,name in enumerate(self.names)}
 
@@ -635,96 +471,77 @@ class Layout(object):
         except (ValueError, TypeError):
             raise ValueError("invalid bladeTupList; must be a list of tuples")
 
+
     def _gmtElement(self, a, b):
-        "Element of the geometric multiplication table given blades a, b."
-
-        mul = 1         # multiplier
-
-        newBlade = list(a) + list(b)
-
-        unique = 0
-        while unique == 0:
-            for i in range(len(newBlade)):
-                index = newBlade[i]
-                if newBlade.count(index) != 1:
-                    delta = newBlade[i+1:].index(index)
-                    eo = 1 - 2*(delta % 2)
-                    # eo == 1 if the elements are an even number of flips away
-                    # eo == -1 otherwise
-
-                    del newBlade[i+delta+1]
-                    del newBlade[i]
-
-                    mul = eo * mul * self.sig[index - self.firstIdx]
-                    break
-            else:
-                unique = 1
-
-        newBlade = tuple(newBlade)
-
-        if newBlade in self.bladeTupList:
-            idx = self.bladeTupList.index(newBlade)
-            # index of the product blade in the bladeTupList
-        elif newBlade in self.even.keys():
-            # even permutation
-            idx = self.bladeTupList.index(self.even[newBlade])
-        else:
-            # odd permutation
-            idx = self.bladeTupList.index(self.odd[newBlade])
-            mul = -mul
-
-        element = np.zeros((self.gaDims,), dtype=int)
-        element[idx] = mul
-
-        return element, idx
+        """
+        Element of the geometric multiplication table given blades a, b.
+        The implementation used here is described in chapter 19 of
+        Leo Dorst's book, Geometric Algebra For Computer Science
+        """
+        bitmap_a = compute_bitmap_representation(a, self.firstIdx)
+        bitmap_b = compute_bitmap_representation(b, self.firstIdx)
+        output_sign = canonical_reordering_sign(bitmap_a, bitmap_b, np.array(self.sig))
+        output_bitmap = bitmap_a^bitmap_b
+        newBlade = compute_blade_representation(output_bitmap, self.firstIdx)
+        idx = self.bladeTupMap[newBlade]
+        return idx, output_sign
 
     def _genTables(self):
         "Generate the multiplication tables."
 
-        # geometric multiplication table
-        gmt = np.zeros((self.gaDims, self.gaDims, self.gaDims), dtype=int)
-        # inner product table
-        imt = np.zeros((self.gaDims, self.gaDims, self.gaDims), dtype=int)
-        # outer product table
-        omt = np.zeros((self.gaDims, self.gaDims, self.gaDims), dtype=int)
-        # left-contraction table
-        lcmt = np.zeros((self.gaDims, self.gaDims, self.gaDims), dtype=int)
+        self.bladeTupMap = generate_blade_tup_map(self.bladeTupList)
+
+        # sparse geometric multiplication table
+        gmt_nzs = {}
+        imt_nzs = {}
+        omt_nzs = {}
+        lcmt_nzs = {}
 
         for i in range(self.gaDims):
+            grade_list_i = self.gradeList[i]
+            blade_tup_list_i = list(self.bladeTupList[i])
             for j in range(self.gaDims):
-                gmt[i, :, j], idx = self._gmtElement(
-                        list(self.bladeTupList[i]), list(self.bladeTupList[j]))
+                grade_list_j = self.gradeList[j]
+
+                v, mul = self._gmtElement(
+                        blade_tup_list_i, list(self.bladeTupList[j]))
+
+                gmt_nzs[tuple([i,v,j])] = mul
+
+                grade_list_idx = self.gradeList[v]
 
                 if (
-                        self.gradeList[idx] == abs(
-                            self.gradeList[i] - self.gradeList[j]) and
-                        self.gradeList[i] != 0 and self.gradeList[j] != 0):
+                        grade_list_idx == abs(
+                    grade_list_i - grade_list_j) and
+                        grade_list_i != 0 and grade_list_j != 0):
 
                     # A_r . B_s = <A_r B_s>_|r-s|
                     # if r,s != 0
-                    imt[i, :, j] = gmt[i, :, j]
+                    imt_nzs[tuple([i,v,j])] = mul
 
-                if self.gradeList[idx] == (
-                        self.gradeList[i] + self.gradeList[j]):
+                if grade_list_idx == (
+                        grade_list_i + grade_list_j):
 
                     # A_r ^ B_s = <A_r B_s>_|r+s|
-                    omt[i, :, j] = gmt[i, :, j]
+                    omt_nzs[tuple([i,v,j])] = mul
 
-                if self.gradeList[idx] == (
-                        self.gradeList[j] - self.gradeList[i]):
+                if grade_list_idx == (
+                        grade_list_j - grade_list_i):
                     # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
-                    lcmt[i, :, j] = gmt[i, :, j]
+                    lcmt_nzs[tuple([i,v,j])] = mul
 
-        self.gmt_func = get_mult_function(gmt,self.gaDims,self.gradeList)
-        self.imt_func = get_mult_function(imt,self.gaDims,self.gradeList)
-        self.omt_func = get_mult_function(omt,self.gaDims,self.gradeList)
-        self.lcmt_func = get_mult_function(lcmt,self.gaDims,self.gradeList)
-        self.rightLaInv_func = get_right_inverse_function(gmt, self.gaDims, self.gradeList)
-        self.gmt = gmt
-        self.imt = imt
-        self.omt = omt
-        self.lcmt = lcmt
-    
+        # This generates the functions that will perform the various products
+        self.gmt_func = get_mult_function(gmt_nzs,self.gaDims,self.gradeList)
+        self.imt_func = get_mult_function(imt_nzs,self.gaDims,self.gradeList)
+        self.omt_func = get_mult_function(omt_nzs,self.gaDims,self.gradeList)
+        self.lcmt_func = get_mult_function(lcmt_nzs,self.gaDims,self.gradeList)
+
+        # We store the sparse objects in the layout object
+        self.gmt = gmt_nzs
+        self.imt = imt_nzs
+        self.omt = omt_nzs
+        self.lcmt = lcmt_nzs
+
     def MultiVector(self,*args,**kw):
         '''
         create a multivector in this layout
@@ -748,7 +565,8 @@ class Layout(object):
         the psuedoScalar
         '''
         return self.blades_list[-1]
-
+    
+    I = pseudoScalar
     
     def randomMV(self, n=1, **kw):
         '''
@@ -1117,7 +935,7 @@ class MultiVector(object):
         for i in range(1, other):
             newMV = newMV * self
 
-            return newMV
+        return newMV
 
     def __rpow__(self, other):
         """Exponentiation of a real by a multivector
@@ -1276,16 +1094,13 @@ class MultiVector(object):
         """
         if isinstance(key, MultiVector):
                 return self.value[int(np.where(key.value)[0][0])]
-        elif key in self.layout.bladeTupList:
-            return self.value[self.layout.bladeTupList.index(key)]
-        elif key in self.layout.even:
-            return self.value[self.layout.bladeTupList.index(
-                self.layout.even[key])]
-        elif key in self.layout.odd:
-            return -self.value[self.layout.bladeTupList.index(
-                self.layout.odd[key])]
-        else:
-            return self.value[key]
+        elif key in self.layout.bladeTupMap.keys():
+            return self.value[self.layout.bladeTupMap[key]]
+        elif isinstance(key, tuple):
+            sign, blade = compute_reordering_sign_and_canonical_form(key, np.array(self.layout.sig),
+                                                                     self.layout.firstIdx)
+            return sign*self.value[self.layout.bladeTupMap[blade]]
+        return self.value[key]
 
     def __setitem__(self, key, value):
         """If key is a blade tuple (e.g. (0,1) or (1,3)), then set
@@ -1296,15 +1111,12 @@ class MultiVector(object):
         M[index] = PyFloat | PyInt
         __setitem__(key, value)
         """
-
-        if key in self.layout.bladeTupList:
-            self.value[self.layout.bladeTupList.index(key)] = value
-        elif key in self.layout.even:
-            self.value[self.layout.bladeTupList.index(
-                self.layout.even[key])] = value
-        elif key in self.layout.odd:
-            self.value[self.layout.bladeTupList.index(
-                self.layout.odd[key])] = -value
+        if key in self.layout.bladeTupMap.keys():
+            self.value[self.layout.bladeTupMap[key]] = value
+        elif isinstance(key, tuple):
+            sign, blade = compute_reordering_sign_and_canonical_form(key, np.array(self.layout.sig),
+                                                                     self.layout.firstIdx)
+            self.value[self.layout.bladeTupMap[blade]] = sign*value
         else:
             self.value[key] = value
 
@@ -1316,14 +1128,12 @@ class MultiVector(object):
         __delitem__(key)
         """
 
-        if key in self.layout.bladeTupList:
-            self.value[self.layout.bladeTupList.index(key)] = 0
-        elif key in self.layout.even:
-            self.value[self.layout.bladeTupList.index(
-                self.layout.even[key])] = 0
-        elif key in self.layout.odd:
-            self.value[self.layout.bladeTupList.index(
-                self.layout.odd[key])] = 0
+        if key in self.layout.bladeTupMap.keys():
+            self.value[self.layout.bladeTupMap[key]] = 0
+        elif isinstance(key, tuple):
+            sign, blade = compute_reordering_sign_and_canonical_form(key, np.array(self.layout.sig),
+                                                                     self.layout.firstIdx)
+            self.value[self.layout.bladeTupMap[blade]] = 0
         else:
             self.value[key] = 0
 
@@ -1573,16 +1383,18 @@ class MultiVector(object):
         newValue = self.layout.lcmt_func(self.value,other.value)
 
         return self._newMV(newValue)
-
+    
+    @property
     def pseudoScalar(self):
         "Returns a MultiVector that is the pseudoscalar of this space."
         return self.layout.pseudoScalar
-        
+    
+    I = pseudoScalar
 
     def invPS(self):
         "Returns the inverse of the pseudoscalar of the algebra."
 
-        ps = self.pseudoScalar()
+        ps = self.pseudoScalar
 
         return ps.inv()
 
@@ -1675,7 +1487,15 @@ class MultiVector(object):
         identity = np.zeros((self.layout.gaDims,))
         identity[self.layout.gradeList.index(0)] = 1
 
-        intermed = np.dot(self.layout.gmt, self.value)
+        intermed = np.zeros((self.layout.gaDims,self.layout.gaDims))
+
+        for i in range(self.layout.gaDims):
+            for j in range(self.layout.gaDims):
+                for k in range(self.layout.gaDims):
+                    ind = tuple([i, j, k])
+                    if ind in self.layout.gmt.keys():
+                        intermed[i, j] += self.layout.gmt[ind] * self.value[k]
+
         intermed = np.transpose(intermed)
 
         if abs(linalg.det(intermed)) < _eps:
@@ -1683,16 +1503,6 @@ class MultiVector(object):
 
         sol = linalg.solve(intermed, identity)
 
-        return self._newMV(sol)
-
-    def rightLaInv(self):
-        """Return right-inverse using a computational linear algebra method
-        proposed by Christian Perwass.
-         -1              -1
-        M    where M * M  == 1
-        rightLaInv() --> MultiVector
-        """
-        sol = self.layout.rightLaInv_func(self.value)
         return self._newMV(sol)
 
     def normalInv(self):
@@ -1712,7 +1522,7 @@ class MultiVector(object):
             raise ValueError("no inverse exists for this multivector")
 
     leftInv = leftLaInv
-    inv = rightInv = rightLaInv
+    inv = rightInv = leftLaInv
     # inv= normalInv
 
     def dual(self, I=None):
@@ -2386,12 +2196,12 @@ def conformalize(layout, added_sig=[1,-1]):
     Parameters
     -------------
     layout: `clifford.Layout`
-         layout of the GA to conformalize
+         layout of the GA to conformalize (the base)
 
     Returns
     ---------
     layout_c:  `clifford.Layout`
-        layout of the conformalized GA
+        layout of the base GA
     blades_c: dict
         blades for the CGA
     stuff: dict
@@ -2401,7 +2211,7 @@ def conformalize(layout, added_sig=[1,-1]):
             * eo - zero vector of null basis (=.5*(en-ep))
             * einf - infinity vector of null basis (=en+ep)
             * E0 - minkowski bivector (=einf^eo)
-            * I_ga - pseudoscalar for conformalized GA in new layout
+            * base - pseudoscalar for base ga, in cga layout
             * up - up-project a vector from GA to CGA
             * down - down-project a vector from CGA to GA
             * homo - homogenize a CGA vector
@@ -2426,20 +2236,47 @@ def conformalize(layout, added_sig=[1,-1]):
     eo = .5 ^ (en - ep)
     einf = en + ep
     E0 = einf ^ eo
-    I_ga = layout_c.pseudoScalar*E0
+    I_base = layout_c.pseudoScalar*E0
     #  some  convenience functions
     def up(x):
+        try:
+            if x.layout == layout:
+                # vector is in original space, map it into conformal space
+                old_val = x.value
+                new_val = zeros(layout_c.gaDims)
+                new_val[:len(old_val)] = old_val
+                x = layout_c.MultiVector(value=new_val)
+        except(AttributeError):
+            # if x is a scalar it doesnt have layout but following 
+            # will still work
+            pass
+            
+        # then up-project into a null vector
         return x + (.5 ^ ((x**2)*einf)) + eo
 
     def homo(x):
         return x*(-x | einf).normalInv()  # homogenise conformal vector
 
     def down(x):
-        return (homo(x) ^ E0)*E0
-
+        x_down =  (homo(x) ^ E0)*E0
+        #new_val = x_down.value[:layout.gaDims]
+        # create vector in layout (not cga)
+        #x_down = layout.MultiVector(value=new_val)
+        return x_down
+        
     stuff = {}
     stuff.update({
         'ep': ep, 'en': en, 'eo': eo, 'einf': einf, 'E0': E0,
-        'up': up, 'down': down, 'homo': homo,'I_ga':I_ga})
+        'up': up, 'down': down, 'homo': homo,'I_base':I_base})
 
     return layout_c, blades_c, stuff
+
+
+## TODO: fix caching to work
+## generate pre-defined algebras and cache them
+
+#sigs = [(1,1,0),(2,0,0),(3,1,0),(3,0,0),(3,2,0),(4,0,0)]
+#current_module = sys.modules[__name__]
+#caching.build_or_read_cache_and_attach_submods(current_module,sigs=sigs)
+
+

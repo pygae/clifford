@@ -45,6 +45,7 @@ Geometry Methods
     get_radius_from_sphere
     point_pair_to_end_points
     get_circle_in_euc
+    circle_to_sphere
     line_to_point_and_direction
     get_plane_origin_distance
     get_plane_normal
@@ -108,8 +109,8 @@ Root Finding
     negative_root
     general_root_val
     general_root
-    val_annhilate_k
-    annhilate_k
+    val_annihilate_k
+    annihilate_k
     pos_twiddle_root_val
     neg_twiddle_root_val
     pos_twiddle_root
@@ -157,8 +158,6 @@ adjoint_func = layout.adjoint_func
 gmt_func = layout.gmt_func
 omt_func = layout.omt_func
 imt_func = layout.imt_func
-rightLaInv = layout.rightLaInv_func
-
 
 
 def get_circle_in_euc(circle):
@@ -172,6 +171,15 @@ def get_circle_in_euc(circle):
     #GAcentre = down(circle*ninf*circle)
     GAcentre = down(inPlaneDual*(1+0.5*inPlaneDual*ninf))
     return [GAcentre,GAnormal,radius]
+
+
+def circle_to_sphere(C):
+    """
+    returns the sphere for which the input circle is the perimeter
+    """
+    Ic = (C ^ einf).normal()
+    sphere = C * Ic * I5
+    return sphere
 
 
 def line_to_point_and_direction(line):
@@ -349,7 +357,7 @@ def get_radius_from_sphere(sphere):
     Returns the radius of a sphere
     """
     dual_sphere = sphere * I5
-    dual_sphere = dual_sphere / (-dual_sphere | ninf)
+    dual_sphere = dual_sphere / (-dual_sphere | ninf)[0]
     return math.sqrt(abs(dual_sphere * dual_sphere))
 
 
@@ -490,16 +498,16 @@ def general_root(sigma):
 
 
 @numba.njit
-def val_annhilate_k(K_val, C_val):
+def val_annihilate_k(K_val, C_val):
     """ Removes K from C = KX via (K[0] - K[4])*C """
     k_4 = -project_val(K_val, 4)
     k_4[0] += K_val[0]
     return val_normalised(gmt_func(k_4, C_val))
 
 
-def annhilate_k(K, C):
+def annihilate_k(K, C):
     """ Removes K from C = KX via (K[0] - K[4])*C """
-    return cf.MultiVector(layout, val_annhilate_k(K.value, C.value))
+    return cf.MultiVector(layout, val_annihilate_k(K.value, C.value))
 
 
 @numba.njit
@@ -513,8 +521,8 @@ def pos_twiddle_root_val(C_value):
     sigma_val = gmt_func(C_value, adjoint_func(C_value))
     k_value = general_root_val(sigma_val)
     output = np.zeros((2,32))
-    output[0, :] = val_annhilate_k(k_value[0, :], C_value)
-    output[1, :] = val_annhilate_k(k_value[1, :], C_value)
+    output[0, :] = val_annihilate_k(k_value[0, :], C_value)
+    output[1, :] = val_annihilate_k(k_value[1, :], C_value)
     return output
 
 
@@ -529,8 +537,8 @@ def neg_twiddle_root_val(C_value):
     sigma_val = -gmt_func(C_value, adjoint_func(C_value))
     k_value = general_root_val(sigma_val)
     output = np.zeros((2, 32))
-    output[0, :] = val_annhilate_k(k_value[0, :], C_value)
-    output[1, :] = val_annhilate_k(k_value[1, :], C_value)
+    output[0, :] = val_annihilate_k(k_value[0, :], C_value)
+    output[1, :] = val_annihilate_k(k_value[1, :], C_value)
     return output
 
 
@@ -566,14 +574,40 @@ def square_roots_of_rotor(R):
     return pos_twiddle_root(1 + R)
 
 
+def n_th_rotor_root(R, n):
+    """
+    Takes the n_th root of rotor R
+    n must be a power of 2
+    """
+    if not (((n & (n - 1)) == 0) and n != 0):
+        raise ValueError('n is not a power of 2')
+    if n == 1:
+        return R
+    else:
+        return n_th_rotor_root(square_roots_of_rotor(R)[0], int(n/2))
+
+
 def interp_objects_root(C1, C2, alpha):
     """
     Hadfield and Lasenby, Direct Linear Interpolation of Geometric Objects, AGACSE2018
     Directly linearly interpolates conformal objects
     Return a valid object from the addition result C
     """
-    C = alpha * C1 + (1 - alpha) * C2
+    C = (1 - alpha) * C1 + alpha*C2
     return (neg_twiddle_root(C)[0]).normal()
+
+
+from scipy.interpolate import interp1d
+def general_object_interpolation(object_alpha_array, object_list, new_alpha_array, kind='linear'):
+    """
+    Hadfield and Lasenby, Direct Linear Interpolation of Geometric Objects, AGACSE2018
+    This is a general interpolation through the
+    """
+    obj_array = np.transpose(ConformalMVArray(object_list).value)
+    f = interp1d(object_alpha_array, obj_array, kind=kind)
+    new_value_array = np.transpose(f(new_alpha_array))
+    new_conf_array = ConformalMVArray.from_value_array(new_value_array)
+    return [(neg_twiddle_root(C)[0]).normal() for C in new_conf_array]
 
 
 def average_objects(obj_list, weights=[]):
@@ -758,8 +792,8 @@ def random_sphere_at_origin():
     """
     Creates a random sphere at the origin
     """
-    pp = random_point_pair_at_origin()
-    sphere = (I5*pp).normal()
+    C = random_circle_at_origin()
+    sphere = circle_to_sphere(C)
     return sphere
 
 
@@ -977,10 +1011,10 @@ class ConformalMVArray(cf.MVArray):
         """
         return ConformalMVArray(v_new_mv(value_array))
 
-# This is the vectorisation of functions to allow the conformal mv array to work
 v_dual = np.vectorize(fast_dual, otypes=[ConformalMVArray])
 v_new_mv = np.vectorize(lambda v: cf.MultiVector(layout, v), otypes=[ConformalMVArray], signature='(n)->()')
 v_up = np.vectorize(fast_up, otypes=[ConformalMVArray])
 v_down = np.vectorize(fast_down, otypes=[ConformalMVArray])
 v_apply_rotor_inv = np.vectorize(apply_rotor_inv, otypes=[ConformalMVArray])
 v_meet = np.vectorize(meet, otypes=[ConformalMVArray], signature='(),()->()')
+
