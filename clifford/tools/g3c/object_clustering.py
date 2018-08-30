@@ -141,7 +141,10 @@ def n_clusters_objects(n, objects_measurements, initial_centroids=None, \
 
 def visualise_n_clusters(all_objects, centroids, labels, object_type='line',
                          color_1=np.array([255,0,0]),color_2=np.array([0,255,0])):
-
+    """ 
+    Utility method for visualising several clusters and their respective centroids
+    using GAOnline
+    """
     alpha_list = np.linspace(0, 1, num=len(centroids))
     sc = GAScene()
     for ind, this_obj in enumerate(all_objects):

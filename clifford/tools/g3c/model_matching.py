@@ -20,7 +20,7 @@ def newton_rotor(r, delta_r, delta_delta_r, max_steps=10):
 
 def iterative_model_match_sequential(reference_model, query_model, iterations=100,
                           rotor_newton=False, max_newton_steps=10,
-                          object_type='generic', cuda=False):
+                          object_type='generic', cuda=False, print_rotor=False, r_track=None):
     if rotor_newton:
         # Set up the newton stuff
         delta_r_old = 1.0 + 0.0 * e1
@@ -48,10 +48,14 @@ def iterative_model_match_sequential(reference_model, query_model, iterations=10
         # Get the new matching
         labels, costs = assign_measurements_to_objects_matrix(reference_model, remapped_objects,
                                                               object_type=object_type, cuda=cuda)
+        if r_track is not None:
+            r_track.append(r_est)
+        if print_rotor:
+            print(r_est)
+        print(i)
         if compare_labels(old_labels, labels):
             return labels, costs, r_est
         old_labels = [l for l in labels]
-        print(i)
     return labels, costs, r_est
 
 
@@ -105,10 +109,13 @@ def iterative_model_match(reference_model, query_model, iterations=100,
 
 def REFORM(reference_model, query_model, n_samples, objects_per_sample,
            iterations=100, covergence_threshold=0.00000001,
-           pool_size=1,object_type='generic', cuda=False):
+           pool_size=1,object_type='generic', cuda=False, print_rotor=False):
     # Get the starting labels
     labels, costs = assign_measurements_to_objects_matrix(reference_model, query_model,
                                                           object_type=object_type, cuda=cuda)
+
+    min_global_cost = np.inf
+    min_global_rotor = 1.0 + 0.0 * e1
 
     r_est = 1.0 + 0.0 * e1
     remapped_objects = [o for o in query_model]
@@ -130,10 +137,19 @@ def REFORM(reference_model, query_model, n_samples, objects_per_sample,
         labels, costs = assign_measurements_to_objects_matrix(reference_model, remapped_objects,
                                                               object_type=object_type, cuda=cuda)
         current_cost = np.sum(costs)
+        if print_rotor:
+            print(r_est)
         print(i, current_cost, covergence_threshold)
+        if current_cost < min_global_cost:
+            min_global_cost = current_cost
+            min_global_rotor = +r_est
         if current_cost < covergence_threshold:
             return labels, costs, r_est
-    return labels, costs, r_est
+    # Re map with our new rotor
+    remapped_objects = [apply_rotor(l, min_global_rotor).normal() for l in query_model]
+    # Get the new matching
+    labels, costs = assign_measurements_to_objects_matrix(reference_model, remapped_objects, cuda=True)
+    return labels, costs, min_global_rotor
 
 
 def REFORM_sequential(reference_model, query_model, n_samples, objects_per_sample,
@@ -142,6 +158,9 @@ def REFORM_sequential(reference_model, query_model, n_samples, objects_per_sampl
     # Get the starting labels
     labels, costs = assign_measurements_to_objects_matrix(reference_model, query_model,
                                                           object_type=object_type, cuda=cuda)
+
+    min_global_cost = np.inf
+    min_global_rotor = 1.0 + 0.0 * e1
 
     r_est = 1.0 + 0.0 * e1
     remapped_objects = [o for o in query_model]
@@ -164,9 +183,16 @@ def REFORM_sequential(reference_model, query_model, n_samples, objects_per_sampl
                                                               object_type=object_type, cuda=cuda)
         current_cost = np.sum(costs)
         print(i, current_cost, covergence_threshold)
+        if current_cost < min_global_cost:
+            min_global_cost = current_cost
+            min_global_rotor = +r_est
         if current_cost < covergence_threshold:
             return labels, costs, r_est
-    return labels, costs, r_est
+    # Re map with our new rotor
+    remapped_objects = [apply_rotor(l, min_global_rotor).normal() for l in query_model]
+    # Get the new matching
+    labels, costs = assign_measurements_to_objects_matrix(reference_model, remapped_objects, cuda=True)
+    return labels, costs, min_global_rotor
 
 
 def REFORM_cuda(reference_model, query_model, n_samples, objects_per_sample, iterations=100,
