@@ -2,11 +2,15 @@
 =========================================================
 A numerical geometric algebra module for python. BSD License. 
 
-[![Build Status](https://travis-ci.org/pygae/clifford.svg?branch=master)](https://travis-ci.org/pygae/clifford) [![Documentation Status](https://readthedocs.org/projects/clifford/badge/?version=latest)](http://clifford.readthedocs.io/en/latest/?badge=latest) [![Coverage Status](https://coveralls.io/repos/github/pygae/clifford/badge.svg?branch=master)](https://coveralls.io/github/pygae/clifford?branch=master)
+[![Build Status](https://travis-ci.org/pygae/clifford.svg?branch=master)](https://travis-ci.org/pygae/clifford) [![Documentation Status](https://readthedocs.org/projects/clifford/badge/?version=latest)](http://clifford.readthedocs.io/en/latest/?badge=latest) [![Coverage Status](https://coveralls.io/repos/github/pygae/clifford/badge.svg?branch=master)](https://coveralls.io/github/pygae/clifford?branch=master)[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/pygae/clifford/master?filepath=examples%2Fg3c.ipynb)
 
 
 Quickstart
 --------------
+
+Try out a notebook in [binder](https://mybinder.org/v2/gh/pygae/clifford/master?filepath=examples%2Fg3c.ipynb)
+
+Or have a go on your own pc:
 
     from clifford.g3 import *  # import GA for 3D space
     from numpy import e,pi
