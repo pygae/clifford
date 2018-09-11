@@ -8,7 +8,7 @@ from clifford import Cl, randomMV, Frame, get_mult_function, conformalize, grade
 import numpy as np
 from numpy import exp, float64, testing
 import unittest
-
+from functools import reduce
 
 from nose.plugins.skip import SkipTest
 
@@ -75,6 +75,26 @@ class BasicConformal41Tests(unittest.TestCase):
         self.assertAlmostEqual((e3 * e3)[0], 1)
         self.assertAlmostEqual((e4 * e4)[0], 1)
         self.assertAlmostEqual((e5 * e5)[0], -1)
+
+
+    def test_factorise(self):
+        layout_a = Cl(3)[0]
+        layout,blades,stuff = conformalize(layout_a)
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        e4 = layout.blades['e4']
+        e5 = layout.blades['e5']
+
+        up = stuff['up']
+
+        blade = up(e1 + 3*e2 + 4*e3)^up(5*e1 + 3.3*e2 + 10*e3)^up(-13.1*e1)
+
+        basis, scale = blade.factorise()
+        new_blade = (reduce(lambda a, b: a^b, basis)*scale)
+        print(new_blade)
+        print(blade)
+        np.testing.assert_almost_equal(new_blade.value, blade.value, 5)
 
 
     def test_gp_op_ip(self):

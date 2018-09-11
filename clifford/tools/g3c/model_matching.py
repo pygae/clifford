@@ -3,7 +3,7 @@ from .object_clustering import assign_measurements_to_objects_matrix, compare_la
 from .rotor_estimation import estimate_rotor_objects, estimate_rotor_objects_subsample, \
     sequential_object_rotor_estimation, sequential_object_rotor_estimation_convergence_detection, \
     estimate_rotor_objects_subsample_sequential
-from .rotor_parameterisation import interpolate_rotors
+from .rotor_parameterisation import interpolate_TR_rotors
 from .cost_functions import val_rotor_cost_sparse
 from . import apply_rotor
 import numpy as np
@@ -15,7 +15,7 @@ import clifford as cf
 
 def newton_rotor(r, delta_r, delta_delta_r, max_steps=10):
     alpha = 1.0/((1.0/max_steps) + val_rotor_cost_sparse(delta_delta_r.normal().value)/val_rotor_cost_sparse(delta_r.normal().value))
-    return interpolate_rotors(delta_r*r, r, 1 + alpha)
+    return interpolate_TR_rotors(delta_r*r, r, 1 + alpha)
 
 
 def iterative_model_match_sequential(reference_model, query_model, iterations=100,
@@ -71,7 +71,7 @@ def iterative_model_match(reference_model, query_model, iterations=100,
     # Get the starting labels
     labels, costs = assign_measurements_to_objects_matrix(reference_model, query_model,
                                                           object_type=object_type, cuda=cuda)
-    old_labels = [l for l in labels]
+    old_labels = [+l for l in labels]
     remapped_objects = [o for o in query_model]
     r_est = 1.0 + 0.0*e1
     assert iterations > 0, 'Must have at least 1 iteration'
@@ -92,8 +92,7 @@ def iterative_model_match(reference_model, query_model, iterations=100,
             delta_r_old = (r_est * (~r_old)).normal()
             r_est = newton_rotor(r_old, delta_r, delta_delta_r, max_newton_steps)
             r_old = 1.0*r_est
-
-        r_est = r_est.normal()
+            r_est = r_est.normal()
 
         # Re map with our new rotor
         remapped_objects = [apply_rotor(l, r_est).normal() for l in query_model]
@@ -102,7 +101,7 @@ def iterative_model_match(reference_model, query_model, iterations=100,
                                                               object_type=object_type, cuda=cuda)
         if compare_labels(old_labels, labels):
             return labels, costs, r_est
-        old_labels = [l for l in labels]
+        old_labels = [+l for l in labels]
         print(i)
     return labels, costs, r_est
 
