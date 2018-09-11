@@ -955,8 +955,7 @@ def val_rotor_rotor_between_planes(P1_val, P2_val):
 def random_bivector():
     """
     Creates a random bivector on the form described by R. Wareham in
-    TODO: Dig out the name of the interpolation paper
-
+    Mesh Vertex Pose and Position Interpolation using Geometric Algebra.
     $$ B =  ab + c*n_{\inf}$$ where $a, b, c \in \mathcal(R)^3$
     """
     a = random_euc_mv()

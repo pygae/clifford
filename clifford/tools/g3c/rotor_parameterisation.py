@@ -1,9 +1,11 @@
 
 import numpy as np
+from scipy.optimize import minimize
 import clifford as cf
 import numba
 from clifford.g3c import *
 from . import mult_with_ninf
+from clifford.tools.g3 import np_to_euc_mv
 
 ninf = einf
 no = -eo
@@ -19,6 +21,77 @@ ninf_val = einf.value
 I5_val = I5.value
 no_val = no.value
 I3_val = I3.value
+
+
+def full_conformal_biv_params_to_biv(biv_params):
+    """
+    Converts the bivector parameters for a general TRS rotor into
+    the bivector itself
+    """
+    phiP = np_to_euc_mv(biv_params[0:3]) * e123
+    t = np_to_euc_mv(biv_params[3:6])
+    s = np_to_euc_mv(biv_params[6:9])
+    omega = biv_params[9]
+    biv = phiP + t * ninf + s * no + omega * e45
+    return biv
+
+
+def full_conformal_biv_params_to_rotor(biv_params):
+    """
+    Converts the bivector parameters for a general TRS rotor into
+    the rotor
+    """
+    biv = full_conformal_biv_params_to_biv(biv_params)
+    R = general_exp(biv).normal()
+    return R
+
+
+def TRS_biv_params_to_biv(biv_params):
+    """
+    Converts the bivector parameters for a general TRS rotor into
+    the bivector itself
+    """
+    phiP = np_to_euc_mv(biv_params[0:3]) * e123
+    t = np_to_euc_mv(biv_params[3:6])
+    omega = biv_params[6]
+    biv = phiP + t * ninf + omega * e45
+    return biv
+
+
+def TRS_biv_params_to_rotor(biv_params):
+    """
+    Converts the bivector parameters for a general TRS rotor into
+    the rotor
+    """
+    biv = TRS_biv_params_to_biv(biv_params)
+    R = general_exp(biv).normal()
+    return R
+
+
+def find_closest_TRS_to_multivector(V):
+    """
+    Finds the closest TRS versor to the given multivector
+    Distance is measured as l2 norm of coefficients
+    """
+    def residual_cost(biv_params):
+        R = TRS_biv_params_to_biv(biv_params)
+        return np.sum(np.abs(R.value - V.value))
+    x0 = np.random.randn(7) * 0.00001
+    res = minimize(residual_cost, x0, method='L-BFGS-B')
+    return TRS_biv_params_to_rotor(res.x).clean(0.00001).normal()
+
+
+def find_closest_versor_to_multivector(V):
+    """
+    Finds the closest TRS versor to the given multivector
+    Distance is measured as l2 norm of coefficients
+    """
+    def residual_cost(biv_params):
+        R = full_conformal_biv_params_to_rotor(biv_params)
+        return np.sum(np.abs(R.value - V.value))
+    x0 = np.random.randn(10) * 0.00001
+    res = minimize(residual_cost, x0, method='L-BFGS-B')
+    return TRS_biv_params_to_rotor(res.x).clean(0.00001).normal()
 
 
 def general_exp(x, order=9):
