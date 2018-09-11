@@ -10,7 +10,7 @@ from . import rotor_between_objects, apply_rotor, square_roots_of_rotor, rotor_b
 from clifford.g3c import *
 from clifford.tools import orthoFrames2Verser as cartan
 from .cost_functions import object_set_cost_sum, rotor_cost
-
+from clifford import grade_obj
 
 I5 = e12345
 imt_func = layout.imt_func
@@ -162,6 +162,8 @@ def sequential_object_rotor_estimation_convergence_detection(reference_model, qu
     Performs a sequential rotor update based on the rotors between individual objects
     Exits when a full rotation through all objects produces a very small update of rotor
     """
+    grade_list = [grade_obj(ob) for ob in query_model]
+
     R_total = 1.0 + 0.0*e1
     r_list = []
     for j in range(n_iterations):
@@ -171,14 +173,16 @@ def sequential_object_rotor_estimation_convergence_detection(reference_model, qu
         else:
             indices = range(len(query_model))
         for i in indices:
-            C1 = normalised(apply_rotor(query_model[i],R_total))
+            grade = grade_list[i]
+            new_obj = apply_rotor(query_model[i],R_total)(grade)
+            C1 = normalised(new_obj)
             C2 = reference_model[i]
             if abs(C1 + C2) < 0.0001:
                 C1 = -C1
             if object_type == 'lines':
-                rroot = normalised(square_roots_of_rotor(rotor_between_lines(C1, C2))[0])
+                rroot = normalised(square_roots_of_rotor((rotor_between_objects(C1,C2)))[0])
             else:
-                rroot = normalised(square_roots_of_rotor(rotor_between_objects(C1,C2))[0])
+                rroot = normalised(square_roots_of_rotor((rotor_between_objects(C1,C2)))[0])
             r_list.append(rroot)
             r_set = normalised(rroot*r_set)
             R_total = normalised(rroot * R_total)

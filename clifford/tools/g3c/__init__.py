@@ -764,15 +764,20 @@ def average_objects(obj_list, weights=[]):
 def rotor_between_objects(X1, X2):
     """
     Lasenby and Hadfield AGACSE2018
-    For any two conformal objects C1 and C2 this returns a rotor that takes C1 to C2
-    Return a valid object from the addition result 1 + C2C1
+    For any two conformal objects X1 and X2 this returns a rotor that takes X1 to X2
+    Return a valid object from the addition result 1 + gamma*X2X1
     """
     return cf.MultiVector(layout,
-                          val_rotor_between_objects(val_normalised(X1.value),
+                          val_rotor_between_objects_root(val_normalised(X1.value),
                                                     val_normalised(X2.value)))
 
 
 def calculate_S_over_mu(X1, X2):
+    """
+    Lasenby and Hadfield AGACSE2018
+    For any two conformal objects X1 and X2 this returns a factor that corrects
+    the X1 + X2 back to a blade
+    """
     gamma1 = (X1 * X1)[0]
     gamma2 = (X2 * X2)[0]
 
@@ -797,10 +802,23 @@ def calculate_S_over_mu(X1, X2):
 
 
 @numba.njit
-def val_rotor_between_objects(X1, X2):
+def val_rotor_between_objects_root(X1, X2):
     """
     Lasenby and Hadfield AGACSE2018
-    For any two conformal objects C1 and C2 this returns a rotor that takes C1 to C2
+    For any two conformal objects X1 and X2 this returns a rotor that takes X1 to X2
+    Uses the square root of rotors for efficiency and numerical stability
+    """
+    gamma = gmt_func(X1, X1)[0]
+    C_val = gamma*gmt_func(X2, X1)
+    C_val[0] += 1
+    return val_normalised(pos_twiddle_root_val(C_val)[0, :])
+
+
+@numba.njit
+def val_rotor_between_objects_explicit(X1, X2):
+    """
+    Lasenby and Hadfield AGACSE2018
+    For any two conformal objects X1 and X2 this returns a rotor that takes X1 to X2
 
     Implements an optimised version of:
 
@@ -809,6 +827,9 @@ def val_rotor_between_objects(X1, X2):
 
     M12 = X1*X2 + X2*X1
     K = 2 + gamma1*M12
+
+    if np.sum(np.abs(K.value)) < 0.0000001:
+        return 1 + 0*e1
 
     if sum(np.abs(M12(4).value)) > 0.0000001:
         lamb = (-(K(4) * K(4)))[0]
@@ -837,18 +858,19 @@ def val_rotor_between_objects(X1, X2):
 
     M12_val = gmt_func(X1, X2) + gmt_func(X2, X1)
     K_val = gamma1 * M12_val
-    K_val[0] = K_val[0] + gamma1 * 2
+    K_val[0] = K_val[0] + 2
 
-    if np.sum(np.abs(project_val(M12_val, 4))) > 0.0000001:
+    if np.sum(np.abs(K_val)) < 0.0000001:
+        return unit_scalar_mv_val
+
+    if np.sum(np.abs(project_val(M12_val, 4))) > 0.00001:
         K_val_4 = project_val(K_val, 4)
-        lamb = (-gmt_func(K_val_4, K_val_4))[0]
+        lamb = -gmt_func(K_val_4, K_val_4)[0]
         mu = K_val[0] ** 2 + lamb
+
         root_mu = np.sqrt(mu)
-        if abs(lamb) < 0.0000001:
-            beta = 1.0 / (2 * np.sqrt(K_val[0]))
-        else:
-            beta_sqrd = 1 / (2 * (root_mu + K_val[0]))
-            beta = np.sqrt(beta_sqrd)
+        beta_sqrd = 1 / (2 *root_mu + 2 *K_val[0])
+        beta = np.sqrt(beta_sqrd)
 
         temp_1 = beta * K_val_4
         temp_1[0] = temp_1[0] - (1 / (2 * beta))
