@@ -175,7 +175,7 @@ class GAScene():
             print(self,file=fobj)
 
 
-def draw_objects(mv_array, mv_type, color='rgb(0,0,0)'):
+def draw_objects(mv_array, mv_type='interp', color='rgb(0,0,0)'):
     sc = GAScene()
     sc.add_object_array(mv_array, mv_type, color=color)
     print(sc)

@@ -5,7 +5,8 @@ import unittest
 
 from clifford.g3c import *
 from clifford.tools.g3c import *
-from clifford.tools.g3c.rotor_parameterisation import ga_log, ga_exp, general_exp, general_logarithm
+from clifford.tools.g3c.rotor_parameterisation import ga_log, ga_exp, general_exp, general_logarithm,\
+    interpolate_TRS_rotors
 from clifford.tools.g3c.rotor_estimation import *
 from clifford.tools.g3c.object_clustering import *
 from clifford.tools.g3c.scene_simplification import *
@@ -257,16 +258,17 @@ class G3CToolsTests(unittest.TestCase):
 
         # C1 = (up(0+3*e1)^up(2*e1+3*e1)).normal()
         C1 = (up(0 + 3 * e1) ^ up(2 * e1 + 3 * e1) ^ up(e1 + e3 + 3 * e1)).normal()
-        C2 = (R * C1 * ~R).normal()
-        C3 = (R * C2 * ~R).normal()
-        C4 = (R * C3 * ~R).normal()
-        C5 = (R * C4 * ~R).normal()
+        C2 = (R * C1 * ~R).normal()(3)
+        C3 = (R * C2 * ~R).normal()(3)
+        C4 = (R * C3 * ~R).normal()(3)
+        C5 = (R * C4 * ~R).normal()(3)
         object_list = [C1, C2, C3, C4, C5]
 
         object_alpha_array = np.array([0.0, 0.25, 0.5, 0.75, 1.0])
         new_alpha_array = np.linspace(0.0, 1.0)
         new_object_list = general_object_interpolation(object_alpha_array, object_list, new_alpha_array,
                                                        kind='quadratic')
+        new_object_list = [o(3) for o in new_object_list]
 
         draw_objects(object_list, 'circle', color='rgb(255,0,0)')
         draw_objects(new_object_list, 'circle', color='rgb(0,255,0)')

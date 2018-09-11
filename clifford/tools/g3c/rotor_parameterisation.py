@@ -153,6 +153,19 @@ def interpolate_TR_rotors(R_n_plus_1, R_n, interpolation_fraction):
     return R_n_lambda
 
 
+def interpolate_TRS_rotors(R_n_plus_1, R_n, interpolation_fraction):
+    """
+    Interpolates TR type rotors
+    Leo Dorst GA for Computer Science
+    """
+    if interpolation_fraction < np.finfo(float).eps:
+        return R_n
+    delta_R = R_n_plus_1 * ~R_n
+    delta_bivector = general_logarithm(delta_R)(2)
+    R_n_lambda = general_exp(interpolation_fraction * delta_bivector) * R_n
+    return R_n_lambda
+
+
 def extractRotorComponents(R):
     """
     Extracts the translation and rotation information from a TR rotor
