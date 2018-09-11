@@ -1452,7 +1452,7 @@ class MultiVector(object):
 
         Vhat = self.gradeInvol()
         Vrev = ~self
-        Vinv = Vrev/(self*Vrev)
+        Vinv = Vrev/(self*Vrev)[0]
 
         gpres = grades_present(Vhat*Vinv, 0.000001)
         if len(gpres) == 1:
@@ -1473,7 +1473,7 @@ class MultiVector(object):
 
         Vhat = self.gradeInvol()
         Vrev = ~self
-        Vinv = Vrev/(self*Vrev)
+        Vinv = Vrev/(self*Vrev)[0]
 
         gpres = grades_present(Vhat*Vinv, 0.000001)
         if len(gpres) == 1:
