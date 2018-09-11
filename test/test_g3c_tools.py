@@ -33,7 +33,7 @@ class TestGeneralLogarithm(unittest.TestCase):
 
     def test_general_logarithm_rotation(self):
         # Check we can reverse rotations
-        for i in range(500):
+        for i in range(5):
             phi = 2 * (np.random.rand() - 1) * np.pi
             m = random_euc_mv().normal()
             n = random_euc_mv().normal()
@@ -45,7 +45,7 @@ class TestGeneralLogarithm(unittest.TestCase):
 
     def test_general_logarithm_translation(self):
         # Check we can reverse translation
-        for i in range(500):
+        for i in range(5):
             t = random_euc_mv()
             biv = ninf * t /2
             R = general_exp(biv).normal()
@@ -54,7 +54,7 @@ class TestGeneralLogarithm(unittest.TestCase):
 
     def test_general_logarithm_scaling(self):
         # Check we can reverse scaling
-        for i in range(500):
+        for i in range(50):
             scale = 0.5 + np.random.rand()
             biv = -np.log(scale ) *e45 /2
             R = general_exp(biv).normal()
@@ -62,7 +62,7 @@ class TestGeneralLogarithm(unittest.TestCase):
             np.testing.assert_almost_equal(biv.value, biv_2.value)
 
     def test_general_logarithm_RS(self):
-        for i in range(500):
+        for i in range(5):
             scale = 0.5 + np.random.rand()
 
             S = generate_dilation_rotor(scale).normal()
@@ -78,7 +78,7 @@ class TestGeneralLogarithm(unittest.TestCase):
             np.testing.assert_almost_equal(biv.value, biv_alt.value, 5)
 
     def test_general_logarithm_TR(self):
-        for i in range(500):
+        for i in range(5):
             # R = generate_rotation_rotor(0.5, e1, e2).normal()
             # T = generate_translation_rotor(e3 + 7 * e2 - e1).normal()
             # V = (T*R).normal()
@@ -94,7 +94,7 @@ class TestGeneralLogarithm(unittest.TestCase):
             np.testing.assert_almost_equal(C2.value, C3.value, 2)
 
     def test_general_logarithm_TS(self):
-        for i in range(500):
+        for i in range(5):
             scale = 0.5 +np.random.rand()
             t = random_euc_mv()
             S = generate_dilation_rotor(scale)
@@ -109,7 +109,7 @@ class TestGeneralLogarithm(unittest.TestCase):
             np.testing.assert_almost_equal(C2.value, C3.value, 5)
 
     def test_general_logarithm_TRS(self):
-        for i in range(500):
+        for i in range(5):
             scale = 0.5 + np.random.rand()
             S = generate_dilation_rotor(scale)
             R = generate_rotation_rotor(0.5, e1, e2)
@@ -203,7 +203,7 @@ class G3CToolsTests(unittest.TestCase):
             random_sphere]
 
     def test_factorise(self):
-        n_repeats = 100
+        n_repeats = 50
         for obj_gen in self.object_generators:
             print(obj_gen.__name__)
             for i in range(n_repeats):
@@ -227,7 +227,7 @@ class G3CToolsTests(unittest.TestCase):
         assert not a.isBlade()
         a = random_translation_rotor()
         assert not a.isBlade()
-        n_repeats = 10
+        n_repeats = 5
         for obj_gen in self.object_generators:
             for i in range(n_repeats):
                 a = obj_gen()
@@ -428,7 +428,7 @@ class G3CToolsTests(unittest.TestCase):
                              random_sphere]
 
         # Repeats for each fuzz test
-        n_repeats = 10000
+        n_repeats = 100
 
         # Test the general case
         for obj_gen in object_generators:
@@ -459,7 +459,7 @@ class G3CToolsTests(unittest.TestCase):
                              random_sphere]
 
         # Repeats for each fuzz test
-        n_repeats = 10000
+        n_repeats = 1000
 
         # Test the general case
         for obj_gen in object_generators:
@@ -806,8 +806,8 @@ class ModelMatchingTests(unittest.TestCase):
         cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
                                                          max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
         error_count = 0
-        n_iterations = 100
-        n_runs = 10
+        n_iterations = 30
+        n_runs = 5
         for i in range(n_runs):
             # Rotate and translate the cluster
             disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi / 8)
@@ -832,8 +832,8 @@ class ModelMatchingTests(unittest.TestCase):
         cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
                                                          max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
         error_count = 0
-        n_iterations = 100
-        n_runs = 10
+        n_iterations = 30
+        n_runs = 5
         for i in range(n_runs):
             # Rotate and translate the cluster
             disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi / 8).normal()
@@ -860,7 +860,7 @@ class ModelMatchingTests(unittest.TestCase):
         cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
                                                          max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
         error_count = 0
-        n_runs = 10
+        n_runs = 5
         for i in range(n_runs):
             # Rotate and translate the cluster
             disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi / 8)
@@ -886,7 +886,7 @@ class ModelMatchingTests(unittest.TestCase):
         cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
                                                          max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
         error_count = 0
-        n_runs = 10
+        n_runs = 5
         for i in range(n_runs):
             # Rotate and translate the cluster
             disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi / 8)
@@ -910,7 +910,7 @@ class ModelMatchingTests(unittest.TestCase):
         cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
                                                          max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
         error_count = 0
-        n_runs = 10
+        n_runs = 5
         for i in range(n_runs):
             # Rotate and translate the cluster
             disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi / 8)
@@ -925,32 +925,6 @@ class ModelMatchingTests(unittest.TestCase):
                 print(r_est)
                 error_count += 1
         print('Correct fraction: ', 1.0 - error_count / n_runs)
-
-
-    def test_iterative_model_match_newton(self):
-
-        object_generator = random_line
-        n_objects_per_cluster = 20
-
-        # Make a cluster
-        cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
-                                                         max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
-        error_count = 0
-        n_runs = 10
-        for i in range(n_runs):
-            # Rotate and translate the cluster
-            disturbance_rotor = random_rotation_translation_rotor(maximum_translation=2, maximum_angle=np.pi / 8)
-            target = [apply_rotor(c, disturbance_rotor).normal() for c in cluster_objects]
-
-            labels, costs, r_est = iterative_model_match(target, cluster_objects, 30, rotor_newton=True)
-            try:
-                assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
-            except:
-                print(disturbance_rotor)
-                print(r_est)
-                error_count += 1
-        print('Correct fraction: ', 1.0 - error_count / n_runs)
-
 
     @SkipTest
     def test_REFORM(self):
