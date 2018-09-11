@@ -75,7 +75,7 @@ def find_closest_TRS_to_multivector(V):
     """
     def residual_cost(biv_params):
         R = TRS_biv_params_to_biv(biv_params)
-        return np.sum(np.abs(R.value - V.value))
+        return np.sum(np.abs(R.value - V.value)**2)
     x0 = np.random.randn(7) * 0.00001
     res = minimize(residual_cost, x0, method='L-BFGS-B')
     return TRS_biv_params_to_rotor(res.x).clean(0.00001).normal()
@@ -88,7 +88,7 @@ def find_closest_versor_to_multivector(V):
     """
     def residual_cost(biv_params):
         R = full_conformal_biv_params_to_rotor(biv_params)
-        return np.sum(np.abs(R.value - V.value))
+        return np.sum(np.abs(R.value - V.value)**2)
     x0 = np.random.randn(10) * 0.00001
     res = minimize(residual_cost, x0, method='L-BFGS-B')
     return TRS_biv_params_to_rotor(res.x).clean(0.00001).normal()

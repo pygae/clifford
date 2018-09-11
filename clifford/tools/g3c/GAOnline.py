@@ -166,7 +166,7 @@ class GAScene():
         else:
             raise ValueError(str(mv_type) + ' is not a valid mv_type. You must specify a valid mv_type.')
 
-    def add_object_array(self,mv_array,mv_type,color='rgb(0,0,0)'):
+    def add_object_array(self,mv_array,mv_type='interp',color='rgb(0,0,0)'):
         for mv in mv_array:
             self.add_object(mv, mv_type, color=color)
 
