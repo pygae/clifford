@@ -10,6 +10,7 @@ imt_func = layout.imt_func
 gmt_func = layout.gmt_func
 adjoint_func = layout.adjoint_func
 e4_val = e4.value
+e5_val = e5.value
 ninf_val = einf.value
 
 
@@ -43,8 +44,8 @@ def val_object_cost_function(obj_a_val, obj_b_val):
     """
     Evaluates the rotor cost function between two objects
     """
-    grade_a = grade_obj_func(obj_a_val, gradeList, 0.0000001)
-    grade_b = grade_obj_func(obj_b_val, gradeList, 0.0000001)
+    grade_a = grade_obj_func(obj_a_val, gradeList, 0.00001)
+    grade_b = grade_obj_func(obj_b_val, gradeList, 0.00001)
     if grade_a != grade_b:
         return np.finfo(float).max
     else:
@@ -56,9 +57,9 @@ def object_cost_function(obj_a,obj_b):
     """
     Evaluates the rotor cost function between two objects
     """
-    if grade_obj(obj_a) != grade_obj(obj_b):
+    if grade_obj(obj_a, 0.00001) != grade_obj(obj_b, 0.00001):
         return np.finfo(float).max
-    R = rotor_between_objects(obj_a, obj_b)
+    R = rotor_between_objects(obj_a.normal(), obj_b.normal())
     return np.abs(val_rotor_cost_sparse(R.value))
 
 
@@ -119,7 +120,7 @@ def line_cost_function(obj_a,obj_b):
     """
     Evaluates the rotor cost function between two objects
     """
-    if grade_obj(obj_a) != grade_obj(obj_b):
+    if grade_obj(obj_a, 0.00001) != grade_obj(obj_b, 0.00001):
         return np.finfo(float).max
     R = rotor_between_lines(obj_a, obj_b)
     return np.abs(val_rotor_cost_sparse(R.value))

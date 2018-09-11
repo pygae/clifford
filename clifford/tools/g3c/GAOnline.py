@@ -1,6 +1,8 @@
 
 from __future__ import print_function
 from clifford import grade_obj
+from clifford.tools.g3c import interpret_multivector_as_object
+
 
 def interpolate_colors(alpha, rgb_a, rgb_b):
     rgb_c = (1-alpha)*rgb_a + alpha*rgb_b
@@ -122,7 +124,7 @@ class GAScene():
             raise ValueError('Input is not a point_pair')
         self.add(PointPair(mv,color))
 
-    def add_object(self,mv,mv_type,color='rgb(0,0,0)'):
+    def add_object(self, mv, mv_type='interp', color='rgb(0,0,0)'):
         if mv_type == 'line':
             self.add_line(mv, color)
         elif mv_type == 'point_pair':
@@ -133,6 +135,34 @@ class GAScene():
             self.add_plane(mv, color)
         elif mv_type == 'sphere':
             self.add_sphere(mv, color)
+        elif mv_type == 'interp':
+            """
+            -1 -> not a blade
+            0 -> a 1 vector but not a point
+            1 -> a euclidean point
+            2 -> a conformal point
+            3 -> a point pair
+            4 -> a circle
+            5 -> a line
+            6 -> a sphere
+            7 -> a plane
+            """
+            return_val = interpret_multivector_as_object(mv)
+            if return_val > 0:
+                if return_val == 1:
+                    self.add_euc_point(mv,color=color)
+                elif return_val == 3:
+                    self.add_point_pair(mv, color=color)
+                elif return_val == 4:
+                    self.add_circle(mv, color=color)
+                elif return_val == 5:
+                    self.add_line(mv, color=color)
+                elif return_val == 6:
+                    self.add_sphere(mv, color=color)
+                elif return_val == 7:
+                    self.add_plane(mv, color=color)
+            else:
+                raise ValueError('Input object cannot be interpretted as an object.')
         else:
             raise ValueError(str(mv_type) + ' is not a valid mv_type. You must specify a valid mv_type.')
 

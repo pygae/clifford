@@ -170,6 +170,18 @@ def grade_obj(objin, threshold=0.0000001):
     return grade_obj_func(objin.value, objin.layout.gradeList, threshold)
 
 
+def grades_present(objin, threshold=0.0000001):
+    '''
+    Returns all the grades of a multivector with coefficient magnitude bigger than threshold
+    '''
+    grades = []
+    for i in range(objin.layout.gaDims):
+        if abs(objin.value[i]) > threshold and \
+                objin.layout.gradeList[i] not in grades:
+            grades.append(objin.layout.gradeList[i])
+    return grades
+
+
 def generate_blade_tup_map(bladeTupList):
     """
     Generates a mapping from blade tuple to linear index into
@@ -366,9 +378,17 @@ class Layout(object):
         self.gaDims = len(self.bladeTupList)
         self.gradeList = list(map(len, self.bladeTupList))
 
-        if names is None or isinstance(names, str):
-            if isinstance(names, str):
-                e = names
+        # Python 2 and 3 compatibility fix
+        names_is_string = False
+        names_is_unicode = False
+        if sys.version_info >= (3, 0):
+            names_is_string = isinstance(names, str)
+        else:
+            names_is_unicode = isinstance(names, unicode)
+
+        if names is None or names_is_string or names_is_unicode:
+            if names_is_string or names_is_unicode:
+                e = str(names)
             else:
                 e = 'e'
             self.names = []
@@ -1417,11 +1437,7 @@ class MultiVector(object):
 
     def isBlade(self):
         """Returns true if multivector is a blade.
-
-        FIXME: Apparently, not all single-grade multivectors are blades. E.g.
-        in the 4-D Euclidean space, a=(e1^e2 + e3^e4) is not a blade. There is
-        no vector v such that v^a=0.
-
+        From Leo Dorsts GA for computer science section 21.5
         isBlade() --> Boolean
         """
 
@@ -1434,7 +1450,45 @@ class MultiVector(object):
                 elif self.layout.gradeList[i] != grade:
                     return 0
 
-        return 1
+        Vhat = self.gradeInvol()
+        Vrev = ~self
+        Vinv = Vrev/(self*Vrev)
+
+        gpres = grades_present(Vhat*Vinv, 0.000001)
+        if len(gpres) == 1:
+            if gpres[0] == 0:
+                if np.sum(np.abs((Vhat*Vinv).value - (Vinv*Vhat).value)) < 0.0001:
+                    for e in basis_vectors(self.layout).values():
+                        gpres = grades_present(Vhat*e*Vrev, 0.000001)
+                        if not (len(gpres) == 1 and gpres[0] == 1):
+                            return 0
+                    return 1
+        return 0
+
+    def isVersor(self):
+        """Returns true if multivector is a versor.
+        From Leo Dorsts GA for computer science section 21.5
+        isBlade() --> Boolean
+        """
+
+        Vhat = self.gradeInvol()
+        Vrev = ~self
+        Vinv = Vrev/(self*Vrev)
+
+        gpres = grades_present(Vhat*Vinv, 0.000001)
+        if len(gpres) == 1:
+            if gpres[0] == 0:
+                if np.sum(np.abs((Vhat*Vinv).value - (Vinv*Vhat).value)) < 0.0001:
+                    for e in basis_vectors(self.layout).values():
+                        gpres = grades_present(Vhat*e*Vrev, 0.000001)
+                        if not (len(gpres) == 1 and gpres[0] == 1):
+                            return 0
+                    gpres = grades_present(self, 0.000001)
+                    if len(gpres) == 1:
+                        return 0
+                    else:
+                        return 1
+        return 0
 
     def grades(self):
         """Return the grades contained in the multivector.
@@ -1442,14 +1496,7 @@ class MultiVector(object):
         grades() --> [ PyInt, PyInt, ... ]
         """
 
-        grades = []
-
-        for i in range(self.layout.gaDims):
-            if abs(self.value[i]) > _eps and \
-               self.layout.gradeList[i] not in grades:
-                grades.append(self.layout.gradeList[i])
-
-        return grades
+        return grades_present(self,_eps)
 
     @property
     def blades_list(self):
@@ -1620,17 +1667,37 @@ class MultiVector(object):
 
         return other.lc(self) * self.inv()
 
+    def factorise(self):
+        """
+        Factorises a blade into basis vectors and an overall scale
+        Uses Leo Dorsts algorithm from 21.6 of GA for Computer Science
+        """
+        if not self.isBlade():
+            raise ValueError("self is not a blade")
+        scale = abs(self)
+        max_index = np.argmax(np.abs(self.value))
+        B_max_factors = self.layout.bladeTupList[max_index]
+
+        factors = []
+
+        B_c = self/scale
+        for ind in B_max_factors[1:]:
+            ei = self.layout.blades_list[ind]
+            fi = (ei.lc(B_c)*(~B_c*(1/(B_c*~B_c)[0]))).normal()
+            factors.append(fi)
+            B_c = B_c * ~fi * (1 / (fi * ~fi)[0])
+        factors.append(B_c.normal())
+        factors.reverse()
+        return factors, scale
+
     def basis(self):
         """Finds a vector basis of this subspace.
-
         basis() --> [ MultiVector, MultiVector, ... ]
         """
+        if not self.isBlade():
+            raise ValueError("self is not a blade")
 
         gr = self.grades()
-
-        if len(gr) != 1:
-            # FIXME: this is not a sufficient condition for a blade.
-            raise ValueError("self is not a blade")
 
         selfInv = self.inv()
 

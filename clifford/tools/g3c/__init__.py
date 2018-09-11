@@ -119,6 +119,7 @@ Root Finding
     interp_objects_root
     average_objects
     rotor_between_objects
+    val_rotor_between_objects
     val_rotor_between_lines
     rotor_between_lines
     rotor_between_planes
@@ -130,13 +131,13 @@ import math
 import numba
 import numpy as np
 from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
-    random_rotation_rotor, generate_rotation_rotor
+    random_rotation_rotor, generate_rotation_rotor, val_random_euc_mv
 from clifford.g3c import *
 import clifford as cf
 from clifford import get_mult_function
 import warnings
 
-# Allow sytactic alternatives to the standard included in the clifford package
+# Allow syntactic alternatives to the standard included in the clifford package
 ninf = einf
 no = -eo
 
@@ -158,6 +159,137 @@ adjoint_func = layout.adjoint_func
 gmt_func = layout.gmt_func
 omt_func = layout.omt_func
 imt_func = layout.imt_func
+
+epsilon = 10*10**(-6)
+
+
+def interpret_multivector_as_object(mv):
+    """
+    Takes an input multivector and returns what kind of object it is
+    -1 -> not a blade
+    0 -> a 1 vector but not a point
+    1 -> a euclidean point
+    2 -> a conformal point
+    3 -> a point pair
+    4 -> a circle
+    5 -> a line
+    6 -> a sphere
+    7 -> a plane
+    """
+    grades_present = mv.grades()
+    if len(grades_present) != 1:  # Definitely not a blade
+        return -1
+    grade = grades_present[0]
+    if grade == 1:
+        # This can now either be a euc mv or a conformal point or something else
+        if mv(e123) == mv:
+            return 1  # Euclidean point
+        elif mv**2 == 0*e1:
+            return 2  # Conformal point
+        else:
+            return 0  # Unknown mv
+    elif mv.isBlade():
+        if grade == 2:
+            return 3  # Point pair
+        elif grade == 3:  # Line or circle
+            if abs(mv[e123]) > epsilon:
+                return 4  # Circle
+            else:
+                return 5  # Line
+        elif grade == 4:  # Sphere or plane
+            if abs(((mv*I5)|ninf)[0]) > epsilon:
+                return 7  # Plane
+            else:
+                return 6  # Sphere
+    else:
+        return -1
+
+
+def general_exp(x, order=9):
+    """
+    This implements the series expansion of e**mv where mv is a multivector
+    The parameter order is the maximum order of the taylor series to use
+    """
+
+    result = 1.0
+    if (order == 0):
+        return result
+
+    # scale by power of 2 so that its norm is < 1
+    max_val = int(np.max(np.abs(x.value)))
+    scale=1
+    if max_val > 1:
+        max_val <<= 1
+    while max_val:
+        max_val >>= 1
+        scale <<= 1
+
+    scaled = x * (1.0 / scale)
+
+    # taylor approximation
+    tmp = 1.0
+    for i in range(1, order):
+        tmp = tmp*scaled * (1.0 / i)
+        result += tmp
+
+    # undo scaling
+    while scale > 1:
+        result *= result
+        scale >>= 1
+    return result
+
+
+
+def general_logarithm(V):
+    """
+    This implements the logarithm of a TRS rotor to a bivector
+    Ie. any translation rotation and scaling rotor
+    """
+    epsilon = 10**(-6)
+    R = V(e123).normal()
+    RV = R*V
+
+    # Extract the scaling
+    tanh_gamma_2 = -RV[e45]/RV[0]
+    gamma = 2*np.arctanh(tanh_gamma_2)
+
+    if abs(gamma) < epsilon:
+        gamma_dash = 1
+    else:
+        gamma_dash = gamma/(np.exp(gamma)-1)
+    S = (np.cosh(gamma/2) + np.sinh(gamma/2)*(ninf^no)).normal()
+    R = V(e123).normal()
+    T = (V*~S*~R).normal()
+    t = -2*(eo.lc(T))(1)
+    if abs(R[0] - 1) < epsilon:  # No rotation
+        biv_log = -gamma_dash*t*einf/2 + gamma*(eo^einf)/2
+        return biv_log
+    elif abs(gamma) < epsilon:  # No scaling component
+            phi = np.arccos(float(V[0]))  # scalar
+            phi2 = phi * phi  # scalar
+            # Notice: np.sinc(pi * x)/(pi x)
+            phi_sinc = np.sinc(phi / np.pi)  # scalar
+            phiP = ((V(2) * ninf) | ep) / (phi_sinc)
+            t_normal_n = -((phiP * V(4)) / (phi2 * phi_sinc))
+            t_perpendicular_n = -(phiP * (phiP * V(2))(2)) / (phi2 * phi_sinc)
+            return phiP + t_normal_n + t_perpendicular_n
+    else:  # Definitely have rotation and scaling
+        I = -R(2) / abs(R(2))
+        phi = 2 * np.arctan2(abs(R(2)), R[0])
+        if abs(t) > epsilon:  # Translation too, full triple whammy
+            tIoverI = (t.lc(I) * ~I)
+            A = 1 - (np.exp(gamma)) * (R * R)
+            A_rev = ~A
+            A_inv = A_rev/((A*A_rev)[0])
+            Tv = (1 + ninf * A_inv * tIoverI*0.5 ).normal()
+            t_perp = ((t ^ I) * ~I)
+            biv_log_perp = -gamma_dash * t_perp * einf/2
+            biv_log_par = Tv * (-I * phi / 2 - gamma * (no ^ ninf)/2 ) * ~Tv
+            biv_log = biv_log_perp + biv_log_par
+            return biv_log
+        else:  # No translation, just rotation and scaling
+            biv_log = -I * phi/2 - gamma * (no ^ ninf) / 2
+            return biv_log
 
 
 def get_circle_in_euc(circle):
@@ -485,7 +617,7 @@ def general_root_val(sigma_value):
         return output
     elif check_infinite_roots_val(sigma_value):
         output = np.zeros((2, sigma_value.shape[0]))
-        output[0, :] = 1.0
+        output[:, 0] = 1.0
         return output
     else:
         raise ValueError('No root exists')
@@ -594,7 +726,10 @@ def interp_objects_root(C1, C2, alpha):
     Return a valid object from the addition result C
     """
     C = (1 - alpha) * C1 + alpha*C2
-    return (neg_twiddle_root(C)[0]).normal()
+    C3 = (neg_twiddle_root(C)[0]).normal()
+    if cf.grade_obj(C1, 0.00001) != cf.grade_obj(C3, 0.00001):
+        raise ValueError('Created object is not same grade')
+    return C3
 
 
 from scipy.interpolate import interp1d
@@ -620,21 +755,113 @@ def average_objects(obj_list, weights=[]):
         C = sum([o * w for o, w in zip(obj_list, weights)])
     else:
         C = sum(obj_list) / len(obj_list)
-    return (neg_twiddle_root(C)[0]).normal()
+    C3 = (neg_twiddle_root(C)[0]).normal()
+    if cf.grade_obj(obj_list[0], 0.00001) != cf.grade_obj(C3, 0.00001):
+        raise ValueError('Created object is not same grade')
+    return C3
 
 
-def rotor_between_objects(C1, C2):
+def rotor_between_objects(X1, X2):
     """
-    Hadfield and Lasenby AGACSE2018
+    Lasenby and Hadfield AGACSE2018
     For any two conformal objects C1 and C2 this returns a rotor that takes C1 to C2
     Return a valid object from the addition result 1 + C2C1
     """
-    if float(gmt_func(C1.value, C1.value)[0]) > 0:
-        C = 1 + cf.MultiVector(layout,gmt_func(C2.value, C1.value))
-        R = pos_twiddle_root(C)[0]
+    return cf.MultiVector(layout,
+                          val_rotor_between_objects(val_normalised(X1.value),
+                                                    val_normalised(X2.value)))
+
+
+def calculate_S_over_mu(X1, X2):
+    gamma1 = (X1 * X1)[0]
+    gamma2 = (X2 * X2)[0]
+
+    M12 = X1 * X2 + X2 * X1
+    K = 2 + gamma1 * M12
+    mu = (K[0]**2 - K(4)**2)[0]
+
+    if sum(np.abs(M12(4).value)) > 0.0000001:
+        lamb = (-(K(4) * K(4)))[0]
+        mu = K[0] ** 2 + lamb
+        root_mu = np.sqrt(mu)
+        if abs(lamb) < 0.0000001:
+            beta = 1.0 / (2 * np.sqrt(K[0]))
+        else:
+            beta_sqrd = 1 / (2 * (root_mu + K[0]))
+            beta = np.sqrt(beta_sqrd)
+        S = -gamma1/(2*beta) + beta*M12(4)
+        return S/np.sqrt(mu)
+    else:
+        S = np.sqrt(abs(K[0]))
+    return S/np.sqrt(mu)
+
+
+@numba.njit
+def val_rotor_between_objects(X1, X2):
+    """
+    Lasenby and Hadfield AGACSE2018
+    For any two conformal objects C1 and C2 this returns a rotor that takes C1 to C2
+
+    Implements an optimised version of:
+
+    gamma1 = (X1 * X1)[0]
+    gamma2 = (X2 * X2)[0]
+
+    M12 = X1*X2 + X2*X1
+    K = 2 + gamma1*M12
+
+    if sum(np.abs(M12(4).value)) > 0.0000001:
+        lamb = (-(K(4) * K(4)))[0]
+        mu = K[0]**2 + lamb
+        root_mu = np.sqrt(mu)
+        if abs(lamb) < 0.0000001:
+            beta = 1.0/(2*np.sqrt(K[0]))
+        else:
+            beta_sqrd = 1/(2*(root_mu + K[0]))
+            beta = np.sqrt(beta_sqrd)
+        R = ( beta*K(4) - (1/(2*beta)) )*(1 + gamma1*X2*X1)/(root_mu)
         return R
     else:
-        return (1 - cf.MultiVector(layout,gmt_func(C2.value, C1.value))).normal()
+        return (1 + gamma1*X2*X1)/(np.sqrt(abs(K[0])))
+
+    """
+    gamma1 = gmt_func(X1, X1)[0]
+    gamma2 = gmt_func(X2, X2)[0]
+
+    # if abs(abs(gamma1) - 1.0) > 0.00001:
+    #     raise ValueError('X1 must be normalised to give abs(X1*X1) == 1')
+    # elif abs(abs(gamma2) - 1.0) > 0.00001:
+    #     raise ValueError('X1 must be normalised to give abs(X1*X1) == 1')
+    # elif abs(gamma1 - gamma2) > 0.00001:
+    #     raise ValueError('X1 and X2 must square to the same value')
+
+    M12_val = gmt_func(X1, X2) + gmt_func(X2, X1)
+    K_val = gamma1 * M12_val
+    K_val[0] = K_val[0] + gamma1 * 2
+
+    if np.sum(np.abs(project_val(M12_val, 4))) > 0.0000001:
+        K_val_4 = project_val(K_val, 4)
+        lamb = (-gmt_func(K_val_4, K_val_4))[0]
+        mu = K_val[0] ** 2 + lamb
+        root_mu = np.sqrt(mu)
+        if abs(lamb) < 0.0000001:
+            beta = 1.0 / (2 * np.sqrt(K_val[0]))
+        else:
+            beta_sqrd = 1 / (2 * (root_mu + K_val[0]))
+            beta = np.sqrt(beta_sqrd)
+
+        temp_1 = beta * K_val_4
+        temp_1[0] = temp_1[0] - (1 / (2 * beta))
+
+        temp_2 = gamma1*gmt_func(X2,X1)
+        temp_2[0] = temp_2[0] + 1.0
+
+        R_val = gmt_func(temp_1, temp_2) / root_mu
+        return R_val
+    else:
+        temp_1 = gamma1 * gmt_func(X2, X1)
+        temp_1[0] += 1.0
+        return temp_1/(np.sqrt(abs(K_val[0])))
 
 
 sparse_line_gmt = get_mult_function(
@@ -781,11 +1008,10 @@ def random_circle():
     """
     Creates a random circle
     """
-    mv_a = random_euc_mv()
-    mv_b = random_euc_mv()
-    mv_c = random_euc_mv()
-    line_a = ((up(mv_a) ^ up(mv_b) ^ up(mv_c))).normal()
-    return line_a
+    mv_a = val_random_euc_mv()
+    mv_b = val_random_euc_mv()
+    mv_c = val_random_euc_mv()
+    return layout.MultiVector(value=val_normalised(omt_func(omt_func(val_up(mv_a), val_up(mv_b)), val_up(mv_c))))
 
 
 def random_sphere_at_origin():
@@ -822,8 +1048,9 @@ def random_plane():
     """
     Creates a random plane
     """
-    line_a = ((random_circle() ^ ninf)).normal()
-    return line_a
+    c = random_circle()
+    plane = (c ^ ninf).normal()
+    return plane
 
 
 @numba.njit
