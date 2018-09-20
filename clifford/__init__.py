@@ -978,27 +978,20 @@ class MultiVector(object):
 
         while nextTerm != 0:
             # iterate until the added term is within _eps of 0
-            newMV << nextTerm
+            newMV = newMV + nextTerm
             nextTerm = nextTerm * intMV / n
             n = n + 1
         else:
             # squeeze out that extra little bit of accuracy
-            newMV << nextTerm
+            newMV = newMV + nextTerm
 
         return newMV
 
     def __lshift__(self, other):
-        """In-place addition
-
-        M << N --> M + N
-        __iadd__(other) --> MultiVector
         """
-
-        other, mv = self._checkOther(other)
-
-        self.value = self.value + other.value
-
-        return self
+        The << operator is the left contraction
+        """
+        return self.lc(other)
 
     # unary
 
@@ -1403,6 +1396,7 @@ class MultiVector(object):
         newValue = self.layout.lcmt_func(self.value,other.value)
 
         return self._newMV(newValue)
+
     
     @property
     def pseudoScalar(self):
