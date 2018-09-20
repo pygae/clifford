@@ -447,9 +447,13 @@ def intersect_line_and_plane_to_point(line, plane):
     Returns the point at the intersection of a line and plane
     If there is no intersection it returns None
     """
-    biv = meet(line,plane)
-    if (biv*biv)[0] > 0:
-        return ((biv^no)|niono)/abs(biv)
+    biv = meet(line, plane)
+    abs_biv = abs(biv)
+    if abs_biv > 0.000001:
+        if (biv|niono)[0] > 0:
+            return ((biv ^ no) | niono) / abs(biv)
+        else:
+            return -((biv ^ no) | niono) / abs(biv)
     else:
         return None
 
