@@ -346,14 +346,24 @@ class G3CToolsTests(unittest.TestCase):
         """ Intersection of a line and a plane """
 
         # First the case that they intersect
-        line = (up(e1) ^ up(e1 + e3) ^ ninf).normal()
+        line = (up(2*e1) ^ up(2*e1 + e3) ^ ninf).normal()
         plane = (up(e3) ^ up(e3 + e1) ^ up(e3 + e2) ^ ninf).normal()
         point_result = intersect_line_and_plane_to_point(line, plane)
-        testing.assert_almost_equal(down(point_result).value, (e3 + e1).value)
+        testing.assert_almost_equal(point_result.value, (e3 + 2*e1).value)
         # Next the case that the do not intersect
         line = (up(0) ^ up(e1) ^ ninf).normal()
         point_result = intersect_line_and_plane_to_point(line, plane)
         assert point_result is None
+
+        for i in range(200):
+            line = random_line()
+            plane = random_plane()
+            point_result = intersect_line_and_plane_to_point(line, plane)
+
+            # draw_objects([line], mv_type='line')
+            # draw_objects([plane], mv_type='plane', color='rgb(0,255,0)')
+            # draw_objects([point_result], mv_type='euc_point', color='rgb(255,0,0)')
+
 
     def test_normalise_n_minus_1(self):
 

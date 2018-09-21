@@ -146,6 +146,7 @@ E = ninf ^ (no)
 I5 = e12345
 I3 = e123
 E0 = ninf ^ -no
+niono = ninf ^ no
 E0_val = E0.value
 I5_val = I5.value
 ninf_val = ninf.value
@@ -446,9 +447,13 @@ def intersect_line_and_plane_to_point(line, plane):
     Returns the point at the intersection of a line and plane
     If there is no intersection it returns None
     """
-    bivector = (meet(line, plane)).normal()
-    if (bivector*bivector)[0] > 0:
-        return bivector | no
+    biv = meet(line, plane)
+    abs_biv = abs(biv)
+    if abs_biv > 0.000001:
+        if (biv|niono)[0] > 0:
+            return ((biv ^ no) | niono) / abs(biv)
+        else:
+            return -((biv ^ no) | niono) / abs(biv)
     else:
         return None
 

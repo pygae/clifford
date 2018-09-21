@@ -127,6 +127,8 @@ class GAScene():
     def add_object(self, mv, mv_type='interp', color='rgb(0,0,0)'):
         if mv_type == 'line':
             self.add_line(mv, color)
+        elif mv_type == 'euc_point':
+            self.add_euc_point(mv, color)
         elif mv_type == 'point_pair':
             self.add_point_pair(mv, color)
         elif mv_type == 'circle':
