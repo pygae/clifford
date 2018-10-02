@@ -85,10 +85,11 @@ def get_mult_function(sparse_mult, n_dims, gradeList, grades_a=None, grades_b=No
     '''
     Returns a function that implements the mult_table on two input multivectors
     '''
-    non_zero_indices =  np.transpose(np.array(list(sparse_mult.keys())))
+    non_zero_indices = np.transpose(np.array(list(sparse_mult.keys())))
     k_list = non_zero_indices[0]
     l_list = non_zero_indices[1]
     m_list = non_zero_indices[2]
+    #mult_table_vals = np.fromiter(sparse_mult.values(), dtype=np.float64)
     mult_table_vals = np.array([sparse_mult[k, l, m] for k, l, m in np.transpose(non_zero_indices)], dtype=int)
 
     if filter_mask is not None:
@@ -150,6 +151,42 @@ def get_mult_function(sparse_mult, n_dims, gradeList, grades_a=None, grades_b=No
     return mv_mult
 
 
+@numba.njit
+def gmt_element(bitmap_a, bitmap_b, sig_array, bitmap_to_linear_mapping):
+    """
+    Element of the geometric multiplication table given blades a, b.
+    The implementation used here is described in chapter 19 of
+    Leo Dorst's book, Geometric Algebra For Computer Science
+    """
+    output_sign = canonical_reordering_sign(bitmap_a, bitmap_b, sig_array)
+    output_bitmap = bitmap_a^bitmap_b
+    idx = bitmap_to_linear_mapping[output_bitmap]
+    return idx, output_sign
+
+
+@numba.njit
+def imt_check(grade_list_idx, grade_list_i, grade_list_j):
+    """
+    A check used in imt table generation
+    """
+    return ((grade_list_idx == abs(grade_list_i - grade_list_j)) and (grade_list_i != 0) and (grade_list_j != 0))
+
+
+@numba.njit
+def omt_check(grade_list_idx, grade_list_i, grade_list_j):
+    """
+    A check used in omt table generation
+    """
+    return grade_list_idx == (grade_list_i + grade_list_j)
+
+
+@numba.njit
+def lcmt_check(grade_list_idx, grade_list_i, grade_list_j):
+    """
+    A check used in lcmt table generation
+    """
+    return grade_list_idx == (grade_list_j - grade_list_i)
+
 
 @numba.jit
 def grade_obj_func(objin_val, gradeList, threshold):
@@ -191,6 +228,17 @@ def generate_blade_tup_map(bladeTupList):
     for ind,blade in enumerate(bladeTupList):
         blade_map[blade] = ind
     return blade_map
+
+
+def generate_bitmap_to_linear_index_map(bladeTupList, firstIdx):
+    """
+    Generates a mapping from the bitmap representation to
+    the linear index
+    """
+    bitmap_map = np.zeros(len(bladeTupList), dtype=int)
+    for ind, blade in enumerate(bladeTupList):
+        bitmap_map[compute_bitmap_representation(blade, firstIdx)] = ind
+    return bitmap_map
 
 
 @numba.njit
@@ -491,25 +539,14 @@ class Layout(object):
         except (ValueError, TypeError):
             raise ValueError("invalid bladeTupList; must be a list of tuples")
 
-
-    def _gmtElement(self, a, b):
-        """
-        Element of the geometric multiplication table given blades a, b.
-        The implementation used here is described in chapter 19 of
-        Leo Dorst's book, Geometric Algebra For Computer Science
-        """
-        bitmap_a = compute_bitmap_representation(a, self.firstIdx)
-        bitmap_b = compute_bitmap_representation(b, self.firstIdx)
-        output_sign = canonical_reordering_sign(bitmap_a, bitmap_b, np.array(self.sig))
-        output_bitmap = bitmap_a^bitmap_b
-        newBlade = compute_blade_representation(output_bitmap, self.firstIdx)
-        idx = self.bladeTupMap[newBlade]
-        return idx, output_sign
-
     def _genTables(self):
         "Generate the multiplication tables."
 
         self.bladeTupMap = generate_blade_tup_map(self.bladeTupList)
+        self.bitmap_to_linear_map = generate_bitmap_to_linear_index_map(self.bladeTupList, self.firstIdx)
+        self.linear_map_to_bitmap = np.zeros(len(self.bladeTupMap), dtype=int)
+        for bitmap, linear in enumerate(self.bitmap_to_linear_map):
+            self.linear_map_to_bitmap[linear] = int(bitmap)
 
         # sparse geometric multiplication table
         gmt_nzs = {}
@@ -517,36 +554,30 @@ class Layout(object):
         omt_nzs = {}
         lcmt_nzs = {}
 
+
         for i in range(self.gaDims):
             grade_list_i = self.gradeList[i]
+            blade_bitmap_i = int(self.linear_map_to_bitmap[i])
             blade_tup_list_i = list(self.bladeTupList[i])
             for j in range(self.gaDims):
                 grade_list_j = self.gradeList[j]
+                blade_bitmap_j = int(self.linear_map_to_bitmap[j])
 
-                v, mul = self._gmtElement(
-                        blade_tup_list_i, list(self.bladeTupList[j]))
+                v, mul = gmt_element(blade_bitmap_i, blade_bitmap_j, self.sig, self.bitmap_to_linear_map)
 
                 gmt_nzs[tuple([i,v,j])] = mul
-
                 grade_list_idx = self.gradeList[v]
 
-                if (
-                        grade_list_idx == abs(
-                    grade_list_i - grade_list_j) and
-                        grade_list_i != 0 and grade_list_j != 0):
-
+                if imt_check(grade_list_idx, grade_list_i, grade_list_j):
                     # A_r . B_s = <A_r B_s>_|r-s|
                     # if r,s != 0
                     imt_nzs[tuple([i,v,j])] = mul
 
-                if grade_list_idx == (
-                        grade_list_i + grade_list_j):
-
+                if omt_check(grade_list_idx, grade_list_i, grade_list_j):
                     # A_r ^ B_s = <A_r B_s>_|r+s|
                     omt_nzs[tuple([i,v,j])] = mul
 
-                if grade_list_idx == (
-                        grade_list_j - grade_list_i):
+                if lcmt_check(grade_list_idx, grade_list_i, grade_list_j):
                     # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
                     lcmt_nzs[tuple([i,v,j])] = mul
 
@@ -561,6 +592,7 @@ class Layout(object):
         self.imt = imt_nzs
         self.omt = omt_nzs
         self.lcmt = lcmt_nzs
+
 
     def MultiVector(self,*args,**kw):
         '''
