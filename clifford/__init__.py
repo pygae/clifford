@@ -130,22 +130,22 @@ def get_mult_function(k_list, l_list, m_list, mult_table_vals, n_dims, gradeList
     Returns a function that implements the mult_table on two input multivectors
     '''
     if product_mask is None:
-        k_list_copy = k_list.copy()
-        l_list_copy = l_list.copy()
-        m_list_copy = m_list.copy()
-        mult_table_vals_copy = mult_table_vals.copy()
+        k_list_copy = k_list
+        l_list_copy = l_list
+        m_list_copy = m_list
+        mult_table_vals_copy = mult_table_vals
     else:
-        k_list_copy = k_list[product_mask].copy()
-        l_list_copy = l_list[product_mask].copy()
-        m_list_copy = m_list[product_mask].copy()
-        mult_table_vals_copy = mult_table_vals[product_mask].copy()
+        k_list_copy = k_list[product_mask]
+        l_list_copy = l_list[product_mask]
+        m_list_copy = m_list[product_mask]
+        mult_table_vals_copy = mult_table_vals[product_mask]
 
     if filter_mask is not None:
         # We can pass the sparse filter mask directly
-        k_list_copy = k_list_copy[filter_mask].copy()
-        l_list_copy = l_list_copy[filter_mask].copy()
-        m_list_copy = m_list_copy[filter_mask].copy()
-        mult_table_vals_copy  = mult_table_vals_copy[filter_mask].copy()
+        k_list_copy = k_list_copy[filter_mask]
+        l_list_copy = l_list_copy[filter_mask]
+        m_list_copy = m_list_copy[filter_mask]
+        mult_table_vals_copy = mult_table_vals_copy[filter_mask]
 
         @numba.njit
         def mv_mult(value, other_value):
