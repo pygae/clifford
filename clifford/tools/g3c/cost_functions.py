@@ -1,7 +1,7 @@
 
 import numba
 import numpy as np
-from clifford import get_mult_function, grade_obj
+from clifford import grade_obj
 from clifford.g3c import *
 import clifford as cf
 from . import rotor_between_objects, rotor_between_lines, val_normalised
@@ -14,8 +14,8 @@ e5_val = e5.value
 ninf_val = einf.value
 
 
-sparse_cost_imt = get_mult_function(layout.imt, layout.gaDims, layout.gradeList, grades_a=[0, 2, 4], grades_b=[1])
-sparse_cost_gmt = get_mult_function(layout.gmt, layout.gaDims, layout.gradeList, grades_a=[0, 2, 4], grades_b=[0, 2, 4])
+sparse_cost_imt = layout.imt_func_generator(grades_a=[0, 2, 4], grades_b=[1])
+sparse_cost_gmt = layout.gmt_func_generator(grades_a=[0, 2, 4], grades_b=[0, 2, 4])
 
 
 @numba.njit

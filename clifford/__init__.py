@@ -81,54 +81,103 @@ def get_adjoint_function(gradeList):
     return adjoint_func
 
 
-def get_mult_function(sparse_mult, n_dims, gradeList, grades_a=None, grades_b=None, filter_mask=None):
+@numba.njit(parallel=True, nogil=True)
+def construct_tables(gradeList, linear_map_to_bitmap,
+                 bitmap_to_linear_map, signature):
+
+    array_length = int(len(gradeList) * len(gradeList))
+    k_list = np.zeros(array_length, dtype=np.uint64)
+    l_list = np.zeros(array_length, dtype=np.uint64)
+    imt_prod_mask = np.zeros(array_length, dtype=np.uint64)
+    omt_prod_mask = np.zeros(array_length, dtype=np.uint64)
+    lcmt_prod_mask = np.zeros(array_length, dtype=np.uint64)
+    m_list = np.zeros(array_length, dtype=np.uint64)
+    mult_table_vals = np.zeros(array_length, dtype=np.float64)
+
+    for i, grade_list_i in enumerate(gradeList):
+        blade_bitmap_i = linear_map_to_bitmap[i]
+
+        for j, grade_list_j in enumerate(gradeList):
+            blade_bitmap_j = linear_map_to_bitmap[j]
+            v, mul = gmt_element(blade_bitmap_i, blade_bitmap_j, signature, bitmap_to_linear_map)
+
+            list_ind = i * len(gradeList) + j
+            k_list[list_ind] = i
+            l_list[list_ind] = v
+            m_list[list_ind] = j
+
+            mult_table_vals[list_ind] = mul
+            grade_list_idx = gradeList[v]
+
+            if imt_check(grade_list_idx, grade_list_i, grade_list_j):
+                # A_r . B_s = <A_r B_s>_|r-s|
+                # if r,s != 0
+                imt_prod_mask[list_ind] = list_ind
+
+            if omt_check(grade_list_idx, grade_list_i, grade_list_j):
+                # A_r ^ B_s = <A_r B_s>_|r+s|
+                omt_prod_mask[list_ind] = list_ind
+
+            if lcmt_check(grade_list_idx, grade_list_i, grade_list_j):
+                # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
+                lcmt_prod_mask[list_ind] = list_ind
+    return k_list, l_list, m_list, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask
+
+
+def get_mult_function(k_list, l_list, m_list, mult_table_vals, n_dims, gradeList, product_mask=None,
+                      grades_a=None, grades_b=None, filter_mask=None):
     '''
     Returns a function that implements the mult_table on two input multivectors
     '''
-    non_zero_indices =  np.transpose(np.array(list(sparse_mult.keys())))
-    k_list = non_zero_indices[0]
-    l_list = non_zero_indices[1]
-    m_list = non_zero_indices[2]
-    mult_table_vals = np.array([sparse_mult[k, l, m] for k, l, m in np.transpose(non_zero_indices)], dtype=int)
+    if product_mask is None:
+        k_list_copy = k_list.copy()
+        l_list_copy = l_list.copy()
+        m_list_copy = m_list.copy()
+        mult_table_vals_copy = mult_table_vals.copy()
+    else:
+        k_list_copy = k_list[product_mask].copy()
+        l_list_copy = l_list[product_mask].copy()
+        m_list_copy = m_list[product_mask].copy()
+        mult_table_vals_copy = mult_table_vals[product_mask].copy()
 
     if filter_mask is not None:
         # We can pass the sparse filter mask directly
-        k_list = k_list[filter_mask]
-        l_list = l_list[filter_mask]
-        m_list = m_list[filter_mask]
-        mult_table_vals = mult_table_vals[filter_mask]
+        k_list_copy = k_list_copy[filter_mask].copy()
+        l_list_copy = l_list_copy[filter_mask].copy()
+        m_list_copy = m_list_copy[filter_mask].copy()
+        mult_table_vals_copy  = mult_table_vals_copy[filter_mask].copy()
 
         @numba.njit
         def mv_mult(value, other_value):
             output = np.zeros(n_dims)
-            for ind, k in enumerate(k_list):
-                m = m_list[ind]
-                l = l_list[ind]
-                output[l] += value[k] * mult_table_vals[ind] * other_value[m]
+            for ind, k in enumerate(k_list_copy):
+                m = m_list_copy[ind]
+                l = l_list_copy[ind]
+                output[l] += value[k] * mult_table_vals_copy[ind] * other_value[m]
             return output
 
         return mv_mult
 
     elif ((grades_a is not None) and (grades_b is not None)):
         # We can also specify sparseness by grade
-        filter_mask = np.zeros(len(k_list), dtype=bool)
+        filter_mask = np.zeros(len(k_list_copy), dtype=bool)
         for i in range(len(filter_mask)):
-            if gradeList[k_list[i]] in grades_a:
-                if gradeList[m_list[i]] in grades_b:
+            if gradeList[k_list_copy[i]] in grades_a:
+                if gradeList[m_list_copy[i]] in grades_b:
                     filter_mask[i] = 1
 
-        k_list = k_list[filter_mask]
-        l_list = l_list[filter_mask]
-        m_list = m_list[filter_mask]
-        mult_table_vals = mult_table_vals[filter_mask]
+        k_list_copy = k_list_copy[filter_mask]
+        l_list_copy = l_list_copy[filter_mask]
+        m_list_copy = m_list_copy[filter_mask]
+        mult_table_vals_copy = mult_table_vals_copy[filter_mask]
 
         @numba.njit
         def mv_mult(value, other_value):
             output = np.zeros(n_dims)
-            for ind, k in enumerate(k_list):
-                m = m_list[ind]
-                l = l_list[ind]
-                output[l] += value[k] * mult_table_vals[ind] * other_value[m]
+            for ind, k in enumerate(k_list_copy):
+                m = m_list_copy[ind]
+                l = l_list_copy[ind]
+                output[l] += value[k] * mult_table_vals_copy[ind] * other_value[m]
             return output
 
         return mv_mult
@@ -137,18 +186,54 @@ def get_mult_function(sparse_mult, n_dims, gradeList, grades_a=None, grades_b=No
     @numba.njit
     def mv_mult(value, other_value):
         output = np.zeros(n_dims)
-        for ind, k in enumerate(k_list):
+        for ind, k in enumerate(k_list_copy):
             v_val = value[k]
             if v_val != 0.0:
-                m = m_list[ind]
+                m = m_list_copy[ind]
                 ov_val = other_value[m]
                 if ov_val != 0.0:
-                    l = l_list[ind]
-                    output[l] += v_val * mult_table_vals[ind] * ov_val
+                    l = l_list_copy[ind]
+                    output[l] += v_val * mult_table_vals_copy[ind] * ov_val
         return output
 
     return mv_mult
 
+
+@numba.njit
+def gmt_element(bitmap_a, bitmap_b, sig_array, bitmap_to_linear_mapping):
+    """
+    Element of the geometric multiplication table given blades a, b.
+    The implementation used here is described in chapter 19 of
+    Leo Dorst's book, Geometric Algebra For Computer Science
+    """
+    output_sign = canonical_reordering_sign(bitmap_a, bitmap_b, sig_array)
+    output_bitmap = bitmap_a^bitmap_b
+    idx = bitmap_to_linear_mapping[output_bitmap]
+    return idx, output_sign
+
+
+@numba.njit
+def imt_check(grade_list_idx, grade_list_i, grade_list_j):
+    """
+    A check used in imt table generation
+    """
+    return ((grade_list_idx == abs(grade_list_i - grade_list_j)) and (grade_list_i != 0) and (grade_list_j != 0))
+
+
+@numba.njit
+def omt_check(grade_list_idx, grade_list_i, grade_list_j):
+    """
+    A check used in omt table generation
+    """
+    return grade_list_idx == (grade_list_i + grade_list_j)
+
+
+@numba.njit
+def lcmt_check(grade_list_idx, grade_list_i, grade_list_j):
+    """
+    A check used in lcmt table generation
+    """
+    return grade_list_idx == (grade_list_j - grade_list_i)
 
 
 @numba.jit
@@ -191,6 +276,17 @@ def generate_blade_tup_map(bladeTupList):
     for ind,blade in enumerate(bladeTupList):
         blade_map[blade] = ind
     return blade_map
+
+
+def generate_bitmap_to_linear_index_map(bladeTupList, firstIdx):
+    """
+    Generates a mapping from the bitmap representation to
+    the linear index
+    """
+    bitmap_map = np.zeros(len(bladeTupList), dtype=int)
+    for ind, blade in enumerate(bladeTupList):
+        bitmap_map[compute_bitmap_representation(blade, firstIdx)] = ind
+    return bitmap_map
 
 
 @numba.njit
@@ -491,76 +587,48 @@ class Layout(object):
         except (ValueError, TypeError):
             raise ValueError("invalid bladeTupList; must be a list of tuples")
 
-
-    def _gmtElement(self, a, b):
-        """
-        Element of the geometric multiplication table given blades a, b.
-        The implementation used here is described in chapter 19 of
-        Leo Dorst's book, Geometric Algebra For Computer Science
-        """
-        bitmap_a = compute_bitmap_representation(a, self.firstIdx)
-        bitmap_b = compute_bitmap_representation(b, self.firstIdx)
-        output_sign = canonical_reordering_sign(bitmap_a, bitmap_b, np.array(self.sig))
-        output_bitmap = bitmap_a^bitmap_b
-        newBlade = compute_blade_representation(output_bitmap, self.firstIdx)
-        idx = self.bladeTupMap[newBlade]
-        return idx, output_sign
-
     def _genTables(self):
         "Generate the multiplication tables."
 
         self.bladeTupMap = generate_blade_tup_map(self.bladeTupList)
+        self.bitmap_to_linear_map = generate_bitmap_to_linear_index_map(self.bladeTupList, self.firstIdx)
+        self.linear_map_to_bitmap = np.zeros(len(self.bladeTupMap), dtype=int)
+        for bitmap, linear in enumerate(self.bitmap_to_linear_map):
+            self.linear_map_to_bitmap[linear] = int(bitmap)
 
-        # sparse geometric multiplication table
-        gmt_nzs = {}
-        imt_nzs = {}
-        omt_nzs = {}
-        lcmt_nzs = {}
-
-        for i in range(self.gaDims):
-            grade_list_i = self.gradeList[i]
-            blade_tup_list_i = list(self.bladeTupList[i])
-            for j in range(self.gaDims):
-                grade_list_j = self.gradeList[j]
-
-                v, mul = self._gmtElement(
-                        blade_tup_list_i, list(self.bladeTupList[j]))
-
-                gmt_nzs[tuple([i,v,j])] = mul
-
-                grade_list_idx = self.gradeList[v]
-
-                if (
-                        grade_list_idx == abs(
-                    grade_list_i - grade_list_j) and
-                        grade_list_i != 0 and grade_list_j != 0):
-
-                    # A_r . B_s = <A_r B_s>_|r-s|
-                    # if r,s != 0
-                    imt_nzs[tuple([i,v,j])] = mul
-
-                if grade_list_idx == (
-                        grade_list_i + grade_list_j):
-
-                    # A_r ^ B_s = <A_r B_s>_|r+s|
-                    omt_nzs[tuple([i,v,j])] = mul
-
-                if grade_list_idx == (
-                        grade_list_j - grade_list_i):
-                    # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
-                    lcmt_nzs[tuple([i,v,j])] = mul
+        k_list, l_list, m_list, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask = construct_tables(np.array(self.gradeList),
+                       self.linear_map_to_bitmap,
+                       self.bitmap_to_linear_map,
+                       np.array(self.sig))
 
         # This generates the functions that will perform the various products
-        self.gmt_func = get_mult_function(gmt_nzs,self.gaDims,self.gradeList)
-        self.imt_func = get_mult_function(imt_nzs,self.gaDims,self.gradeList)
-        self.omt_func = get_mult_function(omt_nzs,self.gaDims,self.gradeList)
-        self.lcmt_func = get_mult_function(lcmt_nzs,self.gaDims,self.gradeList)
+        self.gmt_func = get_mult_function(k_list,l_list,m_list,mult_table_vals,self.gaDims,self.gradeList)
+        self.imt_func = get_mult_function(k_list,l_list,m_list,mult_table_vals,self.gaDims,self.gradeList,product_mask=imt_prod_mask)
+        self.omt_func = get_mult_function(k_list,l_list,m_list,mult_table_vals,self.gaDims,self.gradeList,product_mask=omt_prod_mask)
+        self.lcmt_func = get_mult_function(k_list,l_list,m_list,mult_table_vals,self.gaDims,self.gradeList,product_mask=lcmt_prod_mask)
+        self.k_list = k_list
+        self.l_list = l_list
+        self.m_list = m_list
+        self.mult_table_vals = mult_table_vals
+        self.imt_prod_mask = imt_prod_mask
+        self.omt_prod_mask = omt_prod_mask
+        self.lcmt_prod_mask = lcmt_prod_mask
 
-        # We store the sparse objects in the layout object
-        self.gmt = gmt_nzs
-        self.imt = imt_nzs
-        self.omt = omt_nzs
-        self.lcmt = lcmt_nzs
+    def gmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
+        return get_mult_function(self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
+                          grades_a = grades_a, grades_b = grades_b, filter_mask = filter_mask)
+
+    def imt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
+        return get_mult_function(self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
+                          grades_a = grades_a, grades_b = grades_b, filter_mask = filter_mask, product_mask=self.imt_prod_mask)
+
+    def omt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
+        return get_mult_function(self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
+                          grades_a = grades_a, grades_b = grades_b, filter_mask = filter_mask, product_mask=self.omt_prod_mask)
+
+    def lcmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
+        return get_mult_function(self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
+                          grades_a = grades_a, grades_b = grades_b, filter_mask = filter_mask, product_mask=self.lcmt_prod_mask)
 
     def MultiVector(self,*args,**kw):
         '''
@@ -1530,12 +1598,8 @@ class MultiVector(object):
 
         intermed = np.zeros((self.layout.gaDims,self.layout.gaDims))
 
-        for i in range(self.layout.gaDims):
-            for j in range(self.layout.gaDims):
-                for k in range(self.layout.gaDims):
-                    ind = tuple([i, j, k])
-                    if ind in self.layout.gmt.keys():
-                        intermed[i, j] += self.layout.gmt[ind] * self.value[k]
+        for test_ind, [i,j,k] in enumerate(zip(self.layout.k_list,self.layout.l_list,self.layout.m_list)):
+            intermed[i, j] += self.layout.mult_table_vals[test_ind] * self.value[k]
 
         intermed = np.transpose(intermed)
 

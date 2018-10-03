@@ -41,7 +41,7 @@ class InitialisationSpeedTests(unittest.TestCase):
                 for j,grades_b in enumerate(grades_possibilities):
                     sparse_mv_b = sum([b(k) for k in grades_b])
                     # Compute results
-                    gp = get_mult_function(layout.gmt,layout.gaDims,layout.gradeList,grades_a=grades_a,grades_b=grades_b)
+                    gp = layout.gmt_func_generator(grades_a=grades_a,grades_b=grades_b)
                     result_sparse = gp(sparse_mv_a.value,sparse_mv_b.value)
                     result_dense = (sparse_mv_a*sparse_mv_b).value
                     # Check they are the same
