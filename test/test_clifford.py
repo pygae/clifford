@@ -150,6 +150,10 @@ class BasicAlgebraTests(unittest.TestCase):
         e12 = layout.blades['e12']
         np.testing.assert_almost_equal(-e12.value, (e2 ^ e1).value)
 
+        np.testing.assert_almost_equal(0, (e1 ^ e1).value)
+        np.testing.assert_almost_equal(0, (e2 ^ e2).value)
+        np.testing.assert_almost_equal(0, (e3 ^ e3).value)
+
     def test_grade_obj(self):
         algebras = [Cl(i) for i in [3, 4]] + [conformalize(Cl(3)[0])]
         for alg in algebras:

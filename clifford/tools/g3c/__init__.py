@@ -134,7 +134,6 @@ from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
     random_rotation_rotor, generate_rotation_rotor, val_random_euc_mv
 from clifford.g3c import *
 import clifford as cf
-from clifford import get_mult_function
 import warnings
 
 # Allow syntactic alternatives to the standard included in the clifford package
@@ -894,10 +893,7 @@ def val_rotor_between_objects_explicit(X1, X2):
         return temp_1/(np.sqrt(abs(K_val[0])))
 
 
-sparse_line_gmt = get_mult_function(
-    layout.gmt, layout.gaDims, layout.gradeList, grades_a=[3], grades_b=[3])
-
-
+sparse_line_gmt = layout.gmt_func_generator(grades_a=[3], grades_b=[3])
 
 
 @numba.njit
@@ -1200,8 +1196,8 @@ def distance_polar_line_to_euc_point_2d(rho, theta, x, y):
     return val_distance_point_to_line(point, line)
 
 
-dual_gmt_func = get_mult_function(layout.gmt, layout.gaDims, layout.gradeList, grades_a=[
-                                  5], grades_b=[0, 1, 2, 3, 4, 5])
+dual_gmt_func = layout.gmt_func_generator(grades_a=[5], grades_b=[0, 1, 2, 3, 4, 5])
+
 
 @numba.njit
 def dual_func(a_val):
