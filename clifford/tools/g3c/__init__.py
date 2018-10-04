@@ -300,8 +300,11 @@ def get_circle_in_euc(circle):
     inPlaneDual = circle*Ic
     mag = float((inPlaneDual|ninf)[0])
     inPlaneDual = -inPlaneDual/mag
-    radius = math.sqrt((inPlaneDual*inPlaneDual)[0])
-    #GAcentre = down(circle*ninf*circle)
+    radius_squared = (inPlaneDual*inPlaneDual)[0]
+    radius = math.sqrt(abs(radius_squared))
+    if radius_squared < 0:
+        # We have an imaginary circle, return it as a negative radius as our signal
+        radius = -radius
     GAcentre = down(inPlaneDual*(1+0.5*inPlaneDual*ninf))
     return [GAcentre,GAnormal,radius]
 
