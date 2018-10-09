@@ -6,7 +6,7 @@ import unittest
 from clifford.g3c import *
 from clifford.tools.g3c import *
 from clifford.tools.g3c.rotor_parameterisation import ga_log, ga_exp, general_exp, general_logarithm,\
-    interpolate_TRS_rotors
+    interpolate_rotors
 from clifford.tools.g3c.rotor_estimation import *
 from clifford.tools.g3c.object_clustering import *
 from clifford.tools.g3c.scene_simplification import *
@@ -33,19 +33,15 @@ class TestGeneralLogarithm(unittest.TestCase):
 
     def test_general_logarithm_rotation(self):
         # Check we can reverse rotations
-        for i in range(5):
-            phi = 2 * (np.random.rand() - 1) * np.pi
-            m = random_euc_mv().normal()
-            n = random_euc_mv().normal()
-            biv = - (m ^ n).normal() * phi /2
-            R = general_exp(biv).normal()
+        for i in range(50):
+            R = random_rotation_rotor()
             biv_2 = general_logarithm(R)
             biv_3 = ga_log(R)
-            np.testing.assert_almost_equal(biv.value, biv_2.value, 3)
+            np.testing.assert_almost_equal(biv_2.value, biv_3.value, 3)
 
     def test_general_logarithm_translation(self):
         # Check we can reverse translation
-        for i in range(5):
+        for i in range(50):
             t = random_euc_mv()
             biv = ninf * t /2
             R = general_exp(biv).normal()
@@ -123,6 +119,21 @@ class TestGeneralLogarithm(unittest.TestCase):
             C2 = (V * C1 * ~V).normal()
             C3 = (V_rebuilt * C1 * ~V_rebuilt).normal()
             np.testing.assert_almost_equal(C2.value, C3.value)
+
+    def test_general_logarithm_conformal(self):
+
+        object_generators = [random_point_pair, random_line, random_circle, random_plane]
+        # object_generators = [random_sphere]
+
+        for obj_gen in object_generators:
+            print(obj_gen.__name__)
+            for i in range(10000):
+                X = obj_gen()
+                Y = obj_gen()
+                R = rotor_between_objects(X, Y)
+                biv = general_logarithm(R)
+                R_recon = general_exp(biv).normal()
+                np.testing.assert_almost_equal(R.value, R_recon, 3)
 
 
 class ConformalArrayTests(unittest.TestCase):
