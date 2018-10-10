@@ -44,12 +44,10 @@ def generate_mult_function_batch_compile(k_list, l_list, m_list, mult_table_vals
     else:
         totalfuncstring = '@numba.njit\n'
     totalfuncstring += 'def ' + product_name + '(value, other_value, output):\n'
-    #totalfuncstring += '    output = np.zeros(' + str(n_dims) + ')\n'
     for i in range(n_dims):
         total_string += get_output_func_f_string(i) + '\n\n'
         f_name = product_name + '_o' + str(i)
         totalfuncstring += '    output[' + str(i) + '] = ' + f_name + '(value,other_value)\n'
-    #totalfuncstring += '    return output\n\n'
     total_string += totalfuncstring
     return total_string
 
@@ -83,3 +81,7 @@ def write_algebra(file_name, layout, cuda=False):
                                           layout.gaDims, 'imt_func', file_obj,
                                           product_mask=layout.imt_prod_mask, cuda=cuda)
 
+if __name__ == '__main__':
+    from clifford.g3c import *
+    file_name = 'tools/g3c/cuda_products.py'
+    write_algebra(file_name, layout, cuda=True)
