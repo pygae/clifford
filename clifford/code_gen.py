@@ -1,5 +1,5 @@
+from __future__ import print_function
 import numpy as np
-
 
 def generate_mult_function_batch_compile(k_list, l_list, m_list, mult_table_vals, n_dims,
                                          product_name, product_mask=None, cuda=False):
