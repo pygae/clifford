@@ -4,7 +4,7 @@ Issues
  * Currently, algebras over 6 dimensions are very slow. this is because
    this module was written for *pedagogical* purposes. However, because the
    syntax for this module is so attractive, we plan to fix the
-   perfomance problems,  in the future...
+   performance problems,  in the future...
 
  * Due to Python's order of operations, the bit operators ^ << follow
    the normal arithmetic operators + - * /, so
@@ -124,7 +124,7 @@ Changes 0.5-0.6
  * fixed bug in laInv()
  * fixed the massive confusion about how dot() works
  * added left-contraction
- * fixed embarassing bug in gmt generation
+ * fixed embarrassing bug in gmt generation
  * added normal() and anticommutator() methods
  * fixed dumb bug in elements() that limited it to 4 dimensions
 
