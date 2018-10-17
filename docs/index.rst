@@ -52,7 +52,7 @@ Docs
 Links
 --------
 
-* Symbolic geometric alebra module for python:  https://github.com/brombo/galgebra
+* Symbolic geometric algebra module for python:  https://github.com/brombo/galgebra
 
 * Cambridge GA group:   http://www.mrao.cam.ac.uk/~clifford
 

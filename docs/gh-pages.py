@@ -10,7 +10,7 @@ If no tag is given, the major version of 'git describe' is used.  If given,
 that is how the resulting directory will be named.
 
 In practice, you should use either actual clean tags from a current build or
-something like 'current' as a stable URL for the mest current version of the """
+something like 'current' as a stable URL for the most current version of the """
 
 #-----------------------------------------------------------------------------
 # Imports
