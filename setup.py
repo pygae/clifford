@@ -23,6 +23,7 @@ setup(name='clifford',
 		'scipy',
 		'numba',
 		'future',
+		'h5py'
 		],
 	package_dir={'clifford':'clifford'},
 	
