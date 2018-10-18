@@ -53,6 +53,9 @@ import numpy as np
 from numpy import linalg, array,zeros
 import numba
 
+from clifford.gafileio import write_ga_file, read_ga_file
+
+
 __version__ = '1.0.1'
 
 # The blade finding regex for parsing strings of mvs
@@ -474,6 +477,8 @@ class Layout(object):
         self.gaDims = len(self.bladeTupList)
         self.gradeList = list(map(len, self.bladeTupList))
 
+        self._metric = None
+
         # Python 2 and 3 compatibility fix
         names_is_string = False
         names_is_unicode = False
@@ -506,13 +511,16 @@ class Layout(object):
         self._genTables()
         self.adjoint_func = get_adjoint_function(self.gradeList)
 
+    @property
+    def basis_names(self):
+        return np.array(list(sorted(self.basis_vectors.keys())), dtype=bytes)
+
     def dict_to_multivector(self, dict_in):
         """ Takes a dictionary of coefficient values and converts it into a MultiVector object """
         constructed_values = np.zeros(self.gaDims)
         for k in list(dict_in.keys()):
           constructed_values[int(k)] = dict_in[k]
         return MultiVector(self, constructed_values)
-
 
     def __repr__(self):
         s = ("Layout(%r, %r, firstIdx=%r, names=%r)" % (
@@ -637,6 +645,28 @@ class Layout(object):
         convenience func to Multivector(layout)
         '''
         return MultiVector(layout=self, *args, **kw)
+
+    def load_ga_file(self, filename):
+        """
+        Takes a ga file
+        Checks it is the same signature as this layout
+        Loads the data into an MVArray
+        """
+        data_array, metric, basis_names, support = read_ga_file(filename)
+        if not np.allclose(np.diagonal(metric), self.sig):
+            raise ValueError('The signature of the ga file does not match this layout')
+        return MVArray.from_value_array(self, data_array)
+
+    @property
+    def metric(self):
+        if self._metric is None:
+            self._metric = np.zeros((len(self.basis_vectors), len(self.basis_vectors)))
+            for i, v in enumerate(self.basis_vectors_lst):
+                for j, v2 in enumerate(self.basis_vectors_lst):
+                    self._metric[i, j] = (v | v2)[0]
+            return self._metric.copy()
+        else:
+            return self._metric.copy()
     
     @property
     def scalar(self):
@@ -1896,6 +1926,29 @@ class MVArray(np.ndarray):
         if obj is None:
             return
 
+    @property
+    def value(self):
+        """
+        Return an np array of the values of multivectors
+        """
+        return np.array([mv.value for mv in self])
+
+    @staticmethod
+    def from_value_array(layout, value_array):
+        """
+        Constructs an array of mvs from a value array
+        """
+        v_new_mv = np.vectorize(lambda v: MultiVector(layout, v), otypes=[MVArray], signature='(n)->()')
+        return MVArray(v_new_mv(value_array))
+
+    def save(self, filename, compression=True, transpose=False,
+                        sparse=False, support=False, compression_opts=1):
+        """
+        Saves the array to a ga file
+        """
+        write_ga_file(filename, self.value, self[0].layout.metric, self[0].layout.basis_names,
+                      compression=compression, transpose=transpose,
+                      sparse=sparse, support=support, compression_opts=compression_opts)
 
 class Frame(MVArray):
     '''
