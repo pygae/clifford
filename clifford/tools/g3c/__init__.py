@@ -204,6 +204,107 @@ def interpret_multivector_as_object(mv):
     else:
         return -1
 
+
+@numba.njit
+def val_get_line_intersection(L3_val,Ldd_val):
+    """
+    Gets the point of intersection of two orthogonal lines that meet
+    Xdd = Ldd*no*Ldd + no
+    Xddd = L3*Xdd*L3
+    Pd = 0.5*(Xdd+Xddd)
+    P = -(Pd*ninf*Pd)(1)/(2*(Pd|einf)**2)[0]
+    """
+    Xdd = gmt_func(gmt_func(Ldd_val,no_val),Ldd_val) + no_val
+    Xddd = gmt_func(gmt_func(L3_val,Xdd),L3_val)
+    Pd = 0.5*(Xdd+Xddd)
+    P = -gmt_func(gmt_func(Pd,ninf_val),Pd)
+    imt_value = imt_func(Pd,ninf_val)
+    P_denominator = 2*(gmt_func(imt_value,imt_value))[0]
+    return project_val(P/P_denominator,1)
+
+
+def get_line_intersection(L3,Ldd):
+    """
+    Gets the point of intersection of two orthogonal lines that meet
+    Xdd = Ldd*no*Ldd + no
+    Xddd = L3*Xdd*L3
+    Pd = 0.5*(Xdd+Xddd)
+    P = -(Pd*ninf*Pd)(1)/(2*(Pd|einf)**2)[0]
+    """
+    return layout.MultiVector(value=val_get_line_intersection(L3.value,Ldd.value))
+
+
+@numba.njit
+def val_midpoint_between_lines(L1_val, L2_val):
+    """
+    Gets the point that is maximally close to both lines
+    Hadfield and Lasenby AGACSE2018
+    """
+    L3 = val_normalised(L1_val + L2_val)
+    Ldd = val_normalised(L1_val - L2_val)
+    S = val_normalised(gmt_func(I5_val,val_get_line_intersection(L3,Ldd)))
+    return val_normalise_n_minus_1(gmt_func(S,gmt_func(ninf_val,S)))
+
+
+def midpoint_between_lines(L1, L2):
+    """
+    Gets the point that is maximally close to both lines
+    Hadfield and Lasenby AGACSE2018
+    """
+    return layout.MultiVector(value=val_midpoint_between_lines(L1.value,L2.value))
+
+
+def midpoint_of_line_cluster(line_cluster):
+    """
+    Gets an approximate center point of a line cluster
+    Hadfield and Lasenby AGACSE2018
+    """
+    average_line = average_objects(line_cluster,check_grades=False)
+    val_point_track = np.zeros(32)
+    for L2 in line_cluster:
+        p = val_midpoint_between_lines(average_line.value, L2.value)
+        val_point_track += p
+    S = gmt_func(I5_val,val_point_track)
+    center_point = val_normalise_n_minus_1(project_val(gmt_func(S,gmt_func(ninf_val,S)),1))
+    return layout.MultiVector(value=center_point)
+
+
+@numba.njit(parallel=True)
+def val_midpoint_of_line_cluster(array_line_cluster):
+    """
+    Gets an approximate center point of a line cluster
+    Hadfield and Lasenby AGACSE2018
+    """
+    average_line = val_average_objects(array_line_cluster)
+    val_point_track = np.zeros(32)
+    for i in range(array_line_cluster.shape[0]):
+        p = val_midpoint_between_lines(average_line, array_line_cluster[i,:])
+        val_point_track += p
+    S = gmt_func(I5_val,val_point_track)
+    center_point = val_normalise_n_minus_1(project_val(gmt_func(S,gmt_func(ninf_val,S)),1))
+    return center_point
+
+
+@numba.njit
+def val_point_to_line_cluster_distance(point_val, line_cluster_array):
+    error_val = 0.0
+    for i in range(line_cluster_array.shape[0]):
+        l_val = line_cluster_array[i, :]
+        error_val -= imt_func(point_val, (gmt_func(gmt_func(l_val, point_val), l_val)))[0]
+    return error_val
+
+
+def midpoint_and_error_of_line_cluster(line_cluster):
+    """
+    Gets an approximate center point of a line cluster
+    as well as an estimate of the error
+    Hadfield and Lasenby AGACSE2018
+    """
+    line_cluster_array = np.array([l.value for l in line_cluster])
+    cp_val = val_midpoint_of_line_cluster(line_cluster_array)
+    return layout.MultiVector(value=cp_val), val_point_to_line_cluster_distance(cp_val, line_cluster_array)
+
+
 def get_circle_in_euc(circle):
     """ Extracts all the normal stuff for a circle """
     Ic = (circle^ninf).normal()
@@ -371,16 +472,23 @@ def intersect_line_and_plane_to_point(line, plane):
     else:
         return None
 
+@numba.njit
+def val_normalise_n_minus_1(mv_val):
+    """
+    Normalises a conformal point so that it has an inner product of -1 with einf
+    """
+    scale = imt_func(mv_val,ninf_val)[0]
+    if scale != 0.0:
+        return -mv_val/scale
+    else:
+        raise ZeroDivisionError('Multivector has 0 einf component')
+
 
 def normalise_n_minus_1(mv):
     """
     Normalises a conformal point so that it has an inner product of -1 with einf
     """
-    scale = (mv|ninf)[0]
-    if scale != 0.0:
-        return -mv/scale
-    else:
-        raise ZeroDivisionError('Multivector has 0 einf component')
+    return layout.MultiVector(value=val_normalise_n_minus_1(mv.value))
 
 
 def quaternion_and_vector_to_rotor(quaternion, vector):
@@ -645,7 +753,7 @@ def interp_objects_root(C1, C2, alpha):
     Return a valid object from the addition result C
     """
     C = (1 - alpha) * C1 + alpha*C2
-    C3 = (neg_twiddle_root(C)[0]).normal()
+    C3 = normalised(neg_twiddle_root(C)[0])
     if cf.grade_obj(C1, 0.00001) != cf.grade_obj(C3, 0.00001):
         raise ValueError('Created object is not same grade')
     return C3
@@ -661,7 +769,36 @@ def general_object_interpolation(object_alpha_array, object_list, new_alpha_arra
     f = interp1d(object_alpha_array, obj_array, kind=kind)
     new_value_array = np.transpose(f(new_alpha_array))
     new_conf_array = ConformalMVArray.from_value_array(new_value_array)
-    return [(neg_twiddle_root(C)[0]).normal() for C in new_conf_array]
+    return [normalised(neg_twiddle_root(C)[0]) for C in new_conf_array]
+
+
+@numba.njit
+def val_average_objects_with_weights(obj_array, weights_array):
+    """
+    Hadfield and Lasenby, Direct Linear Interpolation of Geometric Objects, AGACSE2018
+    Directly averages conformal objects
+    Return a valid object from the addition result C
+    """
+    C_val = np.zeros(32)
+    for i in range(obj_array.shape[0]):
+        C_val += obj_array[i, :]*weights_array[i]
+    C3 = val_normalised(neg_twiddle_root_val(C_val)[0, :])
+    return C3
+
+
+@numba.njit
+def val_average_objects(obj_array):
+    """
+    Hadfield and Lasenby, Direct Linear Interpolation of Geometric Objects, AGACSE2018
+    Directly averages conformal objects
+    Return a valid object from the addition result C
+    """
+    C_val = np.zeros(32)
+    for i in range(obj_array.shape[0]):
+        C_val += obj_array[i,:]
+    C_val = C_val / obj_array.shape[0]
+    C3 = val_normalised(neg_twiddle_root_val(C_val)[0, :])
+    return C3
 
 
 def average_objects(obj_list, weights=[], check_grades=True):
@@ -674,7 +811,7 @@ def average_objects(obj_list, weights=[], check_grades=True):
         C = sum([o * w for o, w in zip(obj_list, weights)])
     else:
         C = sum(obj_list) / len(obj_list)
-    C3 = (neg_twiddle_root(C)[0]).normal()
+    C3 = normalised(neg_twiddle_root(C)[0])
     if check_grades:
         if cf.grade_obj(obj_list[0], 0.00001) != cf.grade_obj(C3, 0.00001):
             raise ValueError('Created object is not same grade')
