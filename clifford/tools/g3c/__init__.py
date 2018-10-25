@@ -664,7 +664,7 @@ def general_object_interpolation(object_alpha_array, object_list, new_alpha_arra
     return [(neg_twiddle_root(C)[0]).normal() for C in new_conf_array]
 
 
-def average_objects(obj_list, weights=[]):
+def average_objects(obj_list, weights=[], check_grades=True):
     """
     Hadfield and Lasenby, Direct Linear Interpolation of Geometric Objects, AGACSE2018
     Directly averages conformal objects
@@ -675,8 +675,9 @@ def average_objects(obj_list, weights=[]):
     else:
         C = sum(obj_list) / len(obj_list)
     C3 = (neg_twiddle_root(C)[0]).normal()
-    if cf.grade_obj(obj_list[0], 0.00001) != cf.grade_obj(C3, 0.00001):
-        raise ValueError('Created object is not same grade')
+    if check_grades:
+        if cf.grade_obj(obj_list[0], 0.00001) != cf.grade_obj(C3, 0.00001):
+            raise ValueError('Created object is not same grade')
     return C3
 
 
