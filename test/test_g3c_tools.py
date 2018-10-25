@@ -696,18 +696,39 @@ class RotorEstimationTests(unittest.TestCase):
 
 class SceneSimplificationTests(unittest.TestCase):
 
-    def test_simplify_scene(self):
+    def test_simplify_recursive(self):
         object_generator = random_line
         n_clusters = 3
-        n_objects_per_cluster = 10
+        n_objects_per_cluster = 5
         threshold = 0.5
         all_objects, object_clusters = generate_n_clusters(object_generator,
                                                            n_clusters,
                                                            n_objects_per_cluster)
         all_object_copy = [o for o in all_objects]
-        all_object_copy = simplify_scene(all_object_copy, threshold)
+        all_object_copy = simplify_scene_recursive(all_object_copy, threshold)
         print(n_clusters)
         # assert len(all_object_copy) == n_clusters
+
+    def test_simplify_scene(self):
+        object_generator = random_line
+        n_clusters = 3
+        n_objects_per_cluster = 5
+        threshold = 2.0
+        all_objects, object_clusters = generate_n_clusters(object_generator,
+                                                           n_clusters,
+                                                           n_objects_per_cluster)
+        all_object_copy1 = [o for o in all_objects]
+        all_object_copy1 = simplify_scene(all_object_copy1, threshold)
+        print(len(all_object_copy1))
+        # assert len(all_object_copy) == n_clusters
+
+        all_object_copy2 = [o for o in all_objects]
+        all_object_copy2 = simplify_scene(all_object_copy2, threshold)
+        print(len(all_object_copy2))
+
+        draw_objects(all_object_copy1)
+        draw_objects(all_object_copy2, color='rgb(255,0,0)')
+
 
 
 class ObjectClusteringTests(unittest.TestCase):

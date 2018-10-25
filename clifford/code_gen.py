@@ -22,9 +22,9 @@ def generate_mult_function_batch_compile(k_list, l_list, m_list, mult_table_vals
 
     def get_output_func_f_string(l_value):
         if cuda:
-            f_string = '@numba.cuda.jit(device=True)\n'
+            f_string = '@cuda.jit(device=True)\n'
         else:
-            f_string = '@numba.njit\n'
+            f_string = '@njit\n'
         fname = product_name + '_o' + str(l_value)
         f_string += 'def ' + fname + '(value, other_value):\n'
         f_string += '    return 0'
@@ -40,9 +40,9 @@ def generate_mult_function_batch_compile(k_list, l_list, m_list, mult_table_vals
 
     total_string = ''
     if cuda:
-        totalfuncstring = '@numba.cuda.jit(device=True)\n'
+        totalfuncstring = '@cuda.jit(device=True)\n'
     else:
-        totalfuncstring = '@numba.njit\n'
+        totalfuncstring = '@njit\n'
     totalfuncstring += 'def ' + product_name + '(value, other_value, output):\n'
     for i in range(n_dims):
         total_string += get_output_func_f_string(i) + '\n\n'
@@ -68,7 +68,7 @@ def write_algebra(file_name, layout, cuda=False):
     """
     with open(file_name, 'w') as file_obj:
         # Write the preamble
-        print('import numpy as np\nimport numba\n\n', file=file_obj)
+        print('import numpy as np\nfrom numba import njit, cuda\n\n', file=file_obj)
         # Write the gmt
         write_mult_function_batch_compile(layout.k_list, layout.l_list, layout.m_list, layout.mult_table_vals,
                                           layout.gaDims, 'gmt_func', file_obj, cuda=cuda)
