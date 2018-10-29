@@ -2,8 +2,7 @@ import unittest
 from clifford import *
 from clifford.g3c import *
 from clifford.tools.g3c import *
-from clifford.gafileio import *
-
+from clifford.io import *
 
 
 class TestBasicIO(unittest.TestCase):
