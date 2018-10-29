@@ -53,7 +53,7 @@ import numpy as np
 from numpy import linalg, array,zeros
 import numba
 
-from clifford.gafileio import write_ga_file, read_ga_file
+from clifford.io import write_ga_file, read_ga_file
 
 
 __version__ = '1.0.1'

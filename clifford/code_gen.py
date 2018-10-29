@@ -12,10 +12,15 @@ def generate_mult_function_batch_compile(k_list, l_list, m_list, mult_table_vals
         m_list_copy = m_list
         mult_table_vals_copy = mult_table_vals
     else:
-        k_list_copy = k_list[product_mask]
-        l_list_copy = l_list[product_mask]
-        m_list_copy = m_list[product_mask]
-        mult_table_vals_copy = mult_table_vals[product_mask]
+        k_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
+        l_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
+        m_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
+        mult_table_vals_copy = np.zeros(product_mask.shape[0])
+        for i in range(product_mask.shape[0]):
+            k_list_copy[i] = k_list[product_mask[i]]
+            l_list_copy[i] = l_list[product_mask[i]]
+            m_list_copy[i] = m_list[product_mask[i]]
+            mult_table_vals_copy[i] = mult_table_vals[product_mask[i]]
 
     # Sort them by l list
     arg_list = np.argsort(l_list_copy)
