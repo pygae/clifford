@@ -285,26 +285,6 @@ def val_midpoint_of_line_cluster(array_line_cluster):
     return center_point
 
 
-@numba.njit
-def val_point_to_line_cluster_distance(point_val, line_cluster_array):
-    error_val = 0.0
-    for i in range(line_cluster_array.shape[0]):
-        l_val = line_cluster_array[i, :]
-        error_val -= imt_func(point_val, (gmt_func(gmt_func(l_val, point_val), l_val)))[0]
-    return error_val
-
-
-def midpoint_and_error_of_line_cluster(line_cluster):
-    """
-    Gets an approximate center point of a line cluster
-    as well as an estimate of the error
-    Hadfield and Lasenby AGACSE2018
-    """
-    line_cluster_array = np.array([l.value for l in line_cluster])
-    cp_val = val_midpoint_of_line_cluster(line_cluster_array)
-    return layout.MultiVector(value=cp_val), val_point_to_line_cluster_distance(cp_val, line_cluster_array)
-
-
 def get_circle_in_euc(circle):
     """ Extracts all the normal stuff for a circle """
     Ic = (circle^ninf).normal()

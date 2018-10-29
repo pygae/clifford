@@ -91,9 +91,15 @@ def construct_tables(gradeList, linear_map_to_bitmap,
     array_length = int(len(gradeList) * len(gradeList))
     k_list = np.zeros(array_length, dtype=np.uint64)
     l_list = np.zeros(array_length, dtype=np.uint64)
-    imt_prod_mask = np.zeros(array_length, dtype=np.uint64)
-    omt_prod_mask = np.zeros(array_length, dtype=np.uint64)
-    lcmt_prod_mask = np.zeros(array_length, dtype=np.uint64)
+    imt_prod_mask = np.zeros(array_length, dtype=np.int64)
+    imt_prod_mask[:] = -1
+
+    omt_prod_mask = np.zeros(array_length, dtype=np.int64)
+    omt_prod_mask[:] = -1
+
+    lcmt_prod_mask = np.zeros(array_length, dtype=np.int64)
+    lcmt_prod_mask[:] = -1
+
     m_list = np.zeros(array_length, dtype=np.uint64)
     mult_table_vals = np.zeros(array_length, dtype=np.float64)
 
@@ -124,6 +130,10 @@ def construct_tables(gradeList, linear_map_to_bitmap,
             if lcmt_check(grade_list_idx, grade_list_i, grade_list_j):
                 # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
                 lcmt_prod_mask[list_ind] = list_ind
+    # Now filter out the -1s
+    imt_prod_mask = imt_prod_mask[imt_prod_mask != -1]
+    omt_prod_mask = omt_prod_mask[omt_prod_mask != -1]
+    lcmt_prod_mask = lcmt_prod_mask[lcmt_prod_mask != -1]
     return k_list, l_list, m_list, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask
 
 
@@ -138,10 +148,16 @@ def get_mult_function(k_list, l_list, m_list, mult_table_vals, n_dims, gradeList
         m_list_copy = m_list
         mult_table_vals_copy = mult_table_vals
     else:
-        k_list_copy = k_list[product_mask]
-        l_list_copy = l_list[product_mask]
-        m_list_copy = m_list[product_mask]
-        mult_table_vals_copy = mult_table_vals[product_mask]
+        # We can pass the sparse filter mask directly
+        k_list_copy = np.zeros(product_mask.shape[0],dtype=np.int64)
+        l_list_copy = np.zeros(product_mask.shape[0],dtype=np.int64)
+        m_list_copy = np.zeros(product_mask.shape[0],dtype=np.int64)
+        mult_table_vals_copy = np.zeros(product_mask.shape[0])
+        for i in range(product_mask.shape[0]):
+            k_list_copy[i] = k_list[product_mask[i]]
+            l_list_copy[i] = l_list[product_mask[i]]
+            m_list_copy[i] = m_list[product_mask[i]]
+            mult_table_vals_copy[i] = mult_table_vals[product_mask[i]]
 
     if filter_mask is not None:
         # We can pass the sparse filter mask directly

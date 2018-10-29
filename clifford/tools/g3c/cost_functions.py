@@ -1,11 +1,6 @@
 
-import numba
-import numpy as np
-from clifford import grade_obj
-from clifford.g3c import *
-import clifford as cf
-from . import rotor_between_objects, val_rotor_between_lines, \
-    rotor_between_lines, val_normalised, val_rotor_between_objects_root, ConformalMVArray
+from . import *
+import itertools
 
 imt_func = layout.imt_func
 gmt_func = layout.gmt_func
@@ -17,6 +12,57 @@ ninf_val = einf.value
 
 sparse_cost_imt = layout.imt_func_generator(grades_a=[0, 2, 4], grades_b=[1])
 sparse_cost_gmt = layout.gmt_func_generator(grades_a=[0, 2, 4], grades_b=[0, 2, 4])
+
+
+@numba.njit
+def val_point_to_line_cluster_distance(point_val, line_cluster_array):
+    """ Distance between a single point and a cluster of lines """
+    error_val = 0.0
+    for i in range(line_cluster_array.shape[0]):
+        l_val = line_cluster_array[i, :]
+        error_val -= imt_func(point_val, (gmt_func(gmt_func(l_val, point_val), l_val)))[0]
+    return error_val
+
+
+def midpoint_and_error_of_line_cluster(line_cluster):
+    """
+    Gets an approximate center point of a line cluster
+    as well as an estimate of the error
+    Hadfield and Lasenby AGACSE2018
+    """
+    line_cluster_array = np.array([l.value for l in line_cluster])
+    cp_val = val_midpoint_of_line_cluster(line_cluster_array)
+    return layout.MultiVector(value=cp_val), val_point_to_line_cluster_distance(cp_val, line_cluster_array)
+
+
+def line_plane_cost(line, plane):
+    """
+    A cost function for a line and a plane
+    """
+    P = normalised((line|plane)*I5)
+    L = normalised(meet(P,plane))
+    return line_cost_function(L,line)
+
+
+def midline_and_error_of_plane_cluster(plane_cluster):
+    """
+    Finds the line that is the best intersection of the planes
+    """
+    plane_perms = itertools.permutations(plane_cluster, 2)
+    line_list = [normalised(meet(pp[0], pp[1])(3)) for pp in plane_perms]
+
+    ref_line = line_list[0]
+    line_sum = 0.0 * e1
+    for l in line_list:
+        if (ref_line | l)[0] > 0:
+            line_sum += l
+        else:
+            line_sum -= l
+    line_average = average_objects([line_sum])
+    cost_val = 0.0
+    for plane in plane_cluster:
+        cost_val += line_plane_cost(line_average, plane)
+    return line_average, cost_val
 
 
 @numba.njit
@@ -148,7 +194,10 @@ def val_line_cost_function(obj_a_val, obj_b_val):
     if grade_a != grade_b:
         return max_float
     else:
-        R_val = val_rotor_between_lines(obj_a_val, obj_b_val)
+        if imt_func(obj_a_val,obj_b_val)[0] < 0:
+            R_val = val_rotor_between_lines(obj_a_val, -obj_b_val)
+        else:
+            R_val = val_rotor_between_lines(obj_a_val, obj_b_val)
         return np.abs(val_rotor_cost_sparse(R_val))
 
 

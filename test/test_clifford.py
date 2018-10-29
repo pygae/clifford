@@ -143,16 +143,25 @@ class BasicAlgebraTests(unittest.TestCase):
         e2 = layout.blades['e2']
         e3 = layout.blades['e3']
 
+        print('outer product')
         e123 = layout.blades['e123']
         np.testing.assert_almost_equal(e123.value, (e1 ^ e2 ^ e3).value)
         np.testing.assert_almost_equal(e123.value, (e1 * e2 * e3).value)
 
+        print('outer product ordering')
         e12 = layout.blades['e12']
         np.testing.assert_almost_equal(-e12.value, (e2 ^ e1).value)
 
+        print('outer product zeros')
         np.testing.assert_almost_equal(0, (e1 ^ e1).value)
         np.testing.assert_almost_equal(0, (e2 ^ e2).value)
         np.testing.assert_almost_equal(0, (e3 ^ e3).value)
+
+        print('scalar outer product')
+        np.testing.assert_almost_equal(((1 + 0 * e1) ^ (1 + 0 * e1)).value, (1 + 0 * e1).value)
+
+        print('scalar inner product')
+        np.testing.assert_almost_equal(((1 + 0 * e1) | (1 + 0 * e1)).value, 0)
 
     def test_grade_obj(self):
         algebras = [Cl(i) for i in [3, 4]] + [conformalize(Cl(3)[0])]
@@ -161,6 +170,7 @@ class BasicAlgebraTests(unittest.TestCase):
             for i in range(len(layout.sig)+1):
                 mv = layout.randomMV()(i)
                 assert i == grade_obj(mv)
+
 
 class FrameTests(unittest.TestCase):
 
