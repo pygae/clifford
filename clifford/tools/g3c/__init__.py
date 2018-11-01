@@ -500,16 +500,31 @@ def get_radius_from_sphere(sphere):
     return math.sqrt(abs(dual_sphere * dual_sphere))
 
 
+@numba.njit
+def val_point_pair_to_end_points(T):
+    """
+    Extracts the end points of a point pair bivector
+    """
+    beta = np.sqrt(abs(gmt_func(T, T)[0]))
+    F = T / beta
+    P =  0.5*F
+    P[0] += 0.5
+    P_twiddle = -0.5*F
+    P_twiddle[0] += 0.5
+    A = val_normalise_n_minus_1(-gmt_func(P_twiddle , imt_func(T, ninf_val)))
+    B = val_normalise_n_minus_1(gmt_func(P,imt_func(T, ninf_val)))
+    output = np.zeros((2,32))
+    output[0,:]=A
+    output[1,:]=B
+    return output
+
 def point_pair_to_end_points(T):
     """
     Extracts the end points of a point pair bivector
     """
-    beta = math.sqrt(abs((T * T)[0]))
-    F = T / beta
-    P = 0.5 * (1 + F)
-    P_twiddle = 0.5 * (1 - F)
-    A = normalise_n_minus_1(-P_twiddle * (T | ninf))
-    B = normalise_n_minus_1(P * (T | ninf))
+    output = val_point_pair_to_end_points(T.value)
+    A = layout.MultiVector(value=output[0,:])
+    B = layout.MultiVector(value=output[1,:])
     return A, B
 
 
