@@ -35,6 +35,17 @@ def midpoint_and_error_of_line_cluster(line_cluster):
     return layout.MultiVector(value=cp_val), val_point_to_line_cluster_distance(cp_val, line_cluster_array)
 
 
+def midpoint_and_error_of_line_cluster_grad(line_cluster):
+    """
+    Gets an approximate center point of a line cluster
+    as well as an estimate of the error
+    Hadfield and Lasenby AGACSE2018
+    """
+    line_cluster_array = np.array([l.value for l in line_cluster])
+    cp_val = val_midpoint_of_line_cluster_grad(line_cluster_array)
+    return layout.MultiVector(value=cp_val), val_point_to_line_cluster_distance(cp_val, line_cluster_array)
+
+
 def line_plane_cost(line, plane):
     """
     A cost function for a line and a plane
@@ -175,7 +186,6 @@ def object_set_cost_matrix(object_set_a, object_set_b, object_type='generic'):
         return val_line_set_cost_matrix(object_array_a, object_array_b)
     else:
         return val_object_set_cost_matrix(object_array_a, object_array_b)
-
 
 
 def object_set_cost_matrix_sum(object_set_a, object_set_b, object_type='generic'):

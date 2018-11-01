@@ -285,6 +285,30 @@ def val_midpoint_of_line_cluster(array_line_cluster):
     return center_point
 
 
+@numba.njit(parallel=True)
+def val_midpoint_of_line_cluster_grad(array_line_cluster):
+    """
+    Gets an approximate center point of a line cluster
+    Hadfield and Lasenby AGACSE2018
+    """
+    average_line = val_average_objects(array_line_cluster)
+    val_point_track = np.zeros(32)
+    for i in range(array_line_cluster.shape[0]):
+        p = val_midpoint_between_lines(average_line, array_line_cluster[i,:])
+        val_point_track += p
+    S = gmt_func(I5_val,val_point_track)
+    center_point = val_normalise_n_minus_1(project_val(gmt_func(S,gmt_func(ninf_val,S)),1))
+    # Take a derivative of the cost function at this point
+    grad = np.zeros(32)
+    for i in range(array_line_cluster.shape[0]):
+        l_val = array_line_cluster[i, :]
+        grad += (gmt_func(gmt_func(l_val, center_point), l_val))
+    grad = val_normalise_n_minus_1(project_val(grad, 1))
+    s_val = gmt_func(I5_val, project_val(center_point + grad, 1))
+    center_point = val_normalise_n_minus_1(gmt_func(gmt_func(s_val, ninf_val), s_val))
+    return center_point
+
+
 def get_circle_in_euc(circle):
     """ Extracts all the normal stuff for a circle """
     Ic = (circle^ninf).normal()
