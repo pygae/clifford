@@ -447,9 +447,14 @@ def val_intersect_line_and_plane_to_point(line_val, plane_val):
         return np.array([-1.])
     output = np.zeros(32)
     A = val_normalised(m)
-    output[1] = A[8]
-    output[2] = A[11]
-    output[3] = A[14]
+    if(A[15] < 0):
+        output[1] = A[8]
+        output[2] = A[11]
+        output[3] = A[14]
+    else:
+        output[1] = -A[8]
+        output[2] = -A[11]
+        output[3] = -A[14]
     output = val_up(output)
     return output
 
