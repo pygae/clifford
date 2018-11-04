@@ -443,11 +443,11 @@ def val_intersect_line_and_plane_to_point(line_val, plane_val):
     Returns the point at the intersection of a line and plane
     """
     m = meet_val(line_val, plane_val)
-    if(gmt_func(m,m)[0] < 0.000001):
+    if gmt_func(m, m)[0] < 0.000001:
         return np.array([-1.])
     output = np.zeros(32)
     A = val_normalised(m)
-    if(A[15] < 0):
+    if A[15] < 0:
         output[1] = A[8]
         output[2] = A[11]
         output[3] = A[14]
@@ -458,15 +458,17 @@ def val_intersect_line_and_plane_to_point(line_val, plane_val):
     output = val_up(output)
     return output
 
+
 def intersect_line_and_plane_to_point(line, plane):
     """
     Returns the point at the intersection of a line and plane
     If there is no intersection it returns None
     """
     ans = val_intersect_line_and_plane_to_point(line.value, plane.value)
-    if(ans[0] == -1.):
+    if ans[0] == -1.:
         return None
-    return layout.MultiVector(value = ans)
+    return layout.MultiVector(value=ans)
+
 
 @numba.njit
 def val_normalise_n_minus_1(mv_val):
