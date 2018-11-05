@@ -360,7 +360,7 @@ class G3CToolsTests(unittest.TestCase):
         line = (up(2*e1) ^ up(2*e1 + e3) ^ ninf).normal()
         plane = (up(e3) ^ up(e3 + e1) ^ up(e3 + e2) ^ ninf).normal()
         point_result = intersect_line_and_plane_to_point(line, plane)
-        testing.assert_almost_equal(point_result.value, (e3 + 2*e1).value)
+        testing.assert_almost_equal(point_result.value, up(e3 + 2*e1).value)
         # Next the case that the do not intersect
         line = (up(0) ^ up(e1) ^ ninf).normal()
         point_result = intersect_line_and_plane_to_point(line, plane)
