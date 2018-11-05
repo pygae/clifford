@@ -63,8 +63,8 @@ Misc
 
 .. autosummary::
     :toctree: generated/
-    
-    
+
+
     meet_val
     meet
     normalise_n_minus_1
@@ -95,7 +95,7 @@ Root Finding
 
 .. autosummary::
     :toctree: generated/
-    
+
     dorst_norm_val
     check_sigma_for_positive_root_val
     check_sigma_for_positive_root
@@ -311,9 +311,9 @@ def circle_to_sphere(C):
 
 
 def line_to_point_and_direction(line):
-    """ 
-    converts a line to the conformal nearest point to the origin and a 
-    euc direction vector in direction of the line 
+    """
+    converts a line to the conformal nearest point to the origin and a
+    euc direction vector in direction of the line
     """
     L_star = line*I5
     T = L_star|no
@@ -437,20 +437,38 @@ def meet(A, B):
     return cf.MultiVector(layout, meet_val(A.value, B.value))
 
 
+@numba.njit
+def val_intersect_line_and_plane_to_point(line_val, plane_val):
+    """
+    Returns the point at the intersection of a line and plane
+    """
+    m = meet_val(line_val, plane_val)
+    if gmt_func(m, m)[0] < 0.000001:
+        return np.array([-1.])
+    output = np.zeros(32)
+    A = val_normalised(m)
+    if A[15] < 0:
+        output[1] = A[8]
+        output[2] = A[11]
+        output[3] = A[14]
+    else:
+        output[1] = -A[8]
+        output[2] = -A[11]
+        output[3] = -A[14]
+    output = val_up(output)
+    return output
+
+
 def intersect_line_and_plane_to_point(line, plane):
     """
     Returns the point at the intersection of a line and plane
     If there is no intersection it returns None
     """
-    biv = meet(line, plane)
-    abs_biv = abs(biv)
-    if abs_biv > 0.000001:
-        if (biv|niono)[0] > 0:
-            return ((biv ^ no) | niono) / abs(biv)
-        else:
-            return -((biv ^ no) | niono) / abs(biv)
-    else:
+    ans = val_intersect_line_and_plane_to_point(line.value, plane.value)
+    if ans[0] == -1.:
         return None
+    return layout.MultiVector(value=ans)
+
 
 @numba.njit
 def val_normalise_n_minus_1(mv_val):
@@ -1314,4 +1332,3 @@ v_up = np.vectorize(fast_up, otypes=[ConformalMVArray])
 v_down = np.vectorize(fast_down, otypes=[ConformalMVArray])
 v_apply_rotor_inv = np.vectorize(apply_rotor_inv, otypes=[ConformalMVArray])
 v_meet = np.vectorize(meet, otypes=[ConformalMVArray], signature='(),()->()')
-
