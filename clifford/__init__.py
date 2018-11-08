@@ -400,6 +400,22 @@ def compute_blade_representation(bitmap, firstIdx):
     return tuple(blade)
 
 
+@numba.njit
+def val_get_left_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
+    """
+    This produces the matrix X that performs left multiplication with x
+    eg. X@b == (x*b).value
+    """
+    intermed = np.zeros((ndims,ndims))
+    test_ind = 0
+    for k in k_list:
+        j = l_list[test_ind]
+        i = m_list[test_ind]
+        intermed[j, i] += mult_table_vals[test_ind] * x[k]
+        test_ind = test_ind + 1
+    return intermed
+
+
 class NoMorePermutations(Exception):
     """ No more permutations can be generated.
     """
@@ -653,6 +669,22 @@ class Layout(object):
     def lcmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
                           grades_a = grades_a, grades_b = grades_b, filter_mask = filter_mask, product_mask=self.lcmt_prod_mask)
+
+    def get_grade_projection_matrix(self, grade):
+        """
+        Returns the matrix M_g that performs grade projection via left multiplication
+        eg. M_g@A.value = A(g).value
+        """
+        diag_mask = 1.0 * (np.array(self.gradeList) == grade)
+        return np.diag(diag_mask)
+
+    def get_left_gmt_matrix(self, x):
+        """
+        This produces the matrix X that performs left multiplication with x
+        eg. X@b == (x*b).value
+        """
+        return val_get_left_gmt_matrix(x.value, self.k_list, self.l_list,
+                                           self.m_list, self.mult_table_vals, self.gaDims)
 
     def MultiVector(self,*args,**kw):
         '''
