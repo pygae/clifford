@@ -545,6 +545,17 @@ class RotorEstimationTests(unittest.TestCase):
         print('ERRORS ', error_count)
         print('ERROR percentage ', 100 * error_count / float(n_runs), '%')
 
+    def test_estimate_rotor_lines_average_then_opt(self):
+
+        def estimation_func(pp_list_a, pp_list_b):
+            r_start = average_estimator(pp_list_a, pp_list_b)
+            query_start = [apply_rotor(b,r_start)(3).normal() for b in pp_list_b]
+            r_est, costs = estimate_rotor_objects(pp_list_a, query_start)
+            return (r_est*r_start).normal()
+
+        self.run_rotor_estimation(random_line, estimation_func)
+
+
     def test_estimate_rotor_lines_optimisation(self):
 
         def estimation_func(pp_list_a, pp_list_b):
