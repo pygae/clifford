@@ -134,6 +134,7 @@ from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
     random_rotation_rotor, generate_rotation_rotor, val_random_euc_mv
 from clifford.g3c import *
 import clifford as cf
+from clifford import val_get_left_gmt_matrix
 import warnings
 
 # Allow syntactic alternatives to the standard included in the clifford package
@@ -161,6 +162,14 @@ omt_func = layout.omt_func
 imt_func = layout.imt_func
 
 epsilon = 10*10**(-6)
+
+
+mask0 = layout.get_grade_projection_matrix(0)
+mask1 = layout.get_grade_projection_matrix(1)
+mask2 = layout.get_grade_projection_matrix(2)
+mask3 = layout.get_grade_projection_matrix(3)
+mask4 = layout.get_grade_projection_matrix(4)
+mask_2minus4 = mask2 - mask4
 
 
 def interpret_multivector_as_object(mv):
@@ -203,6 +212,102 @@ def interpret_multivector_as_object(mv):
                 return 6  # Sphere
     else:
         return -1
+
+
+def normalise_TR_to_unit_T(TR):
+    """
+    Takes in a TR rotor
+    extracts the R and T
+    normalises the T to unit displacement magnitude
+    rebuilds the TR rotor with the new displacement rotor
+    returns the new TR and the original length of the T rotor
+    """
+    R_only = TR(e123)
+    T_only = (TR*~R_only).normal()
+    t = -2*(T_only|no)
+    scale = abs(t)
+    t = t/scale
+    new_TR = (generate_translation_rotor(t)*R_only).normal()
+    return new_TR, scale
+
+
+def scale_TR_translation(TR, scale):
+    """
+    Takes in a TR rotor and a scale
+    extracts the R and T
+    scales the T displacement magnitude by scale
+    rebuilds the TR rotor with the new displacement rotor
+    returns the new TR rotor
+    """
+    R_only = TR(e123)
+    T_only = (TR*~R_only).normal()
+    t = -2*(T_only|no)*scale
+    new_TR = (generate_translation_rotor(t)*R_only).normal()
+    return new_TR
+
+def left_gmt_generator():
+    k_list = layout.k_list
+    l_list = layout.l_list
+    m_list = layout.m_list
+    mult_table_vals = layout.mult_table_vals
+    gaDims = layout.gaDims
+    @numba.njit
+    def get_left_gmt(x_val):
+        return val_get_left_gmt_matrix(x_val, k_list, l_list,
+                                m_list, mult_table_vals, gaDims)
+    return get_left_gmt
+
+get_left_gmt_matrix = left_gmt_generator()
+def get_line_reflection_matrix(lines, n_power=1):
+    """
+    Generates the matrix that sums the reflection of a point in many lines
+    """
+    mat2solve = np.zeros((32,32), dtype=np.float64)
+    for Li in lines:
+        LiMat = get_left_gmt_matrix(Li.value)
+        tmat = LiMat@mask_2minus4@LiMat
+        mat2solve += tmat
+    mat = mask1@mat2solve
+    if n_power != 1:
+        mat = np.linalg.matrix_power(mat, n_power)
+    return mat
+
+@numba.njit
+def val_get_line_reflection_matrix(line_array, n_power):
+    """
+    Generates the matrix that sums the reflection of a point in many lines
+    """
+    mat2solve = np.zeros((32,32), dtype=np.float64)
+    for i in range(line_array.shape[0]):
+        LiMat = get_left_gmt_matrix(line_array[i,:])
+        tmat = LiMat@mask_2minus4@LiMat
+        mat2solve += tmat
+    mat = mask1@mat2solve
+    if n_power != 1:
+        mat = np.linalg.matrix_power(mat, n_power)
+    return mat
+
+
+@numba.njit
+def val_truncated_get_line_reflection_matrix(line_array, n_power):
+    """
+    Generates the truncated matrix that sums the
+    reflection of a point in many lines
+    n_power should be 1 or a power of 2
+    """
+    mat2solve = np.zeros((32,32), dtype=np.float64)
+    for i in range(line_array.shape[0]):
+        LiMat = get_left_gmt_matrix(line_array[i,:])
+        tmat = LiMat@mask_2minus4@LiMat
+        mat2solve += tmat
+    mat_val = mask1@mat2solve
+    mat_val = mat_val[1:6, 1:6].copy()/line_array.shape[0]
+    if n_power != 1:
+        c_pow = 1
+        while c_pow < n_power:
+            mat_val = mat_val@mat_val
+            c_pow=c_pow*2
+    return mat_val
 
 
 @numba.njit
