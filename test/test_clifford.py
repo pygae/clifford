@@ -171,6 +171,16 @@ class BasicAlgebraTests(unittest.TestCase):
                 mv = layout.randomMV()(i)
                 assert i == grade_obj(mv)
 
+    def test_left_multiplication_matrix(self):
+        algebras = [Cl(i) for i in [3, 4]] + [conformalize(Cl(3)[0])]
+        for alg in algebras:
+            layout = alg[0]
+            for i in range(1000):
+                mv = layout.randomMV()
+                mv2 = layout.randomMV()
+                np.testing.assert_almost_equal(layout.get_left_gmt_matrix(mv)@mv2.value, (mv*mv2).value)
+
+
 
 class FrameTests(unittest.TestCase):
 
