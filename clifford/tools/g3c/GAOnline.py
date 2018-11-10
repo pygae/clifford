@@ -1,8 +1,10 @@
 
 from __future__ import print_function
 from clifford import grade_obj
+from clifford.g3c import *
 from clifford.tools.g3c import interpret_multivector_as_object
 from clifford.io import read_ga_file
+from clifford import MVArray
 
 
 def interpolate_colors(alpha, rgb_a, rgb_b):
@@ -185,13 +187,16 @@ def draw_objects(objects, mv_type='interp', color='rgb(0,0,0)'):
     """
     if isinstance(objects, str):
         data_array, metric, basis_names, support = read_ga_file(objects)
+        mv_list = [layout.MultiVector(value=data_array[i,:]) for i in range(data_array.shape[0])]
         sc = GAScene()
-        sc.add_object_array(data_array, mv_type, color=color)
+        sc.add_object_array(mv_list, mv_type, color=color)
         print(sc)
-    elif isinstance(objects, list):
+        return sc
+    elif isinstance(objects, list) or isinstance(objects, MVArray):
         sc = GAScene()
         sc.add_object_array(objects, mv_type, color=color)
         print(sc)
+        return sc
     else:
         raise ValueError('The input is not a string or a list of objects')
 

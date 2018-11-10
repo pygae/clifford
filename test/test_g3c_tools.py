@@ -136,6 +136,15 @@ class TestGeneralLogarithm(unittest.TestCase):
                 np.testing.assert_almost_equal(R.value, R_recon, 3)
 
 
+class GAOnlineTests(unittest.TestCase):
+    def test_draw_objects(self):
+        scene = ConformalMVArray([random_line() for i in range(100)])
+        sc_a = str(draw_objects(scene))
+        scene.save('test.ga')
+        sc_b = str(draw_objects('test.ga'))
+        assert sc_a == sc_b
+
+
 class ConformalArrayTests(unittest.TestCase):
 
     @classmethod
