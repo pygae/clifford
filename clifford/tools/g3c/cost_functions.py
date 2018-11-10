@@ -14,6 +14,10 @@ sparse_cost_imt = layout.imt_func_generator(grades_a=[0, 2, 4], grades_b=[1])
 sparse_cost_gmt = layout.gmt_func_generator(grades_a=[0, 2, 4], grades_b=[0, 2, 4])
 
 
+def point_to_line_cluster_distance(point, line_cluster):
+    return val_point_to_line_cluster_distance(point.value, np.array([l.value for l in line_cluster]))
+
+
 @numba.njit
 def val_point_to_line_cluster_distance(point_val, line_cluster_array):
     """ Distance between a single point and a cluster of lines """

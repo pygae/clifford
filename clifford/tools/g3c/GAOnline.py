@@ -2,6 +2,7 @@
 from __future__ import print_function
 from clifford import grade_obj
 from clifford.tools.g3c import interpret_multivector_as_object
+from clifford.io import read_ga_file
 
 
 def interpolate_colors(alpha, rgb_a, rgb_b):
@@ -177,10 +178,22 @@ class GAScene():
             print(self,file=fobj)
 
 
-def draw_objects(mv_array, mv_type='interp', color='rgb(0,0,0)'):
-    sc = GAScene()
-    sc.add_object_array(mv_array, mv_type, color=color)
-    print(sc)
+def draw_objects(objects, mv_type='interp', color='rgb(0,0,0)'):
+    """
+    Takes a list of multivectors or a .ga file name and draws the multivectors
+    By default attempts to interpret the type of object unless a mv_type is specified
+    """
+    if isinstance(objects, str):
+        data_array, metric, basis_names, support = read_ga_file(objects)
+        sc = GAScene()
+        sc.add_object_array(data_array, mv_type, color=color)
+        print(sc)
+    elif isinstance(objects, list):
+        sc = GAScene()
+        sc.add_object_array(objects, mv_type, color=color)
+        print(sc)
+    else:
+        raise ValueError('The input is not a string or a list of objects')
 
 
 class GAAnimation():
