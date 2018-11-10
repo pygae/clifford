@@ -12,7 +12,7 @@ from clifford.tools.g3c.object_clustering import *
 from clifford.tools.g3c.scene_simplification import *
 from clifford.tools.g3c.model_matching import *
 from clifford.tools.g3 import random_euc_mv
-from clifford.tools.g3c.GAOnline import draw_objects, GAScene
+from clifford.tools.g3c.GAOnline import draw_objects, GAScene, GanjaScene
 import time
 
 import numpy as np
@@ -136,13 +136,21 @@ class TestGeneralLogarithm(unittest.TestCase):
                 np.testing.assert_almost_equal(R.value, R_recon, 3)
 
 
-class GAOnlineTests(unittest.TestCase):
+class VisualisationTests(unittest.TestCase):
     def test_draw_objects(self):
         scene = ConformalMVArray([random_line() for i in range(100)])
         sc_a = str(draw_objects(scene))
         scene.save('test.ga')
         sc_b = str(draw_objects('test.ga'))
         assert sc_a == sc_b
+
+    def test_ganja_scene(self):
+        scene = ConformalMVArray([up(0)^up(e1)^einf,up(0)^up(e2)^einf,up(0)^up(e3)^einf]
+                                 + [random_line() for i in range(2)])
+
+        sc = GanjaScene()
+        sc.add_objects(scene)
+        sc.save_to_file('test.json')
 
 
 class ConformalArrayTests(unittest.TestCase):
