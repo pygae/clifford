@@ -73,6 +73,16 @@ class EucPoint():
         return return_string
 
 
+class ConfPoint():
+    def __init__(self,mv,color):
+        self.mv = mv
+        self.color = color
+
+    def gen_string(self):
+        return_string = 'DrawConfPoint('+str(self.mv)+','+self.color+');'
+        return return_string
+
+
 class GAScene():
 
     def __init__(self):
@@ -103,6 +113,11 @@ class GAScene():
             raise ValueError('Input is not a euc_point')
         self.add(EucPoint(mv,color))
 
+    def add_conf_point(self,mv,color='rgb(0,0,0)'):
+        if grade_obj(mv) != 1:
+            raise ValueError('Input is not a conf_point')
+        self.add(ConfPoint(mv, color))
+
     def add_circle(self,mv,color='rgb(0,0,0)'):
         if grade_obj(mv) != 3:
             raise ValueError('Input is not a circle')
@@ -131,6 +146,8 @@ class GAScene():
     def add_object(self, mv, mv_type='interp', color='rgb(0,0,0)'):
         if mv_type == 'line':
             self.add_line(mv, color)
+        elif mv_type == 'conf_point':
+            self.add_conf_point(mv, color)
         elif mv_type == 'euc_point':
             self.add_euc_point(mv, color)
         elif mv_type == 'point_pair':
@@ -157,6 +174,8 @@ class GAScene():
             if return_val > 0:
                 if return_val == 1:
                     self.add_euc_point(mv,color=color)
+                elif return_val == 2:
+                    self.add_conf_point(mv,color=color)
                 elif return_val == 3:
                     self.add_point_pair(mv, color=color)
                 elif return_val == 4:
