@@ -178,7 +178,7 @@ class BasicAlgebraTests(unittest.TestCase):
             for i in range(1000):
                 mv = layout.randomMV()
                 mv2 = layout.randomMV()
-                np.testing.assert_almost_equal(layout.get_left_gmt_matrix(mv)@mv2.value, (mv*mv2).value)
+                np.testing.assert_almost_equal(np.matmul(layout.get_left_gmt_matrix(mv),mv2.value), (mv*mv2).value)
 
 
 
