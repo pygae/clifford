@@ -134,7 +134,7 @@ from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
     random_rotation_rotor, generate_rotation_rotor, val_random_euc_mv
 from clifford.g3c import *
 import clifford as cf
-from clifford import val_get_left_gmt_matrix
+from clifford import val_get_left_gmt_matrix, grades_present
 import warnings
 
 # Allow syntactic alternatives to the standard included in the clifford package
@@ -185,15 +185,15 @@ def interpret_multivector_as_object(mv):
     6 -> a sphere
     7 -> a plane
     """
-    grades_present = mv.grades()
-    if len(grades_present) != 1:  # Definitely not a blade
+    g_pres = grades_present(mv, 0.00000001)
+    if len(g_pres) != 1:  # Definitely not a blade
         return -1
-    grade = grades_present[0]
+    grade = g_pres[0]
     if grade == 1:
         # This can now either be a euc mv or a conformal point or something else
         if mv(e123) == mv:
             return 1  # Euclidean point
-        elif mv**2 == 0*e1:
+        elif np.sum(np.abs((mv**2).value)) < 0.00000001:
             return 2  # Conformal point
         else:
             return 0  # Unknown mv
