@@ -267,6 +267,40 @@ def grade_obj_func(objin_val, gradeList, threshold):
     return np.argmax(modal_value_count)
 
 
+def general_exp(x, order=9):
+    """
+    This implements the series expansion of e**mv where mv is a multivector
+    The parameter order is the maximum order of the taylor series to use
+    """
+
+    result = 1.0
+    if (order == 0):
+        return result
+
+    # scale by power of 2 so that its norm is < 1
+    max_val = int(np.max(np.abs(x.value)))
+    scale=1
+    if max_val > 1:
+        max_val <<= 1
+    while max_val:
+        max_val >>= 1
+        scale <<= 1
+
+    scaled = x * (1.0 / scale)
+
+    # taylor approximation
+    tmp = 1.0
+    for i in range(1, order):
+        tmp = tmp*scaled * (1.0 / i)
+        result += tmp
+
+    # undo scaling
+    while scale > 1:
+        result *= result
+        scale >>= 1
+    return result
+
+
 def grade_obj(objin, threshold=0.0000001):
     '''
     Returns the modal grade of a multivector
@@ -1112,24 +1146,9 @@ class MultiVector(object):
 
         # Let math.log() check that other is a Python number, not something
         # else.
-        intMV = math.log(other) * self
+
         # pow(x, y) == exp(y * log(x))
-
-        newMV = self._newMV()  # null
-
-        nextTerm = self._newMV()
-        nextTerm[()] = 1  # order 0 term of exp(x) Taylor expansion
-
-        n = 1.
-
-        while nextTerm != 0:
-            # iterate until the added term is within _eps of 0
-            newMV = newMV + nextTerm
-            nextTerm = nextTerm * intMV / n
-            n = n + 1
-        else:
-            # squeeze out that extra little bit of accuracy
-            newMV = newMV + nextTerm
+        newMV = general_exp(math.log(other) * self)
 
         return newMV
 

@@ -4,8 +4,9 @@ from clifford import Cl, grades_present
 import unittest
 
 from clifford.g3c import *
+from clifford import general_exp
 from clifford.tools.g3c import *
-from clifford.tools.g3c.rotor_parameterisation import ga_log, ga_exp, general_exp, general_logarithm,\
+from clifford.tools.g3c.rotor_parameterisation import ga_log, ga_exp, general_logarithm,\
     interpolate_rotors
 from clifford.tools.g3c.rotor_estimation import *
 from clifford.tools.g3c.object_clustering import *

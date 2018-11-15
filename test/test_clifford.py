@@ -33,11 +33,12 @@ class CliffordTests(unittest.TestCase):
                     self.assert_(abs(a_inv - 1./a) < 1.e-11)
 
     def test_exp(self):
-
         layout, blades = self.algebras[0]
-        R = exp(blades['e12'])
-        e1 = blades['e1']
-        R*e1*~R
+        e12 = blades['e12']
+        theta = np.linspace(0, 100 * np.pi, 101)
+        a_list = [np.e**(t * e12) for t in theta]
+        for a in a_list:
+            np.testing.assert_almost_equal(abs(a), 1.0, 5)
 
     def test_indexing(self):
         layout, blades = self.algebras[0]

@@ -74,40 +74,6 @@ def decompose_bivector(F):
     return F1, F2
 
 
-def general_exp(x, order=9):
-    """
-    This implements the series expansion of e**mv where mv is a multivector
-    The parameter order is the maximum order of the taylor series to use
-    """
-
-    result = 1.0
-    if (order == 0):
-        return result
-
-    # scale by power of 2 so that its norm is < 1
-    max_val = int(np.max(np.abs(x.value)))
-    scale=1
-    if max_val > 1:
-        max_val <<= 1
-    while max_val:
-        max_val >>= 1
-        scale <<= 1
-
-    scaled = x * (1.0 / scale)
-
-    # taylor approximation
-    tmp = 1.0
-    for i in range(1, order):
-        tmp = tmp*scaled * (1.0 / i)
-        result += tmp
-
-    # undo scaling
-    while scale > 1:
-        result *= result
-        scale >>= 1
-    return result
-
-
 def general_logarithm(R):
     """
     Takes a general conformal rotor and returns the log
