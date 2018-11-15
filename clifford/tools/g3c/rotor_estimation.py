@@ -21,6 +21,16 @@ ninf_val = einf.value
 e123inf =e123*einf
 
 
+def average_estimator(reference_model, query_model):
+    """
+    Estimates the rotor that takes one set of objects to another
+    by estimating the rotor between the average objects
+    """
+    r_av = sum(reference_model)(grade_obj(reference_model[0]))
+    q_av = sum(query_model)(grade_obj(reference_model[0]))
+    return rotor_between_objects(q_av, r_av)
+
+
 def estimate_rotor_objects_subsample(reference_model, query_model, n_repeats, objects_per_sample,
                                      maxfev=20000, print_res=False, pool_size=1, object_type='generic'):
     """

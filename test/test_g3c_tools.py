@@ -4,15 +4,16 @@ from clifford import Cl, grades_present
 import unittest
 
 from clifford.g3c import *
+from clifford import general_exp
 from clifford.tools.g3c import *
-from clifford.tools.g3c.rotor_parameterisation import ga_log, ga_exp, general_exp, general_logarithm,\
+from clifford.tools.g3c.rotor_parameterisation import ga_log, ga_exp, general_logarithm,\
     interpolate_rotors
 from clifford.tools.g3c.rotor_estimation import *
 from clifford.tools.g3c.object_clustering import *
 from clifford.tools.g3c.scene_simplification import *
 from clifford.tools.g3c.model_matching import *
 from clifford.tools.g3 import random_euc_mv
-from clifford.tools.g3c.GAOnline import draw_objects, GAScene
+from clifford.tools.g3c.GAOnline import draw_objects, GAScene, GanjaScene
 import time
 
 import numpy as np
@@ -134,6 +135,23 @@ class TestGeneralLogarithm(unittest.TestCase):
                 biv = general_logarithm(R)
                 R_recon = general_exp(biv).normal()
                 np.testing.assert_almost_equal(R.value, R_recon, 3)
+
+
+class VisualisationTests(unittest.TestCase):
+    def test_draw_objects(self):
+        scene = ConformalMVArray([random_line() for i in range(100)])
+        sc_a = str(draw_objects(scene))
+        scene.save('test.ga')
+        sc_b = str(draw_objects('test.ga'))
+        assert sc_a == sc_b
+
+    def test_ganja_scene(self):
+        scene = ConformalMVArray([up(0)^up(e1)^einf,up(0)^up(e2)^einf,up(0)^up(e3)^einf]
+                                 + [random_line() for i in range(2)])
+
+        sc = GanjaScene()
+        sc.add_objects(scene)
+        sc.save_to_file('test.json')
 
 
 class ConformalArrayTests(unittest.TestCase):
@@ -544,6 +562,17 @@ class RotorEstimationTests(unittest.TestCase):
         print('RUNS ', n_runs)
         print('ERRORS ', error_count)
         print('ERROR percentage ', 100 * error_count / float(n_runs), '%')
+
+    def test_estimate_rotor_lines_average_then_opt(self):
+
+        def estimation_func(pp_list_a, pp_list_b):
+            r_start = average_estimator(pp_list_a, pp_list_b)
+            query_start = [apply_rotor(b,r_start)(3).normal() for b in pp_list_b]
+            r_est, costs = estimate_rotor_objects(pp_list_a, query_start)
+            return (r_est*r_start).normal()
+
+        self.run_rotor_estimation(random_line, estimation_func)
+
 
     def test_estimate_rotor_lines_optimisation(self):
 

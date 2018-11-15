@@ -134,6 +134,7 @@ from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
     random_rotation_rotor, generate_rotation_rotor, val_random_euc_mv
 from clifford.g3c import *
 import clifford as cf
+from clifford import val_get_left_gmt_matrix, grades_present
 import warnings
 
 # Allow syntactic alternatives to the standard included in the clifford package
@@ -163,6 +164,14 @@ imt_func = layout.imt_func
 epsilon = 10*10**(-6)
 
 
+mask0 = layout.get_grade_projection_matrix(0)
+mask1 = layout.get_grade_projection_matrix(1)
+mask2 = layout.get_grade_projection_matrix(2)
+mask3 = layout.get_grade_projection_matrix(3)
+mask4 = layout.get_grade_projection_matrix(4)
+mask_2minus4 = mask2 - mask4
+
+
 def interpret_multivector_as_object(mv):
     """
     Takes an input multivector and returns what kind of object it is
@@ -176,15 +185,15 @@ def interpret_multivector_as_object(mv):
     6 -> a sphere
     7 -> a plane
     """
-    grades_present = mv.grades()
-    if len(grades_present) != 1:  # Definitely not a blade
+    g_pres = grades_present(mv, 0.00000001)
+    if len(g_pres) != 1:  # Definitely not a blade
         return -1
-    grade = grades_present[0]
+    grade = g_pres[0]
     if grade == 1:
         # This can now either be a euc mv or a conformal point or something else
         if mv(e123) == mv:
             return 1  # Euclidean point
-        elif mv**2 == 0*e1:
+        elif np.sum(np.abs((mv**2).value)) < 0.00000001:
             return 2  # Conformal point
         else:
             return 0  # Unknown mv
@@ -203,6 +212,102 @@ def interpret_multivector_as_object(mv):
                 return 6  # Sphere
     else:
         return -1
+
+
+def normalise_TR_to_unit_T(TR):
+    """
+    Takes in a TR rotor
+    extracts the R and T
+    normalises the T to unit displacement magnitude
+    rebuilds the TR rotor with the new displacement rotor
+    returns the new TR and the original length of the T rotor
+    """
+    R_only = TR(e123)
+    T_only = (TR*~R_only).normal()
+    t = -2*(T_only|no)
+    scale = abs(t)
+    t = t/scale
+    new_TR = (generate_translation_rotor(t)*R_only).normal()
+    return new_TR, scale
+
+
+def scale_TR_translation(TR, scale):
+    """
+    Takes in a TR rotor and a scale
+    extracts the R and T
+    scales the T displacement magnitude by scale
+    rebuilds the TR rotor with the new displacement rotor
+    returns the new TR rotor
+    """
+    R_only = TR(e123)
+    T_only = (TR*~R_only).normal()
+    t = -2*(T_only|no)*scale
+    new_TR = (generate_translation_rotor(t)*R_only).normal()
+    return new_TR
+
+def left_gmt_generator():
+    k_list = layout.k_list
+    l_list = layout.l_list
+    m_list = layout.m_list
+    mult_table_vals = layout.mult_table_vals
+    gaDims = layout.gaDims
+    @numba.njit
+    def get_left_gmt(x_val):
+        return val_get_left_gmt_matrix(x_val, k_list, l_list,
+                                m_list, mult_table_vals, gaDims)
+    return get_left_gmt
+
+get_left_gmt_matrix = left_gmt_generator()
+def get_line_reflection_matrix(lines, n_power=1):
+    """
+    Generates the matrix that sums the reflection of a point in many lines
+    """
+    mat2solve = np.zeros((32,32), dtype=np.float64)
+    for Li in lines:
+        LiMat = get_left_gmt_matrix(Li.value)
+        tmat = np.matmul(np.matmul(LiMat, mask_2minus4), LiMat)
+        mat2solve += tmat
+    mat = np.matmul(mask1,mat2solve)
+    if n_power != 1:
+        mat = np.linalg.matrix_power(mat, n_power)
+    return mat
+
+@numba.njit
+def val_get_line_reflection_matrix(line_array, n_power):
+    """
+    Generates the matrix that sums the reflection of a point in many lines
+    """
+    mat2solve = np.zeros((32,32), dtype=np.float64)
+    for i in range(line_array.shape[0]):
+        LiMat = get_left_gmt_matrix(line_array[i,:])
+        tmat = np.matmul(np.matmul(LiMat, mask_2minus4), LiMat)
+        mat2solve += tmat
+    mat = np.matmul(mask1,mat2solve)
+    if n_power != 1:
+        mat = np.linalg.matrix_power(mat, n_power)
+    return mat
+
+
+@numba.njit
+def val_truncated_get_line_reflection_matrix(line_array, n_power):
+    """
+    Generates the truncated matrix that sums the
+    reflection of a point in many lines
+    n_power should be 1 or a power of 2
+    """
+    mat2solve = np.zeros((32,32), dtype=np.float64)
+    for i in range(line_array.shape[0]):
+        LiMat = get_left_gmt_matrix(line_array[i,:])
+        tmat = np.matmul(np.matmul(LiMat, mask_2minus4), LiMat)
+        mat2solve += tmat
+    mat_val = np.matmul(mask1,mat2solve)
+    mat_val = mat_val[1:6, 1:6].copy()/line_array.shape[0]
+    if n_power != 1:
+        c_pow = 1
+        while c_pow < n_power:
+            mat_val = np.matmul(mat_val,mat_val)
+            c_pow=c_pow*2
+    return mat_val
 
 
 @numba.njit
@@ -282,6 +387,30 @@ def val_midpoint_of_line_cluster(array_line_cluster):
         val_point_track += p
     S = gmt_func(I5_val,val_point_track)
     center_point = val_normalise_n_minus_1(project_val(gmt_func(S,gmt_func(ninf_val,S)),1))
+    return center_point
+
+
+@numba.njit(parallel=True)
+def val_midpoint_of_line_cluster_grad(array_line_cluster):
+    """
+    Gets an approximate center point of a line cluster
+    Hadfield and Lasenby AGACSE2018
+    """
+    average_line = val_average_objects(array_line_cluster)
+    val_point_track = np.zeros(32)
+    for i in range(array_line_cluster.shape[0]):
+        p = val_midpoint_between_lines(average_line, array_line_cluster[i,:])
+        val_point_track += p
+    S = gmt_func(I5_val,val_point_track)
+    center_point = val_normalise_n_minus_1(project_val(gmt_func(S,gmt_func(ninf_val,S)),1))
+    # Take a derivative of the cost function at this point
+    grad = np.zeros(32)
+    for i in range(array_line_cluster.shape[0]):
+        l_val = array_line_cluster[i, :]
+        grad += (gmt_func(gmt_func(l_val, center_point), l_val))
+    grad = val_normalise_n_minus_1(project_val(grad, 1))
+    s_val = gmt_func(I5_val, project_val(center_point + grad, 1))
+    center_point = val_normalise_n_minus_1(gmt_func(gmt_func(s_val, ninf_val), s_val))
     return center_point
 
 

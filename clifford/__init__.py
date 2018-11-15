@@ -267,6 +267,40 @@ def grade_obj_func(objin_val, gradeList, threshold):
     return np.argmax(modal_value_count)
 
 
+def general_exp(x, order=9):
+    """
+    This implements the series expansion of e**mv where mv is a multivector
+    The parameter order is the maximum order of the taylor series to use
+    """
+
+    result = 1.0
+    if (order == 0):
+        return result
+
+    # scale by power of 2 so that its norm is < 1
+    max_val = int(np.max(np.abs(x.value)))
+    scale=1
+    if max_val > 1:
+        max_val <<= 1
+    while max_val:
+        max_val >>= 1
+        scale <<= 1
+
+    scaled = x * (1.0 / scale)
+
+    # taylor approximation
+    tmp = 1.0
+    for i in range(1, order):
+        tmp = tmp*scaled * (1.0 / i)
+        result += tmp
+
+    # undo scaling
+    while scale > 1:
+        result *= result
+        scale >>= 1
+    return result
+
+
 def grade_obj(objin, threshold=0.0000001):
     '''
     Returns the modal grade of a multivector
@@ -398,6 +432,22 @@ def compute_blade_representation(bitmap, firstIdx):
         bmp = bmp >> 1
         n = n + 1
     return tuple(blade)
+
+
+@numba.njit
+def val_get_left_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
+    """
+    This produces the matrix X that performs left multiplication with x
+    eg. X@b == (x*b).value
+    """
+    intermed = np.zeros((ndims,ndims))
+    test_ind = 0
+    for k in k_list:
+        j = l_list[test_ind]
+        i = m_list[test_ind]
+        intermed[j, i] += mult_table_vals[test_ind] * x[k]
+        test_ind = test_ind + 1
+    return intermed
 
 
 class NoMorePermutations(Exception):
@@ -653,6 +703,22 @@ class Layout(object):
     def lcmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
                           grades_a = grades_a, grades_b = grades_b, filter_mask = filter_mask, product_mask=self.lcmt_prod_mask)
+
+    def get_grade_projection_matrix(self, grade):
+        """
+        Returns the matrix M_g that performs grade projection via left multiplication
+        eg. M_g@A.value = A(g).value
+        """
+        diag_mask = 1.0 * (np.array(self.gradeList) == grade)
+        return np.diag(diag_mask)
+
+    def get_left_gmt_matrix(self, x):
+        """
+        This produces the matrix X that performs left multiplication with x
+        eg. X@b == (x*b).value
+        """
+        return val_get_left_gmt_matrix(x.value, self.k_list, self.l_list,
+                                           self.m_list, self.mult_table_vals, self.gaDims)
 
     def MultiVector(self,*args,**kw):
         '''
@@ -1080,24 +1146,9 @@ class MultiVector(object):
 
         # Let math.log() check that other is a Python number, not something
         # else.
-        intMV = math.log(other) * self
+
         # pow(x, y) == exp(y * log(x))
-
-        newMV = self._newMV()  # null
-
-        nextTerm = self._newMV()
-        nextTerm[()] = 1  # order 0 term of exp(x) Taylor expansion
-
-        n = 1.
-
-        while nextTerm != 0:
-            # iterate until the added term is within _eps of 0
-            newMV = newMV + nextTerm
-            nextTerm = nextTerm * intMV / n
-            n = n + 1
-        else:
-            # squeeze out that extra little bit of accuracy
-            newMV = newMV + nextTerm
+        newMV = general_exp(math.log(other) * self)
 
         return newMV
 

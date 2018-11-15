@@ -1,10 +1,76 @@
 
 import h5py
 import numpy as np
+import json
+
+
+def write_json_file(file_name, mv_array, metric, basis_names, compression=True,
+                   transpose=False, sparse=False, support=None, compression_opts=1):
+    """
+    Writes a json ga file of format version 0.0.1
+    """
+    data_dict = {}
+
+    # Record the version number
+    data_dict['version'] = '0.0.1'
+
+    # First lets deal with the multivector coefficient data itself
+    dset_data = {}
+    if transpose:
+        dset_data['data'] = mv_array.T.tolist()
+        dset_data['transpose'] = True
+    else:
+        dset_data['data'] = mv_array.tolist()
+        dset_data['transpose'] = False
+
+    if sparse:
+        dset_data['sparse'] = True
+        if support is not None:
+            dset_data['support'] = support.tolist()
+        else:
+            raise ValueError('You must specify the support of the multivectors '
+                             'if you explicitly specify sparse storage')
+    else:
+        dset_data['sparse'] = False
+        dset_data['support'] = []
+
+    data_dict['dataset'] = dset_data
+
+    # Now save the metric
+    data_dict["metric"] = metric.tolist()
+
+    # Now the basis names
+    data_dict["basis_names"] = [str(s) for s in basis_names]
+
+    with open(file_name, "w") as fp:
+        json.dump(data_dict, fp)
+
+
+def read_json_file(file_name):
+    """
+    Reads a json ga file of format version 0.0.1
+    """
+    with open(file_name, "r") as fp:
+        f = json.load(fp)
+        assert f['version'] == '0.0.1'
+        data = f['dataset']
+        transpose = data['transpose']
+        if transpose:
+            data_array = np.array(data['data']).T
+        else:
+            data_array = np.array(data['data'])
+        sparse = data['sparse']
+        if sparse:
+            support = data['support']
+        else:
+            support = None
+        metric = np.array(f['metric'])
+        basis_names = np.array(f['basis_names'][:])
+    return data_array, metric, basis_names, support
 
 
 def write_ga_file(file_name, mv_array, metric, basis_names, compression=True,
-                   transpose=False, sparse=False, support=False, compression_opts=1):
+                   transpose=False, sparse=False, support=None, compression_opts=1):
     """
     Writes a ga file of format version 0.0.1
     """

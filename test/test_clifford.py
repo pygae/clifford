@@ -33,11 +33,12 @@ class CliffordTests(unittest.TestCase):
                     self.assert_(abs(a_inv - 1./a) < 1.e-11)
 
     def test_exp(self):
-
         layout, blades = self.algebras[0]
-        R = exp(blades['e12'])
-        e1 = blades['e1']
-        R*e1*~R
+        e12 = blades['e12']
+        theta = np.linspace(0, 100 * np.pi, 101)
+        a_list = [np.e**(t * e12) for t in theta]
+        for a in a_list:
+            np.testing.assert_almost_equal(abs(a), 1.0, 5)
 
     def test_indexing(self):
         layout, blades = self.algebras[0]
@@ -170,6 +171,16 @@ class BasicAlgebraTests(unittest.TestCase):
             for i in range(len(layout.sig)+1):
                 mv = layout.randomMV()(i)
                 assert i == grade_obj(mv)
+
+    def test_left_multiplication_matrix(self):
+        algebras = [Cl(i) for i in [3, 4]] + [conformalize(Cl(3)[0])]
+        for alg in algebras:
+            layout = alg[0]
+            for i in range(1000):
+                mv = layout.randomMV()
+                mv2 = layout.randomMV()
+                np.testing.assert_almost_equal(np.matmul(layout.get_left_gmt_matrix(mv),mv2.value), (mv*mv2).value)
+
 
 
 class FrameTests(unittest.TestCase):
