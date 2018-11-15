@@ -40,7 +40,7 @@ def midpoint_and_error_of_line_cluster_eig(line_cluster):
     start = gmt_func(gmt_func(start,ninf_val),start)[1:6]
 
     point_val = np.zeros(32)
-    point_val[1:6] = (mat2solve@start)
+    point_val[1:6] = np.matmul(mat2solve,start)
     new_mv = layout.MultiVector(value=point_val)
     new_mv = normalise_n_minus_1((new_mv * einf * new_mv)(1))
     return new_mv, val_point_to_line_cluster_distance(new_mv.value, line_cluster_array)
