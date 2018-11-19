@@ -234,7 +234,7 @@ class GanjaScene:
             print(self, file=fobj)
 
 
-def draw_objects_ganja(objects, color=int('AA000000', 16)):
+def draw_objects_ganja(objects, color=int('AA000000', 16), print_scene=True):
     """
     Takes a list of multivectors or a .ga file name and draws the multivectors
     By default attempts to interpret the type of object unless a mv_type is specified
@@ -244,18 +244,20 @@ def draw_objects_ganja(objects, color=int('AA000000', 16)):
         mv_list = [layout.MultiVector(value=data_array[i, :]) for i in range(data_array.shape[0])]
         sc = GanjaScene()
         sc.add_objects(mv_list, color=color)
-        print(sc)
+        if print_scene:
+            print(sc)
         return sc
     elif isinstance(objects, list) or isinstance(objects, MVArray):
         sc = GanjaScene()
         sc.add_objects(objects, color=color)
-        print(sc)
+        if print_scene:
+            print(sc)
         return sc
     else:
         raise ValueError('The input is not a string or a list of objects')
 
 
-def draw_objects(objects, mv_type='interp', color='rgb(0,0,0)'):
+def draw_objects(objects, mv_type='interp', color='rgb(0,0,0)', print_scene=True):
     """
     Takes a list of multivectors or a .ga file name and draws the multivectors
     By default attempts to interpret the type of object unless a mv_type is specified
@@ -265,12 +267,14 @@ def draw_objects(objects, mv_type='interp', color='rgb(0,0,0)'):
         mv_list = [layout.MultiVector(value=data_array[i,:]) for i in range(data_array.shape[0])]
         sc = GAScene()
         sc.add_object_array(mv_list, mv_type, color=color)
-        print(sc)
+        if print_scene:
+            print(sc)
         return sc
     elif isinstance(objects, list) or isinstance(objects, MVArray):
         sc = GAScene()
         sc.add_object_array(objects, mv_type, color=color)
-        print(sc)
+        if print_scene:
+            print(sc)
         return sc
     else:
         raise ValueError('The input is not a string or a list of objects')
