@@ -32,6 +32,27 @@ be mixed freely and consistently in the form of mixed-grade multivectors. Like t
 ![blades](https://github.com/arsenovic/clifford/blob/master/docs/_static/blades.png)
 
 
+Docs
+----------
+
+[Tutorials](https://clifford.readthedocs.io/en/latest/)
+* [Installation](https://clifford.readthedocs.io/en/latest/Installation.html)
+* [Quick Start (G2)](https://clifford.readthedocs.io/en/latest/QuickStartG2.html)
+* [The Algebra Of Space (G3)](https://clifford.readthedocs.io/en/latest/TheAlgebraOfSpaceG3.html)
+* [Rotations in Space: Euler Angles, Matrices, and Quaternions](https://clifford.readthedocs.io/en/latest/EulerAngles.html)
+* [Conformal Geometric Algebra](https://clifford.readthedocs.io/en/latest/ConformalGeometricAlgebra.html)
+* [Space Time Algebra](https://clifford.readthedocs.io/en/latest/SpaceTimeAlgebra.html)
+* [Interfacing Other Mathematical Systems](https://clifford.readthedocs.io/en/latest/InterfacingOtherMathSystems.html)
+* [Predefined Geometric Algebras](https://clifford.readthedocs.io/en/latest/PredefinedGAs.html)
+
+[API](https://clifford.readthedocs.io/en/latest/api.html)
+* [clifford](https://clifford.readthedocs.io/en/latest/clifford.html)
+* [cga](https://clifford.readthedocs.io/en/latest/cga.html)
+* [tools](https://clifford.readthedocs.io/en/latest/tools.html)
+
+Links
+----------
+
 If you think Geometric Algebra looks interesting and want to learn more, check out the [cambridge group page]( http://geometry.mrao.cam.ac.uk/),  and here are some great introductory textbooks!
 
 * Geometric Algebra for Physicists, by Doran and Lasenby
