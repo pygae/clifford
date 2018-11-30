@@ -137,6 +137,15 @@ import clifford as cf
 from clifford import val_get_left_gmt_matrix, grades_present
 import warnings
 
+global pyganja_available
+try:
+    import pyganja as ganja
+    from pyganja import draw
+    pyganja_available =True
+except:
+    pyganja_available = False
+
+
 # Allow syntactic alternatives to the standard included in the clifford package
 ninf = einf
 no = -eo
@@ -1410,6 +1419,17 @@ class ConformalMVArray(cf.MVArray):
     """
     This class is for storing arrays of conformal multivectors
     """
+    def draw(self):
+        '''
+        display mvarray using a given visualization backend
+        
+        currently supports pyganja. 
+        '''
+        if pyganja_available:
+            return draw([mv for mv in self])
+        else:
+            pass  
+                   
     def up(self):
         """
         Up mapping
@@ -1454,7 +1474,7 @@ class ConformalMVArray(cf.MVArray):
         Constructs an array of mvs from a value array
         """
         return ConformalMVArray(v_new_mv(value_array))
-
+    
 v_dual = np.vectorize(fast_dual, otypes=[ConformalMVArray])
 v_new_mv = np.vectorize(lambda v: cf.MultiVector(layout, v), otypes=[ConformalMVArray], signature='(n)->()')
 v_up = np.vectorize(fast_up, otypes=[ConformalMVArray])

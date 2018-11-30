@@ -62,7 +62,13 @@ from . import conformalize, op,gp, MultiVector,Cl
 from numpy import zeros,e,log
 from numpy.random import rand
 import math
-    
+
+global pyganja_available
+try:
+    import pyganja as ganja
+    pyganja_available =True
+except:
+    pyganja_available = False
 
 class CGAThing(object):
     '''
@@ -79,7 +85,8 @@ class CGAThing(object):
         else:
             klass = other.__class__
             return klass(self.cga, self.mv*other.mv*~self.mv)
-    
+     
+            
     def inverted(self):
         '''
         inverted version of this thing. 

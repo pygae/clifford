@@ -377,7 +377,7 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
     # if det is known a priori check to see if it's correct, if not add
     # an extra reflection which leaves all points in B invarianct
     if det is not None:
-        I = R.pseudoScalar()
+        I = R.pseudoScalar
         our_det = (R * I * ~R * I.inv())(0)
         if sign(float(our_det)) != det:
             R = B_En.dual() * R
