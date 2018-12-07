@@ -50,16 +50,6 @@ class TestJSONBasicIO(unittest.TestCase):
         np.testing.assert_equal(layout.metric, metric_2)
         np.testing.assert_equal(basis_names, basis_names_2)
 
-    # def test_write_and_read_array(self):
-    #     file_name = "test.ga.json"
-    #
-    #     mv_array = MVArray([random_point_pair() for i in range(1000)])
-    #     mv_array.save(file_name, compression=True, transpose=False, sparse=False, support=False)
-    #
-    #     loaded_array = layout.load_ga_file(file_name)
-    #
-    #     np.testing.assert_equal(loaded_array.value, mv_array.value)
-
 
 if __name__ == '__main__':
     unittest.main()
