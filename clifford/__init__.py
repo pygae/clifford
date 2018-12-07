@@ -1722,17 +1722,19 @@ class MultiVector(object):
             return Madjoint / MadjointM[()]
         else:
             raise ValueError("no inverse exists for this multivector")
+            
+
+    
 
     def inv(self):
-        try:
-            return self.normalInv()
-        except (ValueError):
-            return self.leftLaInv()
-            
-        
+        if (self*~self).isScalar()
+            it =  self.normalInv()
+        else:
+            it =  self.leftLaInv()
+        return it
+    
     leftInv = leftLaInv
     rightInv = leftLaInv
-    # inv= normalInv
 
     def dual(self, I=None):
         """Returns the dual of the multivector against the given subspace I.
