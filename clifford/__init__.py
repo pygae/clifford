@@ -1725,7 +1725,7 @@ class MultiVector(object):
 
     leftInv = leftLaInv
     def inv(self):
-        if (self*~self).isScalar()
+        if (self*~self).isScalar():
             it =  self.normalInv()
         else:
             it =  self.leftLaInv()
