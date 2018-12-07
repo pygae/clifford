@@ -1724,8 +1724,13 @@ class MultiVector(object):
             raise ValueError("no inverse exists for this multivector")
 
     leftInv = leftLaInv
-    inv = rightInv = leftLaInv
-    # inv= normalInv
+    def inv(self):
+        if (self*~self).isScalar()
+            it =  self.normalInv()
+        else:
+            it =  self.leftLaInv()
+        return it
+    rightInv = leftLaInv
 
     def dual(self, I=None):
         """Returns the dual of the multivector against the given subspace I.
