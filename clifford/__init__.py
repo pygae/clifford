@@ -267,7 +267,7 @@ def grade_obj_func(objin_val, gradeList, threshold):
     return np.argmax(modal_value_count)
 
 
-def general_exp(x, max_order=15):
+def general_exp(x, max_order=50):
     """
     This implements the series expansion of e**mv where mv is a multivector
     The parameter order is the maximum order of the taylor series to use
