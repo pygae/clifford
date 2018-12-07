@@ -291,7 +291,7 @@ def general_exp(x, max_order=15):
     # taylor approximation
     tmp = 1.0 + 0*e1
     for i in range(1, max_order):
-        if np.any(np.abs(tmp.value) > _eps)):
+        if np.any(np.abs(tmp.value) > _eps):
             tmp = tmp*scaled * (1.0 / i)
             result += tmp
         else:
