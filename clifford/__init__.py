@@ -1151,7 +1151,7 @@ class MultiVector(object):
         # else.
 
         # pow(x, y) == exp(y * log(x))
-        newMV = general_exp(math.log(other) * self, max_order=20)
+        newMV = general_exp(math.log(other) * self)
 
         return newMV
 
