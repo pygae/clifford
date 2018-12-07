@@ -1723,8 +1723,15 @@ class MultiVector(object):
         else:
             raise ValueError("no inverse exists for this multivector")
 
+    def inv(self):
+        try:
+            return self.normalInv()
+        except (ValueError):
+            return self.leftLaInv()
+            
+        
     leftInv = leftLaInv
-    inv = rightInv = leftLaInv
+    rightInv = leftLaInv
     # inv= normalInv
 
     def dual(self, I=None):
