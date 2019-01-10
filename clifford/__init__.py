@@ -452,6 +452,20 @@ def val_get_left_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
         test_ind = test_ind + 1
     return intermed
 
+@numba.njit
+def val_get_right_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
+    """
+    This produces the matrix X that performs right multiplication with x
+    eg. X@b == (b*x).value
+    """
+    intermed = np.zeros((ndims,ndims))
+    test_ind = 0
+    for m in m_list:
+        j = l_list[test_ind]
+        i = k_list[test_ind]
+        intermed[j, i] += mult_table_vals[test_ind] * x[m]
+        test_ind = test_ind + 1
+    return intermed
 
 class NoMorePermutations(Exception):
     """ No more permutations can be generated.
