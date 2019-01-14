@@ -312,7 +312,7 @@ class CUDATESTS(unittest.TestCase):
         print(mv_a_array)
         print('Starting kernel')
         t = time.time()
-        mv_c_array = object_set_cost_matrix(mv_a_array, mv_b_array, object_type='lines') #line_set_cost_cuda_mvs(mv_a_array, mv_b_array)
+        mv_c_array = line_set_cost_cuda_mvs(mv_a_array, mv_b_array)
         end_time = time.time() - t
         print('Kernel finished')
         print(end_time)
