@@ -1007,8 +1007,15 @@ def val_rotor_between_objects_root(X1, X2):
     For any two conformal objects X1 and X2 this returns a rotor that takes X1 to X2
     Uses the square root of rotors for efficiency and numerical stability
     """
-    gamma = gmt_func(X1, X1)[0]
-    C_val = gamma*gmt_func(X2, X1)
+    X21 = gmt_func(X2, X1)
+    X12 = gmt_func(X1, X2)
+    X_SUM = X21 + X12
+    X_SUM[0] -= 2.0
+    if np.sum(np.abs(X_SUM)) > 0.0000001:
+        gamma = gmt_func(X1, X1)[0]
+        C_val = gamma*gmt_func(X2, X1)
+    else:
+        C_val = X21
     C_val[0] += 1
     return val_normalised(pos_twiddle_root_val(C_val)[0, :])
 
