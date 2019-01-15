@@ -319,10 +319,21 @@ def rotor_between_objects_device(L1, L2, rotor):
         positive_root_device(sigma_val, k_value)
         annhilate_k_device(k_value, C_val, rotor)
     else:
-        gp_device(L2, L1, rotor)
+        L21 = numba.cuda.local.array(32, dtype=numba.float64)
+        L12 = numba.cuda.local.array(32, dtype=numba.float64)
+        gp_device(L2, L1, L21)
+        gp_device(L1, L2, L12)
+        sumval = 0.0
         for i in range(32):
-            rotor[i] = -rotor[i]
-        rotor[0] = rotor[0] + 1.0
+            if i == 0:
+                sumval += abs(L12[i] + L21[i] - 2.0)
+            else:
+                sumval += abs(L12[i] + L21[i])
+            rotor[i] = -L21[i]
+        if sumval < 0.0000001:
+            rotor[0] = rotor[0] - 1.0
+        else:
+            rotor[0] = rotor[0] + 1.0
         normalise_mv_device(rotor)
 
 

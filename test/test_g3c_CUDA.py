@@ -175,7 +175,7 @@ class CUDATESTS(unittest.TestCase):
                 mv_b = cf.MultiVector(self.layout, mv_b_array[i, :])
                 mv_d_array[i, :] = rotor_between_objects(mv_a, mv_b).value
             print(time.time() - t)
-
+            print(generator.__name__)
             np.testing.assert_almost_equal(mv_c_array, mv_d_array)
 
     def test_dorst_norm_val(self):
@@ -312,7 +312,7 @@ class CUDATESTS(unittest.TestCase):
         print(mv_a_array)
         print('Starting kernel')
         t = time.time()
-        mv_c_array = object_set_cost_matrix(mv_a_array, mv_b_array, object_type='lines') #line_set_cost_cuda_mvs(mv_a_array, mv_b_array)
+        mv_c_array = line_set_cost_cuda_mvs(mv_a_array, mv_b_array)
         end_time = time.time() - t
         print('Kernel finished')
         print(end_time)
