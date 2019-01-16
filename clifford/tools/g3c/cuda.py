@@ -29,6 +29,7 @@ def sequential_rotor_estimation_device(reference_model, query_model, rotor_outpu
     # Set up the running rotor estimate
     set_as_unit_rotor_device(r_running)
 
+
     # Start iterating for convergence
     for iteration_number in range(n_iterations):
 

@@ -99,11 +99,12 @@ def estimate_rotor_objects(reference_model, query_model, maxfev=20000, print_res
     """
     Estimates the rotor that takes one set of objects to another
     """
+    grade_list = [grade_obj(q) for q in query_model]
     x0 = np.finfo(float).eps * np.random.rand(6)
 
     def minimisation_func(x):
         R = rotorconversion(x)
-        query_model_remapped = [(apply_rotor(l, R)).normal() for l in query_model]
+        query_model_remapped = [(apply_rotor(l, R))(grade_list[i]).normal() for i,l in enumerate(query_model)]
         return object_set_cost_sum(reference_model, query_model_remapped, object_type=object_type)
 
     res = minimize(minimisation_func, x0, method='SLSQP', options={'ftol': 10.0 ** (-16), \
@@ -118,7 +119,7 @@ def estimate_rotor_objects(reference_model, query_model, maxfev=20000, print_res
     if print_res:
         print(res)
     rotor = rotorconversion(res.x)
-    query_model_remapped = [apply_rotor(l, rotor).normal() for l in query_model]
+    query_model_remapped = [(apply_rotor(l, rotor))(grade_list[i]).normal() for i,l in enumerate(query_model)]
     cost = object_set_cost_sum(reference_model, query_model_remapped, object_type=object_type)
     return rotor, cost
 
@@ -138,6 +139,8 @@ def sequential_object_rotor_estimation(reference_model, query_model, n_iteration
     Performs a sequential rotor update based on the rotors between individual objects
     Exits when the sum of the cost of rotor updates through the list is very small
     """
+    grade_list = [grade_obj(q) for q in query_model]
+
     R_total = 1.0 + 0.0*e1
     r_list = []
     for j in range(n_iterations):
@@ -147,14 +150,20 @@ def sequential_object_rotor_estimation(reference_model, query_model, n_iteration
         else:
             indices = range(len(query_model))
         for i in indices:
-            C1 = (apply_rotor(query_model[i], R_total)).normal()
+            C1 = (apply_rotor(query_model[i], R_total)(grade_list[i])).normal()
             C2 = reference_model[i]
             if abs(C1 + C2) < 0.0001:
                 C1 = -C1
             if object_type == 'lines':
                 rroot = (square_roots_of_rotor(rotor_between_lines(C1, C2))[0]).normal()
             else:
-                rroot = (square_roots_of_rotor(rotor_between_objects(C1, C2))[0]).normal()
+                try:
+                    rroot = (square_roots_of_rotor(rotor_between_objects(C1, C2))[0]).normal()
+                except:
+                    print(C1)
+                    print(C2)
+                    print(rotor_between_objects(C1, C2))
+                    rroot = (square_roots_of_rotor(rotor_between_objects(C1, C2))[0]).normal()
             r_list.append(rroot)
             R_total = (rroot*R_total).normal()
             cost_sum += rotor_cost(rroot)
@@ -184,7 +193,7 @@ def sequential_object_rotor_estimation_convergence_detection(reference_model, qu
             indices = range(len(query_model))
         for i in indices:
             grade = grade_list[i]
-            new_obj = apply_rotor(query_model[i],R_total)(grade)
+            new_obj = apply_rotor(query_model[i],R_total)(grade).normal()
             C1 = normalised(new_obj)
             C2 = reference_model[i]
             if abs(C1 + C2) < 0.0001:

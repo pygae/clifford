@@ -502,6 +502,7 @@ class G3CToolsTests(unittest.TestCase):
 
         # Test the general case
         for obj_gen in object_generators:
+            print(obj_gen.__name__)
             for i in range(n_repeats):
                 C1 = obj_gen()
                 C2 = obj_gen()
@@ -512,7 +513,12 @@ class G3CToolsTests(unittest.TestCase):
                 if sum(np.abs((C2 + C3).value)) < 0.0001:
                     print('SIGN FLIP ', obj_gen.__name__)
                     C3 = -C3
-                np.testing.assert_almost_equal(C2.value, C3.value, 3)
+                try:
+                    np.testing.assert_almost_equal(C2.value, C3.value, 3)
+                except:
+                    print(R)
+                    print(C2*C1 + C1*C2)
+                    np.testing.assert_almost_equal(C2.value, C3.value, 3)
 
     def test_general_rotor_between_objects_specific_cases(self):
         C1 = -(2.48651^e1234) - (2.48651^e1235) - (1.0^e1245) + (3e-05^e1345) - (0.0^e2345)

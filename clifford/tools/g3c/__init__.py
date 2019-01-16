@@ -1014,9 +1014,11 @@ def val_rotor_between_objects_root(X1, X2):
     if np.sum(np.abs(X_SUM)) > 0.0000001:
         gamma = gmt_func(X1, X1)[0]
         C_val = gamma*gmt_func(X2, X1)
+        C_val[0] += 1
     else:
         C_val = X21
-    C_val[0] += 1
+        C_val[0] += 1
+        return val_normalised(C_val)
     return val_normalised(pos_twiddle_root_val(C_val)[0, :])
 
 
