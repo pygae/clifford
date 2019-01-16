@@ -221,7 +221,7 @@ def val_line_set_cost_matrix(object_array_a, object_array_b):
     return matrix
 
 
-def object_set_cost_matrix(object_set_a, object_set_b, object_type='generic'):
+def object_set_cost_matrix(object_set_a, object_set_b, object_type="generic"):
     """
     Evaluates the rotor cost matrix between two sets of objects
     """
