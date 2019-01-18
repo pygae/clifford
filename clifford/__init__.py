@@ -68,6 +68,10 @@ TEST_NUMBA = True
 
 
 def test_numba():
+    """
+    This tests numba to see if it can successfully compile a specific program
+    https://github.com/numba/numba/issues/3671
+    """
     @numba.njit(parallel=True)
     def play_games():
         monte_carlo_cell_visit_frequency = np.zeros(100, dtype=np.int_)
