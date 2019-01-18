@@ -9,12 +9,14 @@ matrix:
       python: '3.5'
       env: CONDA=false
     - os: linux
+      python: '3.6'
+      env: CONDA=false
+    - os: linux
       python: '3.5'
       env: CONDA=true
     - os: linux
       python: '3.6'
       env: CONDA=true
-
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then lsb_release -a ; fi
