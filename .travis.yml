@@ -25,6 +25,7 @@ install:
     fi
   - pip install coverage
   - pip install python-coveralls
+  - pip install numba==0.40.1
   - python setup.py install
 
 script:
