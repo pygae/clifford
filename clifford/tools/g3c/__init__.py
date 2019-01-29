@@ -213,6 +213,52 @@ def interpret_multivector_as_object(mv):
     else:
         return -1
 
+    
+def project_points_to_plane(point_list, plane):
+    """ 
+    Takes a load of points and projects them onto a plane
+    """
+    projected_list = []
+    for point in point_list:
+        proj_point = ((point|plane)*plane)
+        proj_point = normalise_n_minus_1( (proj_point*einf*proj_point)(1) )
+        projected_list.append(proj_point)
+    return projected_list
+
+
+def project_points_to_sphere(point_list, sphere):
+    """
+    Takes a load of points and projects them onto a sphere
+    """
+    projected_list = []
+    C = sphere*einf*sphere
+    for point in point_list:
+        proj_point = point_pair_to_end_points(meet((point^C^einf).normal(),sphere))[1]
+        projected_list.append(proj_point)
+    return projected_list
+
+
+def project_points_to_circle(point_list, circle):
+    """
+    Takes a load of point and projects them onto a circle
+    """
+    circle_plane = (circle^einf).normal()
+    planar_points = project_points_to_plane(point_list,circle_plane)
+    circle_points = project_points_to_sphere(planar_points, -circle_plane*I5)
+    return circle_points
+
+
+def project_points_to_line(point_list, line):
+    """
+    Takes a load of points and projects them onto a line
+    """
+    projected_list = []
+    for point in point_list:
+        pp = point|line
+        proj_point = (pp*einf*pp)(1)
+        projected_list.append(proj_point)
+    return projected_list
+
 
 def normalise_TR_to_unit_T(TR):
     """
