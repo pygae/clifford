@@ -2069,6 +2069,35 @@ class MVArray(np.ndarray):
                       compression=compression, transpose=transpose,
                       sparse=sparse, support=support, compression_opts=compression_opts)
 
+    def sum(self):
+        '''
+        sum elements of this MVArray 
+        '''
+        out=self[0]
+        for k in self[1:]:
+            out+=k
+        return out 
+
+    def gp(self):
+        '''
+        geometric product of all elements of this MVArray  (like reduce)
+        like `self[0]*self[1]*....self[n]`
+        '''
+        out=self[0]
+        for k in self[1:]:
+            out*=k
+        return out 
+    
+    def op(selfx):
+        '''
+        outer product of all elements of this MVArray  (like reduce)
+        like `self[0]^self[1]^....self[n]`
+        '''
+        out=self[0]
+        for k in self[1:]:
+            out= out^k
+        return out
+
 class Frame(MVArray):
     '''
     A frame of vectors
