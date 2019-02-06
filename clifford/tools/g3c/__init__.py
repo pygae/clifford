@@ -134,7 +134,7 @@ from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
     random_rotation_rotor, generate_rotation_rotor, val_random_euc_mv
 from clifford.g3c import *
 import clifford as cf
-from clifford import val_get_left_gmt_matrix, grades_present
+from clifford import val_get_left_gmt_matrix, grades_present, NUMBA_PARALLEL
 import warnings
 
 # Allow syntactic alternatives to the standard included in the clifford package
@@ -420,7 +420,7 @@ def midpoint_of_line_cluster(line_cluster):
     return layout.MultiVector(value=center_point)
 
 
-@numba.njit(parallel=True)
+@numba.njit(parallel=NUMBA_PARALLEL)
 def val_midpoint_of_line_cluster(array_line_cluster):
     """
     Gets an approximate center point of a line cluster
@@ -436,7 +436,7 @@ def val_midpoint_of_line_cluster(array_line_cluster):
     return center_point
 
 
-@numba.njit(parallel=True)
+@numba.njit(parallel=NUMBA_PARALLEL)
 def val_midpoint_of_line_cluster_grad(array_line_cluster):
     """
     Gets an approximate center point of a line cluster

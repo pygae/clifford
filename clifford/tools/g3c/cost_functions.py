@@ -1,5 +1,6 @@
 
 from . import *
+from clifford import NUMBA_PARALLEL
 import itertools
 
 imt_func = layout.imt_func
@@ -193,7 +194,7 @@ def object_set_cost_sum(object_set_a, object_set_b, object_type='generic'):
     return sum_val
 
 
-@numba.njit(parallel=True, nogil=True)
+@numba.njit(parallel=NUMBA_PARALLEL, nogil=True)
 def val_object_set_cost_matrix(object_array_a, object_array_b):
     """
     Evaluates the rotor cost matrix between two sets of objects
@@ -207,7 +208,7 @@ def val_object_set_cost_matrix(object_array_a, object_array_b):
     return matrix
 
 
-@numba.njit(parallel=True, nogil=True)
+@numba.njit(parallel=NUMBA_PARALLEL, nogil=True)
 def val_line_set_cost_matrix(object_array_a, object_array_b):
     """
     Evaluates the rotor cost matrix between two sets of objects

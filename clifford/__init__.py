@@ -66,13 +66,20 @@ _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
 TEST_NUMBA = True
 
+import os
+try:
+    NUMBA_DISABLE_PARALLEL = os.environ['NUMBA_DISABLE_PARALLEL']
+    NUMBA_PARALLEL = not bool(NUMBA_DISABLE_PARALLEL)
+except:
+    NUMBA_PARALLEL = True
+
 
 def test_numba():
     """
     This tests numba to see if it can successfully compile a specific program
     https://github.com/numba/numba/issues/3671
     """
-    @numba.njit(parallel=True)
+    @numba.njit(parallel=NUMBA_PARALLEL)
     def play_games():
         monte_carlo_cell_visit_frequency = np.zeros(100, dtype=np.int_)
         monte_carlo_cell_visit_frequency != 0
@@ -110,7 +117,7 @@ def get_adjoint_function(gradeList):
     return adjoint_func
 
 
-@numba.njit(parallel=True, nogil=True)
+@numba.njit(parallel=NUMBA_PARALLEL, nogil=True)
 def construct_tables(gradeList, linear_map_to_bitmap,
                  bitmap_to_linear_map, signature):
 
@@ -716,7 +723,7 @@ class Layout(object):
         k_list, l_list, m_list, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask = construct_tables(np.array(self.gradeList),
                        self.linear_map_to_bitmap,
                        self.bitmap_to_linear_map,
-                       np.array(self.sig))
+                       self.sig)
 
         # This generates the functions that will perform the various products
         self.gmt_func = get_mult_function(k_list,l_list,m_list,mult_table_vals,self.gaDims,self.gradeList)
