@@ -2512,7 +2512,7 @@ def conformalize(layout, added_sig=[1,-1]):
         return x + (.5 ^ ((x**2)*einf)) + eo
 
     def homo(x):
-        return x*(-x | einf).normalInv()  # homogenise conformal vector
+        return x*(-x | einf)(0).normalInv()  # homogenise conformal vector
 
     def down(x):
         x_down =  (homo(x) ^ E0)*E0
