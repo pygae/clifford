@@ -2,7 +2,8 @@ from __future__ import absolute_import, division
 from __future__ import print_function, unicode_literals
 from past.builtins import range
 
-from clifford import Cl, randomMV, Frame, get_mult_function, conformalize, grade_obj,MultiVector
+
+from clifford import Cl, randomMV, Frame, get_mult_function, conformalize, grade_obj, val_get_right_gmt_matrix
 
 
 import numpy as np
@@ -236,7 +237,20 @@ class BasicAlgebraTests(unittest.TestCase):
                 mv2 = layout.randomMV()
                 np.testing.assert_almost_equal(np.matmul(layout.get_left_gmt_matrix(mv),mv2.value), (mv*mv2).value)
 
-    
+
+    def test_right_multiplication_matrix(self):
+        algebras = [Cl(i) for i in [3, 4]] + [conformalize(Cl(3)[0])]
+        for alg in algebras:
+            layout = alg[0]
+            for i in range(1000):
+                a = layout.randomMV()
+                b = layout.randomMV()
+                b_right = val_get_right_gmt_matrix(b.value, layout.k_list, layout.l_list, layout.m_list,
+                                                   layout.mult_table_vals, layout.gaDims)
+                res = a*b
+                res2 = layout.MultiVector(value=b_right@a.value)
+                testing.assert_almost_equal(res.value, res2.value)
+
 
 class FrameTests(unittest.TestCase):
 

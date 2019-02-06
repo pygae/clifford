@@ -222,6 +222,52 @@ def interpret_multivector_as_object(mv):
     else:
         return -1
 
+    
+def project_points_to_plane(point_list, plane):
+    """ 
+    Takes a load of points and projects them onto a plane
+    """
+    projected_list = []
+    for point in point_list:
+        proj_point = ((point|plane)*plane)
+        proj_point = normalise_n_minus_1( (proj_point*einf*proj_point)(1) )
+        projected_list.append(proj_point)
+    return projected_list
+
+
+def project_points_to_sphere(point_list, sphere):
+    """
+    Takes a load of points and projects them onto a sphere
+    """
+    projected_list = []
+    C = sphere*einf*sphere
+    for point in point_list:
+        proj_point = point_pair_to_end_points(meet((point^C^einf).normal(),sphere))[1]
+        projected_list.append(proj_point)
+    return projected_list
+
+
+def project_points_to_circle(point_list, circle):
+    """
+    Takes a load of point and projects them onto a circle
+    """
+    circle_plane = (circle^einf).normal()
+    planar_points = project_points_to_plane(point_list,circle_plane)
+    circle_points = project_points_to_sphere(planar_points, -circle_plane*I5)
+    return circle_points
+
+
+def project_points_to_line(point_list, line):
+    """
+    Takes a load of points and projects them onto a line
+    """
+    projected_list = []
+    for point in point_list:
+        pp = point|line
+        proj_point = (pp*einf*pp)(1)
+        projected_list.append(proj_point)
+    return projected_list
+
 
 def normalise_TR_to_unit_T(TR):
     """
@@ -1016,9 +1062,18 @@ def val_rotor_between_objects_root(X1, X2):
     For any two conformal objects X1 and X2 this returns a rotor that takes X1 to X2
     Uses the square root of rotors for efficiency and numerical stability
     """
-    gamma = gmt_func(X1, X1)[0]
-    C_val = gamma*gmt_func(X2, X1)
-    C_val[0] += 1
+    X21 = gmt_func(X2, X1)
+    X12 = gmt_func(X1, X2)
+    X_SUM = X21 + X12
+    X_SUM[0] -= 2.0
+    if np.sum(np.abs(X_SUM)) > 0.0000001:
+        gamma = gmt_func(X1, X1)[0]
+        C_val = gamma*gmt_func(X2, X1)
+        C_val[0] += 1
+    else:
+        C_val = X21
+        C_val[0] += 1
+        return val_normalised(C_val)
     return val_normalised(pos_twiddle_root_val(C_val)[0, :])
 
 

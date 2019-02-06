@@ -53,16 +53,42 @@ import numpy as np
 from numpy import linalg, array,zeros
 import numba
 
+
 from clifford.io import write_ga_file, read_ga_file
 
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 # The blade finding regex for parsing strings of mvs
 _blade_pattern =  "((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))"
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
+TEST_NUMBA = True
+
+
+def test_numba():
+    """
+    This tests numba to see if it can successfully compile a specific program
+    https://github.com/numba/numba/issues/3671
+    """
+    @numba.njit(parallel=True)
+    def play_games():
+        monte_carlo_cell_visit_frequency = np.zeros(100, dtype=np.int_)
+        monte_carlo_cell_visit_frequency != 0
+
+    play_games()
+
+
+if TEST_NUMBA:
+    try:
+        test_numba()
+    except:
+        import os
+        os.environ['NUMBA_DISABLE_JIT'] = "1"
+        warn('The version of numba installed suffers from https://github.com/numba/numba/issues/3671. ' +
+             'It has therefore been disabled. To reenable numba JIT compiliation try installing numba version 0.40.1', Warning)
+    TEST_NUMBA = False
 
 
 def get_longest_string(string_array):
@@ -452,6 +478,20 @@ def val_get_left_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
         test_ind = test_ind + 1
     return intermed
 
+@numba.njit
+def val_get_right_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
+    """
+    This produces the matrix X that performs right multiplication with x
+    eg. X@b == (b*x).value
+    """
+    intermed = np.zeros((ndims,ndims))
+    test_ind = 0
+    for m in m_list:
+        j = l_list[test_ind]
+        i = k_list[test_ind]
+        intermed[j, i] += mult_table_vals[test_ind] * x[m]
+        test_ind = test_ind + 1
+    return intermed
 
 class NoMorePermutations(Exception):
     """ No more permutations can be generated.

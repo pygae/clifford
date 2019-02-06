@@ -50,6 +50,22 @@ Docs
 * [cga](https://clifford.readthedocs.io/en/latest/cga.html)
 * [tools](https://clifford.readthedocs.io/en/latest/tools.html)
 
+
+Syntax Summary
+----------
+
+| Syntax  | Operation |
+|:-:|:-:|
+| \| |  Symetric inner product |
+| << |  Left contraction |
+|  ^ | Outer product  |
+| *  |  Geometric product |
+| X\(i\)  |  Return the section of the multivector X of grade i |
+| X\(ei\)  |  Return the section of the multivector X for which ei is the pseudo scalar |
+| X\[i\]  | Return the i'th coefficient from the multivector X
+| X.normal() | Return the normalised multivector so that X*~X is +- 1 |
+
+
 Links
 ----------
 

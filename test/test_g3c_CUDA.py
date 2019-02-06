@@ -21,7 +21,13 @@ from clifford.tools.g3c.cost_functions import val_object_cost_function, \
     object_set_cost_matrix
 from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation_convergence_detection
 
-from clifford.tools.g3c.model_matching import REFORM_cuda, iterative_model_match_sequential
+from clifford.tools.g3c.model_matching import REFORM_cuda, iterative_model_match_sequential, \
+    assign_measurements_to_objects_matrix
+
+
+object_generators = [random_point_pair, random_line, random_circle, \
+                          random_sphere, random_plane]
+
 
 class CUDATESTS(unittest.TestCase):
 
@@ -49,25 +55,28 @@ class CUDATESTS(unittest.TestCase):
         output = np.zeros((n_samples, 32))
         mv_d_array = np.zeros(output.shape)
 
+        cost_array = np.zeros(n_samples, dtype=np.float64)
+
         print('Starting kernel')
         t = time.time()
-        # blockdim = 64
-        # griddim = int(math.ceil(n_mvs / blockdim))
-        # sequential_rotor_estimation_kernel[griddim, blockdim](reference_model_array, query_model_array, output)
-        output, cost_array = sequential_rotor_estimation_cuda(reference_model_array, query_model_array, n_samples,
-                                                  n_objects_per_sample)
-        end_time = time.time() - t
-        print('Kernel finished')
-        print(end_time)
+        blockdim = 64
+        griddim = int(math.ceil(reference_model_array.shape[0] / blockdim))
 
-        # Now do the non cuda kernel
-        t = time.time()
-        for i in range(output.shape[0]):
-            mv_d_array[i, :] = sequential_object_rotor_estimation_convergence_detection(reference_model,
-                                                                                        query_model)[0].value
-        print(time.time() - t)
-        print(cost_array)
-        np.testing.assert_almost_equal(output, mv_d_array, 5)
+        sequential_rotor_estimation_kernel[griddim, blockdim](reference_model_array, query_model_array, output, cost_array)
+        # output, cost_array = sequential_rotor_estimation_cuda(reference_model_array, query_model_array, n_samples,
+        #                                           n_objects_per_sample)
+        # end_time = time.time() - t
+        # print('Kernel finished')
+        # print(end_time)
+        #
+        # # Now do the non cuda kernel
+        # t = time.time()
+        # for i in range(output.shape[0]):
+        #     mv_d_array[i, :] = sequential_object_rotor_estimation_convergence_detection(reference_model,
+        #                                                                                 query_model)[0].value
+        # print(time.time() - t)
+        # print(cost_array)
+        # np.testing.assert_almost_equal(output, mv_d_array, 5)
 
 
     def test_square_root_of_rotor_kernel(self):
@@ -175,7 +184,7 @@ class CUDATESTS(unittest.TestCase):
                 mv_b = cf.MultiVector(self.layout, mv_b_array[i, :])
                 mv_d_array[i, :] = rotor_between_objects(mv_a, mv_b).value
             print(time.time() - t)
-
+            print(generator.__name__)
             np.testing.assert_almost_equal(mv_c_array, mv_d_array)
 
     def test_dorst_norm_val(self):
@@ -312,7 +321,7 @@ class CUDATESTS(unittest.TestCase):
         print(mv_a_array)
         print('Starting kernel')
         t = time.time()
-        mv_c_array = object_set_cost_matrix(mv_a_array, mv_b_array, object_type='lines') #line_set_cost_cuda_mvs(mv_a_array, mv_b_array)
+        mv_c_array = line_set_cost_cuda_mvs(mv_a_array, mv_b_array)
         end_time = time.time() - t
         print('Kernel finished')
         print(end_time)
@@ -385,3 +394,28 @@ class CUDATESTS(unittest.TestCase):
                 print(r_est)
                 error_count += 1
         print('Correct fraction: ', 1.0 - error_count / n_runs)
+
+    def test_assign_objects_to_objects_cuda(self):
+        n_repeats = 5
+        for obj_gen in object_generators:
+            print(obj_gen.__name__)
+            for i in range(n_repeats):
+                object_set_a = [obj_gen() for i in range(20)]
+                object_set_b = [l for l in object_set_a]
+                label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b, cuda=True)
+                try:
+                    np.testing.assert_equal(label_a, np.array(range(len(label_a))))
+                except:
+                    label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b, cuda=True)
+                    np.testing.assert_equal(label_a, np.array(range(len(label_a))))
+
+        n_repeats = 5
+        for obj_gen in object_generators:
+            print(obj_gen.__name__)
+            for i in range(n_repeats):
+                r = random_rotation_translation_rotor(0.001, np.pi / 32)
+
+                object_set_a = [obj_gen() for i in range(20)]
+                object_set_b = [l for l in object_set_a]
+                label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b, cuda=True)
+                np.testing.assert_equal(label_a, np.array(range(len(label_a))))
