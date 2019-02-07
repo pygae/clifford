@@ -1772,14 +1772,18 @@ class MultiVector(object):
             return Madjoint / MadjointM[()]
         else:
             raise ValueError("no inverse exists for this multivector")
+            
 
-    leftInv = leftLaInv
+    
+
     def inv(self):
         if (self*~self).isScalar():
             it =  self.normalInv()
         else:
             it =  self.leftLaInv()
         return it
+    
+    leftInv = leftLaInv
     rightInv = leftLaInv
 
     def dual(self, I=None):
@@ -2071,6 +2075,35 @@ class MVArray(np.ndarray):
         write_ga_file(filename, self.value, self[0].layout.metric, self[0].layout.basis_names,
                       compression=compression, transpose=transpose,
                       sparse=sparse, support=support, compression_opts=compression_opts)
+
+    def sum(self):
+        '''
+        sum elements of this MVArray 
+        '''
+        out=self[0]
+        for k in self[1:]:
+            out+=k
+        return out 
+
+    def gp(self):
+        '''
+        geometric product of all elements of this MVArray  (like reduce)
+        like `self[0]*self[1]*....self[n]`
+        '''
+        out=self[0]
+        for k in self[1:]:
+            out*=k
+        return out 
+    
+    def op(selfx):
+        '''
+        outer product of all elements of this MVArray  (like reduce)
+        like `self[0]^self[1]^....self[n]`
+        '''
+        out=self[0]
+        for k in self[1:]:
+            out= out^k
+        return out
 
 class Frame(MVArray):
     '''
@@ -2555,7 +2588,7 @@ def conformalize(layout, added_sig=[1,-1]):
         return x + (.5 ^ ((x**2)*einf)) + eo
 
     def homo(x):
-        return x*(-x | einf).normalInv()  # homogenise conformal vector
+        return x*(-x | einf)(0).normalInv()  # homogenise conformal vector
 
     def down(x):
         x_down =  (homo(x) ^ E0)*E0
