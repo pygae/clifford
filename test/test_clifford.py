@@ -3,7 +3,8 @@ from __future__ import print_function, unicode_literals
 from past.builtins import range
 
 
-from clifford import Cl, randomMV, Frame, get_mult_function, conformalize, grade_obj, val_get_right_gmt_matrix
+from clifford import Cl, randomMV, Frame, get_mult_function, \
+    conformalize, grade_obj, val_get_right_gmt_matrix, MultiVector
 
 
 import numpy as np
