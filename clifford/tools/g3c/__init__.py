@@ -40,10 +40,12 @@ Geometry Methods
     :toctree: generated/
 
     intersect_line_and_plane_to_point
+    val_intersect_line_and_plane_to_point
     quaternion_and_vector_to_rotor
     get_center_from_sphere
     get_radius_from_sphere
     point_pair_to_end_points
+    val_point_pair_to_end_points
     get_circle_in_euc
     circle_to_sphere
     line_to_point_and_direction
@@ -56,7 +58,17 @@ Geometry Methods
     convert_2D_point_to_conformal
     val_distance_point_to_line
     distance_polar_line_to_euc_point_2d
-
+    midpoint_between_lines
+    val_midpoint_between_lines
+    midpoint_of_line_cluster
+    val_midpoint_of_line_cluster
+    val_midpoint_of_line_cluster_grad
+    get_line_intersection
+    val_get_line_intersection
+    project_points_to_plane
+    project_points_to_sphere
+    project_points_to_circle
+    project_points_to_line
 
 Misc
 --------------------
@@ -68,6 +80,7 @@ Misc
     meet_val
     meet
     normalise_n_minus_1
+    val_normalise_n_minus_1
     val_apply_rotor
     apply_rotor
     val_apply_rotor_inv
@@ -88,6 +101,12 @@ Misc
     fast_dual
     disturb_object
     project_val
+    get_line_reflection_matrix
+    val_get_line_reflection_matrix
+    val_truncated_get_line_reflection_matrix
+    interpret_multivector_as_object
+    normalise_TR_to_unit_T
+    scale_TR_translation
 
 
 Root Finding
@@ -116,10 +135,16 @@ Root Finding
     pos_twiddle_root
     neg_twiddle_root
     square_roots_of_rotor
+    n_th_rotor_root
     interp_objects_root
+    general_object_interpolation
     average_objects
+    val_average_objects_with_weights
+    val_average_objects
     rotor_between_objects
-    val_rotor_between_objects
+    val_rotor_between_objects_root
+    val_rotor_between_objects_explicit
+    calculate_S_over_mu
     val_rotor_between_lines
     rotor_between_lines
     rotor_between_planes
@@ -1251,6 +1276,7 @@ def random_point_pair():
 
 
 def standard_line_at_origin():
+    """ Creates a standard line at the origin """
     return (standard_point_pair_at_origin()^einf).normal()
 
 
