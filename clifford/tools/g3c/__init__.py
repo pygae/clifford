@@ -278,7 +278,7 @@ def project_points_to_circle(point_list, circle):
     """
     circle_plane = (circle^einf).normal()
     planar_points = project_points_to_plane(point_list,circle_plane)
-    circle_points = project_points_to_sphere(planar_points, -circle_plane*I5)
+    circle_points = project_points_to_sphere(planar_points, -circle*circle_plane*I5)
     return circle_points
 
 
