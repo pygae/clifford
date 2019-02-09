@@ -763,6 +763,14 @@ class Layout(object):
         return val_get_left_gmt_matrix(x.value, self.k_list, self.l_list,
                                            self.m_list, self.mult_table_vals, self.gaDims)
 
+    def get_right_gmt_matrix(self, x):
+        """
+        This produces the matrix X that performs right multiplication with x
+        eg. X@b == (b*x).value
+        """
+        return val_get_right_gmt_matrix(x.value, self.k_list, self.l_list,
+                                           self.m_list, self.mult_table_vals, self.gaDims)
+
     def MultiVector(self,*args,**kw):
         '''
         create a multivector in this layout

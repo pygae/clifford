@@ -134,7 +134,7 @@ from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
     random_rotation_rotor, generate_rotation_rotor, val_random_euc_mv
 from clifford.g3c import *
 import clifford as cf
-from clifford import val_get_left_gmt_matrix, grades_present
+from clifford import val_get_left_gmt_matrix, val_get_right_gmt_matrix, grades_present
 import warnings
 
 # Allow syntactic alternatives to the standard included in the clifford package
@@ -257,7 +257,20 @@ def left_gmt_generator():
                                 m_list, mult_table_vals, gaDims)
     return get_left_gmt
 
+def right_gmt_generator():
+    k_list = layout.k_list
+    l_list = layout.l_list
+    m_list = layout.m_list
+    mult_table_vals = layout.mult_table_vals
+    gaDims = layout.gaDims
+    @numba.njit
+    def get_right_gmt(x_val):
+        return val_get_right_gmt_matrix(x_val, k_list, l_list,
+                                m_list, mult_table_vals, gaDims)
+    return get_right_gmt
+
 get_left_gmt_matrix = left_gmt_generator()
+get_right_gmt_matrix = right_gmt_generator()
 def get_line_reflection_matrix(lines, n_power=1):
     """
     Generates the matrix that sums the reflection of a point in many lines
