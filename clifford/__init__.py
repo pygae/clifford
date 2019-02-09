@@ -2103,7 +2103,7 @@ class MVArray(np.ndarray):
             out*=k
         return out 
     
-    def op(selfx):
+    def op(self):
         '''
         outer product of all elements of this MVArray  (like reduce)
         like `self[0]^self[1]^....self[n]`
