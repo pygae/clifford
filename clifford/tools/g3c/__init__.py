@@ -40,10 +40,12 @@ Geometry Methods
     :toctree: generated/
 
     intersect_line_and_plane_to_point
+    val_intersect_line_and_plane_to_point
     quaternion_and_vector_to_rotor
     get_center_from_sphere
     get_radius_from_sphere
     point_pair_to_end_points
+    val_point_pair_to_end_points
     get_circle_in_euc
     circle_to_sphere
     line_to_point_and_direction
@@ -56,7 +58,17 @@ Geometry Methods
     convert_2D_point_to_conformal
     val_distance_point_to_line
     distance_polar_line_to_euc_point_2d
-
+    midpoint_between_lines
+    val_midpoint_between_lines
+    midpoint_of_line_cluster
+    val_midpoint_of_line_cluster
+    val_midpoint_of_line_cluster_grad
+    get_line_intersection
+    val_get_line_intersection
+    project_points_to_plane
+    project_points_to_sphere
+    project_points_to_circle
+    project_points_to_line
 
 Misc
 --------------------
@@ -68,6 +80,7 @@ Misc
     meet_val
     meet
     normalise_n_minus_1
+    val_normalise_n_minus_1
     val_apply_rotor
     apply_rotor
     val_apply_rotor_inv
@@ -88,6 +101,12 @@ Misc
     fast_dual
     disturb_object
     project_val
+    get_line_reflection_matrix
+    val_get_line_reflection_matrix
+    val_truncated_get_line_reflection_matrix
+    interpret_multivector_as_object
+    normalise_TR_to_unit_T
+    scale_TR_translation
 
 
 Root Finding
@@ -116,10 +135,16 @@ Root Finding
     pos_twiddle_root
     neg_twiddle_root
     square_roots_of_rotor
+    n_th_rotor_root
     interp_objects_root
+    general_object_interpolation
     average_objects
+    val_average_objects_with_weights
+    val_average_objects
     rotor_between_objects
-    val_rotor_between_objects
+    val_rotor_between_objects_root
+    val_rotor_between_objects_explicit
+    calculate_S_over_mu
     val_rotor_between_lines
     rotor_between_lines
     rotor_between_planes
@@ -134,8 +159,17 @@ from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
     random_rotation_rotor, generate_rotation_rotor, val_random_euc_mv
 from clifford.g3c import *
 import clifford as cf
-from clifford import val_get_left_gmt_matrix, val_get_right_gmt_matrix, grades_present
+from clifford import val_get_left_gmt_matrix, val_get_right_gmt_matrix, grades_present, NUMBA_PARALLEL
 import warnings
+
+global pyganja_available
+try:
+    import pyganja as ganja
+    from pyganja import draw
+    pyganja_available =True
+except:
+    pyganja_available = False
+
 
 # Allow syntactic alternatives to the standard included in the clifford package
 ninf = einf
@@ -212,6 +246,52 @@ def interpret_multivector_as_object(mv):
                 return 6  # Sphere
     else:
         return -1
+
+    
+def project_points_to_plane(point_list, plane):
+    """ 
+    Takes a load of points and projects them onto a plane
+    """
+    projected_list = []
+    for point in point_list:
+        proj_point = ((point|plane)*plane)
+        proj_point = normalise_n_minus_1( (proj_point*einf*proj_point)(1) )
+        projected_list.append(proj_point)
+    return projected_list
+
+
+def project_points_to_sphere(point_list, sphere):
+    """
+    Takes a load of points and projects them onto a sphere
+    """
+    projected_list = []
+    C = sphere*einf*sphere
+    for point in point_list:
+        proj_point = point_pair_to_end_points(meet((point^C^einf).normal(),sphere))[1]
+        projected_list.append(proj_point)
+    return projected_list
+
+
+def project_points_to_circle(point_list, circle):
+    """
+    Takes a load of point and projects them onto a circle
+    """
+    circle_plane = (circle^einf).normal()
+    planar_points = project_points_to_plane(point_list,circle_plane)
+    circle_points = project_points_to_sphere(planar_points, -circle*circle_plane*I5)
+    return circle_points
+
+
+def project_points_to_line(point_list, line):
+    """
+    Takes a load of points and projects them onto a line
+    """
+    projected_list = []
+    for point in point_list:
+        pp = point|line
+        proj_point = (pp*einf*pp)(1)
+        projected_list.append(proj_point)
+    return projected_list
 
 
 def normalise_TR_to_unit_T(TR):
@@ -387,7 +467,7 @@ def midpoint_of_line_cluster(line_cluster):
     return layout.MultiVector(value=center_point)
 
 
-@numba.njit(parallel=True)
+@numba.njit(parallel=NUMBA_PARALLEL)
 def val_midpoint_of_line_cluster(array_line_cluster):
     """
     Gets an approximate center point of a line cluster
@@ -403,7 +483,7 @@ def val_midpoint_of_line_cluster(array_line_cluster):
     return center_point
 
 
-@numba.njit(parallel=True)
+@numba.njit(parallel=NUMBA_PARALLEL)
 def val_midpoint_of_line_cluster_grad(array_line_cluster):
     """
     Gets an approximate center point of a line cluster
@@ -1209,6 +1289,7 @@ def random_point_pair():
 
 
 def standard_line_at_origin():
+    """ Creates a standard line at the origin """
     return (standard_point_pair_at_origin()^einf).normal()
 
 
@@ -1432,6 +1513,17 @@ class ConformalMVArray(cf.MVArray):
     """
     This class is for storing arrays of conformal multivectors
     """
+    def draw(self):
+        '''
+        display mvarray using a given visualization backend
+        
+        currently supports pyganja. 
+        '''
+        if pyganja_available:
+            return draw([mv for mv in self])
+        else:
+            pass  
+                   
     def up(self):
         """
         Up mapping
@@ -1476,7 +1568,7 @@ class ConformalMVArray(cf.MVArray):
         Constructs an array of mvs from a value array
         """
         return ConformalMVArray(v_new_mv(value_array))
-
+    
 v_dual = np.vectorize(fast_dual, otypes=[ConformalMVArray])
 v_new_mv = np.vectorize(lambda v: cf.MultiVector(layout, v), otypes=[ConformalMVArray], signature='(n)->()')
 v_up = np.vectorize(fast_up, otypes=[ConformalMVArray])

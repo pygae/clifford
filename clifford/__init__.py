@@ -66,13 +66,20 @@ _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
 TEST_NUMBA = True
 
+import os
+try:
+    NUMBA_DISABLE_PARALLEL = os.environ['NUMBA_DISABLE_PARALLEL']
+    NUMBA_PARALLEL = not bool(NUMBA_DISABLE_PARALLEL)
+except:
+    NUMBA_PARALLEL = True
+
 
 def test_numba():
     """
     This tests numba to see if it can successfully compile a specific program
     https://github.com/numba/numba/issues/3671
     """
-    @numba.njit(parallel=True)
+    @numba.njit(parallel=NUMBA_PARALLEL)
     def play_games():
         monte_carlo_cell_visit_frequency = np.zeros(100, dtype=np.int_)
         monte_carlo_cell_visit_frequency != 0
@@ -110,7 +117,7 @@ def get_adjoint_function(gradeList):
     return adjoint_func
 
 
-@numba.njit(parallel=True, nogil=True)
+@numba.njit(parallel=NUMBA_PARALLEL, nogil=True)
 def construct_tables(gradeList, linear_map_to_bitmap,
                  bitmap_to_linear_map, signature):
 
@@ -716,7 +723,7 @@ class Layout(object):
         k_list, l_list, m_list, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask = construct_tables(np.array(self.gradeList),
                        self.linear_map_to_bitmap,
                        self.bitmap_to_linear_map,
-                       np.array(self.sig))
+                       self.sig)
 
         # This generates the functions that will perform the various products
         self.gmt_func = get_mult_function(k_list,l_list,m_list,mult_table_vals,self.gaDims,self.gradeList)
@@ -1773,14 +1780,18 @@ class MultiVector(object):
             return Madjoint / MadjointM[()]
         else:
             raise ValueError("no inverse exists for this multivector")
+            
 
-    leftInv = leftLaInv
+    
+
     def inv(self):
         if (self*~self).isScalar():
             it =  self.normalInv()
         else:
             it =  self.leftLaInv()
         return it
+    
+    leftInv = leftLaInv
     rightInv = leftLaInv
 
     def dual(self, I=None):
@@ -2072,6 +2083,35 @@ class MVArray(np.ndarray):
         write_ga_file(filename, self.value, self[0].layout.metric, self[0].layout.basis_names,
                       compression=compression, transpose=transpose,
                       sparse=sparse, support=support, compression_opts=compression_opts)
+
+    def sum(self):
+        '''
+        sum elements of this MVArray 
+        '''
+        out=self[0]
+        for k in self[1:]:
+            out+=k
+        return out 
+
+    def gp(self):
+        '''
+        geometric product of all elements of this MVArray  (like reduce)
+        like `self[0]*self[1]*....self[n]`
+        '''
+        out=self[0]
+        for k in self[1:]:
+            out*=k
+        return out 
+    
+    def op(selfx):
+        '''
+        outer product of all elements of this MVArray  (like reduce)
+        like `self[0]^self[1]^....self[n]`
+        '''
+        out=self[0]
+        for k in self[1:]:
+            out= out^k
+        return out
 
 class Frame(MVArray):
     '''
@@ -2556,7 +2596,7 @@ def conformalize(layout, added_sig=[1,-1]):
         return x + (.5 ^ ((x**2)*einf)) + eo
 
     def homo(x):
-        return x*(-x | einf).normalInv()  # homogenise conformal vector
+        return x*(-x | einf)(0).normalInv()  # homogenise conformal vector
 
     def down(x):
         x_down =  (homo(x) ^ E0)*E0
