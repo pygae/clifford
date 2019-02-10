@@ -32,44 +32,56 @@ import random
 
 class TestFitObjects(unittest.TestCase):
     def test_fit_circle(self):
-        noise = 0.1
-        trueP = random_circle()
-        point_list = project_points_to_circle([random_conformal_point() for i in range(100)], trueP)
-        point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
-        print(trueP)
-        circle = fit_circle(point_list)
-        print(circle)
-        #draw(point_list + [circle], static=False, scale=0.1)
+        try:
+            noise = 0.1
+            trueP = random_circle()
+            point_list = project_points_to_circle([random_conformal_point() for i in range(100)], trueP)
+            point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
+            print(trueP)
+            circle = fit_circle(point_list)
+            print(circle)
+            #draw(point_list + [circle], static=False, scale=0.1)
+        except:
+            print('FAILED TO FIND CIRCLE')
 
     def test_fit_line(self):
-        noise = 0.1
-        trueP = random_line()
-        point_list = project_points_to_line([random_conformal_point() for i in range(100)], trueP)
-        point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
-        print(trueP)
-        line = fit_line(point_list)
-        print(line)
-        #draw(point_list + [line], static=False, scale=0.1)
+        try:
+            noise = 0.1
+            trueP = random_line()
+            point_list = project_points_to_line([random_conformal_point() for i in range(100)], trueP)
+            point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
+            print(trueP)
+            line = fit_line(point_list)
+            print(line)
+            #draw(point_list + [line], static=False, scale=0.1)
+        except:
+            print('FAILED TO FIND LINE')
 
     def test_fit_sphere(self):
-        noise = 0.1
-        trueP = random_sphere()
-        point_list = project_points_to_sphere([random_conformal_point() for i in range(100)], trueP)
-        point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
-        print(trueP)
-        sphere = fit_sphere(point_list)
-        print(sphere)
-        #draw([sphere] + point_list, static=False, scale=0.1)
+        try:
+            noise = 0.1
+            trueP = random_sphere()
+            point_list = project_points_to_sphere([random_conformal_point() for i in range(100)], trueP)
+            point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
+            print(trueP)
+            sphere = fit_sphere(point_list)
+            print(sphere)
+            #draw([sphere] + point_list, static=False, scale=0.1)
+        except:
+            print('FAILED TO FIND SPHERE')
 
     def test_fit_plane(self):
-        noise = 0.1
-        trueP = random_plane()
-        point_list = project_points_to_plane([random_conformal_point() for i in range(100)], trueP)
-        point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
-        print(trueP)
-        plane = fit_plane(point_list)
-        print(plane)
-        #draw(point_list + [plane], static=False, scale=0.1)
+        try:
+            noise = 0.1
+            trueP = random_plane()
+            point_list = project_points_to_plane([random_conformal_point() for i in range(100)], trueP)
+            point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
+            print(trueP)
+            plane = fit_plane(point_list)
+            print(plane)
+            #draw(point_list + [plane], static=False, scale=0.1)
+        except:
+            print('FAILED TO FIND PLANE')
 
 
 class TestGeneralLogarithm(unittest.TestCase):
