@@ -2,7 +2,7 @@
 from . import *
 
 
-#@numba.njit
+@numba.njit
 def val_fit_circle(point_list):
     """
     Performs Leo Dorsts circle fitting technique
@@ -70,7 +70,7 @@ def fit_line(point_list):
     return layout.MultiVector(value=val_fit_line(np.array(point_list)))
 
 
-#@numba.njit
+@numba.njit
 def val_fit_sphere(point_list):
     """
     Performs Leo Dorsts sphere fitting technique
