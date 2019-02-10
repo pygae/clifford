@@ -563,6 +563,10 @@ class Layout(object):
 
       gaDims -- 2**dims
 
+      einf -- if conformal returns einf
+
+      eo -- if conformal returns eo
+
       names -- pretty-printing symbols for the blades
 
       even -- dictionary of even permutations of blades to the canonical blades
@@ -594,6 +598,10 @@ class Layout(object):
         self.gradeList = list(map(len, self.bladeTupList))
 
         self._metric = None
+
+        self.isconformal = False
+        self.einf = None
+        self.eo = None
 
         # Python 2 and 3 compatibility fix
         names_is_string = False
@@ -2576,6 +2584,11 @@ def conformalize(layout, added_sig=[1,-1]):
     # setup  null basis, and minkowski subspace bivector
     eo = .5 ^ (en - ep)
     einf = en + ep
+
+    layout_c.isconformal = True
+    layout_c.einf = einf
+    layout_c.eo = eo
+
     E0 = einf ^ eo
     I_base = layout_c.pseudoScalar*E0
     #  some  convenience functions
