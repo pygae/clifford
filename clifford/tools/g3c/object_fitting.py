@@ -114,14 +114,13 @@ def val_fit_plane(point_list):
         P_i_r = get_right_gmt_matrix(point_list[i,:])
         accumulator_matrix += mask4@P_i_l@P_i_r
     e_vals, e_vecs = np.linalg.eig(accumulator_matrix)
-    # Find the smallest non negative eigenvalues
     min_eval = np.inf
     min_eval_index = -1
     for i in range(len(e_vals)):
         if e_vals[i] < min_eval and e_vals[i] > 0:
             min_eval = e_vals[i]
             min_eval_index = i
-    best_plane = val_normalised(e_vecs[:, min_eval_index])
+    best_plane = val_normalised(mask4@e_vecs[:, min_eval_index])
     return best_plane
 
 
