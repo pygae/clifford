@@ -132,11 +132,11 @@ class PointProcessingTests(unittest.TestCase):
     def test_convex_hull_vertices(self):
         from clifford.tools.g3c import random_conformal_point
         from clifford.tools.point_processing import GAConvexHull
-        from pyganja import GanjaScene, draw
         point_list = [random_conformal_point() for i in range(100)]
         hull = GAConvexHull(point_list, hull_dims=3)
         conf_vertices = [hull.GApoints[i] for i in hull.vertices]
-
+        
+        # from pyganja import GanjaScene, draw
         # gs = GanjaScene()
         # gs.add_objects(point_list, static=True, color=int('00000000', 16))
         # gs.add_objects(conf_vertices, static=True, color=int('00FF0000', 16))
