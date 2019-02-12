@@ -183,6 +183,23 @@ class PointProcessingTests(unittest.TestCase):
         #     gs.add_facet(f, color=int('AAFF0000', 16))
         # draw(gs, scale=0.05)
 
+    def test_GADelaunay_facets(self):
+        from clifford.g3c import up, blades, layout
+        e1 = blades['e1']
+        e2 = blades['e2']
+        einf = layout.einf
+        from clifford.tools.g3c import random_conformal_point, project_points_to_plane
+        from clifford.tools.point_processing import GADelaunay
+        point_list = [random_conformal_point() for i in range(100)]
+        point_list_flat = project_points_to_plane(point_list, (up(0)^up(e1)^up(e2)^einf).normal())
+        hull = GADelaunay(point_list_flat, hull_dims=2)
+        facets = hull.conformal_facets()
+        
+        # from pyganja import GanjaScene, draw
+        # gs = GanjaScene()
+        # gs.add_objects(point_list_flat, static=True, color=int('00000000', 16))
+        # gs.add_facets(facets, static=True, color=int('00FF0000', 16))
+        # draw(gs, scale=0.05)
 
 
 if __name__ == '__main__':
