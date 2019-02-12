@@ -128,6 +128,62 @@ class G3ToolsTests(unittest.TestCase):
             testing.assert_almost_equal(r.value, r_2.value)
 
 
+class PointProcessingTests(unittest.TestCase):
+    def test_convex_hull_vertices(self):
+        from clifford.tools.g3c import random_conformal_point
+        from clifford.tools.point_processing import GAConvexHull
+        point_list = [random_conformal_point() for i in range(100)]
+        hull = GAConvexHull(point_list, hull_dims=3)
+        conf_vertices = [hull.GApoints[i] for i in hull.vertices]
+        
+        # from pyganja import GanjaScene, draw
+        # gs = GanjaScene()
+        # gs.add_objects(point_list, static=True, color=int('00000000', 16))
+        # gs.add_objects(conf_vertices, static=True, color=int('00FF0000', 16))
+        # draw(gs, scale=0.05)
+
+    def test_convex_hull_conformal_rounds(self):
+        from clifford.tools.g3c import random_conformal_point
+        from clifford.tools.point_processing import GAConvexHull
+        point_list = [random_conformal_point() for i in range(100)]
+        hull = GAConvexHull(point_list, hull_dims=3)
+        rounds = hull.conformal_rounds()
+
+        # from pyganja import GanjaScene, draw
+        # gs = GanjaScene()
+        # gs.add_objects(point_list, static=True, color=int('00000000', 16))
+        # gs.add_objects(rounds, color=int('00FF0000', 16))
+        # draw(gs, scale=0.05)
+
+    def test_convex_hull_conformal_flats(self):
+        from clifford.tools.g3c import random_conformal_point
+        from clifford.tools.point_processing import GAConvexHull
+
+        point_list = [random_conformal_point() for i in range(100)]
+        hull = GAConvexHull(point_list, hull_dims=3)
+        flats = hull.conformal_flats()
+
+        # from pyganja import GanjaScene, draw
+        # gs = GanjaScene()
+        # gs.add_objects(point_list, static=True, color=int('00000000', 16))
+        # gs.add_objects(flats, color=int('00FF0000', 16))
+        # draw(gs, scale=0.05)
+
+    def test_convex_hull_facets(self):
+        from clifford.tools.g3c import random_conformal_point
+        from clifford.tools.point_processing import GAConvexHull
+        point_list = [random_conformal_point() for i in range(100)]
+        hull = GAConvexHull(point_list, hull_dims=3)
+        facets = hull.conformal_facets()
+
+        # from pyganja import GanjaScene, draw
+        # gs = GanjaScene()
+        # gs.add_objects(point_list, static=True, color=int('00000000', 16))
+        # for f in facets:
+        #     gs.add_facet(f, color=int('AAFF0000', 16))
+        # draw(gs, scale=0.05)
+
+
 
 if __name__ == '__main__':
     unittest.main()
