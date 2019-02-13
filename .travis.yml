@@ -24,7 +24,7 @@ before_install:
 install:
   - if [[ "${CONDA}" == "true" ]]; then
       PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-linux}" source auto_version/travis_install_conda.sh future numpy scipy numba pip nose h5py;
-      conda install numba==0.40.0;
+      conda install numba==0.43.0dev0;
     fi
   - pip install coverage
   - pip install python-coveralls
