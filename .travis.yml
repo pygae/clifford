@@ -5,26 +5,24 @@ language: python
 
 matrix:
   include:
-    - os: linux
-      python: '3.5'
-      env: CONDA=false
+    - os: windows
+      python: '3.6'
+      env: WINDOWS=true
     - os: linux
       python: '3.6'
-      env: CONDA=false
-    - os: linux
-      python: '3.5'
-      env: CONDA=true
-    - os: linux
-      python: '3.6'
-      env: CONDA=true
+      env: WINDOWS=false
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then lsb_release -a ; fi
 
 install:
-  - if [[ "${CONDA}" == "true" ]]; then
+  - if [[ "${WINDOWS}" == "false" ]]; then
       PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-linux}" source auto_version/travis_install_conda.sh future numpy scipy numba pip nose h5py;
       conda install -c numba/label/dev numba;
+    fi
+  - if [[ "${WINDOWS}" == "true" ]]; then
+    PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-windows}" source auto_version/travis_install_conda.sh future numpy scipy numba pip nose h5py;
+    conda install -c numba/label/dev numba;
     fi
   - pip install coverage
   - pip install python-coveralls
