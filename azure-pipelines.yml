@@ -13,56 +13,56 @@ jobs:
       linuxPython35:
         imageName: 'ubuntu-16.04'
         python.version: '3.5'
-        numbacommand: '-y numba'
+        numbacommand: 'numba'
       linuxPython36:
         imageName: 'ubuntu-16.04'
         python.version: '3.6'
-        numbacommand: '-y numba'
+        numbacommand: 'numba'
       linuxPython37:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
-        numbacommand: '-y numba'
+        numbacommand: 'numba'
 
       linuxPython37NumbaDev:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
-        numbacommand: '-y -c numba/label/dev numba'
+        numbacommand: '-c numba/label/dev numba'
         
       macPython35:
         imageName: 'macos-10.13'
         python.version: '3.5'
-        numbacommand: '-y numba'
+        numbacommand: 'numba'
       macPython36:
         imageName: 'macos-10.13'
         python.version: '3.6'
-        numbacommand: '-y numba'
+        numbacommand: 'numba'
       macPython37:
         imageName: 'macos-10.13'
         python.version: '3.7'
-        numbacommand: '-y numba'
+        numbacommand: 'numba'
 
       macPython37NumbaDev:
         imageName: 'macos-10.13'
         python.version: '3.7'
-        numbacommand: '-y -c numba/label/dev numba'
+        numbacommand: '-c numba/label/dev numba'
         
       windowsPython35:
         imageName: 'vs2017-win2016'
         python.version: '3.5'
-        numbacommand: '-y numba'
+        numbacommand: 'numba'
       windowsPython36:
         imageName: 'vs2017-win2016'
         python.version: '3.6'
-        numbacommand: '-y numba'
+        numbacommand: 'numba'
       windowsPython37:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
-        numbacommand: '-y numba'
+        numbacommand: 'numba'
 
       windowsPython37NumbaDev:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
-        numbacommand: '-y -c numba/label/dev numba'
+        numbacommand: '-c numba/label/dev numba'
 
 
     maxParallel: 4
@@ -79,11 +79,13 @@ jobs:
   - task: CondaEnvironment@1
     inputs:
       packageSpecs: 'python=3 numpy scipy future h5py'
+    displayName: 'Install dependencies'
 
   - task: CondaEnvironment@1
     inputs:
       cleanEnvironment: 'false'
       installOptions: '$(numbacommand)'
+    displayName: 'Install correct numba version'
     
   - script: python setup.py install
     displayName: 'Install library'
