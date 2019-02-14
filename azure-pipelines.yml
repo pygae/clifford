@@ -14,23 +14,23 @@ jobs:
         imageName: 'ubuntu-16.04'
         python.version: '3.5'
         numbacommand: 'numba'
-        installPackageCommand: 'sudo apt-get install python3-setuptools && python setup.py install'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python setup.py install'
       linuxPython36:
         imageName: 'ubuntu-16.04'
         python.version: '3.6'
         numbacommand: 'numba'
-        installPackageCommand: 'sudo apt-get install python3-setuptools && python setup.py install'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python setup.py install'
       linuxPython37:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
         numbacommand: 'numba'
-        installPackageCommand: 'sudo apt-get install python3-setuptools && python setup.py install'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python setup.py install'
 
       linuxPython37NumbaDev:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
         numbacommand: '-c numba/label/dev numba'
-        installPackageCommand: 'sudo apt-get install python3-setuptools && python setup.py install'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python setup.py install'
         
       macPython35:
         imageName: 'macos-10.13'
@@ -75,9 +75,6 @@ jobs:
         python.version: '3.7'
         numbacommand: '-c numba/label/dev numba'
         installPackageCommand: 'python setup.py install'
-
-
-    maxParallel: 4
   
   pool:
     vmImage: $(imageName)
@@ -90,7 +87,7 @@ jobs:
 
   - task: CondaEnvironment@1
     inputs:
-      packageSpecs: 'python=3 numpy scipy future h5py nose pytest setuptools'
+      packageSpecs: 'python=3 future h5py nose pytest setuptool scipy numpy'
     displayName: 'Install dependencies'
 
   - task: CondaEnvironment@1
