@@ -14,67 +14,67 @@ jobs:
         imageName: 'ubuntu-16.04'
         python.version: '3.5'
         numbacommand: 'numba'
-        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py install'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py install --no-deps'
       linuxPython36:
         imageName: 'ubuntu-16.04'
         python.version: '3.6'
         numbacommand: 'numba'
-        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py install'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py install --no-deps'
       linuxPython37:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
         numbacommand: 'numba'
-        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py install'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py install --no-deps'
 
       linuxPython37NumbaDev:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
         numbacommand: '-c numba/label/dev numba'
-        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py install'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py install --no-deps'
         
       macPython35:
         imageName: 'macos-10.13'
         python.version: '3.5'
         numbacommand: 'numba'
-        installPackageCommand: 'sudo python setup.py install'
+        installPackageCommand: 'sudo python setup.py install --no-deps'
       macPython36:
         imageName: 'macos-10.13'
         python.version: '3.6'
         numbacommand: 'numba'
-        installPackageCommand: 'sudo python setup.py install'
+        installPackageCommand: 'sudo python setup.py install --no-deps'
       macPython37:
         imageName: 'macos-10.13'
         python.version: '3.7'
         numbacommand: 'numba'
-        installPackageCommand: 'sudo python setup.py install'
+        installPackageCommand: 'sudo python setup.py install --no-deps'
 
       macPython37NumbaDev:
         imageName: 'macos-10.13'
         python.version: '3.7'
         numbacommand: '-c numba/label/dev numba'
-        installPackageCommand: 'sudo python setup.py install'
+        installPackageCommand: 'sudo python setup.py install --no-deps'
         
       windowsPython35:
         imageName: 'vs2017-win2016'
         python.version: '3.5'
         numbacommand: 'numba'
-        installPackageCommand: 'python setup.py install'
+        installPackageCommand: 'python setup.py install --no-deps'
       windowsPython36:
         imageName: 'vs2017-win2016'
         python.version: '3.6'
         numbacommand: 'numba'
-        installPackageCommand: 'python setup.py install'
+        installPackageCommand: 'python setup.py install --no-deps'
       windowsPython37:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
         numbacommand: 'numba'
-        installPackageCommand: 'python setup.py install'
+        installPackageCommand: 'python setup.py install --no-deps'
 
       windowsPython37NumbaDev:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
         numbacommand: '-c numba/label/dev numba'
-        installPackageCommand: 'python setup.py install'
+        installPackageCommand: 'python setup.py install --no-deps'
   
   pool:
     vmImage: $(imageName)
