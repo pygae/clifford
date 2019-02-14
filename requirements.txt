@@ -1,0 +1,5 @@
+numpy
+scipy
+numba==0.40.1
+future
+h5py
