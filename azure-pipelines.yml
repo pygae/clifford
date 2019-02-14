@@ -88,7 +88,7 @@ jobs:
       installOptions: '$(numbacommand)'
     displayName: 'Install correct numba version'
     
-  - script: python setup.py install
+  - script: sudo python setup.py install
     displayName: 'Install library'
 
   - script: |
