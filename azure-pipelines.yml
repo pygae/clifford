@@ -77,7 +77,8 @@ jobs:
       architecture: 'x64'
 
   - task: CondaEnvironment@1
-    installOptions: '$(numbacommand) numpy scipy future h5py'
+    inputs:
+      installOptions: '$(numbacommand) numpy scipy future h5py'
     
   - script: python setup.py install
     displayName: 'Install library'
