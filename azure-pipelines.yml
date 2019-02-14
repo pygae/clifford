@@ -14,55 +14,67 @@ jobs:
         imageName: 'ubuntu-16.04'
         python.version: '3.5'
         numbacommand: 'numba'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && python setup.py install'
       linuxPython36:
         imageName: 'ubuntu-16.04'
         python.version: '3.6'
         numbacommand: 'numba'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && python setup.py install'
       linuxPython37:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
         numbacommand: 'numba'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && python setup.py install'
 
       linuxPython37NumbaDev:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
         numbacommand: '-c numba/label/dev numba'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && python setup.py install'
         
       macPython35:
         imageName: 'macos-10.13'
         python.version: '3.5'
         numbacommand: 'numba'
+        installPackageCommand: 'sudo python setup.py install'
       macPython36:
         imageName: 'macos-10.13'
         python.version: '3.6'
         numbacommand: 'numba'
+        installPackageCommand: 'sudo python setup.py install'
       macPython37:
         imageName: 'macos-10.13'
         python.version: '3.7'
         numbacommand: 'numba'
+        installPackageCommand: 'sudo python setup.py install'
 
       macPython37NumbaDev:
         imageName: 'macos-10.13'
         python.version: '3.7'
         numbacommand: '-c numba/label/dev numba'
+        installPackageCommand: 'sudo python setup.py install'
         
       windowsPython35:
         imageName: 'vs2017-win2016'
         python.version: '3.5'
         numbacommand: 'numba'
+        installPackageCommand: 'python setup.py install'
       windowsPython36:
         imageName: 'vs2017-win2016'
         python.version: '3.6'
         numbacommand: 'numba'
+        installPackageCommand: 'python setup.py install'
       windowsPython37:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
         numbacommand: 'numba'
+        installPackageCommand: 'python setup.py install'
 
       windowsPython37NumbaDev:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
         numbacommand: '-c numba/label/dev numba'
+        installPackageCommand: 'python setup.py install'
 
 
     maxParallel: 4
@@ -84,11 +96,11 @@ jobs:
   - task: CondaEnvironment@1
     inputs:
       packageSpecs: ''
-      cleanEnvironment: 'false'
+      cleanEnvironment: false
       installOptions: '$(numbacommand)'
     displayName: 'Install correct numba version'
     
-  - script: sudo python setup.py install
+  - script: '$(installPackageCommand)'
     displayName: 'Install library'
 
   - script: |
