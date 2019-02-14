@@ -31,7 +31,7 @@ jobs:
     displayName: 'Install dependencies'
 
   - script: |
-      pip install pytest
+      pip install pytest, nose
       pytest test --doctest-modules --junitxml=junit/test-results.xml
     displayName: 'pytest'
 
