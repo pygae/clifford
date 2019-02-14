@@ -1,5 +1,5 @@
 numpy
 scipy
-numba==0.40.1
+numba==0.40.0
 future
 h5py

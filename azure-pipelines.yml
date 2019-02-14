@@ -78,11 +78,14 @@ jobs:
 
   - task: CondaEnvironment@1
 
-  - script: $(numbacommand)
-    displayName: 'Numba version install'
+  - script: conda install --yes --file requirements.txt
+    displayName: 'Install requirements'
     
   - script: python setup.py install
     displayName: 'Install library'
+
+  - script: $(numbacommand)
+    displayName: 'Numba version install'
 
   - script: |
       pip install nose
