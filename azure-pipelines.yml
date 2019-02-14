@@ -13,15 +13,15 @@ jobs:
       linuxPython35:
         imageName: 'ubuntu-16.04'
         python.version: '3.5'
-        numbacommand: '-y -c numba numba;'
+        numbacommand: '-y -c numba numba'
       linuxPython36:
         imageName: 'ubuntu-16.04'
         python.version: '3.6'
-        numbacommand: '-y -c numba numba;'
+        numbacommand: '-y -c numba numba'
       linuxPython37:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
-        numbacommand: '-y -c numba numba;'
+        numbacommand: '-y -c numba numba'
 
       linuxPython37NumbaDev:
         imageName: 'ubuntu-16.04'
@@ -78,7 +78,8 @@ jobs:
 
   - task: CondaEnvironment@1
     inputs:
-      installOptions: '$(numbacommand) numpy scipy future h5py'
+      packageSpecs: 'python=3 gitnumpy scipy future h5py'
+      installOptions: '$(numbacommand)'
     
   - script: python setup.py install
     displayName: 'Install library'
