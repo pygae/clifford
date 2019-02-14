@@ -78,9 +78,6 @@ jobs:
 
   - task: CondaEnvironment@1
 
-  - script: while read requirement; do conda install --yes $requirement; done < requirements.txt
-    displayName: 'Install dependencies'
-
   - script: $(numbacommand)
     
   - script: python setup.py install
