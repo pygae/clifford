@@ -9,33 +9,33 @@ trigger:
 - job: 'Test'
   strategy:
     matrix:
-      linux Python35:
+      linuxPython35:
         imageName: 'ubuntu-16.04'
         python.version: '3.5'
-      linux Python36:
+      linuxPython36:
         imageName: 'ubuntu-16.04'
         python.version: '3.6'
-      linux Python37:
+      linuxPython37:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
         
-      mac Python35:
+      macPython35:
         imageName: 'macos-10.13'
         python.version: '3.5'
-      mac Python36:
+      macPython36:
         imageName: 'macos-10.13'
         python.version: '3.6'
-      mac Python37:
+      macPython37:
         imageName: 'macos-10.13'
         python.version: '3.7'
         
-      windows Python35:
+      windowsPython35:
         imageName: 'vs2017-win2016'
         python.version: '3.5'
-      windows Python36:
+      windowsPython36:
         imageName: 'vs2017-win2016'
         python.version: '3.6'
-      windows Python37:
+      windowsPython37:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
         
