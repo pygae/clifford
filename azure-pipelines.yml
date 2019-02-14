@@ -6,20 +6,43 @@
 trigger:
 - master
 
-jobs:
-
 - job: 'Test'
-  pool:
-    vmImage: 'Ubuntu-16.04'
   strategy:
     matrix:
-      Python35:
+      linux Python35:
+        imageName: 'ubuntu-16.04'
         python.version: '3.5'
-      Python36:
+      linux Python36:
+        imageName: 'ubuntu-16.04'
         python.version: '3.6'
-      Python37:
+      linux Python37:
+        imageName: 'ubuntu-16.04'
         python.version: '3.7'
+        
+      mac Python35:
+        imageName: 'macos-10.13'
+        python.version: '3.5'
+      mac Python36:
+        imageName: 'macos-10.13'
+        python.version: '3.6'
+      mac Python37:
+        imageName: 'macos-10.13'
+        python.version: '3.7'
+        
+      windows Python35:
+        imageName: 'vs2017-win2016'
+        python.version: '3.5'
+      windows Python36:
+        imageName: 'vs2017-win2016'
+        python.version: '3.6'
+      windows Python37:
+        imageName: 'vs2017-win2016'
+        python.version: '3.7'
+        
     maxParallel: 4
+  
+  pool:
+    vmImage: $(imageName)
 
   steps:
   - task: UsePythonVersion@0
