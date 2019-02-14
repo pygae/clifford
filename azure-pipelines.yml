@@ -13,56 +13,56 @@ jobs:
       linuxPython35:
         imageName: 'ubuntu-16.04'
         python.version: '3.5'
-        numbacommand: 'conda install -c numba numba;'
+        numbacommand: 'conda install -y -c numba numba;'
       linuxPython36:
         imageName: 'ubuntu-16.04'
         python.version: '3.6'
-        numbacommand: 'conda install -c numba numba;'
+        numbacommand: 'conda install -y -c numba numba;'
       linuxPython37:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
-        numbacommand: 'conda install -c numba numba;'
+        numbacommand: 'conda install -y -c numba numba;'
 
       linuxPython37NumbaDev:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
-        numbacommand: 'conda install -c numba/label/dev numba;'
+        numbacommand: 'conda install -y -c numba/label/dev numba;'
         
       macPython35:
         imageName: 'macos-10.13'
         python.version: '3.5'
-        numbacommand: 'conda install -c numba numba;'
+        numbacommand: 'conda install -y -c numba numba;'
       macPython36:
         imageName: 'macos-10.13'
         python.version: '3.6'
-        numbacommand: 'conda install -c numba numba;'
+        numbacommand: 'conda install -y -c numba numba;'
       macPython37:
         imageName: 'macos-10.13'
         python.version: '3.7'
-        numbacommand: 'conda install -c numba numba;'
+        numbacommand: 'conda install -y -c numba numba;'
 
       macPython37NumbaDev:
         imageName: 'macos-10.13'
         python.version: '3.7'
-        numbacommand: 'conda install -c numba/label/dev numba;'
+        numbacommand: 'conda install -y -c numba/label/dev numba;'
         
       windowsPython35:
         imageName: 'vs2017-win2016'
         python.version: '3.5'
-        numbacommand: 'conda install -c numba numba;'
+        numbacommand: 'conda install -y -c numba numba;'
       windowsPython36:
         imageName: 'vs2017-win2016'
         python.version: '3.6'
-        numbacommand: 'conda install -c numba numba;'
+        numbacommand: 'conda install -y -c numba numba;'
       windowsPython37:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
-        numbacommand: 'conda install -c numba numba;'
+        numbacommand: 'conda install -y -c numba numba;'
 
       windowsPython37NumbaDev:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
-        numbacommand: 'conda install -c numba/label/dev numba;'
+        numbacommand: 'conda install -y -c numba/label/dev numba;'
 
 
     maxParallel: 4
@@ -79,6 +79,7 @@ jobs:
   - task: CondaEnvironment@1
 
   - script: $(numbacommand)
+    displayName: 'Numba version install'
     
   - script: python setup.py install
     displayName: 'Install library'
