@@ -14,23 +14,23 @@ jobs:
         imageName: 'ubuntu-16.04'
         python.version: '3.5'
         numbacommand: 'numba'
-        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python setup.py install'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py install'
       linuxPython36:
         imageName: 'ubuntu-16.04'
         python.version: '3.6'
         numbacommand: 'numba'
-        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python setup.py install'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py install'
       linuxPython37:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
         numbacommand: 'numba'
-        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python setup.py install'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py install'
 
       linuxPython37NumbaDev:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
         numbacommand: '-c numba/label/dev numba'
-        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python setup.py install'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py install'
         
       macPython35:
         imageName: 'macos-10.13'
