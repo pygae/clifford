@@ -6,6 +6,7 @@
 trigger:
 - master
 
+jobs:
 - job: 'Test'
   strategy:
     matrix:
