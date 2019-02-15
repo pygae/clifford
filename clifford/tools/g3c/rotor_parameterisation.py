@@ -98,7 +98,7 @@ def general_logarithm(R):
 
 def full_conformal_biv_params_to_biv(biv_params):
     """
-    Converts the bivector parameters for a general TRS rotor into
+    Converts the bivector parameters for a general conformal rotor into
     the bivector itself
     """
     phiP = np_to_euc_mv(biv_params[0:3]) * e123
@@ -111,7 +111,7 @@ def full_conformal_biv_params_to_biv(biv_params):
 
 def full_conformal_biv_params_to_rotor(biv_params):
     """
-    Converts the bivector parameters for a general TRS rotor into
+    Converts the bivector parameters for a general conformal rotor into
     the rotor
     """
     biv = full_conformal_biv_params_to_biv(biv_params)

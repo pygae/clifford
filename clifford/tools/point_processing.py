@@ -2,6 +2,10 @@
 import scipy.spatial
 import numpy as np
 from .. import MVArray
+import itertools
+import scipy.special
+import random
+import functools
 
 
 class GADelaunay(scipy.spatial.Delaunay):
@@ -92,3 +96,83 @@ class GAConvexHull(scipy.spatial.ConvexHull):
             return [(r^self.layout.einf).normal() for r in self.conformal_rounds()]
         else:
             raise ValueError('Input points do not seem to be from a conformal algebra')
+
+
+def naiive_subspace_detector(point_list, grade, min_points=None,
+                             point_cost_threshold=0.1,
+                            flat_flag=True, n_tests=1000):
+    """
+    Given a point cloud extract objects of the given grade
+    This only works for conformal algebras at the moment
+    """
+    layout = point_list[0].layout
+    if not layout.isconformal:
+        raise ValueError('The naiive_subspace_detector only operates on conformal algebras at the moment')
+    einf = layout.einf
+
+    def sample_objects(point_list, grade, n_tests, flat_flag=True):
+        if flat_flag:
+            n_sample_objects = grade - 1
+        else:
+            n_sample_objects = grade
+
+        # How many combos are there
+        nchoosek = scipy.special.comb(len(point_list), n_sample_objects)
+
+        # Get a combo generator
+        combos = itertools.combinations(point_list, n_sample_objects)
+
+        # Sample from the generator
+        n_samples = int(min([n_tests, nchoosek]))
+        sampled_objects_list = random.sample(list(combos), n_samples)
+
+        # Wedge the results
+        output_list = []
+        for i in range(n_samples):
+            print(i, flush=True)
+            sampled_objects = sampled_objects_list[i]
+            wedged_points = functools.reduce(lambda x, y: x ^ y, sampled_objects)
+            output_object = wedged_points
+            if flat_flag:
+                output_object = output_object ^ einf
+            final_object = output_object.normal()
+            output_list.append(final_object)
+        return output_list
+
+    def associate_points_with_objects(point_list, object_list, point_cost_threshold=0.1):
+        # Check how close all the points are to each object
+        point_associations = []
+        for obj in object_list:
+            this_obj_association = []
+            for i, p in enumerate(point_list):
+                if abs(obj ^ p) < point_cost_threshold:
+                    this_obj_association.append(i)
+            point_associations.append(this_obj_association)
+        return point_associations
+
+    def filter_matches(point_associations, object_list, min_points=None, flat_flag=True):
+        if flat_flag:
+            n_sample_objects = grade - 1
+        else:
+            n_sample_objects = grade
+        if min_points is None:
+            min_points = n_sample_objects
+        po = [[p, o] for p, o in zip(point_associations, object_list) if len(p) > min_points]
+        point_associations_out = [p for p, o in po]
+        object_list_out = [o for p, o in po]
+        return point_associations_out, object_list_out
+
+    print('SAMPLING', flush=True)
+    object_list = sample_objects(point_list, grade, n_tests, flat_flag=flat_flag)
+
+    print('ASSOCIATING', flush=True)
+    point_associations = associate_points_with_objects(point_list,
+                                                       object_list,
+                                                       point_cost_threshold=point_cost_threshold)
+    print('FILTERING', flush=True)
+    point_associations, object_list = filter_matches(point_associations,
+                                                     object_list,
+                                                     min_points=min_points,
+                                                     flat_flag=flat_flag)
+
+    return point_associations, object_list
