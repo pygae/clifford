@@ -119,7 +119,7 @@ jobs:
   - script: '$(installPackageCommand)'
     displayName: 'Install library'
 
-  - script: py.test test --doctest-modules --junitxml=junit/test-results.xml
+  - script: python -m pytest test --doctest-modules --junitxml=junit/test-results.xml
     displayName: 'pytest'
 
 
