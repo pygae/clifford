@@ -81,38 +81,38 @@ jobs:
 
   steps:
   - bash: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
-    displayName: Add conda to PATH
+    displayName: Add conda to PATH linux
     condition: eq(variables['imageName'], 'ubuntu-16.04')
 
   - bash: echo "##vso[task.prependpath]$CONDA/bin"
-    displayName: Add conda to PATH
+    displayName: Add conda to PATH mac
     condition: eq(variables['imageName'], 'macos-10.13')
 
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
-    displayName: Add conda to PATH
+    displayName: Add conda to PATH windows
     condition: eq(variables['imageName'], 'vs2017-win2016')
 
 
   - script: conda create --yes --quiet --name myEnvironment
-    displayName: Create Anaconda environment
+    displayName: Create Anaconda environment not windows
     condition: eq(variables['imageName'], 'vs2017-win2016')
 
   - bash: conda create --yes --quiet --name myEnvironment
-    displayName: Activate Conda
+    displayName: Activate Conda windows
     condition: ne(variables['imageName'], 'vs2017-win2016')
 
   - script: |
       call activate myEnvironment
-      conda install python=$(python.version) future h5py nose pytest setuptools scipy numpy
-      conda install $(numbacommand)
-    displayName: Activate Conda
+      conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
+      conda install --yes $(numbacommand)
+    displayName: Install dependencies windows
     condition: eq(variables['imageName'], 'vs2017-win2016')
 
   - bash: |
       source activate myEnvironment
-      conda install python=$(python.version) future h5py nose pytest setuptools scipy numpy
-      conda install $(numbacommand)
-    displayName: Activate Conda
+      conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
+      conda install --yes $(numbacommand)
+    displayName: Install dependencies not windows
     condition: ne(variables['imageName'], 'vs2017-win2016')
 
     
