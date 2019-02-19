@@ -26,6 +26,17 @@ jobs:
         numbacommand: 'numba=0.40.0'
         installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
 
+      linuxPython36NumbaLatest:
+        imageName: 'ubuntu-16.04'
+        python.version: '3.6'
+        numbacommand: 'numba'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
+      linuxPython36NumbaDev:
+        imageName: 'ubuntu-16.04'
+        python.version: '3.6'
+        numbacommand: '-c numba/label/dev numba'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
+
       linuxPython37NumbaLatest:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
@@ -53,6 +64,17 @@ jobs:
         numbacommand: 'numba=0.40.0'
         installPackageCommand: 'sudo python setup.py develop --no-deps'
 
+      macPython36NumbaLatest:
+        imageName: 'macos-10.13'
+        python.version: '3.6'
+        numbacommand: 'numba'
+        installPackageCommand: 'sudo python setup.py develop --no-deps'
+      macPython36NumbaDev:
+        imageName: 'macos-10.13'
+        python.version: '3.6'
+        numbacommand: '-c numba/label/dev numba'
+        installPackageCommand: 'sudo python setup.py develop --no-deps'
+
       macPython37NumbaLatest:
         imageName: 'macos-10.13'
         python.version: '3.7'
@@ -78,6 +100,17 @@ jobs:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
         numbacommand: 'numba=0.40.0'
+        installPackageCommand: 'python setup.py develop'
+
+      windowsPython36NumbaLatest:
+        imageName: 'vs2017-win2016'
+        python.version: '3.6'
+        numbacommand: 'numba'
+        installPackageCommand: 'python setup.py develop'
+      windowsPython36NumbaDev:
+        imageName: 'vs2017-win2016'
+        python.version: '3.6'
+        numbacommand: '-c numba/label/dev numba'
         installPackageCommand: 'python setup.py develop'
 
       windowsPython37NumbaLatest:
