@@ -80,10 +80,18 @@ jobs:
     vmImage: $(imageName)
 
   steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '$(python.version)'
-      architecture: 'x64'
+  - bash: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
+    displayName: Add conda to PATH
+    condition: eq('$(imageName)', 'ubuntu-16.04')
+
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+    condition: eq('$(imageName)', 'macos-10.13')
+
+  - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+    displayName: Add conda to PATH
+    condition: eq('$(imageName)', 'vs2017-win2016')
+
 
   - script: conda create --yes --quiet --name myEnvironment
     displayName: Create Anaconda environment
