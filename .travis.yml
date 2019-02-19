@@ -26,15 +26,10 @@ install:
       PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-linux}" source auto_version/travis_install_conda.sh future numpy scipy numba pip nose h5py;
       conda install numba==0.40.0;
     fi
-  - pip install coverage
-  - pip install python-coveralls
   - python setup.py install
 
 script:
-  - nosetests --with-coverage --cover-package=clifford
-
-after_success:
-  - coveralls
+  - nosetests
 
 deploy:
   provider: pypi
