@@ -88,6 +88,7 @@ jobs:
   - task: CondaEnvironment@1
     inputs:
       packageSpecs: 'python=$(python.version) future h5py nose pytest setuptools scipy numpy'
+      updateConda: false
     displayName: 'Install dependencies'
 
   - task: CondaEnvironment@1
