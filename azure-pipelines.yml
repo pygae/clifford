@@ -87,25 +87,25 @@ jobs:
 
   - script: conda create --yes --quiet --name myEnvironment
     displayName: Create Anaconda environment
-    condition: eq('$(imageName)', 'vs2017-win2016'))
+    condition: eq('$(imageName)', 'vs2017-win2016')
 
   - bash: conda create --yes --quiet --name myEnvironment
     displayName: Activate Conda
-    condition: ne('$(imageName)', 'vs2017-win2016'))
+    condition: ne('$(imageName)', 'vs2017-win2016')
 
   - script: |
       call activate myEnvironment
       conda install python=$(python.version) future h5py nose pytest setuptools scipy numpy
       conda install $(numbacommand)
     displayName: Activate Conda
-    condition: eq('$(imageName)', 'vs2017-win2016'))
+    condition: eq('$(imageName)', 'vs2017-win2016')
 
   - bash: |
       source activate myEnvironment
       conda install python=$(python.version) future h5py nose pytest setuptools scipy numpy
       conda install $(numbacommand)
     displayName: Activate Conda
-    condition: ne('$(imageName)', 'vs2017-win2016'))
+    condition: ne('$(imageName)', 'vs2017-win2016')
 
     
   - script: '$(installPackageCommand)'
