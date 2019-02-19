@@ -13,19 +13,24 @@ jobs:
       linuxPython35:
         imageName: 'ubuntu-16.04'
         python.version: '3.5'
-        numbacommand: 'numba'
+        numbacommand: 'numba=0.40.0'
         installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
       linuxPython36:
         imageName: 'ubuntu-16.04'
         python.version: '3.6'
-        numbacommand: 'numba'
+        numbacommand: 'numba=0.40.0'
         installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
-      linuxPython37:
+      linuxPython37Numba:
+        imageName: 'ubuntu-16.04'
+        python.version: '3.7'
+        numbacommand: 'numba=0.40.0'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
+
+      linuxPython37NumbaLatest:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
         numbacommand: 'numba'
         installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
-
       linuxPython37NumbaDev:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
@@ -35,19 +40,24 @@ jobs:
       macPython35:
         imageName: 'macos-10.13'
         python.version: '3.5'
-        numbacommand: 'numba'
+        numbacommand: 'numba=0.40.0'
         installPackageCommand: 'sudo python setup.py develop --no-deps'
       macPython36:
         imageName: 'macos-10.13'
         python.version: '3.6'
-        numbacommand: 'numba'
+        numbacommand: 'numba=0.40.0'
         installPackageCommand: 'sudo python setup.py develop --no-deps'
       macPython37:
         imageName: 'macos-10.13'
         python.version: '3.7'
-        numbacommand: 'numba'
+        numbacommand: 'numba=0.40.0'
         installPackageCommand: 'sudo python setup.py develop --no-deps'
 
+      macPython37NumbaLatest:
+        imageName: 'macos-10.13'
+        python.version: '3.7'
+        numbacommand: 'numba'
+        installPackageCommand: 'sudo python setup.py develop --no-deps'
       macPython37NumbaDev:
         imageName: 'macos-10.13'
         python.version: '3.7'
@@ -57,19 +67,24 @@ jobs:
       windowsPython35:
         imageName: 'vs2017-win2016'
         python.version: '3.5'
-        numbacommand: 'numba'
+        numbacommand: 'numba=0.40.0'
         installPackageCommand: 'python setup.py install --no-deps'
       windowsPython36:
         imageName: 'vs2017-win2016'
         python.version: '3.6'
-        numbacommand: 'numba'
+        numbacommand: 'numba=0.40.0'
         installPackageCommand: 'python setup.py develop --no-deps'
       windowsPython37:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
-        numbacommand: 'numba'
+        numbacommand: 'numba=0.40.0'
         installPackageCommand: 'python setup.py develop --no-deps'
 
+      windowsPython37NumbaLatest:
+        imageName: 'vs2017-win2016'
+        python.version: '3.7'
+        numbacommand: 'numba'
+        installPackageCommand: 'python setup.py develop --no-deps'
       windowsPython37NumbaDev:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
