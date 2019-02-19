@@ -68,28 +68,28 @@ jobs:
         imageName: 'vs2017-win2016'
         python.version: '3.5'
         numbacommand: 'numba=0.40.0'
-        installPackageCommand: 'python setup.py install --no-deps'
+        installPackageCommand: 'python setup.py install'
       windowsPython36:
         imageName: 'vs2017-win2016'
         python.version: '3.6'
         numbacommand: 'numba=0.40.0'
-        installPackageCommand: 'python setup.py develop --no-deps'
+        installPackageCommand: 'python setup.py develop'
       windowsPython37:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
         numbacommand: 'numba=0.40.0'
-        installPackageCommand: 'python setup.py develop --no-deps'
+        installPackageCommand: 'python setup.py develop'
 
       windowsPython37NumbaLatest:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
         numbacommand: 'numba'
-        installPackageCommand: 'python setup.py develop --no-deps'
+        installPackageCommand: 'python setup.py develop'
       windowsPython37NumbaDev:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
         numbacommand: '-c numba/label/dev numba'
-        installPackageCommand: 'python setup.py develop --no-deps'
+        installPackageCommand: 'python setup.py develop'
   
   pool:
     vmImage: $(imageName)
