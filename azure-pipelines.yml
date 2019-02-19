@@ -85,18 +85,28 @@ jobs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
-  - task: CondaEnvironment@1
-    inputs:
-      packageSpecs: 'python=$(python.version) future h5py nose pytest setuptools scipy numpy'
-      updateConda: false
-    displayName: 'Install dependencies'
+  - script: conda create --yes --quiet --name myEnvironment
+    displayName: Create Anaconda environment
+    condition: eq('$(imageName)', 'vs2017-win2016'))
 
-  - task: CondaEnvironment@1
-    inputs:
-      packageSpecs: ''
-      cleanEnvironment: false
-      installOptions: '$(numbacommand)'
-    displayName: 'Install correct numba version'
+  - bash: conda create --yes --quiet --name myEnvironment
+    displayName: Activate Conda
+    condition: ne('$(imageName)', 'vs2017-win2016'))
+
+  - script: |
+      call activate myEnvironment
+      conda install python=$(python.version) future h5py nose pytest setuptools scipy numpy
+      conda install $(numbacommand)
+    displayName: Activate Conda
+    condition: eq('$(imageName)', 'vs2017-win2016'))
+
+  - bash: |
+      source activate myEnvironment
+      conda install python=$(python.version) future h5py nose pytest setuptools scipy numpy
+      conda install $(numbacommand)
+    displayName: Activate Conda
+    condition: ne('$(imageName)', 'vs2017-win2016'))
+
     
   - script: '$(installPackageCommand)'
     displayName: 'Install library'
@@ -104,6 +114,7 @@ jobs:
   - script: |
       pytest test --doctest-modules --junitxml=junit/test-results.xml
     displayName: 'pytest'
+
 
   - task: PublishTestResults@2
     inputs:
