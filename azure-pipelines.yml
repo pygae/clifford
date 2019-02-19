@@ -103,6 +103,7 @@ jobs:
 
   - script: |
       call activate myEnvironment
+      conda update -n base -c defaults conda
       conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
       conda install --yes $(numbacommand)
     displayName: Install dependencies windows
@@ -110,6 +111,7 @@ jobs:
 
   - bash: |
       source activate myEnvironment
+      conda update -n base -c defaults conda
       conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
       conda install --yes $(numbacommand)
     displayName: Install dependencies not windows
@@ -119,8 +121,7 @@ jobs:
   - script: '$(installPackageCommand)'
     displayName: 'Install library'
 
-  - script: |
-      pytest test --doctest-modules --junitxml=junit/test-results.xml
+  - script: py.test test --doctest-modules --junitxml=junit/test-results.xml
     displayName: 'pytest'
 
 
