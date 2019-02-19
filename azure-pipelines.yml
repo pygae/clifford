@@ -106,7 +106,7 @@ jobs:
       conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
       conda install --yes $(numbacommand)
       python -m pip install -U pytest
-      '$(installPackageCommand)'
+      $(installPackageCommand)
     displayName: Install dependencies windows
     condition: eq(variables['imageName'], 'vs2017-win2016')
 
@@ -115,19 +115,19 @@ jobs:
       conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
       conda install --yes $(numbacommand)
       python -m pip install -U pytest
-      '$(installPackageCommand)'
+      $(installPackageCommand)
     displayName: Install dependencies not windows
     condition: ne(variables['imageName'], 'vs2017-win2016')
 
-  - script: |
-    source activate myEnvironment
-    python -m pytest test --doctest-modules --junitxml=junit/test-results.xml
+  - bash: |
+      source activate myEnvironment
+      python -m pytest test --doctest-modules --junitxml=junit/test-results.xml
     displayName: pytest not windows
     condition: ne(variables['imageName'], 'vs2017-win2016')
 
   - script: |
-    call activate myEnvironment
-    python -m pytest test --doctest-modules --junitxml=junit/test-results.xml
+      call activate myEnvironment
+      python -m pytest test --doctest-modules --junitxml=junit/test-results.xml
     displayName: pytest windows
     condition: eq(variables['imageName'], 'vs2017-win2016')
 
