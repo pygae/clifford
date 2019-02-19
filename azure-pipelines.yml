@@ -118,6 +118,7 @@ jobs:
 
   - script: |
       call activate myEnvironment
+      conda update -n base -y -c defaults conda
       conda update -y conda
       conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
       conda install --yes $(numbacommand)
@@ -128,6 +129,7 @@ jobs:
 
   - bash: |
       source activate myEnvironment
+      conda update -n base -y -c defaults conda
       conda update -y conda
       conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
       conda install --yes $(numbacommand)
