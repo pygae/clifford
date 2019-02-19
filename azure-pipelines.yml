@@ -10,17 +10,17 @@ jobs:
 - job: 'Test'
   strategy:
     matrix:
-      linuxPython35:
+      linuxPython35Numba0.40.0:
         imageName: 'ubuntu-16.04'
         python.version: '3.5'
         numbacommand: 'numba=0.40.0'
         installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
-      linuxPython36:
+      linuxPython36Numba0.40.0:
         imageName: 'ubuntu-16.04'
         python.version: '3.6'
         numbacommand: 'numba=0.40.0'
         installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
-      linuxPython37Numba:
+      linuxPython37Numba0.40.0:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
         numbacommand: 'numba=0.40.0'
@@ -48,17 +48,17 @@ jobs:
         numbacommand: '-c numba/label/dev numba'
         installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
         
-      macPython35:
+      macPython35Numba0.40.0:
         imageName: 'macos-10.13'
         python.version: '3.5'
         numbacommand: 'numba=0.40.0'
         installPackageCommand: 'sudo python setup.py develop --no-deps'
-      macPython36:
+      macPython36Numba0.40.0:
         imageName: 'macos-10.13'
         python.version: '3.6'
         numbacommand: 'numba=0.40.0'
         installPackageCommand: 'sudo python setup.py develop --no-deps'
-      macPython37:
+      macPython37Numba0.40.0:
         imageName: 'macos-10.13'
         python.version: '3.7'
         numbacommand: 'numba=0.40.0'
@@ -86,17 +86,17 @@ jobs:
         numbacommand: '-c numba/label/dev numba'
         installPackageCommand: 'sudo python setup.py develop --no-deps'
         
-      windowsPython35:
+      windowsPython35Numba0.40.0:
         imageName: 'vs2017-win2016'
         python.version: '3.5'
         numbacommand: 'numba=0.40.0'
         installPackageCommand: 'python setup.py install'
-      windowsPython36:
+      windowsPython36Numba0.40.0:
         imageName: 'vs2017-win2016'
         python.version: '3.6'
         numbacommand: 'numba=0.40.0'
         installPackageCommand: 'python setup.py develop'
-      windowsPython37:
+      windowsPython37Numba0.40.0:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
         numbacommand: 'numba=0.40.0'
