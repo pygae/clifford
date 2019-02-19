@@ -94,16 +94,15 @@ jobs:
 
 
   - script: conda create --yes --quiet --name myEnvironment
-    displayName: Create Anaconda environment not windows
+    displayName: Create Anaconda environment windows
     condition: eq(variables['imageName'], 'vs2017-win2016')
 
   - bash: conda create --yes --quiet --name myEnvironment
-    displayName: Activate Conda windows
+    displayName: Activate Conda environment not windows
     condition: ne(variables['imageName'], 'vs2017-win2016')
 
   - script: |
       call activate myEnvironment
-      conda update -n base -c defaults conda
       conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
       conda install --yes $(numbacommand)
     displayName: Install dependencies windows
@@ -111,7 +110,6 @@ jobs:
 
   - bash: |
       source activate myEnvironment
-      conda update -n base -c defaults conda
       conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
       conda install --yes $(numbacommand)
     displayName: Install dependencies not windows
