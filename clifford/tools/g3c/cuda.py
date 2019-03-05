@@ -7,6 +7,171 @@ import numba
 import math
 import random
 
+from .cost_functions import val_rotor_cost_sparse
+
+
+
+
+
+
+from . import *
+unit_rotor = np.zeros(32)
+unit_rotor[0] = 1.0
+
+@numba.njit
+def set_as_unit_rotor_jit(array):
+    for j in range(1,32):
+        array[j] = 0.0
+    array[0] = 1.0
+
+@numba.njit
+def sequential_rotor_estimation_jit(reference_model, query_model, rotor_output):
+    n_iterations = 20
+    cost_tolerance = 10 * (10 ** -16)
+
+    # Allocate memory
+    r_set = np.zeros(32)
+    r_running = np.zeros(32)
+    r_root = np.zeros(32)
+    r_temp = np.zeros(32)
+    C1 = np.zeros(32)
+
+    # Set up the running rotor estimate
+    set_as_unit_rotor_jit(r_running)
+
+    # Start iterating for convergence
+    for iteration_number in range(n_iterations):
+
+        # Set up the convergence check
+        set_as_unit_rotor_jit(r_set)
+
+        # Iterate over the array of objects
+        for mv_ind in range(reference_model.shape[0]):
+            C1 = val_apply_rotor(query_model[mv_ind, :], r_running)
+            C1 = val_normalised(C1)
+            C2 = reference_model[mv_ind, :]
+
+            # Check if they are the same other than a sign flip
+            sum_abs = 0.0
+            for b_ind in range(32):
+                sum_abs += abs(C1[b_ind] + C2[b_ind])
+            if sum_abs < 0.0001:
+                r_root = unit_rotor
+            else:
+                r_temp = val_rotor_between_objects_root(C1, C2)
+                r_temp[0] += 1.0
+                r_root = pos_twiddle_root_val(r_temp)[0, :]
+
+            # Update the set rotor and the running rotor
+            r_temp = gmt_func(r_root, r_set)
+            r_set = val_normalised(r_temp)
+            r_temp = gmt_func(r_root, r_running)
+            r_running = val_normalised(r_temp)
+
+            # Check if we have converged
+            if val_rotor_cost_sparse(r_set) < cost_tolerance:
+                r_temp = val_normalised(r_running)
+                for i in range(32):
+                    rotor_output[i] = r_temp[i]
+
+                # Now calculate the cost of this transform
+                total_cost = 0.0
+                for object_ind in range(query_model.shape[0]):
+                    r_temp = val_apply_rotor(query_model[object_ind,:], rotor_output)
+                    total_cost += np.abs(val_rotor_cost_sparse( val_rotor_between_objects_root(r_temp, reference_model[object_ind, :] )))
+                return total_cost
+    # Return whatever we have
+    r_temp = val_normalised(r_running)
+    for i in range(32):
+        rotor_output[i] = r_temp[i]
+
+    total_cost = 0.0
+    for object_ind in range(query_model.shape[0]):
+        r_temp = val_apply_rotor(query_model[object_ind, :], rotor_output)
+        total_cost += np.abs(val_rotor_cost_sparse( val_rotor_between_objects_root(r_temp, reference_model[object_ind, :])))
+    return total_cost
+
+
+@numba.njit
+def sequential_rotor_estimation_chunks_jit(reference_model, query_model, output, cost_array):
+    # Break the model into n chunks and estimate the rotor based on each of those
+    n_chunks = output.shape[0]
+    n_objects_per_chunk = int(reference_model.shape[0]/n_chunks)
+    for i in range(n_chunks):
+        ref = reference_model[i*n_objects_per_chunk:(i+1)*n_objects_per_chunk]
+        qer = query_model[i*n_objects_per_chunk:(i+1)*n_objects_per_chunk]
+        total_cost = sequential_rotor_estimation_jit(ref, qer, output[i, :])
+        cost_array[i] = total_cost
+
+
+
+def sequential_rotor_estimation_chunks(reference_model_array, query_model_array, n_samples, n_objects_per_sample, mutation_probability=None):
+
+    # Stack up a list of numbers
+    total_matches = n_samples*n_objects_per_sample
+    sample_indices = random.sample(range(total_matches), total_matches)
+
+    n_mvs = reference_model_array.shape[0]
+    sample_indices = [i%n_mvs for i in sample_indices]
+
+    if mutation_probability is not None:
+        reference_model_array_new = []
+        mutation_flag = np.random.binomial(1,mutation_probability,total_matches)
+        for mut, i in zip(mutation_flag, sample_indices):
+            if mut:
+                ref_ind = random.sample(range(len(reference_model_array)), 1)[0]
+            else:
+                ref_ind = i
+            reference_model_array_new.append(reference_model_array[ref_ind,:])
+        reference_model_array_new = np.array(reference_model_array_new)
+    else:
+        reference_model_array_new = np.array([reference_model_array[i,:] for i in sample_indices], dtype=np.float64)
+    query_model_array_new = np.array([query_model_array[i, :] for i in sample_indices], dtype=np.float64)
+
+    output = np.zeros((n_samples,32), dtype=np.float64)
+    cost_array = np.zeros(n_samples, dtype=np.float64)
+
+    sequential_rotor_estimation_chunks_jit(reference_model_array_new, query_model_array_new, output, cost_array)
+
+    return output, cost_array
+
+
+def sequential_rotor_estimation_chunks_mvs(reference_model_list, query_model_list, n_samples, n_objects_per_sample, mutation_probability=None):
+    query_model_array = np.array([l.value for l in query_model_list])
+    reference_model_array = np.array([l.value for l in reference_model_list])
+    output, cost_array = sequential_rotor_estimation_chunks(reference_model_array, query_model_array, n_samples, n_objects_per_sample, mutation_probability=mutation_probability)
+    output_mvs = [query_model_list[0]._newMV(output[i, :]) for i in range(output.shape[0])]
+    return output_mvs, cost_array
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @numba.cuda.jit(device=True)
 def set_as_unit_rotor_device(array):
     for j in range(1,32):
@@ -28,7 +193,6 @@ def sequential_rotor_estimation_device(reference_model, query_model, rotor_outpu
 
     # Set up the running rotor estimate
     set_as_unit_rotor_device(r_running)
-
 
     # Start iterating for convergence
     for iteration_number in range(n_iterations):
@@ -141,6 +305,14 @@ def apply_rotor_device(mv, rotor, output):
     adjoint_device(rotor, rotor_adjoint)
     gp_device(mv, rotor_adjoint, temp)
     gp_device(rotor, temp, output)
+
+
+@numba.cuda.jit
+def apply_rotor_kernel(mv, rotor, output):
+    # This does elementwise gp with the input arrays into the ouput array
+    i = numba.cuda.grid(1)
+    if i < mv.shape[0]:
+        apply_rotor_device(mv[i, :], rotor[i, :], output[i, :])
 
 
 @numba.cuda.jit(device=True)

@@ -203,6 +203,7 @@ mask1 = layout.get_grade_projection_matrix(1)
 mask2 = layout.get_grade_projection_matrix(2)
 mask3 = layout.get_grade_projection_matrix(3)
 mask4 = layout.get_grade_projection_matrix(4)
+mask5 = layout.get_grade_projection_matrix(5)
 mask_2minus4 = mask2 - mask4
 
 
@@ -276,7 +277,7 @@ def project_points_to_circle(point_list, circle):
     """
     Takes a load of point and projects them onto a circle
     """
-    circle_plane = (circle^einf).normal()
+    circle_plane = normalised(circle^einf)
     planar_points = project_points_to_plane(point_list,circle_plane)
     circle_points = project_points_to_sphere(planar_points, -circle*circle_plane*I5)
     return circle_points

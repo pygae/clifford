@@ -39,7 +39,8 @@ class CUDATESTS(unittest.TestCase):
         self.layout = layout
         self.stuff = g3c.stuff
 
-    def test_sequential_rotor_estimation_kernel(self):
+
+    def test_sequential_rotor_estimation_jit(self):
         n_mvs = 1000
         query_model = [random_line() for i in range(n_mvs)]
 
@@ -59,24 +60,57 @@ class CUDATESTS(unittest.TestCase):
 
         print('Starting kernel')
         t = time.time()
-        blockdim = 64
-        griddim = int(math.ceil(reference_model_array.shape[0] / blockdim))
 
-        sequential_rotor_estimation_kernel[griddim, blockdim](reference_model_array, query_model_array, output, cost_array)
-        # output, cost_array = sequential_rotor_estimation_cuda(reference_model_array, query_model_array, n_samples,
-        #                                           n_objects_per_sample)
-        # end_time = time.time() - t
-        # print('Kernel finished')
-        # print(end_time)
-        #
-        # # Now do the non cuda kernel
-        # t = time.time()
-        # for i in range(output.shape[0]):
-        #     mv_d_array[i, :] = sequential_object_rotor_estimation_convergence_detection(reference_model,
-        #                                                                                 query_model)[0].value
-        # print(time.time() - t)
-        # print(cost_array)
-        # np.testing.assert_almost_equal(output, mv_d_array, 5)
+        output, cost_array = sequential_rotor_estimation_chunks(reference_model_array, query_model_array, n_samples,
+                                                  n_objects_per_sample)
+        end_time = time.time() - t
+        print('Kernel finished')
+        print(end_time)
+
+        # Now do the non cuda kernel
+        t = time.time()
+        for i in range(output.shape[0]):
+            mv_d_array[i, :] = sequential_object_rotor_estimation_convergence_detection(reference_model,
+                                                                                        query_model)[0].value
+        print(time.time() - t)
+        print(cost_array)
+        np.testing.assert_almost_equal(output, mv_d_array, 5)
+
+
+
+    def test_sequential_rotor_estimation_kernel(self):
+        n_mvs = 1000
+        query_model = [random_line() for i in range(n_mvs)]
+
+        r = random_rotation_translation_rotor()
+
+        reference_model = [(r*a*~r).normal() for a in query_model]
+
+        query_model_array = np.array(query_model)
+        reference_model_array = np.array(reference_model)
+
+        n_samples = 100
+        n_objects_per_sample = 100
+        output = np.zeros((n_samples, 32))
+        mv_d_array = np.zeros(output.shape)
+
+        print('Starting kernel')
+        t = time.time()
+
+        output, cost_array = sequential_rotor_estimation_cuda(reference_model_array, query_model_array, n_samples,
+                                                  n_objects_per_sample)
+        end_time = time.time() - t
+        print('Kernel finished')
+        print(end_time)
+
+        # Now do the non cuda kernel
+        t = time.time()
+        for i in range(output.shape[0]):
+            mv_d_array[i, :] = sequential_object_rotor_estimation_convergence_detection(reference_model,
+                                                                                        query_model)[0].value
+        print(time.time() - t)
+        print(cost_array)
+        np.testing.assert_almost_equal(output, mv_d_array, 5)
 
 
     def test_square_root_of_rotor_kernel(self):
@@ -271,6 +305,29 @@ class CUDATESTS(unittest.TestCase):
 
         np.testing.assert_almost_equal(mv_c_array, mv_d_array)
 
+    def test_apply_rotor_kernel(self):
+        n_mvs = 1000
+        for obj_gen in object_generators:
+            mv_s = [obj_gen() for i in range(n_mvs)]
+            mv_a_array = np.array(mv_s)
+            random_rotors = [random_rotation_translation_rotor()*generate_dilation_rotor(np.random.rand()*3) for i in range(n_mvs)]
+            rotor_array = np.array(random_rotors)
+            output = np.zeros(rotor_array.shape)
+
+            blockdim = 64
+            griddim = int(math.ceil(n_mvs / blockdim))
+            apply_rotor_kernel[griddim, blockdim](mv_a_array, rotor_array, output)
+
+            output_normal = np.array([apply_rotor(mv,r) for mv,r in zip(mv_s,random_rotors)])
+            for i in range(n_mvs):
+                try:
+                    np.testing.assert_almost_equal(output_normal[i,:], output[i,:])
+                except:
+                    print(output_normal[i,:])
+                    print(output[i,:])
+                    np.testing.assert_almost_equal(output_normal[i,:], output[i,:])
+
+
     def test_adjoint(self):
 
         n_mvs = 1000
@@ -355,13 +412,19 @@ class CUDATESTS(unittest.TestCase):
             t = time.time()
             mv_d_array = object_set_cost_matrix(mv_a_array, mv_b_array, object_type='generic')
             print(time.time() - t)
-            try:
-                np.testing.assert_almost_equal(mv_c_array, mv_d_array, 3)
-            except:
-                print(mv_c_array[0,:])
-                print(mv_d_array[0,:])
-                np.testing.assert_almost_equal(mv_c_array, mv_d_array, 3)
 
+            for i in range(n_mvs):
+                for j in range(n_mvs):
+                    try:
+                        assert abs(mv_d_array[i,j]-mv_c_array[i,j])/abs(mv_d_array[i,j]) < 10**(-6)
+                    except:
+                        print(generator.__name__)
+                        if generator.__name__ == 'random_line':
+                            print(val_object_cost_function(mv_a_array[i].value, mv_b_array[j].value))
+                        print(mv_d_array[i,j])
+                        print(mv_c_array[i,j])
+                        print(abs(mv_d_array[i,j]-mv_c_array[i,j])/abs(mv_d_array[i,j]))
+                        assert abs(mv_d_array[i,j]-mv_c_array[i,j])/abs(mv_d_array[i,j]) < 10**(-6)
 
     def test_REFORM_cuda(self):
 

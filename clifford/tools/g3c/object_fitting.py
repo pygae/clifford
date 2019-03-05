@@ -7,6 +7,12 @@ def val_fit_circle(point_list):
     """
     Performs Leo Dorsts circle fitting technique
     """
+    # Check if there are just 3 points
+    if point_list.shape[0] == 3:
+        best_obj = point_list[0, :]
+        for i in range(1, 3):
+            best_obj = omt_func(best_obj, point_list[i, :])
+        return val_normalised(best_obj)
     # Loop over our points and construct the matrix
     accumulator_matrix = np.zeros((32, 32))
     for i in range(point_list.shape[0]):
@@ -45,10 +51,16 @@ def val_fit_line(point_list):
     """
     Does line fitting with combo J.Lasenbys method and L. Dorsts
     """
-    accumulator_matrix = np.zeros((32,32))
+    # Check if there are just 2 points
+    if point_list.shape[0] == 2:
+        best_obj = point_list[0, :]
+        for i in range(1, 2):
+            best_obj = omt_func(best_obj, point_list[i, :])
+        return val_normalised(omt_func(best_obj, ninf_val))
+    accumulator_matrix = np.zeros((32, 32))
     for i in range(point_list.shape[0]):
-        P_i_l = get_left_gmt_matrix(point_list[i,:])
-        P_i_r = get_right_gmt_matrix(point_list[i,:])
+        P_i_l = get_left_gmt_matrix(point_list[i, :])
+        P_i_r = get_right_gmt_matrix(point_list[i, :])
         accumulator_matrix += mask3@P_i_l@P_i_r
     # Find the eigenvalues of the matrix
     e_vals, e_vecs = np.linalg.eig(accumulator_matrix)
@@ -75,11 +87,17 @@ def val_fit_sphere(point_list):
     """
     Performs Leo Dorsts sphere fitting technique
     """
+    # Check if there are just 4 points
+    if point_list.shape[0] == 4:
+        best_sphere = point_list[0, :]
+        for i in range(1, 4):
+            best_sphere = omt_func(best_sphere, point_list[i, :])
+        return val_normalised(best_sphere)
     # Loop over our points and construct the matrix
     accumulator_matrix = np.zeros((32, 32))
     for i in range(point_list.shape[0]):
         # Get the point as a left gmt matrix
-        P_i_l = get_left_gmt_matrix(point_list[i,:])
+        P_i_l = get_left_gmt_matrix(point_list[i, :])
         # Multiply and add
         accumulator_matrix += P_i_l @ mask0 @ P_i_l
     accumulator_matrix = accumulator_matrix @ mask1
@@ -108,10 +126,16 @@ def val_fit_plane(point_list):
     """
     Does plane fitting with combo J.Lasenbys method and L. Dorsts
     """
-    accumulator_matrix = np.zeros((32,32))
+    # Check if there are just 3 points
+    if point_list.shape[0] == 3:
+        best_obj = point_list[0, :]
+        for i in range(1, 3):
+            best_obj = omt_func(best_obj, point_list[i, :])
+        return val_normalised(omt_func(best_obj, ninf_val))
+    accumulator_matrix = np.zeros((32, 32))
     for i in range(point_list.shape[0]):
-        P_i_l = get_left_gmt_matrix(point_list[i,:])
-        P_i_r = get_right_gmt_matrix(point_list[i,:])
+        P_i_l = get_left_gmt_matrix(point_list[i, :])
+        P_i_r = get_right_gmt_matrix(point_list[i, :])
         accumulator_matrix += mask4@P_i_l@P_i_r
     e_vals, e_vecs = np.linalg.eig(accumulator_matrix)
     min_eval = np.inf
