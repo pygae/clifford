@@ -304,7 +304,6 @@ class G3CToolsTests(unittest.TestCase):
                     print(new_blade)
                     np.testing.assert_almost_equal(new_blade.value, X1.value, 3)
 
-
     def test_is_blade(self):
         a = random_bivector() + random_circle()
         assert not a.isBlade()
@@ -318,7 +317,6 @@ class G3CToolsTests(unittest.TestCase):
                     print(obj_gen.__name__)
                     raise ValueError('Object is not a blade')
 
-
     def test_average_objects(self):
         n_repeats = 1000
         for obj_gen in self.object_generators:
@@ -331,6 +329,13 @@ class G3CToolsTests(unittest.TestCase):
                 except:
                     print(obj_gen.__name__)
                     average_objects(obj_list, weights=[0.5, 0.5])
+
+    def test_closest_furthest_circle_points(self):
+        for _ in range(100):
+            C1 = random_circle()
+            C2 = random_circle()
+            pclose = closest_points_on_circles(C1, C2)
+            pfar = furthest_points_on_circles(C1, C2)
 
     def test_general_object_interpolation(self):
 

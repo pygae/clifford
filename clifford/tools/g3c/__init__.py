@@ -261,25 +261,30 @@ def project_points_to_plane(point_list, plane):
     return projected_list
 
 
-def project_points_to_sphere(point_list, sphere):
+def project_points_to_sphere(point_list, sphere, closest=True):
     """
     Takes a load of points and projects them onto a sphere
     """
+    if closest:
+        point_index = 1
+    else:
+        point_index = 0
     projected_list = []
     C = sphere*einf*sphere
     for point in point_list:
-        proj_point = point_pair_to_end_points(meet((point^C^einf).normal(),sphere))[1]
+        proj_point = point_pair_to_end_points(meet((point^C^einf).normal(),sphere))[point_index]
         projected_list.append(proj_point)
     return projected_list
 
 
-def project_points_to_circle(point_list, circle):
+def project_points_to_circle(point_list, circle, closest=True):
     """
     Takes a load of point and projects them onto a circle
+    The closest flag determines if it should be the closest or furthest point on the circle
     """
     circle_plane = normalised(circle^einf)
     planar_points = project_points_to_plane(point_list,circle_plane)
-    circle_points = project_points_to_sphere(planar_points, -circle*circle_plane*I5)
+    circle_points = project_points_to_sphere(planar_points, -circle*circle_plane*I5, closest=closest)
     return circle_points
 
 
@@ -293,6 +298,43 @@ def project_points_to_line(point_list, line):
         proj_point = (pp*einf*pp)(1)
         projected_list.append(proj_point)
     return projected_list
+
+
+def closest_points_on_circles(C1,C2,niterations=20):
+    """
+    Given two circles C1 and C2 this calculates the closest
+    points on each of them to the other
+    """
+    cav = average_objects([C1,C2])
+    cav2 = average_objects([C1,-C2])
+    PP = meet(cav,cav2^einf).normal()
+    P_list = point_pair_to_end_points(PP)
+    dmin = np.inf
+    for Ptest in P_list:
+        d = -(project_points_to_circle([Ptest],C1)[0](1)|project_points_to_circle([Ptest],C2)[0](1))[0]
+        if d < dmin:
+            dmin = d
+            P2 = Ptest
+    P1 = project_points_to_circle([P2], C1)[0](1)
+    P2 = project_points_to_circle([P1], C2)[0](1)
+    for i in range(niterations):
+        P1 = project_points_to_circle([P2],C1)[0](1)
+        P2 = project_points_to_circle([P1],C2)[0](1)
+    return P1, P2
+
+
+def furthest_points_on_circles(C1,C2,niterations=20):
+    """
+    Given two circles C1 and C2 this calculates the closest
+    points on each of them to the other
+    """
+    P2 = random_conformal_point()
+    P1 = project_points_to_circle([P2], C1, closest=False)[0](1)
+    P2 = project_points_to_circle([P1], C2, closest=False)[0](1)
+    for i in range(niterations):
+        P1 = project_points_to_circle([P2],C1,closest=False)[0](1)
+        P2 = project_points_to_circle([P1],C2,closest=False)[0](1)
+    return P1, P2
 
 
 def normalise_TR_to_unit_T(TR):
