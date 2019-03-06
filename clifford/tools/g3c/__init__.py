@@ -248,6 +248,75 @@ def interpret_multivector_as_object(mv):
     else:
         return -1
 
+
+@numba.njit
+def val_sphere_line_intersect(s, l):
+    """
+    Checks for intersection between a sphere and a line
+    """
+    mv = meet_val(s, l)
+    return imt_func(mv, mv)[0] > 0
+
+
+def sphere_line_intersect(s, l):
+    """
+    Checks for intersection between a sphere and a line
+    """
+    return val_sphere_line_intersect(s.value, l.value)
+
+
+def sphere_in_sphere(S1, S2, tolerance=10**-6):
+    """
+    Checks if one sphere is inside the other
+    (S1|S2)[0] < -1
+    """
+    return (unsign_sphere(S1)|unsign_sphere(S2))[0] <= -1 + tolerance
+
+
+def unsign_sphere(S):
+    """
+    Normalises the sign of a sphere
+    """
+    return -normalised(S * ((I5 * S) | einf)[0])
+
+
+def join_spheres(S1in, S2in):
+    """
+    Find the smallest sphere that encloses both spheres
+    """
+    s1 = unsign_sphere(S1in)
+    s2 = unsign_sphere(S2in)
+    L = normalised(((s1 * I5) ^ (s2 * I5) ^ einf)(3))
+    pp1 = normalised(meet(s1, L)(2))
+    pp2 = normalised(meet(s2, L)(2))
+    p1 = point_pair_to_end_points(pp1)[0]
+    p2 = point_pair_to_end_points(pp2)[1]
+    if (p1|(s2*I5))[0] > 0.0:
+        opt_sphere = s2(4)
+    elif (p2|(s1*I5))[0] > 0.0:
+        opt_sphere = s1(4)
+    else:
+        p12 = p1 ^ p2
+        L2 = normalised(p12 * (p12 ^ einf))
+        opt_sphere = (L2*I5)(4)
+    return unsign_sphere(opt_sphere)
+
+
+def enclosing_sphere(spheres):
+    """
+    For a given set of spheres this finds a sphere that encloses all of them
+    Tries to find the smallest one it can
+    """
+    nspheres = len(spheres)
+    if nspheres == 1:
+        return spheres[0]
+    elif nspheres == 2:
+        return join_spheres(spheres[0], spheres[1])
+    mins = spheres[0]
+    for i in range(1, nspheres):
+        mins = join_spheres(mins, spheres[i])
+    return mins
+
     
 def project_points_to_plane(point_list, plane):
     """ 
@@ -256,7 +325,7 @@ def project_points_to_plane(point_list, plane):
     projected_list = []
     for point in point_list:
         proj_point = ((point|plane)*plane)
-        proj_point = normalise_n_minus_1( (proj_point*einf*proj_point)(1) )
+        proj_point = normalise_n_minus_1((proj_point*einf*proj_point)(1))
         projected_list.append(proj_point)
     return projected_list
 
@@ -272,7 +341,7 @@ def project_points_to_sphere(point_list, sphere, closest=True):
     projected_list = []
     C = sphere*einf*sphere
     for point in point_list:
-        proj_point = point_pair_to_end_points(meet((point^C^einf).normal(),sphere))[point_index]
+        proj_point = point_pair_to_end_points(meet(normalised(point^C^einf),sphere))[point_index]
         projected_list.append(proj_point)
     return projected_list
 

@@ -330,6 +330,22 @@ class G3CToolsTests(unittest.TestCase):
                     print(obj_gen.__name__)
                     average_objects(obj_list, weights=[0.5, 0.5])
 
+    def test_join_spheres(self):
+        for j in range(1000):
+            s1 = random_sphere()
+            s2 = random_sphere()
+            s3 = join_spheres(s1, s2)
+            assert sphere_in_sphere(s1, s3)
+            assert sphere_in_sphere(s2, s3)
+
+    def test_enclosing_spheres(self):
+        n_spheres = 10
+        for j in range(1000):
+            spheres = [random_sphere() for i in range(n_spheres)]
+            s4 = normalised(enclosing_sphere(spheres))
+            for s in spheres:
+                assert sphere_in_sphere(s, s4)
+
     def test_closest_furthest_circle_points(self):
         for _ in range(100):
             C1 = random_circle()
