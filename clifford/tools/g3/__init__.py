@@ -59,26 +59,21 @@ def quaternion_to_rotor(quaternion):
     """
     Converts a quaternion into a pure rotation rotor
     """
-    quat_W = quaternion[0]
-    quat_X = quaternion[1]
-    quat_Y = quaternion[2]
-    quat_Z = quaternion[3]
-    i = e23
-    j = e13
-    k = e12
-    return quat_W + quat_X * i + quat_Y * j + quat_Z * k
+    Q = layout.MultiVector()
+    Q.value[1:4] = quaternion[1:4]
+    Q = -e123*Q
+    Q[0] = quaternion[0]
+    Q.value = Q.value/np.sign(quaternion[0])
+    return Q
 
 
-def rotor_to_quaternion(rotor):
+def rotor_to_quaternion(R):
     """
     Converts a pure rotation rotor into a quaternion
     """
-    quat = np.zeros(4)
-    quat[0] = rotor[0]
-    quat[1] = rotor[(2, 3)]
-    quat[2] = rotor[(1, 3)]
-    quat[3] = rotor[(1, 2)]
-    return quat
+    Q = (e123*R).value[0:4]
+    Q[0] = R[0]
+    return Q
 
 
 def quaternion_to_matrix(q):
