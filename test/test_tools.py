@@ -62,52 +62,49 @@ class G3ToolsTests(unittest.TestCase):
         """
         from clifford.g3c import layout
         from clifford.tools.g3 import rotor_to_quaternion, quaternion_to_rotor
-        e1 = layout.blades['e1']
-        e2 = layout.blades['e2']
-        rotor = e1*e2
-        print(rotor)
-        quaternion = rotor_to_quaternion(rotor)
-        print(quaternion)
-        rotor_return = quaternion_to_rotor(quaternion)
-        print(rotor_return)
-        testing.assert_almost_equal(rotor.value, rotor_return.value)
+        from clifford.tools.g3c import random_rotation_rotor
+        for i in range(1000):
+            rotor = random_rotation_rotor()
+            quaternion = rotor_to_quaternion(rotor)
+            rotor_return = quaternion_to_rotor(quaternion)
+            testing.assert_almost_equal(rotor.value, rotor_return.value)
 
     def test_rotation_matrix_conversions(self):
         """
         Bidirectional rotor - rotation matrix test. This needs work but is a reasonable start
         """
-        from clifford.g3c import layout
+        from clifford.g3c import layout, up, down
         from clifford.tools.g3 import rotation_matrix_to_rotor, rotor_to_rotation_matrix
-        e1 = layout.blades['e1']
-        e2 = layout.blades['e2']
-
-        rotor = e1*e2
-        print(rotor)
-        matrix = rotor_to_rotation_matrix(rotor)
-        print(matrix)
-        rotor_return = rotation_matrix_to_rotor(matrix)
-        print(rotor_return)
-        testing.assert_almost_equal(rotor.value, rotor_return.value)
+        from clifford.tools.g3c import random_rotation_rotor, random_conformal_point, apply_rotor
+        for i in range(1000):
+            rotor = random_rotation_rotor()
+            # Check that we can map up and back
+            Rmat = rotor_to_rotation_matrix(rotor)
+            rotor_return = rotation_matrix_to_rotor(Rmat)
+            testing.assert_almost_equal(rotor.value, rotor_return.value)
+            # Check that the rotations do the same thing
+            A = random_conformal_point()
+            B = down(apply_rotor(A, rotor)).value[1:4]
+            C = Rmat @ down(A).value[1:4]
+            np.testing.assert_almost_equal(B, C)
 
     def test_generate_rotation_rotor_and_angle(self):
         """
         Checks rotation rotor generation
         """
         from clifford.tools.g3 import generate_rotation_rotor, random_unit_vector, angle_between_vectors
+        for i in range(1000):
+            euc_vector_m = random_unit_vector()
+            euc_vector_n = random_unit_vector()
+            theta = angle_between_vectors(euc_vector_m, euc_vector_n)
 
-        euc_vector_m = random_unit_vector()
-        euc_vector_n = random_unit_vector()
-        theta = angle_between_vectors(euc_vector_m, euc_vector_n)
-        print(theta)
+            rot_rotor = generate_rotation_rotor(theta, euc_vector_m, euc_vector_n)
+            v1 = euc_vector_m
+            v2 = rot_rotor*euc_vector_m*~rot_rotor
+            theta_return = angle_between_vectors(v1, v2)
 
-        rot_rotor = generate_rotation_rotor(theta, euc_vector_m, euc_vector_n)
-        v1 = euc_vector_m
-        v2 = rot_rotor*euc_vector_m*~rot_rotor
-        theta_return = angle_between_vectors(v1, v2)
-        print(theta_return)
-
-        testing.assert_almost_equal(theta_return, theta)
-        testing.assert_almost_equal(euc_vector_n.value, v2.value)
+            testing.assert_almost_equal(theta_return, theta)
+            testing.assert_almost_equal(euc_vector_n.value, v2.value)
 
     @SkipTest
     def test_find_rotor_aligning_vectors(self):
