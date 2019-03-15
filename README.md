@@ -2,7 +2,7 @@
 =========================================================
 A numerical geometric algebra module for python. BSD License. 
 
-[![Build Status](https://travis-ci.org/pygae/clifford.svg?branch=master)](https://travis-ci.org/pygae/clifford) [![Azure](https://dev.azure.com/hadfieldhugo/hadfieldhugo/_apis/build/status/pygae.clifford?branchName=master)](https://dev.azure.com/hadfieldhugo/hadfieldhugo/_build/latest?definitionId=1&branchName=master) [![Documentation Status](https://readthedocs.org/projects/clifford/badge/?version=latest)](http://clifford.readthedocs.io/en/latest/?badge=latest) [![Coverage Status](https://coveralls.io/repos/github/pygae/clifford/badge.svg?branch=master)](https://coveralls.io/github/pygae/clifford?branch=master) [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/pygae/clifford/master?filepath=examples%2Fg3c.ipynb) 
+[![Build Status](https://travis-ci.org/pygae/clifford.svg?branch=master)](https://travis-ci.org/pygae/clifford) [![Azure](https://dev.azure.com/hadfieldhugo/hadfieldhugo/_apis/build/status/pygae.clifford?branchName=master)](https://dev.azure.com/hadfieldhugo/hadfieldhugo/_build/latest?definitionId=1&branchName=master) [![Documentation Status](https://readthedocs.org/projects/clifford/badge/?version=latest)](http://clifford.readthedocs.io/en/latest/?badge=latest) [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/pygae/clifford/master?filepath=examples%2Fg3c.ipynb) 
 
 [![DOI](https://zenodo.org/badge/26588915.svg)](https://zenodo.org/badge/latestdoi/26588915)
 
