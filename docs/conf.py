@@ -17,7 +17,7 @@ import os
 import sphinx_rtd_theme
 
 # The short X.Y version.
-version = '1.0.3'
+version = '1.0.4'
 # The full version, including alpha/beta/rc tags.
 release = version
 

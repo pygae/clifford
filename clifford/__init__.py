@@ -57,7 +57,7 @@ import numba
 from clifford.io import write_ga_file, read_ga_file
 
 
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 # The blade finding regex for parsing strings of mvs
 _blade_pattern =  "((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))"
