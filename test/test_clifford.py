@@ -34,6 +34,22 @@ class CliffordTests(unittest.TestCase):
                     self.assert_(abs((a_inv * a)-1.) < 1.e-11)
                     self.assert_(abs(a_inv - 1./a) < 1.e-11)
 
+    def test_grade_masks(self):
+        for alg in self.algebras:
+            layout, blades = alg
+            A = layout.randomMV()
+            for i in range(layout.dims + 1):
+                np.testing.assert_almost_equal(A(i).value,A.value*layout.grade_mask(i))
+
+    def test_rotor_mask(self):
+        for alg in self.algebras:
+            layout, blades = alg
+            rotor_m = layout.rotor_mask
+            rotor_m_t = np.zeros(layout.gaDims)
+            for _ in range(10):
+                rotor_m_t += 100*np.abs(layout.randomRotor().value)
+            np.testing.assert_almost_equal(rotor_m_t > 0, rotor_m)
+
     def test_exp(self):
         layout, blades = self.algebras[0]
         e12 = blades['e12']

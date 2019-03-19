@@ -805,6 +805,13 @@ class Layout(object):
             raise ValueError('The signature of the ga file does not match this layout')
         return MVArray.from_value_array(self, data_array)
 
+    def grade_mask(self, grade):
+        return np.equal(grade, self.gradeList)
+
+    @property
+    def rotor_mask(self):
+        return sum((self.grade_mask(i) for i in range(self.dims + 1) if not i%2))
+
     @property
     def metric(self):
         if self._metric is None:

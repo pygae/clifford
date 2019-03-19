@@ -5,6 +5,14 @@ from clifford.tools.g3c import *
 from clifford.io import *
 
 
+class TestParseMultivector(unittest.TestCase):
+
+    def test_parse_multivector(self):
+        A = layout.randomMV()
+        B = layout.parse_multivector( str(A, ) )
+        np.testing.assert_almost_equal(A.value, B.value, 3)
+
+
 class TestHDF5BasicIO(unittest.TestCase):
 
     def test_write_and_read(self):
