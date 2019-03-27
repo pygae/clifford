@@ -50,7 +50,7 @@ from warnings import warn
 
 # Major library imports.
 import numpy as np
-from numpy import linalg, array,zeros
+from numpy import linalg,zeros
 import numba
 
 
@@ -1859,7 +1859,7 @@ class MultiVector(object):
         else:
             raise ValueError("no inverse exists for this multivector")
             
-
+    
     
 
     def inv(self):
@@ -2191,6 +2191,28 @@ class MVArray(np.ndarray):
             out= out^k
         return out
 
+def array(obj):
+    '''
+    an array method like numpy.array(), but returns a MVArray
+    
+    Parameters
+    -------------
+    obj : MultiVector, list 
+        a MV or a list of MV's 
+        
+    Examples
+    ----------
+    >>>import clifford as cf
+    >>>from clifford import g3
+    >>>import numpy as np
+    >>>np.random.rand(10)*cf.array(g3.e12)
+    '''
+    if isinstance(obj, MultiVector):
+        # they passed a single MV so make a list of it. 
+        return MVArray([obj])
+    else:
+        return MVArray(obj)
+
 class Frame(MVArray):
     '''
     A frame of vectors
@@ -2258,7 +2280,7 @@ class Frame(MVArray):
             eps=_eps
             
             
-        return array([float((b[m]|b[n]) - (a[m]|a[n]))<eps for m, n in pairs]).all()
+        return np.array([float((b[m]|b[n]) - (a[m]|a[n]))<eps for m, n in pairs]).all()
 
 
 class BladeMap(object):
@@ -2694,6 +2716,7 @@ def conformalize(layout, added_sig=[1,-1]):
         'up': up, 'down': down, 'homo': homo,'I_base':I_base})
 
     return layout_c, blades_c, stuff
+
 
 
 ## TODO: fix caching to work
