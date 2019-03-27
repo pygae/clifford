@@ -4,7 +4,7 @@ from past.builtins import range
 
 
 from clifford import Cl, randomMV, Frame, get_mult_function, \
-    conformalize, grade_obj, val_get_right_gmt_matrix, MultiVector
+    conformalize, grade_obj, val_get_right_gmt_matrix, MultiVector, MVArray
 
 
 import numpy as np
@@ -133,6 +133,47 @@ class CliffordTests(unittest.TestCase):
 
         float64(1) + e1
         self.assertEqual(1 + e1, float64(1) + e1)
+
+        self.assertEqual(1 + e1, e1 + float64(1))
+
+    def test_array_control(self):
+        '''
+        test array_wrap method to take control addition from numpy array
+        '''
+        layout, blades = self.algebras[0]
+        e1 = blades['e1']
+        e3 = blades['e3']
+        e12 = blades['e12']
+
+        for i in range(100):
+
+            number_array = np.random.rand(4)
+
+            output = e12+(e1*number_array)
+            output2 = MVArray([e12+(e1*n) for n in number_array])
+            np.testing.assert_almost_equal(output, output2)
+
+            output = e12 + (e1 * number_array)
+            output2 = MVArray([e12 + (e1 * n) for n in number_array])
+            np.testing.assert_almost_equal(output, output2)
+
+            output = (number_array*e1) + e12
+            output2 = MVArray([(n*e1) + e12 for n in number_array])
+            np.testing.assert_almost_equal(output, output2)
+
+            output = number_array/ e12
+            output2 = MVArray([n/ e12 for n in number_array])
+            np.testing.assert_almost_equal(output, output2)
+
+            output = (e1 / number_array)
+            output2 = MVArray([(e1/n) for n in number_array])
+            np.testing.assert_almost_equal(output, output2)
+
+            output = ((e1 / number_array)*e3)/e12
+            output2 = MVArray([((e1 / n)*e3)/e12 for n in number_array])
+            np.testing.assert_almost_equal(output, output2)
+
+
 
 
 class BasicConformal41Tests(unittest.TestCase):
