@@ -273,6 +273,24 @@ def sphere_in_sphere(S1, S2, tolerance=10**-6):
     return (unsign_sphere(S1)|unsign_sphere(S2))[0] <= -1 + tolerance
 
 
+def sphere_beyond_plane(sphere, plane):
+    """
+    Check if the sphere is fully beyond the plane in the direction of
+    the plane normal
+    """
+    snorm = unsign_sphere(sphere)
+    return (snorm|plane)[0] < -get_radius_from_sphere(snorm)
+
+
+def sphere_behind_plane(sphere, plane):
+    """
+    Check if the sphere is fully behind the plane in the direction of
+    the plane normal, ie the opposite of sphere_beyond_plane
+    """
+    snorm = unsign_sphere(sphere)
+    return (snorm|plane)[0] > get_radius_from_sphere(snorm)
+
+
 def unsign_sphere(S):
     """
     Normalises the sign of a sphere
