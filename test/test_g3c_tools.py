@@ -330,6 +330,13 @@ class G3CToolsTests(unittest.TestCase):
                     print(obj_gen.__name__)
                     average_objects(obj_list, weights=[0.5, 0.5])
 
+    def test_point_beyond_plane(self):
+        plane = I5 * ((e1 + e2 + e3).normal() + 2 * einf)
+        P = up((e1 + e2 + e3) * 3)
+        assert point_beyond_plane(P, plane)
+        P = up((e1 + e2 + e3) * 1)
+        assert not point_beyond_plane(P, plane)
+
     def test_join_spheres(self):
         for j in range(1000):
             s1 = random_sphere()

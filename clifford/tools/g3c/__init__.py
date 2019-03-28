@@ -291,6 +291,14 @@ def sphere_behind_plane(sphere, plane):
     return (snorm|plane)[0] > get_radius_from_sphere(snorm)
 
 
+def point_beyond_plane(point, plane):
+    """
+    Check if the point is fully beyond the plane in the direction of
+    the plane normal
+    """
+    return (point|(I5*plane))[0] < 0
+
+
 def unsign_sphere(S):
     """
     Normalises the sign of a sphere
