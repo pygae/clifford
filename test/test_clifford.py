@@ -83,7 +83,7 @@ class CliffordTests(unittest.TestCase):
         
         B = MultiVector(layout=layout,value=valB)
         expB =MultiVector(layout=layout,value=valexpB)
-        np.testing.assert_almost_equal(exp(B).value,expB.value)
+        np.testing.assert_almost_equal(exp(B)[0].value,expB.value)
     
     def test_inv_g4(self):
         '''
