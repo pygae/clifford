@@ -979,44 +979,9 @@ class MultiVector(object):
                     "value must be a sequence of length %s" %
                     self.layout.gaDims)
 
-    def __array_wrap__(self, out_arr, context=None):
-        '''
-        This is a work-around needed to prevent numpy arrays from
-        operating  on MultiVectors using their operators.  This happens
-        because Multivectors act enough like an array, that duck
-        typing thinks they are an array.
-        '''
-        
-        uf, objs, out_index = context
-        op0 = objs[0]
-
-        # If its an exp it only has one argument
-        if uf.__name__ == 'exp':
-            return math.e ** (op0)
-
-        op1 = objs[1]
-
-        # Check if one of them subclasses from ndarray and the other doesn't
-        op0flag = issubclass(np.ndarray, op0)
-        op1flag = issubclass(np.ndarray, op1)
-        if (not op0flag) and op1flag:
-            op0 = np.empty(1, dtype=object)
-            op0[0] = objs[0]
-        elif (not op1flag) and op0flag:
-            op1 = np.empty(1, dtype=object)
-            op1[0] = objs[1]
-
-        if uf.__name__ =='multiply':
-            return op1*op0
-        if uf.__name__ == 'divide':
-            return op1.inv()*op0
-        elif uf.__name__ == 'add':
-            return op1 + op0
-        elif uf.__name__ == 'subtract':
-            return -op1 + op0
-
-        else:
-            raise ValueError('i dont know how to %s yet' % uf.__name__)
+    def __array__(self):
+        # we are a scalar, and the only appropriate dtype is an object array
+        return MVArray([self])
 
     def _checkOther(self, other, coerce=1):
         """Ensure that the other argument has the same Layout or coerce value if
@@ -1054,6 +1019,9 @@ class MultiVector(object):
     # numeric special methods
     # binary
 
+    def exp(self):
+        return general_exp(self)
+
     def __mul__(self, other):
         """Geometric product
 
@@ -1067,8 +1035,7 @@ class MultiVector(object):
             newValue = self.layout.gmt_func(self.value,other.value)
         else:
             if issubclass(other.__class__, np.ndarray):
-                obj = np.empty(1, dtype=object)
-                obj[0] = self
+                obj = self.__array__()
                 return obj*other
 
             newValue = other * self.value
@@ -1088,8 +1055,7 @@ class MultiVector(object):
             newValue = self.layout.gmt_func(other.value,self.value)
         else:
             if issubclass(other.__class__, np.ndarray):
-                obj = np.empty(1, dtype=object)
-                obj[0] = self
+                obj = self.__array__()
                 return other*obj
             newValue = other*self.value
 
@@ -1108,8 +1074,7 @@ class MultiVector(object):
             newValue = self.layout.omt_func(self.value,other.value)
         else:
             if issubclass(other.__class__, np.ndarray):
-                obj = np.empty(1, dtype=object)
-                obj[0] = self
+                obj = self.__array__()
                 return obj^other
             newValue = other*self.value
 
@@ -1128,8 +1093,7 @@ class MultiVector(object):
             newValue = self.layout.omt_func(other.value,self.value)
         else:
             if issubclass(other.__class__, np.ndarray):
-                obj = np.empty(1, dtype=object)
-                obj[0] = self
+                obj = self.__array__()
                 return other^obj
             newValue = other * self.value
 
@@ -1148,8 +1112,7 @@ class MultiVector(object):
             newValue = self.layout.imt_func(self.value,other.value)
         else:
             if issubclass(other.__class__, np.ndarray):
-                obj = np.empty(1, dtype=object)
-                obj[0] = self
+                obj = self.__array__()
                 return obj|other
             return self._newMV()  # l * M = M * l = 0 for scalar l
 
@@ -1167,8 +1130,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other)
         if not mv:
             if issubclass(other.__class__, np.ndarray):
-                obj = np.empty(1, dtype=object)
-                obj[0] = self
+                obj = self.__array__()
                 return obj + other
         newValue = self.value + other.value
 
@@ -1186,8 +1148,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other)
         if not mv:
             if issubclass(other.__class__, np.ndarray):
-                obj = np.empty(1, dtype=object)
-                obj[0] = self
+                obj = self.__array__()
                 return obj - other
         newValue = self.value - other.value
 
@@ -1203,8 +1164,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other)
         if not mv:
             if issubclass(other.__class__, np.ndarray):
-                obj = np.empty(1, dtype=object)
-                obj[0] = self
+                obj = self.__array__()
                 return other - obj
         newValue = other.value - self.value
 
@@ -1223,8 +1183,7 @@ class MultiVector(object):
             return self * other.inv()
         else:
             if issubclass(other.__class__, np.ndarray):
-                obj = np.empty(1, dtype=object)
-                obj[0] = self
+                obj = self.__array__()
                 return obj/other
             newValue = self.value / other
             return self._newMV(newValue)
@@ -1238,8 +1197,7 @@ class MultiVector(object):
 
         other, mv = self._checkOther(other)
         if issubclass(other.__class__, np.ndarray):
-            obj = np.empty(1, dtype=object)
-            obj[0] = self
+            obj = self.__array__()
             return other / obj
 
         return other * self.inv()

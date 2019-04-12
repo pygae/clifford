@@ -188,7 +188,7 @@ class TestGeneralLogarithm(unittest.TestCase):
                 R = rotor_between_objects(X, Y)
                 biv = general_logarithm(R)
                 R_recon = general_exp(biv).normal()
-                np.testing.assert_almost_equal(R.value, R_recon, 3)
+                np.testing.assert_almost_equal(R.value, R_recon.value, 4)
 
 
 class VisualisationTests(unittest.TestCase):
