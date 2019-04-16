@@ -63,7 +63,6 @@ def quaternion_to_rotor(quaternion):
     Q.value[1:4] = quaternion[1:4]
     Q = -e123*Q
     Q[0] = quaternion[0]
-    Q.value = Q.value/np.sign(quaternion[0])
     return Q
 
 

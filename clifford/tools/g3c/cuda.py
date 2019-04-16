@@ -255,7 +255,12 @@ def sequential_rotor_estimation_kernel(reference_model, query_model, output, cos
         cost_array[i] = total_cost
 
 
-def sequential_rotor_estimation_cuda(reference_model_array, query_model_array, n_samples, n_objects_per_sample, mutation_probability=None):
+def sequential_rotor_estimation_cuda(reference_model_array, query_model_array, n_samples=None, n_objects_per_sample=None, mutation_probability=None):
+
+    if n_samples is None:
+        n_samples = int(len(query_model_array)/2)
+    if n_objects_per_sample is None:
+        n_objects_per_sample = max(int(len(query_model_array)/10), 5)
 
     # Stack up a list of numbers
     total_matches = n_samples*n_objects_per_sample

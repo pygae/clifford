@@ -138,7 +138,7 @@ class CliffordTests(unittest.TestCase):
 
     def test_array_control(self):
         '''
-        test array_wrap method to take control addition from numpy array
+        test methods to take control addition from numpy arrays
         '''
         layout, blades = self.algebras[0]
         e1 = blades['e1']
@@ -173,6 +173,21 @@ class CliffordTests(unittest.TestCase):
             output2 = MVArray([((e1 / n)*e3)/e12 for n in number_array])
             np.testing.assert_almost_equal(output, output2)
 
+    def test_array_overload(self):
+        '''
+        test overload operations
+        '''
+        for alg in self.algebras:
+            layout, blades = alg
+            test_array = MVArray([layout.randomMV() for i in range(100)])
+
+            normed_array = test_array.normal()
+            other_array = np.array([t.normal().value for t in test_array])
+            np.testing.assert_almost_equal(normed_array.value, other_array)
+
+            dual_array = test_array.dual()
+            other_array_2 = np.array([t.dual().value for t in test_array])
+            np.testing.assert_almost_equal(dual_array.value, other_array_2)
 
 
 
