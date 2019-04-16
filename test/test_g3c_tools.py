@@ -659,7 +659,10 @@ class RotorEstimationTests(unittest.TestCase):
         noise_std = 0.0
         Y = MVArray([normalise_n_minus_1(apply_rotor(x, random_translation_rotor(noise_std) * R)) for x in X])
         res = de_keninck_twist(Y, X)
-        np.testing.assert_almost_equal(R.value, res.value, 4)
+        try:
+            np.testing.assert_almost_equal(R.value, res.value, 4)
+        except:
+            np.testing.assert_almost_equal(R.value, -res.value, 4)
 
     def test_direct_TRS_extraction(self):
         X = MVArray([random_conformal_point() for i in range(100)])
@@ -668,7 +671,10 @@ class RotorEstimationTests(unittest.TestCase):
         noise_std = 0.0
         Y = MVArray([normalise_n_minus_1(apply_rotor(x, random_translation_rotor(noise_std) * R)) for x in X])
         res = direct_TRS_extraction(Y, X)
-        np.testing.assert_almost_equal(R.value, res.value, 2)
+        try:
+            np.testing.assert_almost_equal(R.value, res.value, 4)
+        except:
+            np.testing.assert_almost_equal(R.value, -res.value, 4)
 
     def test_dorst_motor_points(self):
         X = MVArray([random_conformal_point() for i in range(100)])
@@ -676,7 +682,10 @@ class RotorEstimationTests(unittest.TestCase):
         noise_std = 0.0
         Y = MVArray([normalise_n_minus_1(apply_rotor(x, random_translation_rotor(noise_std) * R)) for x in X])
         res = dorst_motor_estimate(Y, X)
-        np.testing.assert_almost_equal(R.value, res.value, 2)
+        try:
+            np.testing.assert_almost_equal(R.value, res.value, 4)
+        except:
+            np.testing.assert_almost_equal(R.value, -res.value, 4)
 
     def test_dorst_motor_estimate_lines(self):
         self.run_rotor_estimation(random_line, dorst_motor_estimate)
