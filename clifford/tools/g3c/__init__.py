@@ -306,6 +306,13 @@ def unsign_sphere(S):
     return -normalised(S * ((I5 * S) | einf)[0])
 
 
+def val_unsign_sphere(S):
+    """
+    Normalises the sign of a sphere
+    """
+    return val_normalised(S*(-imt_func(dual_func(S),ninf_val)[0]))
+
+
 def join_spheres(S1in, S2in):
     """
     Find the smallest sphere that encloses both spheres
@@ -415,6 +422,29 @@ def closest_points_on_circles(C1,C2,niterations=20):
     for i in range(niterations):
         P1 = project_points_to_circle([P2],C1)[0](1)
         P2 = project_points_to_circle([P1],C2)[0](1)
+    return P1, P2
+
+
+def closest_points_circle_line(C,L,niterations=20):
+    """
+    Given a circle C and line L this calculates the closest
+    points on each of them to the other
+    """
+    cav = average_objects([C,L])
+    cav2 = average_objects([C,-L])
+    PP = meet(cav,cav2^einf).normal()
+    P_list = point_pair_to_end_points(PP)
+    dmin = np.inf
+    for Ptest in P_list:
+        d = -(project_points_to_circle([Ptest],C)[0](1)|project_points_to_line([Ptest],L)[0](1))[0]
+        if d < dmin:
+            dmin = d
+            P2 = Ptest
+    P1 = project_points_to_circle([P2], C)[0](1)
+    P2 = project_points_to_line([P1], L)[0](1)
+    for i in range(niterations):
+        P1 = project_points_to_circle([P2],C)[0](1)
+        P2 = project_points_to_line([P1],L)[0](1)
     return P1, P2
 
 

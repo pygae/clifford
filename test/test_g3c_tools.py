@@ -483,13 +483,6 @@ class G3CToolsTests(unittest.TestCase):
             mv_normed = normalise_n_minus_1(mv)
             testing.assert_almost_equal((mv_normed | ninf)[0], -1.0)
 
-    @SkipTest
-    def test_quaternion_and_vector_to_rotor(self):
-        """
-        TODO: IMPLEMENT THIS TEST
-        """
-        # quaternion_and_vector_to_rotor(quaternion, vector)
-
     def test_get_properties_of_sphere(self):
 
         for i in range(100):
@@ -630,7 +623,7 @@ class G3CToolsTests(unittest.TestCase):
 
 class RotorEstimationTests(unittest.TestCase):
 
-    def run_rotor_estimation(self, object_generator, estimation_function, n_runs=5, n_objects_per_run=10):
+    def run_rotor_estimation(self, object_generator, estimation_function, n_runs=20, n_objects_per_run=10):
 
         error_count = 0
         for i in range(n_runs):
@@ -659,6 +652,47 @@ class RotorEstimationTests(unittest.TestCase):
         print('ERRORS ', error_count)
         print('ERROR percentage ', 100 * error_count / float(n_runs), '%')
 
+
+    def test_de_keninck_twist(self):
+        X = MVArray([random_conformal_point() for i in range(100)])
+        R = random_rotation_rotor()
+        noise_std = 0.0
+        Y = MVArray([normalise_n_minus_1(apply_rotor(x, random_translation_rotor(noise_std) * R)) for x in X])
+        res = de_keninck_twist(Y, X)
+        np.testing.assert_almost_equal(R.value, res.value, 4)
+
+    def test_direct_TRS_extraction(self):
+        X = MVArray([random_conformal_point() for i in range(100)])
+        R = (random_rotation_translation_rotor(maximum_translation=100) * generate_dilation_rotor(
+            0.5 + 2 * np.random.rand())).normal()
+        noise_std = 0.0
+        Y = MVArray([normalise_n_minus_1(apply_rotor(x, random_translation_rotor(noise_std) * R)) for x in X])
+        res = direct_TRS_extraction(Y, X)
+        np.testing.assert_almost_equal(R.value, res.value, 2)
+
+    def test_dorst_motor_points(self):
+        X = MVArray([random_conformal_point() for i in range(100)])
+        R = random_rotation_translation_rotor(maximum_translation=100)
+        noise_std = 0.0
+        Y = MVArray([normalise_n_minus_1(apply_rotor(x, random_translation_rotor(noise_std) * R)) for x in X])
+        res = dorst_motor_estimate(Y, X)
+        np.testing.assert_almost_equal(R.value, res.value, 2)
+
+    def test_dorst_motor_estimate_lines(self):
+        self.run_rotor_estimation(random_line, dorst_motor_estimate)
+
+    def test_dorst_motor_estimate_circles(self):
+        self.run_rotor_estimation(random_circle, dorst_motor_estimate)
+
+    def test_dorst_motor_estimate_point_pairs(self):
+        self.run_rotor_estimation(random_point_pair, dorst_motor_estimate)
+
+    def test_dorst_motor_estimate_planes(self):
+        self.run_rotor_estimation(random_plane, dorst_motor_estimate)
+
+    def test_dorst_motor_estimate_spheres(self):
+        self.run_rotor_estimation(random_sphere, dorst_motor_estimate)
+
     def test_estimate_rotor_lines_average_then_opt(self):
 
         def estimation_func(pp_list_a, pp_list_b):
@@ -677,6 +711,7 @@ class RotorEstimationTests(unittest.TestCase):
             return r_est
 
         self.run_rotor_estimation(random_line, estimation_func)
+
 
     def test_estimate_rotor_circles_optimisation(self):
 
@@ -714,7 +749,7 @@ class RotorEstimationTests(unittest.TestCase):
     def test_estimate_rotor_lines_sequential(self):
 
         def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
+            r_est, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
             print(exit_flag)
             return r_est
 
@@ -723,7 +758,7 @@ class RotorEstimationTests(unittest.TestCase):
     def test_estimate_rotor_circles_sequential(self):
 
         def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
+            r_est, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
             print(exit_flag)
             return r_est
 
@@ -733,7 +768,7 @@ class RotorEstimationTests(unittest.TestCase):
     def test_estimate_rotor_circles_sequential_then_opt(self):
 
         def estimation_func(pp_list_a, pp_list_b):
-            r_est_1, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
+            r_est_1, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
             r_est_2 = 1.0
             if exit_flag == 1:
                 object_set_a = [apply_rotor(l, r_est_1).normal() for l in pp_list_a]
@@ -747,7 +782,7 @@ class RotorEstimationTests(unittest.TestCase):
         """ Skip this one as it seems to take a fairly long time atm """
 
         def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
+            r_est, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
             print(exit_flag)
             return r_est
 
@@ -756,7 +791,7 @@ class RotorEstimationTests(unittest.TestCase):
     def test_estimate_rotor_planes_sequential(self):
 
         def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
+            r_est, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
             print(exit_flag)
             return r_est
 
@@ -765,7 +800,7 @@ class RotorEstimationTests(unittest.TestCase):
     def test_estimate_rotor_spheres_sequential(self):
 
         def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
+            r_est, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
             print(exit_flag)
             return r_est
 
@@ -774,7 +809,7 @@ class RotorEstimationTests(unittest.TestCase):
     def test_estimate_rotor_lines_sequential_convergence_estimation(self):
 
         def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
+            r_est, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
             print(exit_flag)
             return r_est
 
@@ -783,7 +818,7 @@ class RotorEstimationTests(unittest.TestCase):
     def test_estimate_rotor_circles_sequential_convergence_estimation(self):
 
         def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
+            r_est, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
             print(exit_flag)
             return r_est
 
@@ -794,7 +829,7 @@ class RotorEstimationTests(unittest.TestCase):
         """ Skip this one as it seems to take a fairly long time atm """
 
         def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
+            r_est, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
             print(exit_flag)
             return r_est
 
@@ -803,7 +838,7 @@ class RotorEstimationTests(unittest.TestCase):
     def test_estimate_rotor_planes_sequential_convergence_estimation(self):
 
         def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
+            r_est, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
             print(exit_flag)
             return r_est
 
@@ -812,7 +847,7 @@ class RotorEstimationTests(unittest.TestCase):
     def test_estimate_rotor_spheres_sequential_convergence_estimation(self):
 
         def estimation_func(pp_list_a, pp_list_b):
-            r_est, r_list, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
+            r_est, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
             print(exit_flag)
             return r_est
 

@@ -644,7 +644,7 @@ class Layout(object):
         constructed_values = np.zeros(self.gaDims)
         for k in list(dict_in.keys()):
           constructed_values[int(k)] = dict_in[k]
-        return MultiVector(self, constructed_values)
+        return self._newMV(constructed_values)
 
     def __repr__(self):
         s = ("Layout(%r, %r, firstIdx=%r, names=%r)" % (
@@ -999,11 +999,11 @@ class MultiVector(object):
                 return other, False
 
         elif (
-                isinstance(other, self.__class__) and
+                issubclass(other.__class__, MultiVector) and
                 other.layout != self.layout):
             raise ValueError(
                 "cannot operate on MultiVectors with different Layouts")
-        elif issubclass(other.__class__, self.__class__):
+        elif issubclass(other.__class__, MultiVector):
             return other, True
 
         return other, False
@@ -1285,7 +1285,7 @@ class MultiVector(object):
         Note in mixed signature spaces this may be negative
         """
         mv_val = self.layout.gmt_func(self.layout.adjoint_func(self.value),self.value)
-        return MultiVector(self.layout, mv_val)[()]
+        return mv_val[0]
 
     def __abs__(self):
         """Magnitude (modulus)
@@ -1364,7 +1364,7 @@ class MultiVector(object):
         M[index] --> PyFloat | PyInt
         __getitem__(key) --> PyFloat | PyInt
         """
-        if isinstance(key, MultiVector):
+        if issubclass(key.__class__, MultiVector):
                 return self.value[int(np.where(key.value)[0][0])]
         elif key in self.layout.bladeTupMap.keys():
             return self.value[self.layout.bladeTupMap[key]]
@@ -1457,7 +1457,7 @@ class MultiVector(object):
         >>>M(0)
         >>>M(0,2)
         """
-        if isinstance(other, MultiVector):
+        if issubclass(other.__class__, MultiVector):
             return other.project(self)
         else:
             # we are making a grade projection
@@ -2081,6 +2081,10 @@ class MultiVector(object):
         return (self * subspace.inv()) | other
 
 
+dual_array = np.vectorize(MultiVector.dual)
+normal_array = np.vectorize(MultiVector.normal)
+
+
 class MVArray(np.ndarray):
     '''
     MultiVector Array
@@ -2149,6 +2153,19 @@ class MVArray(np.ndarray):
             out= out^k
         return out
 
+    def normal(self):
+        """
+        Normalises all elements
+        """
+        return normal_array(self)
+
+    def dual(self):
+        """
+        Takes the dual of all elements
+        """
+        return dual_array(self)
+
+
 def array(obj):
     '''
     an array method like numpy.array(), but returns a MVArray
@@ -2165,7 +2182,7 @@ def array(obj):
     >>>import numpy as np
     >>>np.random.rand(10)*cf.array(g3.e12)
     '''
-    if isinstance(obj, MultiVector):
+    if issubclass(obj.__class__, MultiVector):
         # they passed a single MV so make a list of it. 
         return MVArray([obj])
     else:

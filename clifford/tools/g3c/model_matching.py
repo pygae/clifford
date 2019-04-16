@@ -37,7 +37,7 @@ def iterative_model_match_sequential(reference_model, query_model, iterations=10
         # Reorder
         reordered_list_ref = [reference_model[i] for i in labels]
         # Estimate the rotor
-        r_est_update, r_list, exit_flag = sequential_object_rotor_estimation_convergence_detection(reordered_list_ref, remapped_objects,
+        r_est_update, exit_flag = sequential_object_rotor_estimation_convergence_detection(reordered_list_ref, remapped_objects,
                                                                              random_sequence=True, n_iterations=10,
                                                                              object_type=object_type)
         # Now update our running estimate
