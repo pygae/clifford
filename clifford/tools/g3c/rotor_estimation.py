@@ -17,6 +17,7 @@ I3 = e123
 I5 = e12345
 imt_func = layout.imt_func
 gmt_func = layout.gmt_func
+inv_func = layout.inv_func
 adjoint_func = layout.adjoint_func
 e4_val = e4.value
 ninf_val = einf.value
@@ -73,34 +74,69 @@ def direct_TRS_extraction(Y, X):
     return est_rotor
 
 
-def de_keninck_twist(Y, X, tolerance=0.000001):
+@numba.njit
+def val_project_bv(bv, x):
+    return -imt_func(imt_func(x,bv),bv)
+
+
+@numba.njit
+def val_calc_error(R, A, Y):
+    sumout = 0
+    for i in range(A.shape[0]):
+        sumout += val_norm(Y[i,:] - val_apply_rotor(A[i,:], R))
+    return sumout/A.shape[0]
+
+
+@numba.njit
+def val_in_plane_estimate_rotation(bv, A, Y):
+    rightside = np.zeros(32)
+    leftside = np.zeros(32)
+    for i in range(A.shape[0]):
+        Abv = val_project_bv(bv, A[i,:])
+        Ybv = val_project_bv(bv, Y[i,:])
+        revAbv = adjoint_func(Abv)
+        rightside += gmt_func(revAbv, Ybv)
+        leftside += gmt_func(revAbv,Abv)
+    R = gmt_func(inv_func(leftside),rightside)
+    R[0] += 1
+    return adjoint_func(val_normalised(R))
+
+e23_val = e23.value
+e12_val = e12.value
+e13_val = e13.value
+dekeninckbivmat = np.array([e23_val, e12_val, e13_val])
+
+@numba.njit
+def val_de_keninck_twist(Y, X, guess):
     """
     Performs the De Keninck twist
     Estimates the rotation between vectors
     """
-    def calc_error(R, A, Y):
-        return np.mean(abs(Y - R * A * ~R))
+    lasterr = 1E20
+    nmvs = X.shape[0]
+    A = np.zeros((nmvs,32))
+    for steps in range(1, 100):
+        for i in range(nmvs):
+            A[i,:] = val_apply_rotor(X[i,:], guess)
+        biv = dekeninckbivmat[steps % 3, :]
+        newguess = val_normalised(gmt_func(val_in_plane_estimate_rotation(biv, A, Y), guess))
+        newerr = val_calc_error(newguess, X, Y)
+        if newerr < lasterr:
+            guess = newguess
+        if abs(lasterr-newerr)<1E-6:
+            break
+        lasterr = newerr
+    return guess
 
-    def project_bv(bv, x):
-        return -(x|bv)|bv
 
-    def estimate(bv, A, Y):
-        Abv = MVArray([project_bv(bv, a) for a in A])
-        Ybv = MVArray([project_bv(bv, a) for a in Y])
-        revAbv = ~Abv
-        R = (1/sum(revAbv*Abv))*sum(revAbv*Ybv)
-        return ~(1+R).normal()
-
-    def improve(guess, Ain, Y):
-        for steps in range(1, 100):
-            A = MVArray([apply_rotor(a, guess) for a in Ain])
-            guess = (estimate([e23, e12, e13][steps % 3], A, Y) * guess).normal()
-            err = calc_error(guess, A, Y)
-            if err < tolerance:
-                break
-        return guess
-
-    return improve(1 + 0*e12, X, Y)
+def de_keninck_twist(Y, X, guess=None):
+    """
+    Performs the De Keninck twist
+    Estimates the rotation between vectors
+    """
+    if guess is None:
+        guess = (1 + 0*e1)
+    return layout.MultiVector(value=val_de_keninck_twist(Y.value, X.value, guess.value))
 
 
 def check_p(Q):

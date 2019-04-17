@@ -926,6 +926,7 @@ def val_point_pair_to_end_points(T):
     output[1,:]=B
     return output
 
+
 def point_pair_to_end_points(T):
     """
     Extracts the end points of a point pair bivector

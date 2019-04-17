@@ -20,7 +20,6 @@ class CliffordTests(unittest.TestCase):
     def setUp(self):
         self.algebras = [Cl(i) for i in [3, 4, 5]] # we should make this a dict, so we know what dimension it is
 
-    @SkipTest
     def test_inverse(self):
         for layout, blades in self.algebras:
             a = 1. + blades['e1']

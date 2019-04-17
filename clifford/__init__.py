@@ -300,6 +300,34 @@ def grade_obj_func(objin_val, gradeList, threshold):
     return np.argmax(modal_value_count)
 
 
+def get_leftLaInv(k_list, l_list, m_list, mult_table_vals, n_dims, gradeList):
+    """
+    Get a function that returns left-inverse using a computational linear algebra method
+    proposed by Christian Perwass.
+     -1         -1
+    M    where M  * M  == 1
+    leftLaInv() --> MultiVector
+    """
+
+    identity = np.zeros((n_dims,))
+    identity[gradeList.index(0)] = 1
+
+    @numba.njit
+    def leftLaInvJIT(value):
+        intermed = np.zeros((n_dims,n_dims))
+        for test_ind, i in enumerate(k_list):
+            j = l_list[test_ind]
+            k = m_list[test_ind]
+            intermed[i, j] += mult_table_vals[test_ind] * value[k]
+        intermed = np.transpose(intermed)
+        if abs(linalg.det(intermed)) < _eps:
+            raise ValueError("multivector has no left-inverse")
+        sol = linalg.solve(intermed, identity)
+        return sol
+
+    return leftLaInvJIT
+
+
 def general_exp(x, max_order=15):
     """
     This implements the series expansion of e**mv where mv is a multivector
@@ -738,6 +766,7 @@ class Layout(object):
         self.imt_func = get_mult_function(k_list,l_list,m_list,mult_table_vals,self.gaDims,self.gradeList,product_mask=imt_prod_mask)
         self.omt_func = get_mult_function(k_list,l_list,m_list,mult_table_vals,self.gaDims,self.gradeList,product_mask=omt_prod_mask)
         self.lcmt_func = get_mult_function(k_list,l_list,m_list,mult_table_vals,self.gaDims,self.gradeList,product_mask=lcmt_prod_mask)
+        self.inv_func = get_leftLaInv(k_list, l_list, m_list, mult_table_vals, self.gaDims, self.gradeList)
         self.k_list = k_list
         self.l_list = l_list
         self.m_list = m_list
@@ -1783,23 +1812,7 @@ class MultiVector(object):
         M    where M  * M  == 1
         leftLaInv() --> MultiVector
         """
-
-        identity = np.zeros((self.layout.gaDims,))
-        identity[self.layout.gradeList.index(0)] = 1
-
-        intermed = np.zeros((self.layout.gaDims,self.layout.gaDims))
-
-        for test_ind, [i,j,k] in enumerate(zip(self.layout.k_list,self.layout.l_list,self.layout.m_list)):
-            intermed[i, j] += self.layout.mult_table_vals[test_ind] * self.value[k]
-
-        intermed = np.transpose(intermed)
-
-        if abs(linalg.det(intermed)) < _eps:
-            raise ValueError("multivector has no left-inverse")
-
-        sol = linalg.solve(intermed, identity)
-
-        return self._newMV(sol)
+        return self._newMV(self.layout.inv_func(self.value))
 
     def normalInv(self):
         """Returns the inverse of itself if M*~M == |M|**2.
