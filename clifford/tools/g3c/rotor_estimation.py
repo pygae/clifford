@@ -10,7 +10,7 @@ from . import rotor_between_objects, apply_rotor, square_roots_of_rotor, rotor_b
 from clifford.g3c import *
 from clifford.tools import orthoFrames2Verser as cartan
 from clifford.tools.g3c import *
-from .cost_functions import object_set_cost_sum, rotor_cost
+from .cost_functions import object_set_cost_sum, rotor_cost, val_rotor_cost_sparse
 from clifford import grade_obj, MVArray
 
 I3 = e123
@@ -26,6 +26,9 @@ e123inf =e123*einf
 motor_basis = [1 + 0 * e1, e12, e13, e23,
                e1 * einf, e2 * einf, e3 * einf,
                I3 * einf]
+
+unit_rotor = np.zeros(32)
+unit_rotor[0] = 1.0
 
 
 def extract_rotor_from_TRS_mat_est(mat_est):
@@ -101,10 +104,12 @@ def val_in_plane_estimate_rotation(bv, A, Y):
     R[0] += 1
     return adjoint_func(val_normalised(R))
 
+
 e23_val = e23.value
 e12_val = e12.value
 e13_val = e13.value
 dekeninckbivmat = np.array([e23_val, e12_val, e13_val])
+
 
 @numba.njit
 def val_de_keninck_twist(Y, X, guess):
@@ -137,11 +142,6 @@ def de_keninck_twist(Y, X, guess=None):
     if guess is None:
         guess = (1 + 0*e1)
     return layout.MultiVector(value=val_de_keninck_twist(Y.value, X.value, guess.value))
-
-
-def check_p(Q):
-    """ For leo dorsts check product """
-    return Q(0, 1, 3) - Q(2, 4, 5)
 
 
 def average_estimator(reference_model, query_model):
@@ -199,7 +199,7 @@ def dorst_motor_estimate(Q_in, P_in):
     Estimating rotors from a variety of data
     """
     # Form linear operator
-    Q_list = [check_p(Q) for Q in Q_in]
+    Q_list = [Q(0, 1, 3) - Q(2, 4, 5) for Q in Q_in]
     P_list = P_in
     lag_mat = np.zeros((32, 32))
     n = len(Q_in)
@@ -390,6 +390,92 @@ def sequential_object_rotor_estimation_convergence_detection(reference_model, qu
             return R_total, exit_flag
     exit_flag = 1
     return R_total, exit_flag
+
+
+@numba.njit
+def set_as_unit_rotor_jit(array):
+    for j in range(1,32):
+        array[j] = 0.0
+    array[0] = 1.0
+
+
+@numba.njit
+def sequential_rotor_estimation_jit(reference_model, query_model, rotor_output, n_iterations = 20):
+    cost_tolerance = 10 * (10 ** -16)
+
+    # Allocate memory
+    r_set = np.zeros(32)
+    r_running = np.zeros(32)
+    r_root = np.zeros(32)
+    r_temp = np.zeros(32)
+    C1 = np.zeros(32)
+
+    # Set up the running rotor estimate
+    set_as_unit_rotor_jit(r_running)
+
+    # Start iterating for convergence
+    for iteration_number in range(n_iterations):
+
+        # Set up the convergence check
+        set_as_unit_rotor_jit(r_set)
+
+        # Iterate over the array of objects
+        for mv_ind in range(reference_model.shape[0]):
+            C1 = val_apply_rotor(query_model[mv_ind, :], r_running)
+            C1 = val_normalised(C1)
+            C2 = reference_model[mv_ind, :]
+
+            # Check if they are the same other than a sign flip
+            sum_abs = 0.0
+            for b_ind in range(32):
+                sum_abs += abs(C1[b_ind] + C2[b_ind])
+            if sum_abs < 0.0001:
+                r_root = unit_rotor
+            else:
+                r_temp = val_rotor_between_objects_root(C1, C2)
+                r_temp[0] += 1.0
+                r_root = pos_twiddle_root_val(r_temp)[0, :]
+
+            # Update the set rotor and the running rotor
+            r_temp = gmt_func(r_root, r_set)
+            r_set = val_normalised(r_temp)
+            r_temp = gmt_func(r_root, r_running)
+            r_running = val_normalised(r_temp)
+
+            # Check if we have converged
+            if val_rotor_cost_sparse(r_set) < cost_tolerance:
+                r_temp = val_normalised(r_running)
+                for i in range(32):
+                    rotor_output[i] = r_temp[i]
+
+                # Now calculate the cost of this transform
+                total_cost = 0.0
+                for object_ind in range(query_model.shape[0]):
+                    r_temp = val_apply_rotor(query_model[object_ind,:], rotor_output)
+                    total_cost += np.abs(val_rotor_cost_sparse( val_rotor_between_objects_root(r_temp, reference_model[object_ind, :] )))
+                return total_cost
+    # Return whatever we have
+    r_temp = val_normalised(r_running)
+    for i in range(32):
+        rotor_output[i] = r_temp[i]
+
+    total_cost = 0.0
+    for object_ind in range(query_model.shape[0]):
+        r_temp = val_apply_rotor(query_model[object_ind, :], rotor_output)
+        total_cost += np.abs(val_rotor_cost_sparse( val_rotor_between_objects_root(r_temp, reference_model[object_ind, :])))
+    return total_cost
+
+
+@numba.njit
+def sequential_rotor_estimation_chunks_jit(reference_model, query_model, output, cost_array):
+    # Break the model into n chunks and estimate the rotor based on each of those
+    n_chunks = output.shape[0]
+    n_objects_per_chunk = int(reference_model.shape[0]/n_chunks)
+    for i in range(n_chunks):
+        ref = reference_model[i*n_objects_per_chunk:(i+1)*n_objects_per_chunk]
+        qer = query_model[i*n_objects_per_chunk:(i+1)*n_objects_per_chunk]
+        total_cost = sequential_rotor_estimation_jit(ref, qer, output[i, :])
+        cost_array[i] = total_cost
 
 
 

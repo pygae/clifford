@@ -553,7 +553,7 @@ class G3CToolsTests(unittest.TestCase):
                 X3 = -S*(X1 + X2)
                 X4 = average_objects([X1,X2], [0.5,0.5]).normal()
                 if sum(np.abs((X3 + X4).value)) < 0.000001:
-                    print('SIGN FLIP')
+                    print(obj_gen.__name__, ' SIGN FLIP')
                     X4 = -X4
                 try:
                     np.testing.assert_almost_equal(X3.value, X4.value, 4)
@@ -595,6 +595,7 @@ class G3CToolsTests(unittest.TestCase):
                     print(C2*C1 + C1*C2)
                     np.testing.assert_almost_equal(C2.value, C3.value, 3)
 
+    #@SkipTest  # Skip this because we know that it is a breaking case
     def test_general_rotor_between_objects_specific_cases(self):
         C1 = -(2.48651^e1234) - (2.48651^e1235) - (1.0^e1245) + (3e-05^e1345) - (0.0^e2345)
         C2 = -(25.8135^e1234) - (25.8135^e1235) + (1.0^e1245) - (3e-05^e1345) - (0.0^e2345)
@@ -606,12 +607,12 @@ class G3CToolsTests(unittest.TestCase):
             C3 = -C3
         np.testing.assert_almost_equal(C2.value, C3.value, 3)
 
-    @SkipTest  # Skip this because we know that it is a breaking case
+    #@SkipTest  # Skip this because we know that it is a breaking case
     def test_rotor_between_non_overlapping_spheres(self):
         C1 = random_sphere()
         rad = get_radius_from_sphere(C1)
-        t_r = generate_translation_rotor(2*rad*e1)
-        C2 = (t_r * C1 * ~t_r).normal()
+        t_r = generate_translation_rotor(2.5*rad*e1)
+        C2 = (t_r * C1 * ~t_r)(4).normal()
         rad2 = get_radius_from_sphere(C2)
         R = rotor_between_objects(C1, C2)
         C3 = (R * C1 * ~R).normal()
@@ -1007,6 +1008,31 @@ class ObjectClusteringTests(unittest.TestCase):
                 npt.assert_equal(label_a, np.array(range(len(label_a))))
 
 class ModelMatchingTests(unittest.TestCase):
+
+
+    def test_fingerprint_match(self):
+
+        object_generator = random_line
+        n_objects_per_cluster = 20
+
+        # Make a cluster
+        cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
+                                                         max_cluster_trans=0.5, max_cluster_rot=np.pi / 3)
+        sum_p = 0
+        n_runs = 20
+        for i in range(n_runs):
+            # Rotate and translate the cluster
+            disturbance_rotor = random_rotation_translation_rotor(maximum_translation=10, maximum_angle=np.pi / 2).normal()
+            target = [apply_rotor(c, disturbance_rotor).normal() for c in cluster_objects]
+
+            labels, min_costs = match_by_fingerprint(target, cluster_objects)
+            pcorrect = 100*np.sum([l==i for i,l in enumerate(labels)])/n_objects_per_cluster
+            sum_p += pcorrect
+            print('Percent correct: ', pcorrect)
+        print('av_p_correct ', sum_p/n_runs)
+        print('\n',flush=True)
+
+
 
     def test_iterative_model_match_line_optimised(self):
 

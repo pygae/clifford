@@ -159,8 +159,10 @@ from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
     random_rotation_rotor, generate_rotation_rotor, val_random_euc_mv
 from clifford.g3c import *
 import clifford as cf
-from clifford import val_get_left_gmt_matrix, val_get_right_gmt_matrix, grades_present, NUMBA_PARALLEL
+from clifford import val_get_left_gmt_matrix, val_get_right_gmt_matrix, \
+    grades_present, NUMBA_PARALLEL, MVArray
 import warnings
+from scipy.interpolate import interp1d
 
 global pyganja_available
 try:
@@ -241,7 +243,7 @@ def interpret_multivector_as_object(mv):
             else:
                 return 5  # Line
         elif grade == 4:  # Sphere or plane
-            if abs(((mv*I5)|ninf)[0]) > epsilon:
+            if abs(((mv*I5)|no)[0]) > epsilon:
                 return 7  # Plane
             else:
                 return 6  # Sphere
@@ -1163,16 +1165,16 @@ def interp_objects_root(C1, C2, alpha):
     return C3
 
 
-from scipy.interpolate import interp1d
+
 def general_object_interpolation(object_alpha_array, object_list, new_alpha_array, kind='linear'):
     """
     Hadfield and Lasenby, Direct Linear Interpolation of Geometric Objects, AGACSE2018
     This is a general interpolation through the
     """
-    obj_array = np.transpose(ConformalMVArray(object_list).value)
+    obj_array = np.transpose(MVArray(object_list).value)
     f = interp1d(object_alpha_array, obj_array, kind=kind)
     new_value_array = np.transpose(f(new_alpha_array))
-    new_conf_array = ConformalMVArray.from_value_array(new_value_array)
+    new_conf_array = MVArray.from_value_array(layout, new_value_array)
     return [normalised(neg_twiddle_root(C)[0]) for C in new_conf_array]
 
 
@@ -1233,6 +1235,17 @@ def rotor_between_objects(X1, X2):
                                                     val_normalised(X2.value)))
 
 
+def motor_between_rounds(X1, X2):
+    """
+    Calculate the motor between any pair of rounds of the same grade
+    Line up the carriers, then line up the centers
+    """
+    R = rotor_between_objects(normalised(X1^einf), normalised(X2^einf))
+    X3 = apply_rotor(X1, R)
+    T = generate_translation_rotor(down(X2*einf*X2) - down(X3*einf*X3))
+    return normalised(T*R)
+
+
 def calculate_S_over_mu(X1, X2):
     """
     Lasenby and Hadfield AGACSE2018
@@ -1261,6 +1274,8 @@ def calculate_S_over_mu(X1, X2):
         S = np.sqrt(abs(K[0]))
     return S/np.sqrt(mu)
 
+I5eoval = (I5 * eo).value
+biv3dmask = (e12+e13+e23).value
 
 @numba.njit
 def val_rotor_between_objects_root(X1, X2):
@@ -1271,17 +1286,24 @@ def val_rotor_between_objects_root(X1, X2):
     """
     X21 = gmt_func(X2, X1)
     X12 = gmt_func(X1, X2)
-    X_SUM = X21 + X12
-    X_SUM[0] -= 2.0
-    if np.sum(np.abs(X_SUM)) > 0.0000001:
-        gamma = gmt_func(X1, X1)[0]
+    gamma = gmt_func(X1, X1)[0]
+    if gamma > 0:
         C_val = gamma*gmt_func(X2, X1)
         C_val[0] += 1
+        if abs(C_val[0]) < 1E-6:
+            R = val_normalised(project_val(gmt_func(I5eoval, X21), 2))
+            return val_normalised(gmt_func(R, val_rotor_between_objects_root(X1, -X2)))
+        return val_normalised(pos_twiddle_root_val(C_val)[0, :])
     else:
-        C_val = X21
+        C_val = -X21
         C_val[0] += 1
-        return val_normalised(C_val)
-    return val_normalised(pos_twiddle_root_val(C_val)[0, :])
+        if abs(C_val[0]) < 1E-6:
+            R = project_val(gmt_func(I5eoval, X21), 2)
+            R = val_normalised(project_val(gmt_func(R,biv3dmask),2))
+            R2 = val_normalised(val_rotor_between_objects_root(val_apply_rotor(X1, R), X2))
+            return val_normalised(gmt_func(R2,R))
+        else:
+            return val_normalised(C_val)
 
 
 @numba.njit

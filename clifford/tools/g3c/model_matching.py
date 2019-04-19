@@ -6,11 +6,54 @@ from .rotor_estimation import estimate_rotor_objects, estimate_rotor_objects_sub
 from .rotor_parameterisation import interpolate_TR_rotors
 from .cost_functions import val_rotor_cost_sparse
 from . import apply_rotor
+from .cost_functions import object_set_cost_matrix, object_cost_function, check_p_cost
 import numpy as np
 from clifford.g3c import *
 from clifford.tools.g3c.cuda import sequential_rotor_estimation_cuda_mvs
 
 import clifford as cf
+
+
+def fingerprint_function(obj, other_objects, nbins=10, max_cost=100.0, cost_func=check_p_cost):
+    """
+    Bins the cost of the object to all the other objects to make a metric
+    for the scene
+    """
+    cost_list = [cost_func(obj, o_obj) for o_obj in other_objects]
+    counts, bins = np.histogram(cost_list, bins=nbins, range=(0.0, max_cost))
+    return counts
+
+
+def match_by_fingerprint(reference_model, query_model, nbins=None, max_cost=None, cost_func=check_p_cost):
+    """
+    Matches the objects in two scenes based on their fingerprint functions
+    """
+    if nbins is None:
+        nbins = len(query_model)
+    if max_cost is None:
+        a = np.max(np.max(np.abs( np.array([[cost_func(obj, o_obj) for o_obj in query_model] for obj in query_model]))))
+        b = np.max(np.max(np.abs( np.array([[cost_func(obj, o_obj) for o_obj in reference_model] for obj in reference_model]))))
+        max_cost = max(a,b)
+    labels = []
+    min_costs = []
+    for j in range(len(query_model)):
+        query_bins = fingerprint_function(query_model[j], query_model,
+                                          nbins=nbins, max_cost=max_cost, cost_func=cost_func)
+
+        min_cost_match = np.inf
+        min_cost_ind = 0
+        for i in range(len(reference_model)):
+            ref_plane_bins = fingerprint_function(reference_model[i], reference_model,
+                                          nbins=nbins, max_cost=max_cost, cost_func=cost_func)
+            cost_match = np.sum(np.abs(query_bins-ref_plane_bins))
+            if cost_match < min_cost_match:
+                min_cost_match = cost_match
+                min_cost_ind = i
+        labels.append(min_cost_ind)
+        min_costs.append(min_cost_match)
+    return labels, min_costs
+
+
 
 
 def newton_rotor(r, delta_r, delta_delta_r, max_steps=10):
@@ -20,15 +63,24 @@ def newton_rotor(r, delta_r, delta_delta_r, max_steps=10):
 
 def iterative_model_match_sequential(reference_model, query_model, iterations=100,
                           rotor_newton=False, max_newton_steps=10,
-                          object_type='generic', cuda=False, print_rotor=False, r_track=None):
+                          object_type='generic', cuda=False, print_rotor=False,
+                                     r_track=None, start_labels=None):
+    """
+    Matches the query model to the reference model and estimates the motor between them
+    Assumes that every query model item has a corresponding reference model item, multiple
+    query model items can match the same reference model item. Uses the sequential rotor estimation
+    """
     if rotor_newton:
         # Set up the newton stuff
         delta_r_old = 1.0 + 0.0 * e1
         r_old = 1.0 + 0.0 * e1
 
     # Get the starting labels
-    labels, costs = assign_measurements_to_objects_matrix(reference_model, query_model,
-                                                          object_type=object_type, cuda=cuda)
+    if start_labels is None:
+        labels, costs = assign_measurements_to_objects_matrix(reference_model, query_model,
+                                                              object_type=object_type, cuda=cuda)
+    else:
+        labels = [+l for l in start_labels]
     old_labels = [l for l in labels]
     remapped_objects = [o for o in query_model]
     r_est = 1.0 + 0.0*e1
@@ -62,7 +114,11 @@ def iterative_model_match_sequential(reference_model, query_model, iterations=10
 def iterative_model_match(reference_model, query_model, iterations=100,
                           rotor_newton=False, max_newton_steps=10,
                           object_type='generic', cuda=False, start_labels=None):
-
+    """
+    Matches the query model to the reference model and estimates the motor between them
+    Assumes that every query model item has a corresponding reference model item, multiple
+    query model items can match the same reference model item
+    """
     if rotor_newton:
         # Set up the newton stuff
         delta_r_old = 1.0 + 0.0 * e1
@@ -109,7 +165,7 @@ def iterative_model_match(reference_model, query_model, iterations=100,
     return labels, costs, r_est
 
 
-def REFORM(reference_model, query_model, n_samples, objects_per_sample,
+def REFORM(reference_model, query_model, n_samples=100, objects_per_sample=5,
            iterations=100, covergence_threshold=0.00000001,
            pool_size=1,object_type='generic', cuda=False, print_rotor=False, start_labels=None):
     #  Get the starting labels
@@ -157,7 +213,7 @@ def REFORM(reference_model, query_model, n_samples, objects_per_sample,
     return labels, costs, min_global_rotor
 
 
-def REFORM_sequential(reference_model, query_model, n_samples, objects_per_sample,
+def REFORM_sequential(reference_model, query_model, n_samples=100, objects_per_sample=5,
                       iterations=100, covergence_threshold=0.00000001,
            pool_size=1,object_type='generic', cuda=False, start_labels=None):
 
@@ -207,7 +263,7 @@ def REFORM_sequential(reference_model, query_model, n_samples, objects_per_sampl
     return labels, costs, min_global_rotor
 
 
-def REFORM_cuda(reference_model, query_model, n_samples, objects_per_sample, iterations=100,
+def REFORM_cuda(reference_model, query_model, n_samples=100, objects_per_sample=5, iterations=100,
                 covergence_threshold=0.00000001, mutation_probability=None, start_labels=None):
     #  Get the starting labels
     if start_labels is None:

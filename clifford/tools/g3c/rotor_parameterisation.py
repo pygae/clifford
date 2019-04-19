@@ -6,6 +6,7 @@ import numba
 from clifford.g3c import *
 from . import mult_with_ninf
 from clifford.tools.g3 import np_to_euc_mv
+from clifford import general_exp
 
 ninf = einf
 no = -eo

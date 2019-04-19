@@ -1,7 +1,8 @@
 
 from . import *
-from clifford import NUMBA_PARALLEL
+from clifford import NUMBA_PARALLEL, MVArray
 import itertools
+from .rotor_parameterisation import general_logarithm
 
 imt_func = layout.imt_func
 gmt_func = layout.gmt_func
@@ -15,13 +16,32 @@ sparse_cost_imt = layout.imt_func_generator(grades_a=[0, 2, 4], grades_b=[1])
 sparse_cost_gmt = layout.gmt_func_generator(grades_a=[0, 2, 4], grades_b=[0, 2, 4])
 
 
+def check_p(Q):
+    """
+    For leo dorsts check product
+    """
+    return Q(0, 1, 3) - Q(2, 4, 5)
+
+
+def check_p_cost(P, Q):
+    """
+    For leo dorsts check product cost
+    """
+    return (P|check_p(Q))[0]
+
+
 def point_to_line_cluster_distance(point, line_cluster):
+    """
+    Distance between a single point and a cluster of lines
+    """
     return val_point_to_line_cluster_distance(point.value, np.array([l.value for l in line_cluster]))
 
 
 @numba.njit
 def val_point_to_line_cluster_distance(point_val, line_cluster_array):
-    """ Distance between a single point and a cluster of lines """
+    """
+    Distance between a single point and a cluster of lines
+    """
     error_val = 0.0
     for i in range(line_cluster_array.shape[0]):
         l_val = line_cluster_array[i, :]
@@ -158,6 +178,18 @@ def val_object_cost_function(obj_a_val, obj_b_val):
         R_val = val_rotor_between_objects_root(obj_a_val, obj_b_val)
         return np.abs(val_rotor_cost_sparse(R_val))
 
+def alt_rotor_cost(V):
+    """
+    An alternate rotor cost for TRS rotors
+    """
+    logV = general_logarithm(V)
+    scale_cost = np.abs(-2*logV[e45])
+    scalefac = np.e**(-2*logV[e45])
+    R = logV(e123)*e123
+    rotation_cost = abs((R*~R)[0])
+    translation_cost = scalefac*abs((logV - logV[e45]*e45 - logV(e123))|eo)
+    return rotation_cost + scale_cost + translation_cost
+
 
 def object_cost_function(obj_a, obj_b):
     """
@@ -226,8 +258,8 @@ def object_set_cost_matrix(object_set_a, object_set_b, object_type="generic"):
     """
     Evaluates the rotor cost matrix between two sets of objects
     """
-    object_array_a = ConformalMVArray(object_set_a).value
-    object_array_b = ConformalMVArray(object_set_b).value
+    object_array_a = MVArray(object_set_a).value
+    object_array_b = MVArray(object_set_b).value
     if object_type == 'lines':
         return val_line_set_cost_matrix(object_array_a, object_array_b)
     else:
