@@ -30,6 +30,15 @@ from nose.plugins.skip import SkipTest
 import random
 
 
+class RotorGenerationTests(unittest.TestCase):
+    def test_generate_translation_rotor(self):
+        for i in range(10000):
+            euc_vector_a = random_euc_mv()
+            res = generate_translation_rotor(euc_vector_a)
+            res2 = (1 + ninf * euc_vector_a / 2)
+            np.testing.assert_almost_equal(res.value, res2.value)
+
+
 class TestFitObjects(unittest.TestCase):
     def test_fit_circle(self):
         try:
@@ -595,6 +604,34 @@ class G3CToolsTests(unittest.TestCase):
                     print(C2*C1 + C1*C2)
                     np.testing.assert_almost_equal(C2.value, C3.value, 3)
 
+    def test_motor_between_rounds(self):
+        # The object generators
+        object_generators = [random_point_pair, random_circle, random_sphere]
+
+        # Repeats for each fuzz test
+        n_repeats = 1000
+
+        # Test the general case
+        for obj_gen in object_generators:
+            print(obj_gen.__name__)
+            for i in range(n_repeats):
+                C1 = obj_gen()
+                Rt = random_rotation_translation_rotor()
+                C2 = (Rt*C1*~Rt).normal()
+
+                R = motor_between_rounds(C1, C2)
+                C3 = (R * C1 * ~R).normal()
+
+                if sum(np.abs((C2 + C3).value)) < 0.0001:
+                    print('SIGN FLIP ', obj_gen.__name__)
+                    C3 = -C3
+                try:
+                    np.testing.assert_almost_equal(C2.value, C3.value, 3)
+                except:
+                    print(C2.normal())
+                    print(C3.normal())
+                    np.testing.assert_almost_equal(C2.value, C3.value, 3)
+
     #@SkipTest  # Skip this because we know that it is a breaking case
     def test_general_rotor_between_objects_specific_cases(self):
         C1 = -(2.48651^e1234) - (2.48651^e1235) - (1.0^e1245) + (3e-05^e1345) - (0.0^e2345)
@@ -811,53 +848,6 @@ class RotorEstimationTests(unittest.TestCase):
 
         def estimation_func(pp_list_a, pp_list_b):
             r_est, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
-            print(exit_flag)
-            return r_est
-
-        self.run_rotor_estimation(random_sphere, estimation_func)
-
-    def test_estimate_rotor_lines_sequential_convergence_estimation(self):
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
-            print(exit_flag)
-            return r_est
-
-        self.run_rotor_estimation(random_line, estimation_func)
-
-    def test_estimate_rotor_circles_sequential_convergence_estimation(self):
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
-            print(exit_flag)
-            return r_est
-
-        self.run_rotor_estimation(random_circle, estimation_func)
-
-    @SkipTest
-    def test_estimate_rotor_point_pairs_sequential_convergence_estimation(self):
-        """ Skip this one as it seems to take a fairly long time atm """
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
-            print(exit_flag)
-            return r_est
-
-        self.run_rotor_estimation(random_point_pair, estimation_func)
-
-    def test_estimate_rotor_planes_sequential_convergence_estimation(self):
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
-            print(exit_flag)
-            return r_est
-
-        self.run_rotor_estimation(random_plane, estimation_func)
-
-    def test_estimate_rotor_spheres_sequential_convergence_estimation(self):
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, exit_flag = sequential_object_rotor_estimation_convergence_detection(pp_list_a, pp_list_b)
             print(exit_flag)
             return r_est
 

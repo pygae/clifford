@@ -19,10 +19,11 @@ from clifford.tools.g3c.cuda import *
 from clifford import g3c
 from clifford.tools.g3c.cost_functions import val_object_cost_function, \
     object_set_cost_matrix
-from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation_convergence_detection
 
 from clifford.tools.g3c.model_matching import REFORM_cuda, iterative_model_match_sequential, \
     assign_measurements_to_objects_matrix
+
+from clifford.tools.g3c.rotor_estimation import sequential_object_rotor_estimation
 
 
 object_generators = [random_point_pair, random_line, random_circle, \
@@ -70,7 +71,7 @@ class CUDATESTS(unittest.TestCase):
         # Now do the non cuda kernel
         t = time.time()
         for i in range(output.shape[0]):
-            mv_d_array[i, :] = sequential_object_rotor_estimation_convergence_detection(reference_model,
+            mv_d_array[i, :] = sequential_object_rotor_estimation(reference_model,
                                                                                         query_model)[0].value
         print(time.time() - t)
         print(cost_array)
@@ -106,7 +107,7 @@ class CUDATESTS(unittest.TestCase):
         # Now do the non cuda kernel
         t = time.time()
         for i in range(output.shape[0]):
-            mv_d_array[i, :] = sequential_object_rotor_estimation_convergence_detection(reference_model,
+            mv_d_array[i, :] = sequential_object_rotor_estimation(reference_model,
                                                                                         query_model)[0].value
         print(time.time() - t)
         print(cost_array)

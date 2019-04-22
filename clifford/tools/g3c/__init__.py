@@ -809,7 +809,17 @@ def generate_translation_rotor(euc_vector_a):
     """
     Generates a rotor that translates objects along the euclidean vector euc_vector_a
     """
-    return (1 + ninf * euc_vector_a / 2)
+    return layout.MultiVector(value=val_generate_translation_rotor(euc_vector_a.value))
+
+
+@numba.njit
+def val_generate_translation_rotor(euc_vector_a):
+    """
+    Generates a rotor that translates objects along the euclidean vector euc_vector_a
+    """
+    T = gmt_func(ninf_val, euc_vector_a)/ 2
+    T[0] += 1
+    return T
 
 
 @numba.njit
@@ -1075,6 +1085,7 @@ def annihilate_k(K, C):
     return cf.MultiVector(layout, val_annihilate_k(K.value, C.value))
 
 
+
 @numba.njit
 def pos_twiddle_root_val(C_value):
     """
@@ -1240,10 +1251,59 @@ def motor_between_rounds(X1, X2):
     Calculate the motor between any pair of rounds of the same grade
     Line up the carriers, then line up the centers
     """
+    return layout.MultiVector(value=val_motor_between_rounds(X1.value, X2.value))
+
+
+@numba.njit
+def val_motor_between_rounds(X1, X2):
+    """
+    Calculate the motor between any pair of rounds of the same grade
+    Line up the carriers, then line up the centers
+
+    Optimised form of this:
+
     R = rotor_between_objects(normalised(X1^einf), normalised(X2^einf))
     X3 = apply_rotor(X1, R)
-    T = generate_translation_rotor(down(X2*einf*X2) - down(X3*einf*X3))
+    C1 = normalise_n_minus_1((X3 * einf * X3)(1)).value[1:4]
+    C2 = normalise_n_minus_1((X2 * einf * X2)(1)).value[1:4]
+    t = layout.MultiVector()
+    t.value[1:4] = C2 - C1
+    T = generate_translation_rotor(t)
     return normalised(T*R)
+    """
+    F1 = val_normalised(omt_func(X1,ninf_val))
+    F2 = val_normalised(omt_func(X2,ninf_val))
+    R = val_rotor_between_objects_root(F1, F2)
+    X3 = val_apply_rotor(X1, R)
+
+    C1 = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(X3, ninf_val), X3), 1))
+    C2 = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(X2, ninf_val), X2), 1))
+
+    t = np.zeros(32)
+    t[1:4] = (C2 - C1)[1:4]
+    T = val_generate_translation_rotor(t)
+    return val_normalised(gmt_func(T, R))
+
+
+@numba.njit
+def val_motor_between_objects(X1, X2):
+    """
+    Calculates a motor that takes X1 to X2
+    """
+    carrier = omt_func(X1, ninf_val)
+    if np.sum(np.abs(carrier)) < 1E-6:
+        # They are flats
+        return val_rotor_between_objects_root(X1, X2)
+    else:
+        # Rounds
+        return val_motor_between_rounds(X1, X2)
+
+
+def motor_between_objects(X1, X2):
+    """
+    Calculates a motor that takes X1 to X2
+    """
+    return layout.MultiVector(value=val_motor_between_objects(X1.value, X2.value))
 
 
 def calculate_S_over_mu(X1, X2):

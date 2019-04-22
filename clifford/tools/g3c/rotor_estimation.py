@@ -274,7 +274,6 @@ def estimate_rotor_objects_subsample_sequential(reference_model, query_model, n_
     return min_rotor, min_cost
 
 
-
 def estimate_rotor_lines(reference_model, query_model, maxfev=20000, print_res=False):
     return estimate_rotor_objects(reference_model, query_model, maxfev=maxfev, print_res=print_res, object_type='lines')
 
@@ -317,48 +316,8 @@ def cartans_lines(obj_list_a, obj_list_b):
 
 
 def sequential_object_rotor_estimation(reference_model, query_model, n_iterations=500,
-                                       cost_tolerance=10*(10**-16), random_sequence=False,
-                                       object_type='generic'):
-    """
-    Performs a sequential rotor update based on the rotors between individual objects
-    Exits when the sum of the cost of rotor updates through the list is very small
-    """
-    grade_list = [grade_obj(q) for q in query_model]
-
-    R_total = 1.0 + 0.0*e1
-    for j in range(n_iterations):
-        cost_sum = 0.0
-        if random_sequence:
-            indices = random.sample(range(len(query_model)), len(query_model))
-        else:
-            indices = range(len(query_model))
-        for i in indices:
-            C1 = normalised(apply_rotor(query_model[i], R_total)(grade_list[i]))
-            C2 = reference_model[i]
-            if abs(C1 + C2) < 0.0001:
-                C1 = -C1
-            if object_type == 'lines':
-                rroot = normalised(square_roots_of_rotor(rotor_between_lines(C1, C2))[0])
-            else:
-                try:
-                    rroot = normalised(square_roots_of_rotor(rotor_between_objects(C1, C2))[0])
-                except:
-                    print(C1)
-                    print(C2)
-                    print(rotor_between_objects(C1, C2))
-                    rroot = normalised(square_roots_of_rotor(rotor_between_objects(C1, C2))[0])
-            R_total = normalised(rroot*R_total)
-            cost_sum += rotor_cost(rroot)
-        if cost_sum < cost_tolerance:
-            exit_flag = 0
-            return R_total, exit_flag
-    exit_flag = 1
-    return R_total, exit_flag
-
-
-def sequential_object_rotor_estimation_convergence_detection(reference_model, query_model, n_iterations=500,
                                                              cost_tolerance=10*(10**-16), random_sequence=False,
-                                                             object_type='generic'):
+                                                             object_type='generic', motor=True):
     """
     Performs a sequential rotor update based on the rotors between individual objects
     Exits when a full rotation through all objects produces a very small update of rotor
@@ -376,15 +335,18 @@ def sequential_object_rotor_estimation_convergence_detection(reference_model, qu
             grade = grade_list[i]
             new_obj = normalised(apply_rotor(query_model[i],R_total)(grade))
             C1 = normalised(new_obj)
-            C2 = reference_model[i]
+            C2 = normalised(reference_model[i])
             if abs(C1 + C2) < 0.0001:
                 C1 = -C1
             if object_type == 'lines':
                 rroot = normalised(square_roots_of_rotor((rotor_between_objects(C1,C2)))[0])
             else:
-                rroot = normalised(square_roots_of_rotor((rotor_between_objects(C1,C2)))[0])
-            r_set = normalised(rroot*r_set)
-            R_total = normalised(rroot * R_total)
+                if motor:
+                    rroot = normalised(square_roots_of_rotor(motor_between_objects(C1, C2))[0])
+                else:
+                    rroot = normalised(square_roots_of_rotor(rotor_between_objects(C1, C2))[0])
+            r_set = normalised((rroot*r_set)(0,2,4))
+            R_total = normalised((rroot * R_total)(0,2,4))
         if rotor_cost(r_set) < cost_tolerance:
             exit_flag = 0
             return R_total, exit_flag
@@ -400,7 +362,8 @@ def set_as_unit_rotor_jit(array):
 
 
 @numba.njit
-def sequential_rotor_estimation_jit(reference_model, query_model, rotor_output, n_iterations = 20):
+def sequential_rotor_estimation_jit(reference_model, query_model, rotor_output,
+                                    n_iterations=20, motor=True):
     cost_tolerance = 10 * (10 ** -16)
 
     # Allocate memory
@@ -423,18 +386,14 @@ def sequential_rotor_estimation_jit(reference_model, query_model, rotor_output, 
         for mv_ind in range(reference_model.shape[0]):
             C1 = val_apply_rotor(query_model[mv_ind, :], r_running)
             C1 = val_normalised(C1)
-            C2 = reference_model[mv_ind, :]
+            C2 = val_normalised(reference_model[mv_ind, :])
 
-            # Check if they are the same other than a sign flip
-            sum_abs = 0.0
-            for b_ind in range(32):
-                sum_abs += abs(C1[b_ind] + C2[b_ind])
-            if sum_abs < 0.0001:
-                r_root = unit_rotor
+            if motor:
+                r_temp = val_motor_between_objects(C1, C2)
             else:
                 r_temp = val_rotor_between_objects_root(C1, C2)
-                r_temp[0] += 1.0
-                r_root = pos_twiddle_root_val(r_temp)[0, :]
+            r_temp[0] += 1.0
+            r_root = pos_twiddle_root_val(r_temp)[0, :]
 
             # Update the set rotor and the running rotor
             r_temp = gmt_func(r_root, r_set)
