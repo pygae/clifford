@@ -141,7 +141,8 @@ def iterative_model_match(reference_model, query_model, iterations=100,
 
 def REFORM(reference_model, query_model, n_samples=100, objects_per_sample=5,
            iterations=100, covergence_threshold=0.00000001,
-           pool_size=1,object_type='generic', cuda=False, print_rotor=False, start_labels=None):
+           pool_size=1,object_type='generic', cuda=False,
+           print_rotor=False, start_labels=None, motor=True):
     #  Get the starting labels
     if start_labels is None:
         labels, costs = assign_measurements_to_objects_matrix(reference_model, query_model,
@@ -163,7 +164,8 @@ def REFORM(reference_model, query_model, n_samples=100, objects_per_sample=5,
                                                               n_samples,
                                                               objects_per_sample,
                                                               pool_size=pool_size,
-                                                              object_type=object_type)
+                                                              object_type=object_type,
+                                                              motor=motor)
         r_est = (r_est_update * r_est)
         r_est = r_est.normal()
         # Re map with our new rotor

@@ -661,7 +661,8 @@ class G3CToolsTests(unittest.TestCase):
 
 class RotorEstimationTests(unittest.TestCase):
 
-    def run_rotor_estimation(self, object_generator, estimation_function, n_runs=20, n_objects_per_run=10):
+    def run_rotor_estimation(self, object_generator, estimation_function,
+                             n_runs=20, n_objects_per_run=10):
 
         error_count = 0
         for i in range(n_runs):
@@ -749,6 +750,54 @@ class RotorEstimationTests(unittest.TestCase):
             return (r_est*r_start).normal()
 
         self.run_rotor_estimation(random_line, estimation_func)
+
+
+
+
+    def test_estimate_motor_lines_optimisation(self):
+
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b, motor=True)
+            return r_est
+
+        self.run_rotor_estimation(random_line, estimation_func)
+
+
+    def test_estimate_motor_circles_optimisation(self):
+
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b, motor=True)
+            return r_est
+
+        self.run_rotor_estimation(random_circle, estimation_func)
+
+    def test_estimate_motor_point_pairs_optimisation(self):
+        # """ Skip this one as it seems to take a fairly long time atm """
+
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b, motor=True)
+            return r_est
+
+        self.run_rotor_estimation(random_point_pair, estimation_func)
+
+    def test_estimate_motor_planes_optimisation(self):
+
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b, motor=True)
+            return r_est
+
+        self.run_rotor_estimation(random_plane, estimation_func)
+
+    def test_estimate_motor_spheres_optimisation(self):
+
+        def estimation_func(pp_list_a, pp_list_b):
+            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b, motor=True)
+            return r_est
+
+        self.run_rotor_estimation(random_sphere, estimation_func)
+
+
+
 
 
     def test_estimate_rotor_lines_optimisation(self):

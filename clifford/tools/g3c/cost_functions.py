@@ -166,7 +166,7 @@ gradeList = np.array(layout.gradeList)
 grade_obj_func = cf.grade_obj_func
 max_float = np.finfo(float).max
 @numba.njit
-def val_object_cost_function(obj_a_val, obj_b_val):
+def val_object_cost_function(obj_a_val, obj_b_val, motor=False):
     """
     Evaluates the rotor cost function between two objects
     """
@@ -175,8 +175,12 @@ def val_object_cost_function(obj_a_val, obj_b_val):
     if grade_a != grade_b:
         return max_float
     else:
-        R_val = val_rotor_between_objects_root(obj_a_val, obj_b_val)
+        if motor:
+            R_val = val_motor_between_objects(obj_a_val, obj_b_val)
+        else:
+            R_val = val_rotor_between_objects_root(obj_a_val, obj_b_val)
         return np.abs(val_rotor_cost_sparse(R_val))
+
 
 def alt_rotor_cost(V):
     """
@@ -191,11 +195,11 @@ def alt_rotor_cost(V):
     return rotation_cost + scale_cost + translation_cost
 
 
-def object_cost_function(obj_a, obj_b):
+def object_cost_function(obj_a, obj_b, motor=False):
     """
     Evaluates the rotor cost function between two objects
     """
-    return val_object_cost_function(obj_a.value, obj_b.value)
+    return val_object_cost_function(obj_a.value, obj_b.value, motor=motor)
 
 
 def object_set_log_cost_sum(object_set_a, object_set_b, object_type='generic'):
@@ -212,7 +216,8 @@ def object_set_log_cost_sum(object_set_a, object_set_b, object_type='generic'):
     return sum_val
 
 
-def object_set_cost_sum(object_set_a, object_set_b, object_type='generic'):
+def object_set_cost_sum(object_set_a, object_set_b,
+                        object_type='generic', motor=False):
     """
     Evaluates the rotor cost function between two sets of objects
     """
@@ -222,7 +227,7 @@ def object_set_cost_sum(object_set_a, object_set_b, object_type='generic'):
             sum_val += line_cost_function(a, b)
     else:
         for a, b in zip(object_set_a, object_set_b):
-            sum_val += object_cost_function(a, b)
+            sum_val += object_cost_function(a, b, motor=motor)
     return sum_val
 
 

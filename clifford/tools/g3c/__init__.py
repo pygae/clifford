@@ -1273,8 +1273,14 @@ def val_motor_between_rounds(X1, X2):
     """
     F1 = val_normalised(omt_func(X1,ninf_val))
     F2 = val_normalised(omt_func(X2,ninf_val))
-    R = val_rotor_between_objects_root(F1, F2)
-    X3 = val_apply_rotor(X1, R)
+
+    if np.abs(F1[31]) > 1E-5:
+        # Its spheres we are dealing with
+        R = unit_scalar_mv_val
+        X3 = X2
+    else:
+        R = val_rotor_between_objects_root(F1, F2)
+        X3 = val_apply_rotor(X1, R)
 
     C1 = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(X3, ninf_val), X3), 1))
     C2 = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(X2, ninf_val), X2), 1))

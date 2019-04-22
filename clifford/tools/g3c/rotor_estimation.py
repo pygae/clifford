@@ -155,10 +155,12 @@ def average_estimator(reference_model, query_model):
 
 
 def estimate_rotor_objects_subsample(reference_model, query_model, n_repeats=None, objects_per_sample=None,
-                                     maxfev=20000, print_res=False, pool_size=1, object_type='generic'):
+                                     maxfev=20000, print_res=False, pool_size=1,
+                                     object_type='generic', motor=False):
     """
     Estimates the rotor that takes one set of objects to another
     """
+
     if n_repeats is None:
         n_repeats = int(len(query_model)/2)
     if objects_per_sample is None:
@@ -170,12 +172,16 @@ def estimate_rotor_objects_subsample(reference_model, query_model, n_repeats=Non
             indices = random.sample(range(len(reference_model)), objects_per_sample)
             object_sample_reference = [reference_model[j] for j in indices]
             object_sample_query = [query_model[j] for j in indices]
-            rotor, new_cost = estimate_rotor_objects(object_sample_reference, object_sample_query, object_type=object_type)
+            rotor, new_cost = estimate_rotor_objects(object_sample_reference, object_sample_query,
+                                                     object_type=object_type, motor=motor)
             if new_cost < min_cost:
                 min_cost = new_cost
                 min_rotor = rotor
             #print('SAMPLE: ', i, '  cost  ', min_cost)
     elif int(pool_size) > 1:
+        def estimate_mot(Y, X):
+            """ Alternate motor estimation func"""
+            return estimate_rotor_objects(Y, X, motor=True)
         with multiprocessing.Pool(int(pool_size)) as pool_obj:
             object_sample_pairs = []
             for i in range(n_repeats):
@@ -186,7 +192,10 @@ def estimate_rotor_objects_subsample(reference_model, query_model, n_repeats=Non
             if object_type == 'lines':
                 starmap_output = pool_obj.starmap(estimate_rotor_lines, object_sample_pairs)
             else:
-                starmap_output = pool_obj.starmap(estimate_rotor_objects, object_sample_pairs)
+                if motor:
+                    starmap_output = pool_obj.starmap(estimate_mot, object_sample_pairs)
+                else:
+                    starmap_output = pool_obj.starmap(estimate_rotor_objects, object_sample_pairs)
             min_rotor, min_cost = min(starmap_output, key=lambda x: x[1])
             #print('SAMPLE: ', n_repeats, '  cost  ', min_cost)
     else:
@@ -278,7 +287,8 @@ def estimate_rotor_lines(reference_model, query_model, maxfev=20000, print_res=F
     return estimate_rotor_objects(reference_model, query_model, maxfev=maxfev, print_res=print_res, object_type='lines')
 
 
-def estimate_rotor_objects(reference_model, query_model, maxfev=20000, print_res=False, object_type='generic'):
+def estimate_rotor_objects(reference_model, query_model, maxfev=20000,
+                           print_res=False, object_type='generic', motor=False):
     """
     Estimates the rotor that takes one set of objects to another
     """
@@ -288,7 +298,7 @@ def estimate_rotor_objects(reference_model, query_model, maxfev=20000, print_res
     def minimisation_func(x):
         R = rotorconversion(x)
         query_model_remapped = [normalised((apply_rotor(l, R))(grade_list[i])) for i,l in enumerate(query_model)]
-        return object_set_cost_sum(reference_model, query_model_remapped, object_type=object_type)
+        return object_set_cost_sum(reference_model, query_model_remapped, object_type=object_type, motor=motor)
 
     res = minimize(minimisation_func, x0, method='SLSQP', options={'ftol': 10.0 ** (-16), \
                                                                       'maxiter': 1000, \
@@ -303,7 +313,7 @@ def estimate_rotor_objects(reference_model, query_model, maxfev=20000, print_res
         print(res)
     rotor = rotorconversion(res.x)
     query_model_remapped = [normalised((apply_rotor(l, rotor))(grade_list[i])) for i,l in enumerate(query_model)]
-    cost = object_set_cost_sum(reference_model, query_model_remapped, object_type=object_type)
+    cost = object_set_cost_sum(reference_model, query_model_remapped, object_type=object_type, motor=motor)
     return rotor, cost
 
 
