@@ -342,7 +342,10 @@ def sequential_object_rotor_estimation(reference_model, query_model, n_iteration
                 rroot = normalised(square_roots_of_rotor((rotor_between_objects(C1,C2)))[0])
             else:
                 if motor:
-                    rroot = normalised(square_roots_of_rotor(motor_between_objects(C1, C2))[0])
+                    if grade_obj(C1, 0.00001) == 4:
+                        rroot = normalised(square_roots_of_rotor(rotor_between_objects(C1, C2))[0])
+                    else:
+                        rroot = normalised(square_roots_of_rotor(motor_between_objects(C1, C2))[0])
                 else:
                     rroot = normalised(square_roots_of_rotor(rotor_between_objects(C1, C2))[0])
             r_set = normalised((rroot*r_set)(0,2,4))
@@ -389,7 +392,11 @@ def sequential_rotor_estimation_jit(reference_model, query_model, rotor_output,
             C2 = val_normalised(reference_model[mv_ind, :])
 
             if motor:
-                r_temp = val_motor_between_objects(C1, C2)
+                C1_4 = project_val(C1, 4)
+                if np.sum(np.abs(C1_4)) > 100*np.sum(np.abs(C1 - C1_4)):
+                    r_temp = val_rotor_between_objects_root(C1, C2)
+                else:
+                    r_temp = val_motor_between_objects(C1, C2)
             else:
                 r_temp = val_rotor_between_objects_root(C1, C2)
             r_temp[0] += 1.0
