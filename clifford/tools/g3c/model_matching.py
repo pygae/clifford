@@ -100,7 +100,8 @@ def iterative_model_match_sequential(reference_model, query_model, iterations=10
 
 
 def iterative_model_match(reference_model, query_model, iterations=100,
-                          object_type='generic', cuda=False, start_labels=None):
+                          object_type='generic', cuda=False, start_labels=None,
+                          symmetric=False):
     """
     Matches the query model to the reference model and estimates the motor between them
     Assumes that every query model item has a corresponding reference model item, multiple
@@ -110,7 +111,8 @@ def iterative_model_match(reference_model, query_model, iterations=100,
     # Get the starting labels
     if start_labels is None:
         labels, costs = assign_measurements_to_objects_matrix(reference_model, query_model,
-                                                              object_type=object_type, cuda=cuda)
+                                                              object_type=object_type, cuda=cuda,
+                                                              symmetric=symmetric)
     else:
         labels = [+l for l in start_labels]
     old_labels = [+l for l in labels]
@@ -122,7 +124,8 @@ def iterative_model_match(reference_model, query_model, iterations=100,
         reordered_list_ref = [reference_model[i] for i in labels]
         # Estimate the rotor
         r_est_update, cost = estimate_rotor_objects(reordered_list_ref, remapped_objects,
-                                                    object_type=object_type)
+                                                    object_type=object_type,
+                                                    symmetric=symmetric)
         # Now update our running estimate
         r_est = (r_est_update*r_est)
         r_est = r_est.normal()
@@ -131,7 +134,8 @@ def iterative_model_match(reference_model, query_model, iterations=100,
         remapped_objects = [apply_rotor(l, r_est).normal() for l in query_model]
         # Get the new matching
         labels, costs = assign_measurements_to_objects_matrix(reference_model, remapped_objects,
-                                                              object_type=object_type, cuda=cuda)
+                                                              object_type=object_type, cuda=cuda,
+                                                              symmetric=symmetric)
         if compare_labels(old_labels, labels):
             return labels, costs, r_est
         old_labels = [+l for l in labels]

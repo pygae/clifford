@@ -288,7 +288,8 @@ def estimate_rotor_lines(reference_model, query_model, maxfev=20000, print_res=F
 
 
 def estimate_rotor_objects(reference_model, query_model, maxfev=20000,
-                           print_res=False, object_type='generic', motor=False):
+                           print_res=False, object_type='generic', motor=False,
+                           symmetric=False):
     """
     Estimates the rotor that takes one set of objects to another
     """
@@ -298,7 +299,9 @@ def estimate_rotor_objects(reference_model, query_model, maxfev=20000,
     def minimisation_func(x):
         R = rotorconversion(x)
         query_model_remapped = [normalised((apply_rotor(l, R))(grade_list[i])) for i,l in enumerate(query_model)]
-        return object_set_cost_sum(reference_model, query_model_remapped, object_type=object_type, motor=motor)
+        return object_set_cost_sum(reference_model, query_model_remapped,
+                                   object_type=object_type, motor=motor,
+                                   symmetric=symmetric)
 
     res = minimize(minimisation_func, x0, method='SLSQP', options={'ftol': 10.0 ** (-16), \
                                                                       'maxiter': 1000, \
@@ -313,7 +316,8 @@ def estimate_rotor_objects(reference_model, query_model, maxfev=20000,
         print(res)
     rotor = rotorconversion(res.x)
     query_model_remapped = [normalised((apply_rotor(l, rotor))(grade_list[i])) for i,l in enumerate(query_model)]
-    cost = object_set_cost_sum(reference_model, query_model_remapped, object_type=object_type, motor=motor)
+    cost = object_set_cost_sum(reference_model, query_model_remapped, object_type=object_type, motor=motor,
+                               symmetric=symmetric)
     return rotor, cost
 
 

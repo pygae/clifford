@@ -24,14 +24,15 @@ def compare_labels(old_labels, new_labels):
 
 
 def assign_measurements_to_objects_matrix(objects, objects_measurements, object_type='generic',
-                                          cuda=False):
+                                          cuda=False, symmetric=False):
     """
     Assigns each object in objects_measurements to one in objects based on minimum cost
     """
     if cuda:
         matrix = object_set_cost_cuda_mvs(objects, objects_measurements)
     else:
-        matrix = object_set_cost_matrix(objects, objects_measurements, object_type=object_type)
+        matrix = object_set_cost_matrix(objects, objects_measurements,
+                                        object_type=object_type,symmetric=symmetric)
     labels = np.nanargmin(matrix, axis=0)
     costs = np.array([matrix[l, i] for i, l in enumerate(labels)])
     return [labels, costs]

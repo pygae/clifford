@@ -195,10 +195,13 @@ def alt_rotor_cost(V):
     return rotation_cost + scale_cost + translation_cost
 
 
-def object_cost_function(obj_a, obj_b, motor=False):
+def object_cost_function(obj_a, obj_b, motor=False, symmetric=False):
     """
     Evaluates the rotor cost function between two objects
     """
+    if symmetric:
+        return min([val_object_cost_function(obj_a.value, obj_b.value, motor=motor),
+                    val_object_cost_function(obj_a.value, -obj_b.value, motor=motor)])
     return val_object_cost_function(obj_a.value, obj_b.value, motor=motor)
 
 
@@ -217,7 +220,8 @@ def object_set_log_cost_sum(object_set_a, object_set_b, object_type='generic'):
 
 
 def object_set_cost_sum(object_set_a, object_set_b,
-                        object_type='generic', motor=False):
+                        object_type='generic', motor=False,
+                        symmetric=False):
     """
     Evaluates the rotor cost function between two sets of objects
     """
@@ -227,7 +231,7 @@ def object_set_cost_sum(object_set_a, object_set_b,
             sum_val += line_cost_function(a, b)
     else:
         for a, b in zip(object_set_a, object_set_b):
-            sum_val += object_cost_function(a, b, motor=motor)
+            sum_val += object_cost_function(a, b, motor=motor, symmetric=symmetric)
     return sum_val
 
 
@@ -259,16 +263,23 @@ def val_line_set_cost_matrix(object_array_a, object_array_b):
     return matrix
 
 
-def object_set_cost_matrix(object_set_a, object_set_b, object_type="generic"):
+def object_set_cost_matrix(object_set_a, object_set_b,
+                           object_type="generic", symmetric=False):
     """
     Evaluates the rotor cost matrix between two sets of objects
     """
     object_array_a = MVArray(object_set_a).value
     object_array_b = MVArray(object_set_b).value
     if object_type == 'lines':
-        return val_line_set_cost_matrix(object_array_a, object_array_b)
+        ret_mat = val_line_set_cost_matrix(object_array_a, object_array_b)
+        if symmetric:
+            ret_mat = np.minimum(ret_mat, val_line_set_cost_matrix(object_array_a, -object_array_b))
+        return ret_mat
     else:
-        return val_object_set_cost_matrix(object_array_a, object_array_b)
+        ret_mat = val_object_set_cost_matrix(object_array_a, object_array_b)
+        if symmetric:
+            ret_mat = np.minimum(ret_mat, val_object_set_cost_matrix(object_array_a, -object_array_b))
+        return ret_mat
 
 
 def object_set_cost_matrix_sum(object_set_a, object_set_b, object_type='generic'):

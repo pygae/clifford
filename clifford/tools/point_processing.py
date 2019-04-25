@@ -98,7 +98,7 @@ class GAConvexHull(scipy.spatial.ConvexHull):
             raise ValueError('Input points do not seem to be from a conformal algebra')
 
 
-def naiive_subspace_detector(point_list, grade, min_points=None,
+def naiive_subspace_detector(point_list, grade,
                              point_cost_threshold=0.1,
                             flat_flag=True, n_tests=1000):
     """
@@ -124,7 +124,7 @@ def naiive_subspace_detector(point_list, grade, min_points=None,
 
         # Sample from the generator
         n_samples = int(min([n_tests, nchoosek]))
-        sampled_objects_list = random.sample(list(combos), n_samples)
+        sampled_objects_list = random.sample(list(combos),n_samples)
 
         # Wedge the results
         output_list = []
@@ -135,7 +135,7 @@ def naiive_subspace_detector(point_list, grade, min_points=None,
             output_object = wedged_points
             if flat_flag:
                 output_object = output_object ^ einf
-            final_object = output_object.normal()
+            final_object = (output_object).normal()
             output_list.append(final_object)
         return output_list
 
@@ -150,18 +150,6 @@ def naiive_subspace_detector(point_list, grade, min_points=None,
             point_associations.append(this_obj_association)
         return point_associations
 
-    def filter_matches(point_associations, object_list, min_points=None, flat_flag=True):
-        if flat_flag:
-            n_sample_objects = grade - 1
-        else:
-            n_sample_objects = grade
-        if min_points is None:
-            min_points = n_sample_objects
-        po = [[p, o] for p, o in zip(point_associations, object_list) if len(p) > min_points]
-        point_associations_out = [p for p, o in po]
-        object_list_out = [o for p, o in po]
-        return point_associations_out, object_list_out
-
     print('SAMPLING', flush=True)
     object_list = sample_objects(point_list, grade, n_tests, flat_flag=flat_flag)
 
@@ -169,10 +157,5 @@ def naiive_subspace_detector(point_list, grade, min_points=None,
     point_associations = associate_points_with_objects(point_list,
                                                        object_list,
                                                        point_cost_threshold=point_cost_threshold)
-    print('FILTERING', flush=True)
-    point_associations, object_list = filter_matches(point_associations,
-                                                     object_list,
-                                                     min_points=min_points,
-                                                     flat_flag=flat_flag)
-
     return point_associations, object_list
+
