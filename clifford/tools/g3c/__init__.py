@@ -1246,6 +1246,22 @@ def rotor_between_objects(X1, X2):
                                                     val_normalised(X2.value)))
 
 
+def TRS_between_rounds(X1, X2):
+    """
+    Calculate the TRS rotor between any pair of rounds of the same grade
+    Bring rounds to origin, line up carriers, calculate scale
+    """
+    T1 = generate_translation_rotor(-down((X1 * einf * X1)(1)))
+    X1h = normalised(T1 * X1 * ~T1)
+    T2 = generate_translation_rotor(-down((X2 * einf * X2)(1)))
+    X2h = normalised(T2 * X2 * ~T2)
+    X1f = normalised(X1h ^ einf)
+    X2f = normalised(X2h ^ einf)
+    Rc = rotor_between_objects(X1f, X2f)
+    S = generate_dilation_rotor(get_radius_from_sphere(normalised(X2h*X2f*I5))/get_radius_from_sphere(normalised(X1h*X1f*I5)))
+    return normalised((~T2)*S*Rc*T1)
+
+
 def motor_between_rounds(X1, X2):
     """
     Calculate the motor between any pair of rounds of the same grade
