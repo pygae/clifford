@@ -31,6 +31,51 @@ unit_rotor = np.zeros(32)
 unit_rotor[0] = 1.0
 
 
+@numba.njit
+def val_two_line_rotor_estimate(LAval, LBval):
+    """
+    Get the rotor between two pairs of
+    two oriented lines in space
+    """
+    Lp = val_normalised(neg_twiddle_root_val(LAval[0, :] + LAval[1, :])[0, :])
+    Lm = val_normalised(neg_twiddle_root_val(LAval[0, :] - LAval[1, :])[0, :])
+    Lp2 = val_normalised(neg_twiddle_root_val(LBval[0, :] + LBval[1, :])[0, :])
+    Lm2 = val_normalised(neg_twiddle_root_val(LBval[0, :] - LBval[1, :])[0, :])
+    R1 = val_rotor_between_objects_root(Lp, Lp2)
+    R2 = val_rotor_between_objects_root(val_normalised(val_apply_rotor(Lm, R1)), Lm2)
+    return val_normalised(gmt_func(R2, R1))
+
+
+def two_line_rotor_estimate(LA, LB):
+    """
+    Get the rotor between two pairs of
+    two oriented lines
+
+    L1 = LA[0]
+    L2 = LA[1]
+    Lp = average_objects([L1,L2])
+    Lm = average_objects([L1,-L2])
+    L3 = LB[0]
+    L4 = LB[1]
+    Lp2 = average_objects([L3,L4])
+    Lm2 = average_objects([L3,-L4])
+    R1 = rotor_between_objects(Lp,Lp2)
+    R2 = rotor_between_objects(normalised(R1*Lm*~R1),Lm2)
+    return normalised(R2*R1)
+    """
+    return layout.MultiVector(value=val_two_line_rotor_estimate(np.array([l.value for l in LA]),
+                                                       np.array([l.value for l in LB])))
+
+
+def three_plane_rotor_estimate(PA,PB):
+    """
+        Get the rotor between two pairs of
+        three oriented planes
+    """
+    return two_line_rotor_estimate([normalised(meet(PA[0],PA[1])), normalised(meet(PA[1],PA[2]))],
+                          [normalised(meet(PB[0],PB[1])), normalised(meet(PB[1],PB[2]))])
+
+
 def extract_rotor_from_TRS_mat_est(mat_est):
     """
     Given a matrix of the form [TRS_left@~TRS_right] returns TRS

@@ -1231,7 +1231,7 @@ def average_objects(obj_list, weights=[], check_grades=True):
     C3 = normalised(neg_twiddle_root(C)[0])
     if check_grades:
         if cf.grade_obj(obj_list[0], 0.00001) != cf.grade_obj(C3, 0.00001):
-            raise ValueError('Created object is not same grade')
+            raise ValueError('Created object is not same grade \n' + str(obj_list[0]) +'\n'+ str(C3))
     return C3
 
 

@@ -39,44 +39,44 @@ class CUDATESTS(unittest.TestCase):
         layout = g3c.layout
         self.layout = layout
         self.stuff = g3c.stuff
-
-
-    def test_sequential_rotor_estimation_jit(self):
-        n_mvs = 1000
-        query_model = [random_line() for i in range(n_mvs)]
-
-        r = random_rotation_translation_rotor()
-
-        reference_model = [(r*a*~r).normal() for a in query_model]
-
-        query_model_array = np.array(query_model)
-        reference_model_array = np.array(reference_model)
-
-        n_samples = 100
-        n_objects_per_sample = 100
-        output = np.zeros((n_samples, 32))
-        mv_d_array = np.zeros(output.shape)
-
-        cost_array = np.zeros(n_samples, dtype=np.float64)
-
-        print('Starting kernel')
-        t = time.time()
-
-        output, cost_array = sequential_rotor_estimation_chunks(reference_model_array, query_model_array, n_samples,
-                                                  n_objects_per_sample)
-        end_time = time.time() - t
-        print('Kernel finished')
-        print(end_time)
-
-        # Now do the non cuda kernel
-        t = time.time()
-        for i in range(output.shape[0]):
-            mv_d_array[i, :] = sequential_object_rotor_estimation(reference_model,
-                                                                                        query_model)[0].value
-        print(time.time() - t)
-        print(cost_array)
-        np.testing.assert_almost_equal(output, mv_d_array, 5)
-
+    #
+    #
+    # def test_sequential_rotor_estimation_jit(self):
+    #     n_mvs = 1000
+    #     query_model = [random_line() for i in range(n_mvs)]
+    #
+    #     r = random_rotation_translation_rotor()
+    #
+    #     reference_model = [(r*a*~r).normal() for a in query_model]
+    #
+    #     query_model_array = np.array(query_model)
+    #     reference_model_array = np.array(reference_model)
+    #
+    #     n_samples = 100
+    #     n_objects_per_sample = 100
+    #     output = np.zeros((n_samples, 32))
+    #     mv_d_array = np.zeros(output.shape)
+    #
+    #     cost_array = np.zeros(n_samples, dtype=np.float64)
+    #
+    #     print('Starting kernel')
+    #     t = time.time()
+    #
+    #     output, cost_array = sequential_rotor_estimation_chunks(reference_model_array, query_model_array, n_samples,
+    #                                               n_objects_per_sample)
+    #     end_time = time.time() - t
+    #     print('Kernel finished')
+    #     print(end_time)
+    #
+    #     # Now do the non cuda kernel
+    #     t = time.time()
+    #     for i in range(output.shape[0]):
+    #         mv_d_array[i, :] = sequential_object_rotor_estimation(reference_model,
+    #                                                                                     query_model)[0].value
+    #     print(time.time() - t)
+    #     print(cost_array)
+    #     np.testing.assert_almost_equal(output, mv_d_array, 5)
+    #
 
 
     def test_sequential_rotor_estimation_kernel(self):
@@ -119,7 +119,7 @@ class CUDATESTS(unittest.TestCase):
         mv_a_list = [random_line() for i in range(n_mvs)]
         mv_b_list = [random_line() for i in range(n_mvs)]
         rotor_list = [rotor_between_objects(C1,C2) for C1,C2 in zip(mv_a_list,mv_b_list)]
-        rotor_list_array = np.array(rotor_list)
+        rotor_list_array = np.array([mv.value for mv in rotor_list])
         rotor_root_array = np.zeros(rotor_list_array.shape)
         mv_d_array = np.zeros(rotor_list_array.shape)
 
@@ -143,8 +143,8 @@ class CUDATESTS(unittest.TestCase):
     def test_rotor_between_lines(self):
         # Make a big array of data
         n_mvs = 1000
-        mv_a_array = np.array([random_line() for i in range(n_mvs)])
-        mv_b_array = np.array([random_line() for i in range(n_mvs)])
+        mv_a_array = np.array([random_line().value for i in range(n_mvs)])
+        mv_b_array = np.array([random_line().value for i in range(n_mvs)])
 
         mv_c_array = np.zeros(mv_b_array.shape)
         mv_d_array = np.zeros(mv_b_array.shape)
@@ -169,7 +169,7 @@ class CUDATESTS(unittest.TestCase):
     def test_normalise_mvs_kernel(self):
 
         n_mvs = 500
-        mv_a_array = np.pi*np.array([random_line() for i in range(n_mvs)])
+        mv_a_array = np.pi*np.array([random_line().value for i in range(n_mvs)])
         mv_d_array = np.zeros(mv_a_array.shape)
         mv_b_array = mv_a_array.copy()
 
@@ -197,8 +197,8 @@ class CUDATESTS(unittest.TestCase):
         generator_list = [random_point_pair, random_line, random_circle, \
                           random_sphere, random_plane]
         for generator in generator_list:
-            mv_a_array = np.array([generator() for i in range(n_mvs)], dtype=np.double)
-            mv_b_array = np.array([generator() for i in range(n_mvs)], dtype=np.double)
+            mv_a_array = np.array([generator().value for i in range(n_mvs)], dtype=np.double)
+            mv_b_array = np.array([generator().value for i in range(n_mvs)], dtype=np.double)
 
             mv_c_array = np.zeros(mv_b_array.shape, dtype=np.double)
             mv_d_array = np.zeros(mv_b_array.shape, dtype=np.double)
@@ -310,16 +310,16 @@ class CUDATESTS(unittest.TestCase):
         n_mvs = 1000
         for obj_gen in object_generators:
             mv_s = [obj_gen() for i in range(n_mvs)]
-            mv_a_array = np.array(mv_s)
+            mv_a_array = np.array([j.value for j in mv_s])
             random_rotors = [random_rotation_translation_rotor()*generate_dilation_rotor(np.random.rand()*3) for i in range(n_mvs)]
-            rotor_array = np.array(random_rotors)
+            rotor_array = np.array([mv.value for mv in random_rotors])
             output = np.zeros(rotor_array.shape)
 
             blockdim = 64
             griddim = int(math.ceil(n_mvs / blockdim))
             apply_rotor_kernel[griddim, blockdim](mv_a_array, rotor_array, output)
 
-            output_normal = np.array([apply_rotor(mv,r) for mv,r in zip(mv_s,random_rotors)])
+            output_normal = np.array([apply_rotor(mv,r).value for mv,r in zip(mv_s,random_rotors)])
             for i in range(n_mvs):
                 try:
                     np.testing.assert_almost_equal(output_normal[i,:], output[i,:])
@@ -347,8 +347,8 @@ class CUDATESTS(unittest.TestCase):
 
         # Make a big array of data
         n_mvs = 500
-        mv_a_array = np.array([random_line() for i in range(n_mvs)])
-        mv_b_array = np.array([random_line() for i in range(n_mvs)])
+        mv_a_array = np.array([random_line().value for i in range(n_mvs)])
+        mv_b_array = np.array([random_line().value for i in range(n_mvs)])
 
         mv_c_array = np.zeros(n_mvs)
         mv_d_array = np.zeros(n_mvs)

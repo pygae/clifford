@@ -1,10 +1,17 @@
 
 import numpy as np
 from . import average_objects
-from .cost_functions import object_set_cost_matrix
+from .cost_functions import object_set_cost_matrix, object_cost_function
 from .cuda import object_set_cost_cuda_mvs
 import random
 from clifford.g3c import *
+
+
+def average_symmetric(C1, C2):
+    if object_cost_function(C1, C2) < object_cost_function(C1, -C2):
+        return average_objects([C1, C2])
+    else:
+        return average_objects([C1, -C2])
 
 
 def simplify_scene_recursive(objects, threshold):
@@ -27,9 +34,9 @@ def simplify_scene_recursive(objects, threshold):
         return simplify_scene_recursive(objects, threshold)
 
 
-def simplify_scene(objects, threshold):
+def simplify_scene(objects, threshold, symmetric=False):
     o_copy = [o for o in objects]
-    cost_matrix = object_set_cost_matrix(o_copy, o_copy)
+    cost_matrix = object_set_cost_matrix(o_copy, o_copy, symmetric=symmetric)
     np.fill_diagonal(cost_matrix, np.finfo(float).max)
     while True:
         # Take the smallest value
@@ -44,11 +51,14 @@ def simplify_scene(objects, threshold):
             b_ind = min_index[1]
             object_a = objects[a_ind]
             object_b = objects[b_ind]
-            objects[b_ind] = average_objects([object_a, object_b])
+            if symmetric:
+                objects[b_ind] = average_symmetric(object_a, object_b)
+            else:
+                objects[b_ind] = average_objects([object_a, object_b])
             objects[a_ind] = 0*e1
             cost_matrix[:, a_ind] = np.finfo(float).max
             cost_matrix[a_ind, :] = np.finfo(float).max
-            cost_to_others = object_set_cost_matrix([objects[b_ind]], objects)
+            cost_to_others = object_set_cost_matrix([objects[b_ind]], objects, symmetric=symmetric)
             cost_matrix[:, b_ind] = cost_to_others
             cost_matrix[b_ind, :] = cost_to_others
             np.fill_diagonal(cost_matrix, np.finfo(float).max)
