@@ -1313,7 +1313,7 @@ def val_motor_between_objects(X1, X2):
     Calculates a motor that takes X1 to X2
     """
     carrier = omt_func(X1, ninf_val)
-    if np.sum(np.abs(carrier)) < 1E-6:
+    if np.sum(np.abs(carrier)) < 1E-4:
         # They are flats
         return val_rotor_between_objects_root(X1, X2)
     else:

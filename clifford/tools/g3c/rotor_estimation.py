@@ -217,8 +217,12 @@ def estimate_rotor_objects_subsample(reference_model, query_model, n_repeats=Non
             indices = random.sample(range(len(reference_model)), objects_per_sample)
             object_sample_reference = [reference_model[j] for j in indices]
             object_sample_query = [query_model[j] for j in indices]
-            rotor, new_cost = estimate_rotor_objects(object_sample_reference, object_sample_query,
-                                                     object_type=object_type, motor=motor)
+            try:
+                rotor, new_cost = estimate_rotor_objects(object_sample_reference, object_sample_query,
+                                                         object_type=object_type, motor=motor)
+            except:
+                rotor = 1.0 + 0*e1
+                new_cost = np.inf
             if new_cost < min_cost:
                 min_cost = new_cost
                 min_rotor = rotor
@@ -317,8 +321,12 @@ def estimate_rotor_objects_subsample_sequential(reference_model, query_model, n_
         indices = random.sample(range(len(reference_model)), objects_per_sample)
         object_sample_reference = [reference_model[j] for j in indices]
         object_sample_query = [query_model[j] for j in indices]
-        rotor, e_flag = sequential_object_rotor_estimation(object_sample_reference, object_sample_query,
-                                                             object_type=object_type)
+        try:
+            rotor, e_flag = sequential_object_rotor_estimation(object_sample_reference, object_sample_query,
+                                                                 object_type=object_type)
+        except:
+            rotor = 1.0 + 0*e1
+            print('ERROR')
         query_model_remapped = [normalised(apply_rotor(l, rotor)) for l in object_sample_query]
         new_cost = object_set_cost_sum(reference_model, query_model_remapped, object_type=object_type)
         if new_cost < min_cost:
