@@ -607,20 +607,21 @@ class G3CToolsTests(unittest.TestCase):
     def test_motor_between_rounds(self):
         # The object generators
         object_generators = [random_point_pair, random_circle, random_sphere]
+        generator_grades = [2,3,4]
 
         # Repeats for each fuzz test
         n_repeats = 1000
 
         # Test the general case
-        for obj_gen in object_generators:
-            print(obj_gen.__name__)
+        for grd, obj_gen in zip(generator_grades,object_generators):
+            print(obj_gen.__name__, grd)
             for i in range(n_repeats):
                 C1 = obj_gen()
                 Rt = random_rotation_translation_rotor()
-                C2 = (Rt*C1*~Rt).normal()
+                C2 = (Rt*C1*~Rt)(grd).normal()
 
                 R = motor_between_rounds(C1, C2)
-                C3 = (R * C1 * ~R).normal()
+                C3 = (R * C1 * ~R)(grd).normal()
 
                 if sum(np.abs((C2 + C3).value)) < 0.0001:
                     print('SIGN FLIP ', obj_gen.__name__)
@@ -630,6 +631,7 @@ class G3CToolsTests(unittest.TestCase):
                 except:
                     print(C2.normal())
                     print(C3.normal())
+                    R = motor_between_rounds(C1, C2)
                     np.testing.assert_almost_equal(C2.value, C3.value, 3)
 
     #@SkipTest  # Skip this because we know that it is a breaking case

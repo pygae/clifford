@@ -24,7 +24,7 @@ class InitialisationSpeedTests(unittest.TestCase):
             print(i, t_end - t_start)
 
     def test_sparse_multiply(self):
-        algebras = [Cl(i) for i in [3, 4]] + [conformalize(Cl(3)[0])]
+        algebras = [Cl(i) for i in [4]] + [conformalize(Cl(3)[0])]
         # For all the algebras we are interested in
         for alg in algebras:
             layout = alg[0]

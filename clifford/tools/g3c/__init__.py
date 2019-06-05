@@ -1293,7 +1293,7 @@ def val_motor_between_rounds(X1, X2):
     if np.abs(F1[31]) > 1E-5:
         # Its spheres we are dealing with
         R = unit_scalar_mv_val
-        X3 = X2
+        X3 = X1
     else:
         R = val_rotor_between_objects_root(F1, F2)
         X3 = val_apply_rotor(X1, R)

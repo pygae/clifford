@@ -81,12 +81,16 @@ class G3ToolsTests(unittest.TestCase):
             # Check that we can map up and back
             Rmat = rotor_to_rotation_matrix(rotor)
             rotor_return = rotation_matrix_to_rotor(Rmat)
-            testing.assert_almost_equal(rotor.value, rotor_return.value)
+
             # Check that the rotations do the same thing
-            A = random_conformal_point()
-            B = down(apply_rotor(A, rotor)).value[1:4]
-            C = Rmat @ down(A).value[1:4]
-            np.testing.assert_almost_equal(B, C)
+            for k in range(10):
+                A = random_conformal_point()
+                B = down(apply_rotor(A, rotor)).value[1:4]
+                C = Rmat @ down(A).value[1:4]
+                np.testing.assert_almost_equal(B, C)
+
+                C = down(apply_rotor(A, rotor_return)).value[1:4]
+                np.testing.assert_almost_equal(B, C)
 
     def test_generate_rotation_rotor_and_angle(self):
         """
