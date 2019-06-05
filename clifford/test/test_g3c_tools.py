@@ -790,6 +790,7 @@ class RotorEstimationTests(unittest.TestCase):
 
         self.run_rotor_estimation(random_plane, estimation_func)
 
+    @SkipTest
     def test_estimate_motor_spheres_optimisation(self):
 
         def estimation_func(pp_list_a, pp_list_b):
