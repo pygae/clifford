@@ -896,10 +896,9 @@ def quaternion_and_vector_to_rotor(quaternion, vector):
     Takes in a quaternion and a vector and returns a conformal rotor that
     implements the transformation
     """
-    rotation = quaternion_to_rotor(quaternion)
-    translation = generate_translation_rotor(
-        vector[0] * e1 + vector[1] * e2 * vector[3] * e3)
-    return translation * rotation
+    rotation = quaternion_to_rotor(quaternion)(0,2,4)
+    translation = generate_translation_rotor(vector[0] * e1 + vector[1] * e2 + vector[2] * e3) (0,2,4)
+    return (translation * rotation).normal()
 
 
 def get_center_from_sphere(sphere):
