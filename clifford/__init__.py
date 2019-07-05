@@ -1563,7 +1563,7 @@ class MultiVector(object):
         if grade not in self.layout.gradeList:
             raise ValueError("algebra does not have grade %s" % grade)
 
-        if not isinstance(grade, int):
+        if not np.issubdtype(type(grade), np.integer):
             raise ValueError("grade must be an integer")
 
         mask = np.equal(grade, self.layout.gradeList)
@@ -2158,6 +2158,7 @@ class MultiVector(object):
 
 dual_array = np.vectorize(MultiVector.dual)
 normal_array = np.vectorize(MultiVector.normal)
+call_array = np.vectorize(MultiVector.__call__)
 
 
 class MVArray(np.ndarray):
@@ -2239,6 +2240,12 @@ class MVArray(np.ndarray):
         Takes the dual of all elements
         """
         return dual_array(self)
+
+    def __call__(self, A):
+        """
+        Performs grade projection on all elements
+        """
+        return call_array(self, A)
 
 
 def array(obj):
