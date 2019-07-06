@@ -616,7 +616,7 @@ class Layout(object):
 
     def __init__(self, sig, bladeTupList, firstIdx=0, names=None):
         self.dims = len(sig)
-        self.sig = np.divide(sig, np.absolute(sig)).astype(int)
+        self.sig = np.array(sig).astype(int)
         self.firstIdx = firstIdx
 
         self.bladeTupList = list(map(tuple, bladeTupList))
@@ -662,6 +662,33 @@ class Layout(object):
 
         self._genTables()
         self.adjoint_func = get_adjoint_function(self.gradeList)
+        self.right_complement_func = self.gen_right_complement_func()
+        self.dual_func = self.gen_dual_func()
+        self.vee_func = self.gen_vee_func()
+
+    def gen_dual_func(self):
+        """ Generates the dual function for the pseudoscalar """
+        if 0 in self.sig:
+            # We are degenerate, use the right complement
+            return self.right_complement_func
+        else:
+            Iinv = self.pseudoScalar.inv().value
+            gmt_func = self.gmt_func
+            @numba.njit
+            def dual_func(Xval):
+                return gmt_func(Xval, Iinv)
+            return dual_func
+
+    def gen_vee_func(self):
+        """
+        Generates the vee product function
+        """
+        dual_func = self.dual_func
+        omt_func = self.omt_func
+        @numba.njit
+        def vee(aval, bval):
+            return dual_func(omt_func(dual_func(aval),dual_func(bval)))
+        return vee
 
     @property
     def basis_names(self):
@@ -798,6 +825,27 @@ class Layout(object):
         """
         diag_mask = 1.0 * (np.array(self.gradeList) == grade)
         return np.diag(diag_mask)
+
+    def gen_right_complement_func(self):
+        """
+        Generates the right complement of a multivector
+        """
+        dims = self.gaDims
+        bl = self.blades_list
+        signlist = np.zeros(self.gaDims)
+        for n in range(len(bl)):
+            i = bl[n]
+            j = bl[dims-1-n]
+            signval = (-1)**((i^j).value[-1]<0.001)
+            signlist[n] = signval
+        @numba.njit
+        def right_comp_func(Xval):
+            Yval = np.zeros(dims)
+            for i,s in enumerate(signlist):
+                Yval[i] = Xval[dims-1-i]*s
+            return Yval
+        return right_comp_func
+
 
     def get_left_gmt_matrix(self, x):
         """
@@ -1051,6 +1099,18 @@ class MultiVector(object):
     def exp(self):
         return general_exp(self)
 
+    def vee(self, other):
+        """
+        The vee product aka. the meet... To be optimised still
+        """
+        return self.layout.MultiVector(value=self.layout.vee_func(self.value,other.value))
+
+    def __and__(self, other):
+        """
+        The vee product aka. the meet... To be optimised still
+        """
+        return self.vee(other)
+
     def __mul__(self, other):
         """Geometric product
 
@@ -1199,6 +1259,9 @@ class MultiVector(object):
 
         return self._newMV(newValue)
 
+    def right_complement(self):
+        return self.layout.MultiVector(value=self.layout.right_complement_func(self.value))
+    
     def __truediv__(self, other):
         """Division
                        -1
@@ -1500,7 +1563,7 @@ class MultiVector(object):
         if grade not in self.layout.gradeList:
             raise ValueError("algebra does not have grade %s" % grade)
 
-        if not isinstance(grade, int):
+        if not np.issubdtype(type(grade), np.integer):
             raise ValueError("grade must be an integer")
 
         mask = np.equal(grade, self.layout.gradeList)
@@ -1851,9 +1914,8 @@ class MultiVector(object):
         M = M * I
         dual(I=None) --> MultiVector
         """
-
         if I is None:
-            Iinv = self.invPS()
+            return self.layout.MultiVector(value=self.layout.dual_func(self.value))
         else:
             Iinv = I.inv()
 
@@ -2096,6 +2158,7 @@ class MultiVector(object):
 
 dual_array = np.vectorize(MultiVector.dual)
 normal_array = np.vectorize(MultiVector.normal)
+call_array = np.vectorize(MultiVector.__call__)
 
 
 class MVArray(np.ndarray):
@@ -2177,6 +2240,12 @@ class MVArray(np.ndarray):
         Takes the dual of all elements
         """
         return dual_array(self)
+
+    def __call__(self, A):
+        """
+        Performs grade projection on all elements
+        """
+        return call_array(self, A)
 
 
 def array(obj):
@@ -2406,7 +2475,7 @@ def elements(dims, firstIdx=0):
     return blades
 
 
-def Cl(p=0, q=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
+def Cl(p=0, q=0, r=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
     """Returns a Layout and basis blades for the geometric algebra Cl_p,q.
 
     The notation Cl_p,q means that the algebra is p+q dimensional, with
@@ -2416,7 +2485,7 @@ def Cl(p=0, q=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
     Cl(p, q=0, names=None, firstIdx=0) --> Layout, {'name': basisElement, ...}
     """
     if sig is None:
-        sig = [+1]*p + [-1]*q
+        sig = [0]*r + [+1]*p + [-1]*q
     bladeTupList = elements(len(sig), firstIdx)
 
     layout = Layout(sig, bladeTupList, firstIdx=firstIdx, names=names)

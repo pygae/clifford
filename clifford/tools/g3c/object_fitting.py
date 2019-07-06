@@ -118,7 +118,7 @@ def fit_sphere(point_list):
     """
     Performs Leo Dorsts sphere fitting technique
     """
-    return layout.MultiVector(value=val_fit_sphere(np.array([p for p in point_list])))
+    return layout.MultiVector(value=val_fit_sphere(np.array([p.value for p in point_list])))
 
 
 @numba.njit

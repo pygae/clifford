@@ -277,7 +277,7 @@ def val_vec_repr_to_bivector(x):
 
 
 @numba.njit
-def val_rotorconversion(x):
+def val_TR_biv_params_to_rotor(x):
     """
     Converts between the parameters of a TR bivector and the rotor that it is generating
     """
@@ -285,9 +285,14 @@ def val_rotorconversion(x):
     R_val = val_exp(B_val)
     return R_val
 
+val_rotorconversion = val_TR_biv_params_to_rotor
 
-def rotorconversion(x):
+
+def TR_biv_params_to_rotor(x):
     """
     Converts between the parameters of a TR bivector and the rotor that it is generating
     """
-    return cf.MultiVector(layout, val_rotorconversion(x))
+    return cf.MultiVector(layout, val_TR_biv_params_to_rotor(x))
+
+rotorconversion = TR_biv_params_to_rotor
+
