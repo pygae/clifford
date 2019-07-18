@@ -188,6 +188,7 @@ I5_val = I5.value
 ninf_val = ninf.value
 no_val = no.value
 I3_val = I3.value
+eo_val = eo.value
 
 unit_scalar_mv = 1.0 + 0.0*e1
 unit_scalar_mv_val = unit_scalar_mv.value
@@ -624,33 +625,43 @@ def midpoint_between_lines(L1, L2):
 
 def midpoint_of_line_cluster(line_cluster):
     """
-    Gets an approximate center point of a line cluster
+    Gets a center point of a line cluster
     Hadfield and Lasenby AGACSE2018
     """
-    average_line = average_objects(line_cluster,check_grades=False)
-    val_point_track = np.zeros(32)
-    for L2 in line_cluster:
-        p = val_midpoint_between_lines(average_line.value, L2.value)
-        val_point_track += p
-    S = gmt_func(I5_val,val_point_track)
-    center_point = val_normalise_n_minus_1(project_val(gmt_func(S,gmt_func(ninf_val,S)),1))
-    return layout.MultiVector(value=center_point)
+    return layout.MultiVector(value=val_midpoint_of_line_cluster(MVArray(line_cluster).value))
 
 
-@numba.njit(parallel=NUMBA_PARALLEL)
+@numba.njit
 def val_midpoint_of_line_cluster(array_line_cluster):
     """
-    Gets an approximate center point of a line cluster
+    Gets a center point of a line cluster
     Hadfield and Lasenby AGACSE2018
     """
-    average_line = val_average_objects(array_line_cluster)
-    val_point_track = np.zeros(32)
+    # Allocate some space for our finished matrix
+    accumulator_matrix = np.zeros((32, 32))
+
+    # Loop over our lines and construct the matrix
     for i in range(array_line_cluster.shape[0]):
-        p = val_midpoint_between_lines(average_line, array_line_cluster[i,:])
-        val_point_track += p
-    S = gmt_func(I5_val,val_point_track)
-    center_point = val_normalise_n_minus_1(project_val(gmt_func(S,gmt_func(ninf_val,S)),1))
-    return center_point
+        # Get the line as a left gmt matrix
+        L_i_l = get_left_gmt_matrix(array_line_cluster[i, :])
+        # Get the line as a right gmt matrix
+        L_i_r = get_right_gmt_matrix(array_line_cluster[i, :])
+        # Multiply and add
+        accumulator_matrix += L_i_r @ L_i_l
+
+    # Raise the matrix to a very high power
+    power_mat = np.linalg.matrix_power(accumulator_matrix / array_line_cluster.shape[0], 256)
+
+    # Get a point that lies on the first line as an approximation to the e-vector
+    pp_val = imt_func(array_line_cluster[0, :], eo_val)
+    p_start = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(pp_val, ninf_val), pp_val), 1))
+
+    # Apply the matrix
+    p_end = project_val(power_mat @ p_start, 1)
+
+    # Remove any junk that has come along with it
+    final_point = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(p_end, ninf_val), p_end), 1))
+    return final_point
 
 
 @numba.njit(parallel=NUMBA_PARALLEL)
