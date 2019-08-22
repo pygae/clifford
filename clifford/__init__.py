@@ -666,6 +666,9 @@ class Layout(object):
         self.dual_func = self.gen_dual_func()
         self.vee_func = self.gen_vee_func()
 
+    def __hash__(self):
+        return hash(tuple(self.sig))
+
     def gen_dual_func(self):
         """ Generates the dual function for the pseudoscalar """
         if 0 in self.sig:
