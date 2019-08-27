@@ -21,7 +21,7 @@ setup(name='clifford',
 	install_requires = [
 		'numpy',
 		'scipy',
-		'numba==0.43',
+		'numba==0.45.1',
 		'future',
 		'h5py'
 		],
