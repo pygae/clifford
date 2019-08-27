@@ -667,6 +667,7 @@ class Layout(object):
         self.vee_func = self.gen_vee_func()
 
     def __hash__(self):
+        """ hashs the signature of the layout """
         return hash(tuple(self.sig))
 
     def gen_dual_func(self):
@@ -1359,6 +1360,9 @@ class MultiVector(object):
         newValue = -self.value
 
         return self._newMV(newValue)
+
+    def as_array(self):
+        return self.value
 
     def __pos__(self):
         """Positive (just a copy)

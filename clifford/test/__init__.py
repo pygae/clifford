@@ -12,5 +12,6 @@ from .test_g3c_CUDA import *
 
 import unittest
 
+
 def run_all_tests():
     unittest.main()
