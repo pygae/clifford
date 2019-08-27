@@ -139,6 +139,7 @@ jobs:
 
   - bash: |
       source activate myEnvironment
+      python -m pip install -U future
       python -m pip install -U pytest
       python -m pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml
     displayName: pytest not windows
@@ -146,6 +147,7 @@ jobs:
 
   - script: |
       call activate myEnvironment
+      python -m pip install -U future
       python -m pip install -U pytest
       python -m pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml
     displayName: pytest windows
