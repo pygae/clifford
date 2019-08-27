@@ -123,6 +123,7 @@ jobs:
     condition: eq(variables['imageName'], 'vs2017-win2016')
 
   - script: |
+      call activate myEnvironment
       conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
       conda install --yes $(numbacommand)
       $(installPackageCommand)
