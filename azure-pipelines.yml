@@ -125,10 +125,20 @@ jobs:
   - script: |
       call activate myEnvironment
       conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
-      conda install --yes $(numbacommand)
-      $(installPackageCommand)
     displayName: Install dependencies windows
     condition: eq(variables['imageName'], 'vs2017-win2016')
+
+  - script: |
+      call activate myEnvironment
+      conda install --yes $(numbacommand)
+      displayName: Install conda windows
+      condition: eq(variables['imageName'], 'vs2017-win2016')
+
+  - script: |
+      call activate myEnvironment
+      $(installPackageCommand)
+      displayName: Install package windows
+      condition: eq(variables['imageName'], 'vs2017-win2016')
 
   - bash: |
       source activate myEnvironment
