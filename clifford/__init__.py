@@ -288,7 +288,7 @@ def lcmt_check(grade_list_idx, grade_list_i, grade_list_j):
     return grade_list_idx == (grade_list_j - grade_list_i)
 
 
-@numba.jit
+@numba.njit
 def grade_obj_func(objin_val, gradeList, threshold):
     """ returns the modal grade of a multivector """
     modal_value_count = np.zeros(objin_val.shape)
