@@ -139,12 +139,14 @@ jobs:
 
   - bash: |
       source activate myEnvironment
+      python -m pip install -U pytest
       python -m pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml
     displayName: pytest not windows
     condition: ne(variables['imageName'], 'vs2017-win2016')
 
   - script: |
       call activate myEnvironment
+      python -m pip install -U pytest
       python -m pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml
     displayName: pytest windows
     condition: eq(variables['imageName'], 'vs2017-win2016')
