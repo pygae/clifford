@@ -112,16 +112,19 @@ jobs:
     condition: eq(variables['imageName'], 'vs2017-win2016')
 
   - bash: conda create --yes --quiet --name myEnvironment
-    displayName: Activate Conda environment not windows
+    displayName: Create Conda environment not windows
     condition: ne(variables['imageName'], 'vs2017-win2016')
 
   - script: |
       call activate myEnvironment
       conda update -n base -y -c defaults conda
       conda update -y conda
+    displayName: Update conda env windows
+    condition: eq(variables['imageName'], 'vs2017-win2016')
+
+  - script: |
       conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
       conda install --yes $(numbacommand)
-      python -m pip install -U pytest
       $(installPackageCommand)
     displayName: Install dependencies windows
     condition: eq(variables['imageName'], 'vs2017-win2016')
@@ -147,8 +150,6 @@ jobs:
 
   - script: |
       call activate myEnvironment
-      pip install -U future
-      pip install -U pytest
       pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml
     displayName: pytest windows
     condition: eq(variables['imageName'], 'vs2017-win2016')
