@@ -64,7 +64,7 @@ _blade_pattern =  "((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
-TEST_NUMBA = True
+
 
 import os
 try:
@@ -72,30 +72,6 @@ try:
     NUMBA_PARALLEL = not bool(NUMBA_DISABLE_PARALLEL)
 except:
     NUMBA_PARALLEL = True
-
-
-def test_numba():
-    """
-    This tests numba to see if it can successfully compile a specific program
-    https://github.com/numba/numba/issues/3671
-    """
-    @numba.njit(parallel=NUMBA_PARALLEL)
-    def play_games():
-        monte_carlo_cell_visit_frequency = np.zeros(100, dtype=np.int_)
-        monte_carlo_cell_visit_frequency != 0
-
-    play_games()
-
-
-if TEST_NUMBA:
-    try:
-        test_numba()
-    except:
-        import os
-        os.environ['NUMBA_DISABLE_JIT'] = "1"
-        warn('The version of numba installed suffers from https://github.com/numba/numba/issues/3671. ' +
-             'It has therefore been disabled. To reenable numba JIT compiliation try installing numba version 0.40.1', Warning)
-    TEST_NUMBA = False
 
 
 def get_longest_string(string_array):

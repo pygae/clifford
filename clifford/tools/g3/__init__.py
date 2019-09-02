@@ -167,7 +167,7 @@ def generate_rotation_rotor(theta, euc_vector_m, euc_vector_n):
     euc_vector_n = euc_vector_n / abs(euc_vector_n)
     euc_vector_m = euc_vector_m / abs(euc_vector_m)
     bivector_B = (euc_vector_m ^ euc_vector_n)
-    bivector_B = bivector_B / (math.sqrt(-bivector_B * bivector_B))
+    bivector_B = bivector_B / (math.sqrt((-bivector_B * bivector_B)[0]))
     rotor = math.cos(theta / 2) - bivector_B * math.sin(theta / 2)
     return rotor
 
