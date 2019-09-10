@@ -4,7 +4,7 @@ from scipy.optimize import minimize
 import clifford as cf
 import numba
 from clifford.g3c import *
-from . import mult_with_ninf
+from . import mult_with_ninf, val_normalised
 from clifford.tools.g3 import np_to_euc_mv
 from clifford import general_exp
 
@@ -275,6 +275,8 @@ def val_vec_repr_to_bivector(x):
     B_val[10] += x[5]
     return B_val
 
+val_TR_biv_params_to_biv = val_vec_repr_to_bivector
+
 
 @numba.njit
 def val_TR_biv_params_to_rotor(x):
@@ -295,4 +297,24 @@ def TR_biv_params_to_rotor(x):
     return cf.MultiVector(layout, val_TR_biv_params_to_rotor(x))
 
 rotorconversion = TR_biv_params_to_rotor
+
+
+@numba.njit
+def val_R_biv_params_to_rotor(x):
+    """
+    Converts between the parameters of an R only bivector and the rotor that it is generating
+    """
+    R_val = np.zeros(32)
+    R_val[6] = x[0]
+    R_val[7] += x[1]
+    R_val[10] += x[2]
+    R_val = val_exp(R_val)
+    return R_val
+
+
+def R_biv_params_to_rotor(x):
+    """
+    Converts between the parameters of a R bivector and the rotor that it is generating
+    """
+    return cf.MultiVector(layout, val_R_biv_params_to_rotor(x))
 

@@ -57,14 +57,14 @@ import numba
 from clifford.io import write_ga_file, read_ga_file
 
 
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 
 # The blade finding regex for parsing strings of mvs
 _blade_pattern =  "((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))"
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
-TEST_NUMBA = True
+
 
 import os
 try:
@@ -72,30 +72,6 @@ try:
     NUMBA_PARALLEL = not bool(NUMBA_DISABLE_PARALLEL)
 except:
     NUMBA_PARALLEL = True
-
-
-def test_numba():
-    """
-    This tests numba to see if it can successfully compile a specific program
-    https://github.com/numba/numba/issues/3671
-    """
-    @numba.njit(parallel=NUMBA_PARALLEL)
-    def play_games():
-        monte_carlo_cell_visit_frequency = np.zeros(100, dtype=np.int_)
-        monte_carlo_cell_visit_frequency != 0
-
-    play_games()
-
-
-if TEST_NUMBA:
-    try:
-        test_numba()
-    except:
-        import os
-        os.environ['NUMBA_DISABLE_JIT'] = "1"
-        warn('The version of numba installed suffers from https://github.com/numba/numba/issues/3671. ' +
-             'It has therefore been disabled. To reenable numba JIT compiliation try installing numba version 0.40.1', Warning)
-    TEST_NUMBA = False
 
 
 def get_longest_string(string_array):
@@ -288,7 +264,7 @@ def lcmt_check(grade_list_idx, grade_list_i, grade_list_j):
     return grade_list_idx == (grade_list_j - grade_list_i)
 
 
-@numba.jit
+@numba.njit
 def grade_obj_func(objin_val, gradeList, threshold):
     """ returns the modal grade of a multivector """
     modal_value_count = np.zeros(objin_val.shape)
@@ -665,6 +641,10 @@ class Layout(object):
         self.right_complement_func = self.gen_right_complement_func()
         self.dual_func = self.gen_dual_func()
         self.vee_func = self.gen_vee_func()
+
+    def __hash__(self):
+        """ hashs the signature of the layout """
+        return hash(tuple(self.sig))
 
     def gen_dual_func(self):
         """ Generates the dual function for the pseudoscalar """
@@ -1356,6 +1336,9 @@ class MultiVector(object):
         newValue = -self.value
 
         return self._newMV(newValue)
+
+    def as_array(self):
+        return self.value
 
     def __pos__(self):
         """Positive (just a copy)
