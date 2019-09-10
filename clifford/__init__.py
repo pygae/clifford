@@ -74,6 +74,19 @@ except:
     NUMBA_PARALLEL = True
 
 
+def linear_operator_as_matrix(func, input_blades, output_blades):
+    """
+    Return a matrix that performs the operation of the provided linear
+    operator function func mapping the input blades to the output blades
+    """
+    ndimin = len(input_blades)
+    ndimout = len(output_blades)
+    mat = np.zeros((ndimout, ndimin))
+    for i,b in enumerate(input_blades):
+       mat[:, i] = np.array([func(b)[j] for j in output_blades])
+    return mat
+
+
 def get_longest_string(string_array):
     """
     Return the longest string in a list of strings
