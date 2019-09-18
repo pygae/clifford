@@ -2662,7 +2662,7 @@ def op(M, N):
         return M ^ N
 
 
-def conformalize(layout, added_sig=[1,-1]):
+def conformalize(layout, added_sig=[1,-1],**kw):
     '''
     Conformalize a Geometric Algebra
 
@@ -2677,7 +2677,11 @@ def conformalize(layout, added_sig=[1,-1]):
     Parameters
     -------------
     layout: `clifford.Layout`
-         layout of the GA to conformalize (the base)
+        layout of the GA to conformalize (the base)
+    added_sig: list-like
+        list of +1,-1  denoted the added signatures
+    **kw: kwargs 
+        passed to Cl() used to generate conformal layout
 
     Returns
     ---------
@@ -2687,8 +2691,8 @@ def conformalize(layout, added_sig=[1,-1]):
         blades for the CGA
     stuff: dict
         dict containing the following:
-            * ep - postive basis vector added
-            * en - negative basis vector added
+            * ep - first basis vector added (usually positive)
+            * en - second basis vector added (usually negative)
             * eo - zero vector of null basis (=.5*(en-ep))
             * einf - infinity vector of null basis (=en+ep)
             * E0 - minkowski bivector (=einf^eo)
@@ -2708,7 +2712,7 @@ def conformalize(layout, added_sig=[1,-1]):
     '''
     
     sig_c = list(layout.sig) + added_sig
-    layout_c, blades_c = Cl(sig=sig_c)
+    layout_c, blades_c = Cl(sig=sig_c,firstIdx=layout.firstIdx,**kw)
     basis_vectors = layout_c.basis_vectors
     added_keys = sorted(layout_c.basis_vectors.keys())[-2:]
     ep, en = [basis_vectors[k] for k in added_keys]
