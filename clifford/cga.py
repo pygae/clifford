@@ -164,7 +164,7 @@ class Flat(CGAThing):
             
         # from vectors on flat         
         else:
-            nulls = map(self.cga.null_vector,args)
+            nulls = list(map(self.cga.null_vector,args))
             if self.einf not in nulls:
                 nulls = list(nulls)+[self.einf]
                 
