@@ -166,7 +166,7 @@ class Flat(CGAThing):
         else:
             nulls = list(map(self.cga.null_vector,args))
             self.mv = reduce(op,nulls)
-            self.mv = op(self.mv, self.einf) or self.einf
+            self.mv = op(self.mv, self.einf) or self.mv
         
         self.mv = self.mv.normal()
     
