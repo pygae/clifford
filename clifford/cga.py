@@ -263,7 +263,7 @@ class Round(CGAThing):
         '''
         dimension of this round
         '''
-        return self.mv.grades()[0]
+        return self.mv.grades()[0] - 2
     
     @property
     def center(self):
