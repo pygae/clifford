@@ -8,6 +8,7 @@ Tutorials
     TheAlgebraOfSpaceG3
     EulerAngles
     ConformalGeometricAlgebra
+    ObjectOrientedCGA
     SpaceTimeAlgebra
     InterfacingOtherMathSystems
     PredefinedGAs
