@@ -254,9 +254,9 @@ class Round(CGAThing):
     def __repr__(self):
         names = {4:'Sphere',3:'Circle',2:'Point Pair',1:'Point'}
         if self.dim <=4:
-            return names[self.dim]
+            return names[self.dim + 2]
         else:
-            return '%i-Round'%self.dim
+            return '%i-Round'% (self.dim + 2)
     
     @property
     def dim(self):
