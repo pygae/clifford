@@ -23,7 +23,7 @@ before_install:
 
 install:
   - if [[ "${CONDA}" == "true" ]]; then
-      PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-linux}" source auto_version/travis_install_conda.sh future numpy scipy numba pip h5py pytest;
+      PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-linux}" source auto_version/travis_install_conda.sh numpy scipy numba pip h5py pytest;
       conda install -c numba numba==0.43;
     fi
   - python setup.py install

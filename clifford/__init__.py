@@ -35,7 +35,6 @@ Functions
 
 """
 
-from past.builtins import cmp, range
 from functools import reduce
 import sys
 import re

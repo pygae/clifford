@@ -1,6 +1,3 @@
-from past.builtins import range
-
-
 from clifford import Cl, randomMV, Frame, get_mult_function, \
     conformalize, grade_obj, val_get_right_gmt_matrix, MultiVector, MVArray
 

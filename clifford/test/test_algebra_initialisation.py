@@ -1,5 +1,3 @@
-from past.builtins import range
-
 from clifford import Cl, randomMV, Frame, get_mult_function, conformalize, grade_obj
 
 from numpy import exp, float64, testing

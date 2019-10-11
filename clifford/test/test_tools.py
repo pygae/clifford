@@ -1,5 +1,3 @@
-from past.builtins import range
-
 from clifford import Cl
 
 import unittest
