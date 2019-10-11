@@ -1497,36 +1497,6 @@ class MultiVector(object):
         else:
             self.value[key] = 0
 
-    def __getslice__(self, i, j):
-        """Return a copy with only the slice non-zero.
-
-        M[i:j]
-        __getslice__(i, j) --> MultiVector
-        """
-
-        newMV = self._newMV()
-        newMV.value[i:j] = self.value[i:j]
-
-        return newMV
-
-    def __setslice__(self, i, j, sequence):
-        """Paste a sequence into coefficients array.
-
-        M[i:j] = sequence
-        __setslice__(i, j, sequence)
-        """
-
-        self.value[i:j] = sequence
-
-    def __delslice__(self, i, j):
-        """Set slice to zeros.
-
-        del M[i:j]
-        __delslice__(i, j)
-        """
-
-        self.value[i:j] = 0
-
     # grade projection
     def __call__(self, other,*others):
         """Return a new multi-vector projected onto a grade OR a MV
