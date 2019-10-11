@@ -1,8 +1,3 @@
-
-from __future__ import absolute_import, division
-from __future__ import print_function, unicode_literals
-from past.builtins import range
-
 import numpy as np
 from numpy import exp, float64, testing
 import numba.cuda
@@ -452,7 +447,7 @@ class CUDATESTS(unittest.TestCase):
             labels, costs, r_est = REFORM_cuda(target, cluster_objects, n_samples, objects_per_sample,
                                           iterations, mutation_probability=None)
             try:
-                assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
+                assert np.sum(labels == list(range(n_objects_per_cluster))) == n_objects_per_cluster
             except:
                 print(disturbance_rotor)
                 print(r_est)

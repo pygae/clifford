@@ -20,7 +20,6 @@ setup(
         'numpy',
         'scipy',
         'numba==0.45.1',
-        'future',
         'h5py'
     ],
     package_dir={'clifford':'clifford'},
