@@ -164,12 +164,11 @@ from clifford import val_get_left_gmt_matrix, val_get_right_gmt_matrix, \
 import warnings
 from scipy.interpolate import interp1d
 
-global pyganja_available
 try:
     import pyganja as ganja
     from pyganja import draw
-    pyganja_available =True
-except:
+    pyganja_available = True
+except ImportError:
     pyganja_available = False
 
 
