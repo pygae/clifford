@@ -40,8 +40,6 @@ translated into a Verser.
 
 """
 
-from __future__ import absolute_import, division
-from __future__ import print_function, unicode_literals
 from functools import reduce
 
 from math import sqrt
