@@ -1,8 +1,14 @@
+import random
+from functools import reduce
+import time
+
+
+import numpy as np
+import numpy.testing as npt
+from numpy import exp
+import pytest
 
 from clifford import Cl, grades_present
-
-import unittest
-
 from clifford.g3c import *
 from clifford import general_exp
 from clifford.tools.g3c import *
@@ -15,30 +21,20 @@ from clifford.tools.g3c.object_fitting import *
 from clifford.tools.g3c.model_matching import *
 from clifford.tools.g3 import random_euc_mv
 from clifford.tools.g3c.GAOnline import draw_objects, GAScene, GanjaScene
-import time
-
-import numpy as np
-import numpy.testing as npt
-from functools import reduce
-
-
-from numpy import exp, float64, testing
 
 
 
-import random
 
-
-class RotorGenerationTests(unittest.TestCase):
+class TestRotorGeneration:
     def test_generate_translation_rotor(self):
         for i in range(10000):
             euc_vector_a = random_euc_mv()
             res = generate_translation_rotor(euc_vector_a)
             res2 = (1 + ninf * euc_vector_a / 2)
-            np.testing.assert_almost_equal(res.value, res2.value)
+            npt.assert_almost_equal(res.value, res2.value)
 
 
-class TestFitObjects(unittest.TestCase):
+class TestFitObjects:
     def test_fit_circle(self):
         try:
             noise = 0.1
@@ -92,7 +88,7 @@ class TestFitObjects(unittest.TestCase):
             print('FAILED TO FIND PLANE')
 
 
-class TestGeneralLogarithm(unittest.TestCase):
+class TestGeneralLogarithm:
 
     def test_general_logarithm_rotation(self):
         # Check we can reverse rotations
@@ -100,7 +96,7 @@ class TestGeneralLogarithm(unittest.TestCase):
             R = random_rotation_rotor()
             biv_2 = general_logarithm(R)
             biv_3 = ga_log(R)
-            np.testing.assert_almost_equal(biv_2.value, biv_3.value, 3)
+            npt.assert_almost_equal(biv_2.value, biv_3.value, 3)
 
     def test_general_logarithm_translation(self):
         # Check we can reverse translation
@@ -109,7 +105,7 @@ class TestGeneralLogarithm(unittest.TestCase):
             biv = ninf * t /2
             R = general_exp(biv).normal()
             biv_2 = general_logarithm(R)
-            np.testing.assert_almost_equal(biv.value, biv_2.value)
+            npt.assert_almost_equal(biv.value, biv_2.value)
 
     def test_general_logarithm_scaling(self):
         # Check we can reverse scaling
@@ -118,7 +114,7 @@ class TestGeneralLogarithm(unittest.TestCase):
             biv = -np.log(scale ) *e45 /2
             R = general_exp(biv).normal()
             biv_2 = general_logarithm(R)
-            np.testing.assert_almost_equal(biv.value, biv_2.value)
+            npt.assert_almost_equal(biv.value, biv_2.value)
 
     def test_general_logarithm_RS(self):
         for i in range(5):
@@ -133,8 +129,8 @@ class TestGeneralLogarithm(unittest.TestCase):
 
             biv_alt = ga_log(R) + general_logarithm(S)
 
-            np.testing.assert_almost_equal(biv.value, biv_test.value, 5)
-            np.testing.assert_almost_equal(biv.value, biv_alt.value, 5)
+            npt.assert_almost_equal(biv.value, biv_test.value, 5)
+            npt.assert_almost_equal(biv.value, biv_alt.value, 5)
 
     def test_general_logarithm_TR(self):
         for i in range(5):
@@ -150,7 +146,7 @@ class TestGeneralLogarithm(unittest.TestCase):
             C1 = random_point_pair()
             C2 = ( V *C1 *~V).normal()
             C3 = (V_rebuilt *C1 *~V_rebuilt).normal()
-            np.testing.assert_almost_equal(C2.value, C3.value, 2)
+            npt.assert_almost_equal(C2.value, C3.value, 2)
 
     def test_general_logarithm_TS(self):
         for i in range(5):
@@ -165,7 +161,7 @@ class TestGeneralLogarithm(unittest.TestCase):
             C1 = random_point_pair()
             C2 = ( V *C1 *~V).normal()
             C3 = (V_rebuilt *C1 *~V_rebuilt).normal()
-            np.testing.assert_almost_equal(C2.value, C3.value, 5)
+            npt.assert_almost_equal(C2.value, C3.value, 5)
 
     def test_general_logarithm_TRS(self):
         for i in range(5):
@@ -181,25 +177,22 @@ class TestGeneralLogarithm(unittest.TestCase):
             C1 = random_point_pair()
             C2 = (V * C1 * ~V).normal()
             C3 = (V_rebuilt * C1 * ~V_rebuilt).normal()
-            np.testing.assert_almost_equal(C2.value, C3.value)
+            npt.assert_almost_equal(C2.value, C3.value)
 
-    def test_general_logarithm_conformal(self):
-
-        object_generators = [random_point_pair, random_line, random_circle, random_plane]
-        # object_generators = [random_sphere]
-
-        for obj_gen in object_generators:
-            print(obj_gen.__name__)
-            for i in range(10000):
-                X = obj_gen()
-                Y = obj_gen()
-                R = rotor_between_objects(X, Y)
-                biv = general_logarithm(R)
-                R_recon = general_exp(biv).normal()
-                np.testing.assert_almost_equal(R.value, R_recon.value, 4)
+    @pytest.mark.parametrize('obj_gen', [
+        random_point_pair, random_line, random_circle, random_plane
+    ])
+    def test_general_logarithm_conformal(self, obj_gen):
+        for i in range(10000):
+            X = obj_gen()
+            Y = obj_gen()
+            R = rotor_between_objects(X, Y)
+            biv = general_logarithm(R)
+            R_recon = general_exp(biv).normal()
+            npt.assert_almost_equal(R.value, R_recon.value, 4)
 
 
-class VisualisationTests(unittest.TestCase):
+class TestVisualisation:
     def test_draw_objects(self):
         scene = ConformalMVArray([random_line() for i in range(100)])
         sc_a = str(draw_objects(scene))
@@ -216,17 +209,7 @@ class VisualisationTests(unittest.TestCase):
         sc.save_to_file('test.json')
 
 
-class ConformalArrayTests(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(self):
-        self.layout = layout
-        self.object_generators = [
-            random_point_pair,
-            random_line,
-            random_circle,
-            random_plane,
-            random_sphere]
+class TestConformalArray:
 
     def test_up_down(self):
         mv = []
@@ -239,10 +222,10 @@ class ConformalArrayTests(unittest.TestCase):
         up_array = test_array.up()
         down_array = up_array.down()
         for a, b in zip(up_array, up_mv):
-            np.testing.assert_almost_equal(a.value, b.value)
-            np.testing.assert_almost_equal(a.value, b.value)
+            npt.assert_almost_equal(a.value, b.value)
+            npt.assert_almost_equal(a.value, b.value)
         for a, b in zip(down_array, mv):
-            np.testing.assert_almost_equal(a.value, b.value)
+            npt.assert_almost_equal(a.value, b.value)
 
     def test_apply_rotor(self):
         mv = []
@@ -254,10 +237,10 @@ class ConformalArrayTests(unittest.TestCase):
 
         # Test apply rotor
         for i in range(100):
-            R = ConformalMVArray([self.layout.randomRotor()])
+            R = ConformalMVArray([layout.randomRotor()])
             rotated_array = up_array.apply_rotor(R)
             for i, v in enumerate(rotated_array):
-                np.testing.assert_almost_equal(v.value, apply_rotor(up_array[i], R[0]).value)
+                npt.assert_almost_equal(v.value, apply_rotor(up_array[i], R[0]).value)
 
     def test_dual(self):
         mv = []
@@ -266,9 +249,9 @@ class ConformalArrayTests(unittest.TestCase):
             mv.append(p)
         test_array = ConformalMVArray(mv)
         up_array = test_array.up()
-        I5 = self.layout.blades['e12345']
+        I5 = layout.blades['e12345']
 
-        np.testing.assert_almost_equal((up_array * ConformalMVArray([I5])).value,
+        npt.assert_almost_equal((up_array * ConformalMVArray([I5])).value,
                                        ConformalMVArray([i * I5 for i in up_array]).value)
 
     def test_from_value_array(self):
@@ -279,64 +262,57 @@ class ConformalArrayTests(unittest.TestCase):
         test_array = ConformalMVArray(mv)
         up_array = test_array.up()
         new_mv_array = ConformalMVArray.from_value_array(up_array.value)
-        np.testing.assert_almost_equal(new_mv_array.value, up_array.value)
+        npt.assert_almost_equal(new_mv_array.value, up_array.value)
 
 
-class G3CToolsTests(unittest.TestCase):
+class TestG3CTools:
 
-    @classmethod
-    def setUpClass(self):
-        self.object_generators = [
-            random_point_pair,
-            random_line,
-            random_circle,
-            random_plane,
-            random_sphere]
+    @pytest.fixture(params=[
+        random_point_pair,
+        random_line,
+        random_circle,
+        random_plane,
+        random_sphere
+    ])
+    def obj_gen(self, request):
+        return request.param
 
-    def test_factorise(self):
+    def test_factorise(self, obj_gen):
         n_repeats = 50
-        for obj_gen in self.object_generators:
-            print(obj_gen.__name__)
-            for i in range(n_repeats):
-                X1 = obj_gen()
-                basis, scale = X1.factorise()
-                for b in basis:
-                    gpres = grades_present(b, 0.0001)
-                    assert len(gpres) == 1
-                    assert gpres[0] == 1
-                new_blade = (reduce(lambda a, b: a ^ b, basis) * scale)
-                try:
-                    np.testing.assert_almost_equal(new_blade.value, X1.value, 3)
-                except:
-                    print(X1)
-                    print(new_blade)
-                    np.testing.assert_almost_equal(new_blade.value, X1.value, 3)
+        for i in range(n_repeats):
+            X1 = obj_gen()
+            basis, scale = X1.factorise()
+            for b in basis:
+                gpres = grades_present(b, 0.0001)
+                assert len(gpres) == 1
+                assert gpres[0] == 1
+            new_blade = (reduce(lambda a, b: a ^ b, basis) * scale)
+            try:
+                npt.assert_almost_equal(new_blade.value, X1.value, 3)
+            except:
+                print(X1)
+                print(new_blade)
+                npt.assert_almost_equal(new_blade.value, X1.value, 3)
 
     def test_is_blade(self):
         a = random_bivector() + random_circle()
         assert not a.isBlade()
         a = random_translation_rotor()
         assert not a.isBlade()
-        n_repeats = 5
-        for obj_gen in self.object_generators:
-            for i in range(n_repeats):
-                a = obj_gen()
-                if not a.isBlade():
-                    print(obj_gen.__name__)
-                    raise ValueError('Object is not a blade')
 
-    def test_average_objects(self):
+    def test_is_blade_generated(self, obj_gen):
+        n_repeats = 5
+        for i in range(n_repeats):
+            a = obj_gen()
+            assert a.isBlade()
+
+    def test_average_objects(self, obj_gen):
         n_repeats = 1000
-        for obj_gen in self.object_generators:
-            for i in range(n_repeats):
-                X1 = obj_gen()
-                X2 = obj_gen()
-                obj_list = [X1, X2]
-                try:
-                    average_objects(obj_list, weights=[0.5, 0.5])
-                except:
-                    print(obj_gen.__name__)
-                    average_objects(obj_list, weights=[0.5, 0.5])
+        for i in range(n_repeats):
+            X1 = obj_gen()
+            X2 = obj_gen()
+            obj_list = [X1, X2]
+            average_objects(obj_list, weights=[0.5, 0.5])
 
     def test_point_beyond_plane(self):
         plane = I5 * ((e1 + e2 + e3).normal() + 2 * einf)
@@ -403,7 +379,7 @@ class G3CToolsTests(unittest.TestCase):
             R = rotor_between_objects(a, b)
             for n in [1, 2, 4, 8, 16, 32]:
                 R_n = n_th_rotor_root(R, n)
-                np.testing.assert_almost_equal((R_n ** n).value, R.value)
+                npt.assert_almost_equal((R_n ** n).value, R.value)
 
     def test_random_point_pair_at_origin(self):
 
@@ -459,7 +435,7 @@ class G3CToolsTests(unittest.TestCase):
             r_trans = generate_translation_rotor(rand)
             end_point = r_trans * starting_point * ~r_trans
             translation_vec = down(end_point) - down(starting_point)
-            testing.assert_almost_equal(translation_vec.value, rand.value)
+            npt.assert_almost_equal(translation_vec.value, rand.value)
 
     def test_intersect_line_and_plane_to_point(self):
         """ Intersection of a line and a plane """
@@ -468,7 +444,7 @@ class G3CToolsTests(unittest.TestCase):
         line = (up(2*e1) ^ up(2*e1 + e3) ^ ninf).normal()
         plane = (up(e3) ^ up(e3 + e1) ^ up(e3 + e2) ^ ninf).normal()
         point_result = intersect_line_and_plane_to_point(line, plane)
-        testing.assert_almost_equal(point_result.value, up(e3 + 2*e1).value)
+        npt.assert_almost_equal(point_result.value, up(e3 + 2*e1).value)
         # Next the case that the do not intersect
         line = (up(0) ^ up(e1) ^ ninf).normal()
         point_result = intersect_line_and_plane_to_point(line, plane)
@@ -489,7 +465,7 @@ class G3CToolsTests(unittest.TestCase):
         for i in range(500):
             mv = np.random.rand() * random_conformal_point()
             mv_normed = normalise_n_minus_1(mv)
-            testing.assert_almost_equal((mv_normed | ninf)[0], -1.0)
+            npt.assert_almost_equal((mv_normed | ninf)[0], -1.0)
 
     def test_get_properties_of_sphere(self):
 
@@ -506,8 +482,8 @@ class G3CToolsTests(unittest.TestCase):
             center = get_center_from_sphere(sphere)
             radius = get_radius_from_sphere(sphere)
 
-            testing.assert_almost_equal(down(center).value, rand_trans.value)
-            testing.assert_almost_equal(radius, scale_factor)
+            npt.assert_almost_equal(down(center).value, rand_trans.value)
+            npt.assert_almost_equal(radius, scale_factor)
 
 
     def test_point_pair_to_end_points(self):
@@ -516,8 +492,8 @@ class G3CToolsTests(unittest.TestCase):
             point_b = random_conformal_point()
             pp = (point_a ^ point_b).normal()
             p_a, p_b = point_pair_to_end_points(pp)
-            testing.assert_almost_equal(p_a.value, point_a.value)
-            testing.assert_almost_equal(p_b.value, point_b.value)
+            npt.assert_almost_equal(p_a.value, point_a.value)
+            npt.assert_almost_equal(p_b.value, point_b.value)
 
 
     def test_euc_distance(self):
@@ -527,7 +503,7 @@ class G3CToolsTests(unittest.TestCase):
             point_b = random_conformal_point()
             dist = euc_dist(point_a, point_b)
             dist_alt = float(abs(down(point_a) - down(point_b)))
-            testing.assert_almost_equal(dist, dist_alt)
+            npt.assert_almost_equal(dist, dist_alt)
 
 
     def test_dilation_rotor(self):
@@ -538,102 +514,83 @@ class G3CToolsTests(unittest.TestCase):
             radius = get_radius_from_sphere(sphere)
             sphere2 = (r * sphere * ~r).normal()
             radius2 = get_radius_from_sphere(sphere2)
-            testing.assert_almost_equal(scale, radius2 / radius)
+            npt.assert_almost_equal(scale, radius2 / radius)
 
 
-    def test_calculate_S_over_mu_general(self):
-        # The object generators
-        object_generators = [random_point_pair,
-                             random_line,
-                             random_circle,
-                             random_plane,
-                             random_sphere]
-
+    def test_calculate_S_over_mu_general(self, obj_gen):
         # Repeats for each fuzz test
         n_repeats = 100
 
         # Test the general case
-        for obj_gen in object_generators:
-            for i in range(n_repeats):
-                X1 = obj_gen()
-                X2 = obj_gen()
-                S = calculate_S_over_mu(X1, X2)
-                X3 = -S*(X1 + X2)
-                X4 = average_objects([X1,X2], [0.5,0.5]).normal()
-                if sum(np.abs((X3 + X4).value)) < 0.000001:
-                    print(obj_gen.__name__, ' SIGN FLIP')
-                    X4 = -X4
-                try:
-                    np.testing.assert_almost_equal(X3.value, X4.value, 4)
-                except:
-                    print(obj_gen.__name__)
-                    print(X3)
-                    print(X4)
-                    X4 = average_objects([X1, X2], [0.5, 0.5]).normal()
-                    np.testing.assert_almost_equal(X3.value, X4.value, 4)
+        for i in range(n_repeats):
+            X1 = obj_gen()
+            X2 = obj_gen()
+            S = calculate_S_over_mu(X1, X2)
+            X3 = -S*(X1 + X2)
+            X4 = average_objects([X1,X2], [0.5,0.5]).normal()
+            if sum(np.abs((X3 + X4).value)) < 0.000001:
+                print(' SIGN FLIP')
+                X4 = -X4
+            try:
+                npt.assert_almost_equal(X3.value, X4.value, 4)
+            except:
+                print(X3)
+                print(X4)
+                X4 = average_objects([X1, X2], [0.5, 0.5]).normal()
+                npt.assert_almost_equal(X3.value, X4.value, 4)
 
-    def test_general_rotor_between_objects(self):
-        # The object generators
-        object_generators = [random_point_pair,
-                             random_line,
-                             random_circle,
-                             random_plane,
-                             random_sphere]
-
+    def test_general_rotor_between_objects(self, obj_gen):
         # Repeats for each fuzz test
         n_repeats = 1000
 
         # Test the general case
-        for obj_gen in object_generators:
-            print(obj_gen.__name__)
-            for i in range(n_repeats):
-                C1 = obj_gen()
-                C2 = obj_gen()
+        for i in range(n_repeats):
+            C1 = obj_gen()
+            C2 = obj_gen()
 
-                R = rotor_between_objects(C1, C2)
-                C3 = (R * C1 * ~R).normal()
+            R = rotor_between_objects(C1, C2)
+            C3 = (R * C1 * ~R).normal()
 
-                if sum(np.abs((C2 + C3).value)) < 0.0001:
-                    print('SIGN FLIP ', obj_gen.__name__)
-                    C3 = -C3
-                try:
-                    np.testing.assert_almost_equal(C2.value, C3.value, 3)
-                except:
-                    print(R)
-                    print(C2*C1 + C1*C2)
-                    np.testing.assert_almost_equal(C2.value, C3.value, 3)
+            if sum(np.abs((C2 + C3).value)) < 0.0001:
+                print('SIGN FLIP ', obj_gen.__name__)
+                C3 = -C3
+            try:
+                npt.assert_almost_equal(C2.value, C3.value, 3)
+            except:
+                print(R)
+                print(C2*C1 + C1*C2)
+                npt.assert_almost_equal(C2.value, C3.value, 3)
 
-    def test_motor_between_rounds(self):
-        # The object generators
-        object_generators = [random_point_pair, random_circle, random_sphere]
-        generator_grades = [2,3,4]
-
+    @pytest.mark.parametrize(('obj_gen', 'grd'), [
+        (random_point_pair, 2),
+        (random_circle, 3),
+        (random_sphere, 4),
+    ])
+    def test_motor_between_rounds(self, obj_gen, grd):
         # Repeats for each fuzz test
         n_repeats = 1000
 
         # Test the general case
-        for grd, obj_gen in zip(generator_grades,object_generators):
-            print(obj_gen.__name__, grd)
-            for i in range(n_repeats):
-                C1 = obj_gen()
-                Rt = random_rotation_translation_rotor()
-                C2 = (Rt*C1*~Rt)(grd).normal()
+        for i in range(n_repeats):
+            C1 = obj_gen()
+            Rt = random_rotation_translation_rotor()
+            C2 = (Rt*C1*~Rt)(grd).normal()
 
+            R = motor_between_rounds(C1, C2)
+            C3 = (R * C1 * ~R)(grd).normal()
+
+            if sum(np.abs((C2 + C3).value)) < 0.0001:
+                print('SIGN FLIP ', obj_gen.__name__)
+                C3 = -C3
+            try:
+                npt.assert_almost_equal(C2.value, C3.value, 3)
+            except:
+                print(C2.normal())
+                print(C3.normal())
                 R = motor_between_rounds(C1, C2)
-                C3 = (R * C1 * ~R)(grd).normal()
+                npt.assert_almost_equal(C2.value, C3.value, 3)
 
-                if sum(np.abs((C2 + C3).value)) < 0.0001:
-                    print('SIGN FLIP ', obj_gen.__name__)
-                    C3 = -C3
-                try:
-                    np.testing.assert_almost_equal(C2.value, C3.value, 3)
-                except:
-                    print(C2.normal())
-                    print(C3.normal())
-                    R = motor_between_rounds(C1, C2)
-                    np.testing.assert_almost_equal(C2.value, C3.value, 3)
-
-    #@unittest.skip("reason unknown")  # Skip this because we know that it is a breaking case
+    #@pytest.mark.skip(reason="unknown")  # Skip this because we know that it is a breaking case
     def test_general_rotor_between_objects_specific_cases(self):
         C1 = -(2.48651^e1234) - (2.48651^e1235) - (1.0^e1245) + (3e-05^e1345) - (0.0^e2345)
         C2 = -(25.8135^e1234) - (25.8135^e1235) + (1.0^e1245) - (3e-05^e1345) - (0.0^e2345)
@@ -643,9 +600,9 @@ class G3CToolsTests(unittest.TestCase):
 
         if sum(np.abs((C2 + C3).value)) < 0.0001:
             C3 = -C3
-        np.testing.assert_almost_equal(C2.value, C3.value, 3)
+        npt.assert_almost_equal(C2.value, C3.value, 3)
 
-    #@unittest.skip("reason unknown")  # Skip this because we know that it is a breaking case
+    #@pytest.mark.skip(reason="unknown")  # Skip this because we know that it is a breaking case
     def test_rotor_between_non_overlapping_spheres(self):
         C1 = random_sphere()
         rad = get_radius_from_sphere(C1)
@@ -657,10 +614,10 @@ class G3CToolsTests(unittest.TestCase):
         if sum(np.abs((C2 + C3).value)) < 0.0001:
             print('SIGN FLIP ')
             C3 = -C3
-        np.testing.assert_almost_equal(C2.value, C3.value, 5)
+        npt.assert_almost_equal(C2.value, C3.value, 5)
 
 
-class RotorEstimationTests(unittest.TestCase):
+class TestRotorEstimation:
 
     def run_rotor_estimation(self, object_generator, estimation_function,
                              n_runs=20, n_objects_per_run=10):
@@ -700,9 +657,9 @@ class RotorEstimationTests(unittest.TestCase):
         Y = MVArray([normalise_n_minus_1(apply_rotor(x, random_translation_rotor(noise_std) * R)) for x in X])
         res = de_keninck_twist(Y, X)
         try:
-            np.testing.assert_almost_equal(R.value, res.value, 4)
+            npt.assert_almost_equal(R.value, res.value, 4)
         except:
-            np.testing.assert_almost_equal(R.value, -res.value, 4)
+            npt.assert_almost_equal(R.value, -res.value, 4)
 
     def test_direct_TRS_extraction(self):
         X = MVArray([random_conformal_point() for i in range(100)])
@@ -712,9 +669,9 @@ class RotorEstimationTests(unittest.TestCase):
         Y = MVArray([normalise_n_minus_1(apply_rotor(x, random_translation_rotor(noise_std) * R)) for x in X])
         res = direct_TRS_extraction(Y, X)
         try:
-            np.testing.assert_almost_equal(R.value, res.value, 4)
+            npt.assert_almost_equal(R.value, res.value, 4)
         except:
-            np.testing.assert_almost_equal(R.value, -res.value, 4)
+            npt.assert_almost_equal(R.value, -res.value, 4)
 
     def test_dorst_motor_points(self):
         X = MVArray([random_conformal_point() for i in range(100)])
@@ -723,24 +680,19 @@ class RotorEstimationTests(unittest.TestCase):
         Y = MVArray([normalise_n_minus_1(apply_rotor(x, random_translation_rotor(noise_std) * R)) for x in X])
         res = dorst_motor_estimate(Y, X)
         try:
-            np.testing.assert_almost_equal(R.value, res.value, 4)
+            npt.assert_almost_equal(R.value, res.value, 4)
         except:
-            np.testing.assert_almost_equal(R.value, -res.value, 4)
+            npt.assert_almost_equal(R.value, -res.value, 4)
 
-    def test_dorst_motor_estimate_lines(self):
-        self.run_rotor_estimation(random_line, dorst_motor_estimate)
-
-    def test_dorst_motor_estimate_circles(self):
-        self.run_rotor_estimation(random_circle, dorst_motor_estimate)
-
-    def test_dorst_motor_estimate_point_pairs(self):
-        self.run_rotor_estimation(random_point_pair, dorst_motor_estimate)
-
-    def test_dorst_motor_estimate_planes(self):
-        self.run_rotor_estimation(random_plane, dorst_motor_estimate)
-
-    def test_dorst_motor_estimate_spheres(self):
-        self.run_rotor_estimation(random_sphere, dorst_motor_estimate)
+    @pytest.mark.parametrize('obj_gen', [
+        random_line,
+        random_circle,
+        random_point_pair,
+        random_plane,
+        random_sphere,
+    ])
+    def test_dorst_motor_estimate(self, obj_gen):
+        self.run_rotor_estimation(obj_gen, dorst_motor_estimate)
 
     def test_estimate_rotor_lines_average_then_opt(self):
 
@@ -753,116 +705,54 @@ class RotorEstimationTests(unittest.TestCase):
         self.run_rotor_estimation(random_line, estimation_func)
 
 
-
-
-    def test_estimate_motor_lines_optimisation(self):
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b, motor=True)
-            return r_est
-
-        self.run_rotor_estimation(random_line, estimation_func)
-
-
-    def test_estimate_motor_circles_optimisation(self):
+    @pytest.mark.parametrize('obj_gen', [
+        random_line,
+        random_circle,
+        random_point_pair,
+        random_plane,
+        pytest.param(random_sphere, marks=pytest.mark.skip(reason="unknown")),
+    ])
+    def test_estimate_motor_optimisation(self, obj_gen):
 
         def estimation_func(pp_list_a, pp_list_b):
             r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b, motor=True)
             return r_est
 
-        self.run_rotor_estimation(random_circle, estimation_func)
+        self.run_rotor_estimation(obj_gen, estimation_func)
 
-    def test_estimate_motor_point_pairs_optimisation(self):
-        # """ Skip this one as it seems to take a fairly long time atm """
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b, motor=True)
-            return r_est
-
-        self.run_rotor_estimation(random_point_pair, estimation_func)
-
-    def test_estimate_motor_planes_optimisation(self):
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b, motor=True)
-            return r_est
-
-        self.run_rotor_estimation(random_plane, estimation_func)
-
-    @unittest.skip("reason unknown")
-    def test_estimate_motor_spheres_optimisation(self):
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b, motor=True)
-            return r_est
-
-        self.run_rotor_estimation(random_sphere, estimation_func)
-
-
-
-
-
-    def test_estimate_rotor_lines_optimisation(self):
+    @pytest.mark.parametrize('obj_gen', [
+        random_line,
+        random_circle,
+        random_point_pair,
+        random_plane,
+        random_sphere,
+    ])
+    def test_estimate_rotor_optimisation(self, obj_gen):
 
         def estimation_func(pp_list_a, pp_list_b):
             r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
             return r_est
 
-        self.run_rotor_estimation(random_line, estimation_func)
+        self.run_rotor_estimation(obj_gen, estimation_func)
 
 
-    def test_estimate_rotor_circles_optimisation(self):
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
-            return r_est
-
-        self.run_rotor_estimation(random_circle, estimation_func)
-
-    def test_estimate_rotor_point_pairs_optimisation(self):
-        # """ Skip this one as it seems to take a fairly long time atm """
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
-            return r_est
-
-        self.run_rotor_estimation(random_point_pair, estimation_func)
-
-    def test_estimate_rotor_planes_optimisation(self):
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
-            return r_est
-
-        self.run_rotor_estimation(random_plane, estimation_func)
-
-    def test_estimate_rotor_spheres_optimisation(self):
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, costs = estimate_rotor_objects(pp_list_a, pp_list_b)
-            return r_est
-
-        self.run_rotor_estimation(random_sphere, estimation_func)
-
-    def test_estimate_rotor_lines_sequential(self):
+    @pytest.mark.parametrize('obj_gen', [
+        random_line,
+        random_circle,
+        pytest.param(random_point_pair, marks=pytest.mark.skip(reason="unknown")),
+        random_plane,
+        random_sphere
+    ])
+    def test_estimate_rotor_sequential(self, obj_gen):
 
         def estimation_func(pp_list_a, pp_list_b):
             r_est, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
             print(exit_flag)
             return r_est
 
-        self.run_rotor_estimation(random_line, estimation_func)
+        self.run_rotor_estimation(obj_gen, estimation_func)
 
-    def test_estimate_rotor_circles_sequential(self):
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
-            print(exit_flag)
-            return r_est
-
-        self.run_rotor_estimation(random_circle, estimation_func)
-
-    @unittest.skip("reason unknown")
+    @pytest.mark.skip(reason="unknown")
     def test_estimate_rotor_circles_sequential_then_opt(self):
 
         def estimation_func(pp_list_a, pp_list_b):
@@ -875,37 +765,8 @@ class RotorEstimationTests(unittest.TestCase):
 
         self.run_rotor_estimation(random_circle, estimation_func)
 
-    @unittest.skip("reason unknown")
-    def test_estimate_rotor_point_pairs_sequential(self):
-        """ Skip this one as it seems to take a fairly long time atm """
 
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
-            print(exit_flag)
-            return r_est
-
-        self.run_rotor_estimation(random_point_pair, estimation_func)
-
-    def test_estimate_rotor_planes_sequential(self):
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
-            print(exit_flag)
-            return r_est
-
-        self.run_rotor_estimation(random_plane, estimation_func)
-
-    def test_estimate_rotor_spheres_sequential(self):
-
-        def estimation_func(pp_list_a, pp_list_b):
-            r_est, exit_flag = sequential_object_rotor_estimation(pp_list_a, pp_list_b)
-            print(exit_flag)
-            return r_est
-
-        self.run_rotor_estimation(random_sphere, estimation_func)
-
-
-class SceneSimplificationTests(unittest.TestCase):
+class TestSceneSimplification:
 
     def test_simplify_recursive(self):
         object_generator = random_line
@@ -942,16 +803,7 @@ class SceneSimplificationTests(unittest.TestCase):
 
 
 
-class ObjectClusteringTests(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(self):
-        self.object_generators = [
-            random_point_pair,
-            random_line,
-            random_circle,
-            random_plane,
-            random_sphere]
+class TestObjectClustering:
 
     def run_n_clusters(self, object_generator, n_clusters, n_objects_per_cluster, n_shotgunning):
 
@@ -1023,32 +875,35 @@ class ObjectClusteringTests(unittest.TestCase):
                                   color_1=np.array([255, 0, 0]), color_2=np.array([0, 255, 0]))
         print(sc)
 
-    def test_assign_objects_to_objects(self):
+    @pytest.mark.parametrize('obj_gen', [
+        random_point_pair,
+        random_line,
+        random_circle,
+        random_plane,
+        random_sphere
+    ])
+    def test_assign_objects_to_objects(self, obj_gen):
         n_repeats = 5
-        for obj_gen in self.object_generators:
-            print(obj_gen.__name__)
-            for i in range(n_repeats):
-                object_set_a = [obj_gen() for i in range(20)]
-                object_set_b = [l for l in object_set_a]
-                label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
-                try:
-                    npt.assert_equal(label_a, np.array(range(len(label_a))))
-                except:
-                    label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
-                    npt.assert_equal(label_a, np.array(range(len(label_a))))
-
-        n_repeats = 5
-        for obj_gen in self.object_generators:
-            print(obj_gen.__name__)
-            for i in range(n_repeats):
-                r = random_rotation_translation_rotor(0.001, np.pi / 32)
-
-                object_set_a = [obj_gen() for i in range(20)]
-                object_set_b = [l for l in object_set_a]
+        for i in range(n_repeats):
+            object_set_a = [obj_gen() for i in range(20)]
+            object_set_b = [l for l in object_set_a]
+            label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+            try:
+                npt.assert_equal(label_a, np.array(range(len(label_a))))
+            except:
                 label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
                 npt.assert_equal(label_a, np.array(range(len(label_a))))
 
-class ModelMatchingTests(unittest.TestCase):
+        n_repeats = 5
+        for i in range(n_repeats):
+            r = random_rotation_translation_rotor(0.001, np.pi / 32)
+
+            object_set_a = [obj_gen() for i in range(20)]
+            object_set_b = [l for l in object_set_a]
+            label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
+            npt.assert_equal(label_a, np.array(range(len(label_a))))
+
+class TestModelMatching:
 
 
     def test_fingerprint_match(self):
@@ -1128,7 +983,7 @@ class ModelMatchingTests(unittest.TestCase):
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
 
-    @unittest.skip("reason unknown")
+    @pytest.mark.skip(reason="unknown")
     def test_iterative_model_match_cuda(self):
 
         object_generator = random_line
@@ -1179,7 +1034,7 @@ class ModelMatchingTests(unittest.TestCase):
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
 
-    @unittest.skip("reason unknown")
+    @pytest.mark.skip(reason="unknown")
     def test_iterative_model_match_sequential_cuda(self):
         object_generator = random_line
         n_objects_per_cluster = 20
@@ -1204,7 +1059,7 @@ class ModelMatchingTests(unittest.TestCase):
                 error_count += 1
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
-    @unittest.skip("reason unknown")
+    @pytest.mark.skip(reason="unknown")
     def test_REFORM(self):
 
         object_generator = random_line
@@ -1238,7 +1093,7 @@ class ModelMatchingTests(unittest.TestCase):
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
 
-    @unittest.skip("reason unknown")
+    @pytest.mark.skip(reason="unknown")
     def test_REFORM_sequential(self):
 
         object_generator = random_line
@@ -1272,7 +1127,7 @@ class ModelMatchingTests(unittest.TestCase):
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
 
-    @unittest.skip("reason unknown")
+    @pytest.mark.skip(reason="unknown")
     def test_REFORM_line_optimised(self):
 
         object_generator = random_line
@@ -1307,7 +1162,7 @@ class ModelMatchingTests(unittest.TestCase):
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
 
-    @unittest.skip("reason unknown")
+    @pytest.mark.skip(reason="unknown")
     def test_iterative_model_match_incomplete_query(self):
 
         # Set the generator
@@ -1340,7 +1195,7 @@ class ModelMatchingTests(unittest.TestCase):
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
 
-    @unittest.skip("reason unknown")
+    @pytest.mark.skip(reason="unknown")
     def test_REFORM_incomplete_query(self):
         object_generator = random_line
         n_objects_per_cluster = 100
@@ -1378,6 +1233,3 @@ class ModelMatchingTests(unittest.TestCase):
                 error_count += 1
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
-
-if __name__ == '__main__':
-    unittest.main()
