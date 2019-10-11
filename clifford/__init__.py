@@ -69,9 +69,10 @@ _print_precision = 5    # pretty printing precision on floats
 import os
 try:
     NUMBA_DISABLE_PARALLEL = os.environ['NUMBA_DISABLE_PARALLEL']
-    NUMBA_PARALLEL = not bool(NUMBA_DISABLE_PARALLEL)
-except:
+except KeyError:
     NUMBA_PARALLEL = True
+else:
+    NUMBA_PARALLEL = not bool(NUMBA_DISABLE_PARALLEL)
 
 
 def linear_operator_as_matrix(func, input_blades, output_blades):
@@ -1496,36 +1497,6 @@ class MultiVector(object):
             self.value[self.layout.bladeTupMap[blade]] = 0
         else:
             self.value[key] = 0
-
-    def __getslice__(self, i, j):
-        """Return a copy with only the slice non-zero.
-
-        M[i:j]
-        __getslice__(i, j) --> MultiVector
-        """
-
-        newMV = self._newMV()
-        newMV.value[i:j] = self.value[i:j]
-
-        return newMV
-
-    def __setslice__(self, i, j, sequence):
-        """Paste a sequence into coefficients array.
-
-        M[i:j] = sequence
-        __setslice__(i, j, sequence)
-        """
-
-        self.value[i:j] = sequence
-
-    def __delslice__(self, i, j):
-        """Set slice to zeros.
-
-        del M[i:j]
-        __delslice__(i, j)
-        """
-
-        self.value[i:j] = 0
 
     # grade projection
     def __call__(self, other,*others):

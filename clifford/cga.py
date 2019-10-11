@@ -63,12 +63,12 @@ from numpy import zeros,e,log
 from numpy.random import rand
 import math
 
-global pyganja_available
 try:
     import pyganja as ganja
     pyganja_available =True
-except:
+except ImportError:
     pyganja_available = False
+
 
 class CGAThing(object):
     '''
