@@ -619,16 +619,8 @@ class Layout(object):
         self.einf = None
         self.eo = None
 
-        # Python 2 and 3 compatibility fix
-        names_is_string = False
-        names_is_unicode = False
-        if sys.version_info >= (3, 0):
-            names_is_string = isinstance(names, str)
-        else:
-            names_is_unicode = isinstance(names, unicode)
-
-        if names is None or names_is_string or names_is_unicode:
-            if names_is_string or names_is_unicode:
+        if names is None or isinstance(names, str):
+            if isinstance(names, str):
                 e = str(names)
             else:
                 e = 'e'
@@ -1286,10 +1278,6 @@ class MultiVector(object):
 
         return other * self.inv()
 
-    if sys.version_info[0] < 3:
-        __div__ = __truediv__
-        __rdiv__ = __rtruediv__
-
     def __pow__(self, other):
         """Exponentiation of a multivector by an integer
                     n
@@ -1408,16 +1396,6 @@ class MultiVector(object):
         """
 
         return int(self.__float__())
-
-    if sys.version_info[0] < 3:
-        def __long__(self):
-            """Coerce to a long iff scalar.
-
-            long(M)
-            __long__() --> PyLong
-            """
-
-            return long(self.__float__())
 
     def __float__(self):
         """"Coerce to a float iff scalar.
@@ -1611,60 +1589,29 @@ class MultiVector(object):
         else:
             return False
 
-    if sys.version_info[0] < 3:
-        __nonzero__ = __bool__
+    def __eq__(self, other):
+        other, mv = self._checkOther(other)
 
-    if sys.version_info[0] < 3:
-        def __cmp__(self, other):
-            """Compares two multivectors.
+        if (np.absolute(self.value - other.value) < _eps).all():
+            # equal within epsilon
+            return True
+        else:
+            return False
 
-            This is mostly defined for equality testing (within epsilon).
-            In the case that the two multivectors have different Layouts,
-            we will raise an error.  In the case that they are not equal,
-            we will compare the tuple represenations of the coefficients
-            lists just so as to return something valid.  Therefore,
-            inequalities are well-nigh meaningless (since they are
-            meaningless for multivectors while equality is meaningful).
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
-            TODO: rich comparisons.
+    def __lt__(self, other):
+        raise NotImplementedError
 
-            M == N
-            __cmp__(other) --> -1|0|1
-            """
+    def __le__(self, other):
+        raise NotImplementedError
 
-            other, mv = self._checkOther(other)
-            print('cmp1', self.value)
-            print('cmp2', other.value)
+    def __gt__(self, other):
+        raise NotImplementedError
 
-            if (np.absolute(self.value - other.value) < _eps).all():
-                # equal within epsilon
-                return 0
-            else:
-                return cmp(tuple(self.value), tuple(other.value))
-    else:
-        def __eq__(self, other):
-            other, mv = self._checkOther(other)
-
-            if (np.absolute(self.value - other.value) < _eps).all():
-                # equal within epsilon
-                return True
-            else:
-                return False
-
-        def __ne__(self, other):
-            return not self.__eq__(other)
-
-        def __lt__(self, other):
-            raise NotImplementedError
-
-        def __le__(self, other):
-            raise NotImplementedError
-
-        def __gt__(self, other):
-            raise NotImplementedError
-
-        def __ge__(self, other):
-            raise NotImplementedError
+    def __ge__(self, other):
+        raise NotImplementedError
 
     def clean(self, eps=None):
         """Sets coefficients whose absolute value is < eps to exactly 0.
