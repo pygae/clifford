@@ -11,9 +11,8 @@ import numpy as np
 
 from numpy import exp, float64, testing
 
-from nose.plugins.skip import SkipTest
 
-@SkipTest
+@unittest.skip("reason unknown")
 class ToolsTests(unittest.TestCase):
 
     def checkit(self, p, q):
@@ -42,12 +41,12 @@ class ToolsTests(unittest.TestCase):
         for p, q in [(2, 0), (3, 0), (4, 0)]:
             self.checkit(p=p, q=q)
 
-    @SkipTest  # fails
+    @unittest.skip("reason unknown")  # fails
     def testOrthoFrames2VerserMinkowski(self):
         for p, q in [(1, 1), (2, 1), (3, 1)]:
             self.checkit(p=p, q=q)
 
-    @SkipTest  # fails
+    @unittest.skip("reason unknown")  # fails
     def testOrthoFrames2VerserBalanced(self):
         for p, q in [(2, 2)]:
             self.checkit(p=p, q=q)
@@ -110,7 +109,7 @@ class G3ToolsTests(unittest.TestCase):
             testing.assert_almost_equal(theta_return, theta)
             testing.assert_almost_equal(euc_vector_n.value, v2.value)
 
-    @SkipTest
+    @unittest.skip("reason unknown")
     def test_find_rotor_aligning_vectors(self):
         """
         Currently fails, needs to be dug into

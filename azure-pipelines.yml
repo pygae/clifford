@@ -124,7 +124,7 @@ jobs:
 
   - script: |
       call activate myEnvironment
-      conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
+      conda install --yes python=$(python.version) future h5py pytest setuptools scipy numpy
     displayName: Install dependencies windows
     condition: eq(variables['imageName'], 'vs2017-win2016')
 
@@ -144,7 +144,7 @@ jobs:
       source activate myEnvironment
       conda update -n base -y -c defaults conda
       conda update -y conda
-      conda install --yes python=$(python.version) future h5py nose pytest setuptools scipy numpy
+      conda install --yes python=$(python.version) future h5py pytest setuptools scipy numpy
       conda install --yes $(numbacommand)
       python -m pip install -U pytest
       $(installPackageCommand)

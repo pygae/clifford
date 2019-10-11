@@ -9,7 +9,6 @@ import unittest
 import itertools
 import time
 
-from nose.plugins.skip import SkipTest
 
 
 class InitialisationSpeedTests(unittest.TestCase):
