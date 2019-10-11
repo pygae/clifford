@@ -69,9 +69,10 @@ _print_precision = 5    # pretty printing precision on floats
 import os
 try:
     NUMBA_DISABLE_PARALLEL = os.environ['NUMBA_DISABLE_PARALLEL']
-    NUMBA_PARALLEL = not bool(NUMBA_DISABLE_PARALLEL)
-except:
+except KeyError:
     NUMBA_PARALLEL = True
+else:
+    NUMBA_PARALLEL = not bool(NUMBA_DISABLE_PARALLEL)
 
 
 def linear_operator_as_matrix(func, input_blades, output_blades):

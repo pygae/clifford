@@ -311,7 +311,7 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
     try:
         B = Frame(B)
         B_En = B.En
-    except:
+    except Exception:
         pass
     N = len(A)
 
@@ -331,7 +331,7 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
             spinor = True
             # we have a spinor, remove the scaling (add it back in at the end)
             B = [b / alpha for b in B]
-    except:
+    except Exception:
         # probably  A and B are not pure vector correspondence
         # whatever,  it might still work
         pass
