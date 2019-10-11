@@ -564,7 +564,10 @@ class TestG3CTools:
     @pytest.mark.parametrize(('obj_gen', 'grd'), [
         (random_point_pair, 2),
         (random_circle, 3),
-        (random_sphere, 4),
+        pytest.param(random_sphere, 4, marks=[
+            # gh-104
+            pytest.mark.xfail(reason="Non-deterministic, sometimes fails", strict=False),
+        ])
     ])
     def test_motor_between_rounds(self, obj_gen, grd):
         # Repeats for each fuzz test
