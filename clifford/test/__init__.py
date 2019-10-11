@@ -1,8 +1,3 @@
-try:
-    import nose
-except:
-    raise ImportError('Nose is not found, to run the tests please install nose')
-
 from .test_algebra_initialisation import *
 from .test_clifford import *
 from .test_io import *

@@ -9,7 +9,6 @@ import numba.cuda
 import unittest
 import itertools
 
-from nose.plugins.skip import SkipTest
 
 import math
 import time
@@ -30,12 +29,13 @@ object_generators = [random_point_pair, random_line, random_circle, \
                           random_sphere, random_plane]
 
 
+@unittest.skipIf(
+    not numba.cuda.is_available(),
+    "CUDA not available")
 class CUDATESTS(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        if not numba.cuda.is_available():
-            raise SkipTest('CUDA is unavailable, skipping tests')
         layout = g3c.layout
         self.layout = layout
         self.stuff = g3c.stuff

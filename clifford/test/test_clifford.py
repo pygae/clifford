@@ -12,7 +12,6 @@ from numpy import exp, float64, testing
 import unittest
 from functools import reduce
 
-from nose.plugins.skip import SkipTest
 
 
 class CliffordTests(unittest.TestCase):

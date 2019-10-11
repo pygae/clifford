@@ -24,7 +24,6 @@ from functools import reduce
 
 from numpy import exp, float64, testing
 
-from nose.plugins.skip import SkipTest
 
 
 import random
@@ -634,7 +633,7 @@ class G3CToolsTests(unittest.TestCase):
                     R = motor_between_rounds(C1, C2)
                     np.testing.assert_almost_equal(C2.value, C3.value, 3)
 
-    #@SkipTest  # Skip this because we know that it is a breaking case
+    #@unittest.skip("reason unknown")  # Skip this because we know that it is a breaking case
     def test_general_rotor_between_objects_specific_cases(self):
         C1 = -(2.48651^e1234) - (2.48651^e1235) - (1.0^e1245) + (3e-05^e1345) - (0.0^e2345)
         C2 = -(25.8135^e1234) - (25.8135^e1235) + (1.0^e1245) - (3e-05^e1345) - (0.0^e2345)
@@ -646,7 +645,7 @@ class G3CToolsTests(unittest.TestCase):
             C3 = -C3
         np.testing.assert_almost_equal(C2.value, C3.value, 3)
 
-    #@SkipTest  # Skip this because we know that it is a breaking case
+    #@unittest.skip("reason unknown")  # Skip this because we know that it is a breaking case
     def test_rotor_between_non_overlapping_spheres(self):
         C1 = random_sphere()
         rad = get_radius_from_sphere(C1)
@@ -790,7 +789,7 @@ class RotorEstimationTests(unittest.TestCase):
 
         self.run_rotor_estimation(random_plane, estimation_func)
 
-    @SkipTest
+    @unittest.skip("reason unknown")
     def test_estimate_motor_spheres_optimisation(self):
 
         def estimation_func(pp_list_a, pp_list_b):
@@ -863,7 +862,7 @@ class RotorEstimationTests(unittest.TestCase):
 
         self.run_rotor_estimation(random_circle, estimation_func)
 
-    @SkipTest
+    @unittest.skip("reason unknown")
     def test_estimate_rotor_circles_sequential_then_opt(self):
 
         def estimation_func(pp_list_a, pp_list_b):
@@ -876,7 +875,7 @@ class RotorEstimationTests(unittest.TestCase):
 
         self.run_rotor_estimation(random_circle, estimation_func)
 
-    @SkipTest
+    @unittest.skip("reason unknown")
     def test_estimate_rotor_point_pairs_sequential(self):
         """ Skip this one as it seems to take a fairly long time atm """
 
@@ -1129,7 +1128,7 @@ class ModelMatchingTests(unittest.TestCase):
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
 
-    @SkipTest
+    @unittest.skip("reason unknown")
     def test_iterative_model_match_cuda(self):
 
         object_generator = random_line
@@ -1180,7 +1179,7 @@ class ModelMatchingTests(unittest.TestCase):
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
 
-    @SkipTest
+    @unittest.skip("reason unknown")
     def test_iterative_model_match_sequential_cuda(self):
         object_generator = random_line
         n_objects_per_cluster = 20
@@ -1205,7 +1204,7 @@ class ModelMatchingTests(unittest.TestCase):
                 error_count += 1
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
-    @SkipTest
+    @unittest.skip("reason unknown")
     def test_REFORM(self):
 
         object_generator = random_line
@@ -1239,7 +1238,7 @@ class ModelMatchingTests(unittest.TestCase):
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
 
-    @SkipTest
+    @unittest.skip("reason unknown")
     def test_REFORM_sequential(self):
 
         object_generator = random_line
@@ -1273,7 +1272,7 @@ class ModelMatchingTests(unittest.TestCase):
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
 
-    @SkipTest
+    @unittest.skip("reason unknown")
     def test_REFORM_line_optimised(self):
 
         object_generator = random_line
@@ -1308,7 +1307,7 @@ class ModelMatchingTests(unittest.TestCase):
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
 
-    @SkipTest
+    @unittest.skip("reason unknown")
     def test_iterative_model_match_incomplete_query(self):
 
         # Set the generator
@@ -1341,7 +1340,7 @@ class ModelMatchingTests(unittest.TestCase):
         print('Correct fraction: ', 1.0 - error_count / n_runs)
 
 
-    @SkipTest
+    @unittest.skip("reason unknown")
     def test_REFORM_incomplete_query(self):
         object_generator = random_line
         n_objects_per_cluster = 100

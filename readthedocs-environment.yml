@@ -7,7 +7,6 @@ dependencies:
     - numba=0.43
     - scipy
     - matplotlib
-    - nose
     - future
     - pandoc
     - ipykernel
