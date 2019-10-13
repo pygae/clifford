@@ -1059,11 +1059,11 @@ class MultiVector(object):
                 return other, False
 
         elif (
-                issubclass(other.__class__, MultiVector) and
+                isinstance(other, MultiVector) and
                 other.layout != self.layout):
             raise ValueError(
                 "cannot operate on MultiVectors with different Layouts")
-        elif issubclass(other.__class__, MultiVector):
+        elif isinstance(other, MultiVector):
             return other, True
 
         return other, False
@@ -1106,7 +1106,7 @@ class MultiVector(object):
         if mv:
             newValue = self.layout.gmt_func(self.value,other.value)
         else:
-            if issubclass(other.__class__, np.ndarray):
+            if isinstance(other, np.ndarray):
                 obj = self.__array__()
                 return obj*other
 
@@ -1126,7 +1126,7 @@ class MultiVector(object):
         if mv:
             newValue = self.layout.gmt_func(other.value,self.value)
         else:
-            if issubclass(other.__class__, np.ndarray):
+            if isinstance(other, np.ndarray):
                 obj = self.__array__()
                 return other*obj
             newValue = other*self.value
@@ -1145,7 +1145,7 @@ class MultiVector(object):
         if mv:
             newValue = self.layout.omt_func(self.value,other.value)
         else:
-            if issubclass(other.__class__, np.ndarray):
+            if isinstance(other, np.ndarray):
                 obj = self.__array__()
                 return obj^other
             newValue = other*self.value
@@ -1164,7 +1164,7 @@ class MultiVector(object):
         if mv:
             newValue = self.layout.omt_func(other.value,self.value)
         else:
-            if issubclass(other.__class__, np.ndarray):
+            if isinstance(other, np.ndarray):
                 obj = self.__array__()
                 return other^obj
             newValue = other * self.value
@@ -1183,7 +1183,7 @@ class MultiVector(object):
         if mv:
             newValue = self.layout.imt_func(self.value,other.value)
         else:
-            if issubclass(other.__class__, np.ndarray):
+            if isinstance(other, np.ndarray):
                 obj = self.__array__()
                 return obj|other
             return self._newMV()  # l * M = M * l = 0 for scalar l
@@ -1201,7 +1201,7 @@ class MultiVector(object):
 
         other, mv = self._checkOther(other)
         if not mv:
-            if issubclass(other.__class__, np.ndarray):
+            if isinstance(other, np.ndarray):
                 obj = self.__array__()
                 return obj + other
         newValue = self.value + other.value
@@ -1219,7 +1219,7 @@ class MultiVector(object):
 
         other, mv = self._checkOther(other)
         if not mv:
-            if issubclass(other.__class__, np.ndarray):
+            if isinstance(other, np.ndarray):
                 obj = self.__array__()
                 return obj - other
         newValue = self.value - other.value
@@ -1235,7 +1235,7 @@ class MultiVector(object):
 
         other, mv = self._checkOther(other)
         if not mv:
-            if issubclass(other.__class__, np.ndarray):
+            if isinstance(other, np.ndarray):
                 obj = self.__array__()
                 return other - obj
         newValue = other.value - self.value
@@ -1257,7 +1257,7 @@ class MultiVector(object):
         if mv:
             return self * other.inv()
         else:
-            if issubclass(other.__class__, np.ndarray):
+            if isinstance(other, np.ndarray):
                 obj = self.__array__()
                 return obj/other
             newValue = self.value / other
@@ -1271,7 +1271,7 @@ class MultiVector(object):
         """
 
         other, mv = self._checkOther(other)
-        if issubclass(other.__class__, np.ndarray):
+        if isinstance(other, np.ndarray):
             obj = self.__array__()
             return other / obj
 
@@ -1428,7 +1428,7 @@ class MultiVector(object):
         M[index] --> PyFloat | PyInt
         __getitem__(key) --> PyFloat | PyInt
         """
-        if issubclass(key.__class__, MultiVector):
+        if isinstance(key, MultiVector):
                 return self.value[int(np.where(key.value)[0][0])]
         elif key in self.layout.bladeTupMap.keys():
             return self.value[self.layout.bladeTupMap[key]]
@@ -1491,7 +1491,7 @@ class MultiVector(object):
         >>>M(0)
         >>>M(0,2)
         """
-        if issubclass(other.__class__, MultiVector):
+        if isinstance(other, MultiVector):
             return other.project(self)
         else:
             # we are making a grade projection
@@ -2175,7 +2175,7 @@ def array(obj):
     >>>import numpy as np
     >>>np.random.rand(10)*cf.array(g3.e12)
     '''
-    if issubclass(obj.__class__, MultiVector):
+    if isinstance(obj, MultiVector):
         # they passed a single MV so make a list of it. 
         return MVArray([obj])
     else:
