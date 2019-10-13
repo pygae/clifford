@@ -1,4 +1,5 @@
 from functools import reduce
+import operator
 
 import pytest
 import numpy as np
@@ -180,6 +181,20 @@ class TestClifford:
         other_array_2 = np.array([t.dual().value for t in test_array])
         np.testing.assert_almost_equal(dual_array.value, other_array_2)
 
+    def test_comparison_operators(self):
+        layout, blades = Cl(3)
+        e1 = blades['e1']
+        e2 = blades['e2']
+
+        pytest.raises(NotImplementedError, operator.lt, e1, e2)
+        pytest.raises(NotImplementedError, operator.le, e1, e2)
+        pytest.raises(NotImplementedError, operator.gt, e1, e2)
+        pytest.raises(NotImplementedError, operator.ge, e1, e2)
+
+        assert operator.eq(e1, e1) == True
+        assert operator.eq(e1, e2) == False
+        assert operator.ne(e1, e1) == False
+        assert operator.ne(e1, e2) == True
 
 
 class TestBasicConformal41:
