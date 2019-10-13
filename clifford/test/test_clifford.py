@@ -199,6 +199,19 @@ class TestClifford:
         assert operator.eq(e1, None) == False
         assert operator.ne(e1, None) == True
 
+    def test_layout_comparison_operators(self):
+        l3a, _ = Cl(3)
+        l3b, _ = Cl(3)
+        l4, _ = Cl(4)
+
+        assert operator.eq(l3a, l3b) == True
+        assert operator.eq(l3a, l4) == False
+        assert operator.eq(l3a, None) == False
+
+        assert operator.ne(l3a, l3b) == False
+        assert operator.ne(l3a, l4) == True
+        assert operator.ne(l3a, None) == True
+
 
 class TestBasicConformal41:
     def test_metric(self):

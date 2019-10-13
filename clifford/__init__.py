@@ -691,16 +691,20 @@ class Layout(object):
         return s
 
     def __eq__(self,other):
-        if other is not self:
-            return np.array_equal(self.sig,other.sig)
-        else:
+        if other is self:
             return True
+        elif isinstance(other, Layout):
+            return np.array_equal(self.sig, other.sig)
+        else:
+            return NotImplemented
 
     def __ne__(self,other):
         if other is self:
             return False
+        elif isinstance(other, Layout):
+            return not np.array_equal(self.sig, other.sig)
         else:
-            return not np.array_equal(self.sig,other.sig)
+            return NotImplemented
 
     def parse_multivector(self,mv_string):
         """ Parses a multivector string into a MultiVector object """
