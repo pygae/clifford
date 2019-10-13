@@ -1590,6 +1590,8 @@ class MultiVector(object):
 
     def __eq__(self, other):
         other, mv = self._checkOther(other)
+        if not mv:
+            return NotImplemented
 
         if (np.absolute(self.value - other.value) < _eps).all():
             # equal within epsilon
@@ -1598,7 +1600,10 @@ class MultiVector(object):
             return False
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        ret = self.__eq__(other)
+        if ret is NotImplemented:
+            return ret
+        return not ret
 
     def __lt__(self, other):
         raise NotImplementedError

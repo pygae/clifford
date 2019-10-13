@@ -196,6 +196,9 @@ class TestClifford:
         assert operator.ne(e1, e1) == False
         assert operator.ne(e1, e2) == True
 
+        assert operator.eq(e1, None) == False
+        assert operator.ne(e1, None) == True
+
 
 class TestBasicConformal41:
     def test_metric(self):
@@ -339,10 +342,10 @@ class TestFrame:
         for k in range(3):
             try:
                 Ainv = A.inv
-            except(ValueError):
+            except ValueError:
                 pass
-        if Ainv ==None:
-            return True
+        if Ainv is None:
+            return
         for m, a in enumerate(A):
             for n, b in enumerate(A.inv):
                 if m == n:
