@@ -712,7 +712,7 @@ class Layout(object):
 
         # Apply the regex
         search_result = re.findall(_blade_pattern,cleaned_string)
-        
+
         # Create a multivector
         mv_out = MultiVector(self)
         for res in search_result:
@@ -849,7 +849,7 @@ class Layout(object):
     def MultiVector(self,*args,**kw):
         '''
         create a multivector in this layout
-        
+
         convenience func to Multivector(layout)
         '''
         return MultiVector(layout=self, *args, **kw)
@@ -882,25 +882,25 @@ class Layout(object):
             return self._metric.copy()
         else:
             return self._metric.copy()
-    
+
     @property
     def scalar(self):
         '''
         the scalar of value 1, for this GA (a MultiVector object)
-        
+
         useful for forcing a MultiVector type
         '''
         return self.MultiVector() +1
-    
+
     @property
     def pseudoScalar(self):
         '''
         the psuedoScalar
         '''
         return self.blades_list[-1]
-    
+
     I = pseudoScalar
-    
+
     def randomMV(self, n=1, **kw):
         '''
         Convenience method to create a random multivector.
@@ -938,16 +938,16 @@ class Layout(object):
     def basis_vectors_lst(self):
         d = self.basis_vectors
         return [d[k] for k in sorted(d.keys())]
-    
+
     def blades_of_grade(self,grade):
         '''
-        return all blades of a given grade, 
-        
-        Parameters 
+        return all blades of a given grade,
+
+        Parameters
         ------------
-        grade: int 
-            the desired grade 
-        
+        grade: int
+            the desired grade
+
         Returns
         --------
         blades : list of MultiVectors
@@ -955,8 +955,8 @@ class Layout(object):
         if grade ==0:
             return self.scalar
         return  [k for k in self.blades_list[1:] if k.grades()==[grade]]
-        
-        
+
+
     @property
     def blades_list(self):
         '''
@@ -970,7 +970,7 @@ class Layout(object):
     @property
     def blades(self):
         return self.bases()
-    
+
 
     def bases(self, *args, **kw):
         '''
@@ -1244,7 +1244,7 @@ class MultiVector(object):
 
     def right_complement(self):
         return self.layout.MultiVector(value=self.layout.right_complement_func(self.value))
-    
+
     def __truediv__(self, other):
         """Division
                        -1
@@ -1423,7 +1423,7 @@ class MultiVector(object):
         (e.g. e12),  then return the (real) value of that blade's coefficient.
         Otherwise, treat key as an index into the list of coefficients.
 
-        
+
         M[blade] --> PyFloat | PyInt
         M[index] --> PyFloat | PyInt
         __getitem__(key) --> PyFloat | PyInt
@@ -1485,7 +1485,7 @@ class MultiVector(object):
         M(other) --> other.project(M)
 
         __call__(grade) --> MultiVector
-        
+
         Examples
         --------
         >>>M(0)
@@ -1497,11 +1497,11 @@ class MultiVector(object):
             # we are making a grade projection
             grade = other
 
-        
+
         if len(others) !=0:
             return sum([self.__call__(k) for k in (other,)+others])
-        
-                
+
+
         if grade not in self.layout.gradeList:
             raise ValueError("algebra does not have grade %s" % grade)
 
@@ -1652,12 +1652,12 @@ class MultiVector(object):
 
         return self._newMV(newValue)
 
-    
+
     @property
     def pseudoScalar(self):
         "Returns a MultiVector that is the pseudoscalar of this space."
         return self.layout.pseudoScalar
-    
+
     I = pseudoScalar
 
     def invPS(self):
@@ -1796,9 +1796,9 @@ class MultiVector(object):
             return Madjoint / MadjointM[()]
         else:
             raise ValueError("no inverse exists for this multivector")
-            
-    
-    
+
+
+
 
     def inv(self):
         if (self*~self).isScalar():
@@ -1806,7 +1806,7 @@ class MultiVector(object):
         else:
             it =  self.leftLaInv()
         return it
-    
+
     leftInv = leftLaInv
     rightInv = leftLaInv
 
@@ -2106,12 +2106,12 @@ class MVArray(np.ndarray):
 
     def sum(self):
         '''
-        sum elements of this MVArray 
+        sum elements of this MVArray
         '''
         out=self[0]
         for k in self[1:]:
             out+=k
-        return out 
+        return out
 
     def gp(self):
         '''
@@ -2121,8 +2121,8 @@ class MVArray(np.ndarray):
         out=self[0]
         for k in self[1:]:
             out*=k
-        return out 
-    
+        return out
+
     def op(self):
         '''
         outer product of all elements of this MVArray  (like reduce)
@@ -2155,12 +2155,12 @@ class MVArray(np.ndarray):
 def array(obj):
     '''
     an array method like numpy.array(), but returns a MVArray
-    
+
     Parameters
     -------------
-    obj : MultiVector, list 
-        a MV or a list of MV's 
-        
+    obj : MultiVector, list
+        a MV or a list of MV's
+
     Examples
     ----------
     >>>import clifford as cf
@@ -2169,7 +2169,7 @@ def array(obj):
     >>>np.random.rand(10)*cf.array(g3.e12)
     '''
     if isinstance(obj, MultiVector):
-        # they passed a single MV so make a list of it. 
+        # they passed a single MV so make a list of it.
         return MVArray([obj])
     else:
         return MVArray(obj)
@@ -2239,8 +2239,8 @@ class Frame(MVArray):
         a, b = self, other
         if eps is None:
             eps=_eps
-            
-            
+
+
         return np.array([float((b[m]|b[n]) - (a[m]|a[n]))<eps for m, n in pairs]).all()
 
 
@@ -2601,7 +2601,7 @@ def conformalize(layout, added_sig=[1,-1],**kw):
         layout of the GA to conformalize (the base)
     added_sig: list-like
         list of +1,-1  denoted the added signatures
-    **kw: kwargs 
+    **kw: kwargs
         passed to Cl() used to generate conformal layout
 
     Returns
@@ -2631,7 +2631,7 @@ def conformalize(layout, added_sig=[1,-1],**kw):
     >>> locals().update(bladesc)
     >>> locals().update(stuff)
     '''
-    
+
     sig_c = list(layout.sig) + added_sig
     layout_c, blades_c = Cl(sig=sig_c,firstIdx=layout.firstIdx,**kw)
     basis_vectors = layout_c.basis_vectors
@@ -2658,10 +2658,10 @@ def conformalize(layout, added_sig=[1,-1],**kw):
                 new_val[:len(old_val)] = old_val
                 x = layout_c.MultiVector(value=new_val)
         except(AttributeError):
-            # if x is a scalar it doesnt have layout but following 
+            # if x is a scalar it doesnt have layout but following
             # will still work
             pass
-            
+
         # then up-project into a null vector
         return x + (.5 ^ ((x**2)*einf)) + eo
 
@@ -2674,7 +2674,7 @@ def conformalize(layout, added_sig=[1,-1],**kw):
         # create vector in layout (not cga)
         #x_down = layout.MultiVector(value=new_val)
         return x_down
-        
+
     stuff = {}
     stuff.update({
         'ep': ep, 'en': en, 'eo': eo, 'einf': einf, 'E0': E0,
