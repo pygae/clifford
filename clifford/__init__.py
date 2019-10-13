@@ -524,78 +524,79 @@ class Layout(object):
     """ Layout stores information regarding the geometric algebra itself and the
     internal representation of multivectors.
 
-    It is constructed like this:
+    Parameters
+    ----------
+    signature : List[int]
+        The signature of the vector space.  This should be
+        a list of positive and negative numbers where the sign determines the
+        sign of the inner product of the corresponding vector with itself.
+        The values are irrelevant except for sign.  This list also determines
+        the dimensionality of the vectors.  Signatures with zeroes are not
+        permitted at this time.
 
-      Layout(signature, bladeTupList, firstIdx=0, names=None)
+        Examples:
+          signature = [+1, -1, -1, -1] # Hestenes', et al. Space-Time Algebra
+          signature = [+1, +1, +1]     # 3-D Euclidean signature
 
-    The arguments to be passed are interpreted as follows:
+    bladeTupList : List[Tuple[int, ...]]
+        List of tuples corresponding to the blades in the whole
+        algebra.  This list determines the order of coefficients in the
+        internal representation of multivectors.  The entry for the scalar
+        must be an empty tuple, and the entries for grade-1 vectors must be
+        singleton tuples.  Remember, the length of the list will be 2**dims.
 
-      signature -- the signature of the vector space.  This should be
-          a list of positive and negative numbers where the sign determines the
-          sign of the inner product of the corresponding vector with itself.
-          The values are irrelevant except for sign.  This list also determines
-          the dimensionality of the vectors.  Signatures with zeroes are not
-          permitted at this time.
+        Example:
+          bladeTupList = [(), (0,), (1,), (0,1)]  # 2-D
 
-          Examples:
-            signature = [+1, -1, -1, -1] # Hestenes', et al. Space-Time Algebra
-            signature = [+1, +1, +1]     # 3-D Euclidean signature
+    firstIdx : int
+        The index of the first vector.  That is, some systems number
+        the base vectors starting with 0, some with 1.  Choose by passing
+        the correct number as firstIdx.  0 is the default.
 
-      bladeTupList -- list of tuples corresponding to the blades in the whole
-          algebra.  This list determines the order of coefficients in the
-          internal representation of multivectors.  The entry for the scalar
-          must be an empty tuple, and the entries for grade-1 vectors must be
-          singleton tuples.  Remember, the length of the list will be 2**dims.
+    names : List[str]
+        List of names of each blade.  When pretty-printing multivectors,
+        use these symbols for the blades.  names should be in the same order
+        as bladeTupList.  You may use an empty string for scalars.  By
+        default, the name for each non-scalar blade is 'e' plus the indices
+        of the blade as given in bladeTupList.
 
-          Example:
-            bladeTupList = [(), (0,), (1,), (0,1)]  # 2-D
-
-      firstIdx -- the index of the first vector.  That is, some systems number
-          the base vectors starting with 0, some with 1.  Choose by passing
-          the correct number as firstIdx.  0 is the default.
-
-      names -- list of names of each blade.  When pretty-printing multivectors,
-          use these symbols for the blades.  names should be in the same order
-          as bladeTupList.  You may use an empty string for scalars.  By
-          default, the name for each non-scalar blade is 'e' plus the indices
-          of the blade as given in bladeTupList.
-
-          Example:
-            names = ['', 's0', 's1', 'i']  # 2-D
+        Example:
+          names = ['', 's0', 's1', 'i']  # 2-D
 
 
-    Layout's Members:
+    Attributes
+    ----------
 
-      dims -- dimensionality of vectors (== len(signature))
-
-      sig -- normalized signature (i.e. all values are +1 or -1)
-
-      firstIdx -- starting point for vector indices
-
-      bladeTupList -- list of blades
-
-      gradeList -- corresponding list of the grades of each blade
-
-      gaDims -- 2**dims
-
-      einf -- if conformal returns einf
-
-      eo -- if conformal returns eo
-
-      names -- pretty-printing symbols for the blades
-
-      even -- dictionary of even permutations of blades to the canonical blades
-
-      odd -- dictionary of odd permutations of blades to the canonical blades
-
-      gmt -- multiplication table for geometric product [1]
-
-      imt -- multiplication table for inner product [1]
-
-      omt -- multiplication table for outer product [1]
-
-      lcmt -- multiplication table for the left-contraction [1]
-
+    dims :
+        dimensionality of vectors (== len(signature))
+    sig :
+        normalized signature (i.e. all values are +1 or -1)
+    firstIdx :
+        starting point for vector indices
+    bladeTupList :
+        list of blades
+    gradeList :
+        corresponding list of the grades of each blade
+    gaDims :
+        2**dims
+    einf :
+        if conformal returns einf
+    eo :
+        if conformal returns eo
+    names :
+        pretty-printing symbols for the blades
+    even :
+        dictionary of even permutations of blades to the canonical blades
+    odd :
+        dictionary of odd permutations of blades to the canonical blades
+    gmt :
+        multiplication table for geometric product [1]
+    imt :
+        multiplication table for inner product [1]
+    omt :
+        multiplication table for outer product [1]
+    lcmt :
+        multiplication table for the left-contraction [1]
 
     [1] The multiplication tables are NumPy arrays of rank 3 with indices like
         the tensor g_ijk discussed above.
