@@ -1605,18 +1605,6 @@ class MultiVector(object):
             return ret
         return not ret
 
-    def __lt__(self, other):
-        raise NotImplementedError
-
-    def __le__(self, other):
-        raise NotImplementedError
-
-    def __gt__(self, other):
-        raise NotImplementedError
-
-    def __ge__(self, other):
-        raise NotImplementedError
-
     def clean(self, eps=None):
         """Sets coefficients whose absolute value is < eps to exactly 0.
 

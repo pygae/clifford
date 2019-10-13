@@ -186,10 +186,10 @@ class TestClifford:
         e1 = blades['e1']
         e2 = blades['e2']
 
-        pytest.raises(NotImplementedError, operator.lt, e1, e2)
-        pytest.raises(NotImplementedError, operator.le, e1, e2)
-        pytest.raises(NotImplementedError, operator.gt, e1, e2)
-        pytest.raises(NotImplementedError, operator.ge, e1, e2)
+        pytest.raises(TypeError, operator.lt, e1, e2)
+        pytest.raises(TypeError, operator.le, e1, e2)
+        pytest.raises(TypeError, operator.gt, e1, e2)
+        pytest.raises(TypeError, operator.ge, e1, e2)
 
         assert operator.eq(e1, e1) == True
         assert operator.eq(e1, e2) == False
