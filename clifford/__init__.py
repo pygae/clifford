@@ -44,6 +44,7 @@ import math
 import numbers
 import itertools
 from warnings import warn
+from typing import List, Tuple
 
 # Major library imports.
 import numpy as np
@@ -293,7 +294,6 @@ def get_leftLaInv(k_list, l_list, m_list, mult_table_vals, n_dims, gradeList):
     proposed by Christian Perwass.
      -1         -1
     M    where M  * M  == 1
-    leftLaInv() --> MultiVector
     """
 
     identity = np.zeros((n_dims,))
@@ -526,6 +526,7 @@ class Layout(object):
 
     Parameters
     ----------
+
     signature : List[int]
         The signature of the vector space.  This should be
         a list of positive and negative numbers where the sign determines the
@@ -1023,11 +1024,8 @@ class MultiVector(object):
     * M[N] : blade projection
     """
 
-    def __init__(self, layout, value=None, string=None):
-        """Constructor.
-
-        MultiVector(layout, value=None) --> MultiVector
-        """
+    def __init__(self, layout, value=None, string=None) -> None:
+        """Constructor."""
 
         self.layout = layout
         self.__array_priority__ = 100
@@ -1044,11 +1042,11 @@ class MultiVector(object):
                     "value must be a sequence of length %s" %
                     self.layout.gaDims)
 
-    def __array__(self):
+    def __array__(self) -> 'MVArray':
         # we are a scalar, and the only appropriate dtype is an object array
         return MVArray([self])
 
-    def _checkOther(self, other, coerce=1):
+    def _checkOther(self, other, coerce=1) -> Tuple['MultiVector', bool]:
         """Ensure that the other argument has the same Layout or coerce value if
         necessary/requested.
 
@@ -1073,7 +1071,7 @@ class MultiVector(object):
 
         return other, False
 
-    def _newMV(self, newValue=None):
+    def _newMV(self, newValue=None) -> 'MultiVector':
         """Returns a new MultiVector (or derived class instance).
 
         _newMV(self, newValue=None)
@@ -1084,26 +1082,25 @@ class MultiVector(object):
     # numeric special methods
     # binary
 
-    def exp(self):
+    def exp(self) -> 'MultiVector':
         return general_exp(self)
 
-    def vee(self, other):
+    def vee(self, other) -> 'MultiVector':
         """
         The vee product aka. the meet... To be optimised still
         """
         return self.layout.MultiVector(value=self.layout.vee_func(self.value,other.value))
 
-    def __and__(self, other):
+    def __and__(self, other) -> 'MultiVector':
         """
         The vee product aka. the meet... To be optimised still
         """
         return self.vee(other)
 
-    def __mul__(self, other):
+    def __mul__(self, other) -> 'MultiVector':
         """Geometric product
 
         M * N --> MN
-        __and__(other) --> MultiVector
         """
 
         other, mv = self._checkOther(other, coerce=0)
@@ -1119,11 +1116,10 @@ class MultiVector(object):
 
         return self._newMV(newValue)
 
-    def __rmul__(self, other):
+    def __rmul__(self, other) -> 'MultiVector':
         """Right-hand geometric product
 
         N * M --> NM
-        __rand__(other) --> MultiVector
         """
 
         other, mv = self._checkOther(other, coerce=0)
@@ -1138,11 +1134,10 @@ class MultiVector(object):
 
         return self._newMV(newValue)
 
-    def __xor__(self, other):
+    def __xor__(self, other) -> 'MultiVector':
         """Outer product
 
         M ^ N
-        __xor__(other) --> MultiVector
         """
 
         other, mv = self._checkOther(other, coerce=0)
@@ -1157,11 +1152,10 @@ class MultiVector(object):
 
         return self._newMV(newValue)
 
-    def __rxor__(self, other):
+    def __rxor__(self, other) -> 'MultiVector':
         """Right-hand outer product
 
         N ^ M
-        __rxor__(other) --> MultiVector
         """
 
         other, mv = self._checkOther(other, coerce=0)
@@ -1176,11 +1170,10 @@ class MultiVector(object):
 
         return self._newMV(newValue)
 
-    def __or__(self, other):
+    def __or__(self, other) -> 'MultiVector':
         """Inner product
 
         M | N
-        __mul__(other) --> MultiVector
         """
 
         other, mv = self._checkOther(other)
@@ -1197,11 +1190,10 @@ class MultiVector(object):
 
     __ror__ = __or__
 
-    def __add__(self, other):
+    def __add__(self, other) -> 'MultiVector':
         """Addition
 
         M + N
-        __add__(other) --> MultiVector
         """
 
         other, mv = self._checkOther(other)
@@ -1215,11 +1207,10 @@ class MultiVector(object):
 
     __radd__ = __add__
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> 'MultiVector':
         """Subtraction
 
         M - N
-        __sub__(other) --> MultiVector
         """
 
         other, mv = self._checkOther(other)
@@ -1231,11 +1222,10 @@ class MultiVector(object):
 
         return self._newMV(newValue)
 
-    def __rsub__(self, other):
+    def __rsub__(self, other) -> 'MultiVector':
         """Right-hand subtraction
 
         N - M
-        __rsub__(other) --> MultiVector
         """
 
         other, mv = self._checkOther(other)
@@ -1247,14 +1237,13 @@ class MultiVector(object):
 
         return self._newMV(newValue)
 
-    def right_complement(self):
+    def right_complement(self) -> 'MultiVector':
         return self.layout.MultiVector(value=self.layout.right_complement_func(self.value))
 
-    def __truediv__(self, other):
+    def __truediv__(self, other) -> 'MultiVector':
         """Division
                        -1
         M / N --> M * N
-        __div__(other) --> MultiVector
         """
 
         other, mv = self._checkOther(other, coerce=0)
@@ -1268,11 +1257,10 @@ class MultiVector(object):
             newValue = self.value / other
             return self._newMV(newValue)
 
-    def __rtruediv__(self, other):
+    def __rtruediv__(self, other) -> 'MultiVector':
         """Right-hand division
                        -1
         N / M --> N * M
-        __rdiv__(other) --> MultiVector
         """
 
         other, mv = self._checkOther(other)
@@ -1282,11 +1270,10 @@ class MultiVector(object):
 
         return other * self.inv()
 
-    def __pow__(self, other):
+    def __pow__(self, other) -> 'MultiVector':
         """Exponentiation of a multivector by an integer
                     n
         M ** n --> M
-        __pow__(other) --> MultiVector
         """
 
         if not isinstance(other, (int, float)):
@@ -1307,11 +1294,10 @@ class MultiVector(object):
 
         return newMV
 
-    def __rpow__(self, other):
+    def __rpow__(self, other) -> 'MultiVector':
         """Exponentiation of a real by a multivector
                   M
         r**M --> r
-        __rpow__(other) --> MultiVector
         """
 
         # Let math.log() check that other is a Python number, not something
@@ -1322,7 +1308,7 @@ class MultiVector(object):
 
         return newMV
 
-    def __lshift__(self, other):
+    def __lshift__(self, other) -> 'MultiVector':
         """
         The << operator is the left contraction
         """
@@ -1330,47 +1316,43 @@ class MultiVector(object):
 
     # unary
 
-    def __neg__(self):
+    def __neg__(self) -> 'MultiVector':
         """Negation
 
         -M
-        __neg__() --> MultiVector
         """
 
         newValue = -self.value
 
         return self._newMV(newValue)
 
-    def as_array(self):
+    def as_array(self) -> np.ndarray:
         return self.value
 
-    def __pos__(self):
+    def __pos__(self) -> 'MultiVector':
         """Positive (just a copy)
 
         +M
-        __pos__(self) --> MultiVector
         """
 
         newValue = self.value + 0  # copy
 
         return self._newMV(newValue)
 
-    def mag2(self):
+    def mag2(self) -> numbers.Number:
         """Magnitude (modulus) squared
            2
         |M|
-        mag2() --> PyFloat | PyInt
 
         Note in mixed signature spaces this may be negative
         """
         mv_val = self.layout.gmt_func(self.layout.adjoint_func(self.value),self.value)
         return mv_val[0]
 
-    def __abs__(self):
+    def __abs__(self) -> numbers.Number:
         """Magnitude (modulus)
 
         abs(M) --> |M|
-        __abs__() --> PyFloat
 
         This is sqrt(abs(~M*M)).
 
@@ -1379,12 +1361,11 @@ class MultiVector(object):
 
         return np.sqrt(abs(self.mag2()))
 
-    def adjoint(self):
+    def adjoint(self) -> 'MultiVector':
         """Adjoint / reversion
                _
         ~M --> M (any one of several conflicting notations)
         ~(N * M) --> ~M * ~N
-        adjoint() --> MultiVector
         """
         # The multivector created by reversing all multiplications
         return self._newMV(self.layout.adjoint_func(self.value))
@@ -1392,20 +1373,14 @@ class MultiVector(object):
     __invert__ = adjoint
 
     # builtin
-    def __int__(self):
+    def __int__(self) -> int:
         """Coerce to an integer iff scalar.
-
-        int(M)
-        __int__() --> PyInt
         """
 
         return int(self.__float__())
 
-    def __float__(self):
+    def __float__(self) -> float:
         """"Coerce to a float iff scalar.
-
-        float(M)
-        __float__() --> PyFloat
         """
 
         if self.isScalar():
@@ -1414,27 +1389,22 @@ class MultiVector(object):
             raise ValueError("non-scalar coefficients are non-zero")
 
     # sequence special methods
-    def __len__(self):
+    def __len__(self) -> int:
         """Returns length of value array.
-
-        len(M)
-        __len__() --> PyInt
         """
 
         return self.layout.gaDims
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> numbers.Number:
         """If key is a blade tuple (e.g. (0,1) or (1,3)), or a blade,
         (e.g. e12),  then return the (real) value of that blade's coefficient.
         Otherwise, treat key as an index into the list of coefficients.
 
-
-        M[blade] --> PyFloat | PyInt
-        M[index] --> PyFloat | PyInt
-        __getitem__(key) --> PyFloat | PyInt
+        value = M[blade]
+        value = M[index]
         """
         if isinstance(key, MultiVector):
-                return self.value[int(np.where(key.value)[0][0])]
+            return self.value[int(np.where(key.value)[0][0])]
         elif key in self.layout.bladeTupMap.keys():
             return self.value[self.layout.bladeTupMap[key]]
         elif isinstance(key, tuple):
@@ -1443,14 +1413,13 @@ class MultiVector(object):
             return sign*self.value[self.layout.bladeTupMap[blade]]
         return self.value[key]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value: numbers.Number) -> None:
         """If key is a blade tuple (e.g. (0,1) or (1,3)), then set
         the (real) value of that blade's coeficient.
         Otherwise treat key as an index into the list of coefficients.
 
-        M[blade] = PyFloat | PyInt
-        M[index] = PyFloat | PyInt
-        __setitem__(key, value)
+        M[blade] = value
+        M[index] = value
         """
         if key in self.layout.bladeTupMap.keys():
             self.value[self.layout.bladeTupMap[key]] = value
@@ -1461,12 +1430,11 @@ class MultiVector(object):
         else:
             self.value[key] = value
 
-    def __delitem__(self, key):
+    def __delitem__(self, key) -> None:
         """Set the selected coefficient to 0.
 
         del M[blade]
         del M[index]
-        __delitem__(key)
         """
 
         if key in self.layout.bladeTupMap.keys():
@@ -1479,7 +1447,7 @@ class MultiVector(object):
             self.value[key] = 0
 
     # grade projection
-    def __call__(self, other,*others):
+    def __call__(self, other,*others) -> 'MultiVector':
         """Return a new multi-vector projected onto a grade OR a MV
 
 
@@ -1488,8 +1456,6 @@ class MultiVector(object):
         OR
 
         M(other) --> other.project(M)
-
-        __call__(grade) --> MultiVector
 
         Examples
         --------
@@ -1520,11 +1486,8 @@ class MultiVector(object):
         return self._newMV(newValue)
 
     # fundamental special methods
-    def __str__(self):
+    def __str__(self) -> str:
         """Return pretty-printed representation.
-
-        str(M)
-        __str__() --> PyString
         """
 
         s = ''
@@ -1564,12 +1527,9 @@ class MultiVector(object):
             # return scalar 0
             return '0'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return eval-able representation if global _pretty is false.
         Otherwise, return str(self).
-
-        repr(M)
-        __repr__() --> PyString
         """
 
         if _pretty:
@@ -1579,11 +1539,9 @@ class MultiVector(object):
             repr(self.layout), list(self.value))
         return s
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         """Instance is nonzero iff at least one of the coefficients
         is nonzero.
-
-        __nonzero() --> Boolean
         """
 
         nonzeroes = np.absolute(self.value) > _eps
@@ -1593,7 +1551,7 @@ class MultiVector(object):
         else:
             return False
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         other, mv = self._checkOther(other)
         if not mv:
             return NotImplemented
@@ -1604,13 +1562,13 @@ class MultiVector(object):
         else:
             return False
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         ret = self.__eq__(other)
         if ret is NotImplemented:
             return ret
         return not ret
 
-    def clean(self, eps=None):
+    def clean(self, eps=None) -> 'MultiVector':
         """Sets coefficients whose absolute value is < eps to exactly 0.
 
         eps defaults to the current value of the global _eps.
@@ -1628,7 +1586,7 @@ class MultiVector(object):
 
         return self
 
-    def round(self, eps=None):
+    def round(self, eps=None) -> 'MultiVector':
         """Rounds all coefficients according to Python's rounding rules.
 
         eps defaults to the current value of the global _eps.
@@ -1644,11 +1602,10 @@ class MultiVector(object):
         return self
 
     # Geometric Algebraic functions
-    def lc(self, other):
+    def lc(self, other) -> 'MultiVector':
         """Returns the left-contraction of two multivectors.
 
         M _| N
-        lc(other) --> MultiVector
         """
 
         other, mv = self._checkOther(other, coerce=1)
@@ -1659,23 +1616,21 @@ class MultiVector(object):
 
 
     @property
-    def pseudoScalar(self):
+    def pseudoScalar(self) -> 'MultiVector':
         "Returns a MultiVector that is the pseudoscalar of this space."
         return self.layout.pseudoScalar
 
     I = pseudoScalar
 
-    def invPS(self):
+    def invPS(self) -> 'MultiVector':
         "Returns the inverse of the pseudoscalar of the algebra."
 
         ps = self.pseudoScalar
 
         return ps.inv()
 
-    def isScalar(self):
+    def isScalar(self) -> bool:
         """Returns true iff self is a scalar.
-
-        isScalar() --> Boolean
         """
 
         indices = list(range(self.layout.gaDims))
@@ -1689,10 +1644,9 @@ class MultiVector(object):
 
         return True
 
-    def isBlade(self):
+    def isBlade(self) -> bool:
         """Returns true if multivector is a blade.
         From Leo Dorsts GA for computer science section 21.5
-        isBlade() --> Boolean
         """
 
         grade = None
@@ -1719,7 +1673,7 @@ class MultiVector(object):
                     return 1
         return 0
 
-    def isVersor(self):
+    def isVersor(self) -> bool:
         """Returns true if multivector is a versor.
         From Leo Dorsts GA for computer science section 21.5
         isBlade() --> Boolean
@@ -1744,16 +1698,14 @@ class MultiVector(object):
                         return 1
         return 0
 
-    def grades(self):
+    def grades(self) -> List[int]:
         """Return the grades contained in the multivector.
-
-        grades() --> [ PyInt, PyInt, ... ]
         """
 
         return grades_present(self,_eps)
 
     @property
-    def blades_list(self):
+    def blades_list(self) -> List['MultiVector']:
         '''
         ordered list of blades present in this MV
         '''
@@ -1763,7 +1715,7 @@ class MultiVector(object):
         b = [value[0]] + [value[k]*blades_list[k] for k in range(1, len(self))]
         return [k for k in b if k != 0]
 
-    def normal(self):
+    def normal(self) -> 'MultiVector':
         """Return the (mostly) normalized multivector.
 
         The _mostly_ comes from the fact that some multivectors have a
@@ -1772,25 +1724,22 @@ class MultiVector(object):
         magnitude to +-1.
 
         M / |M|  up to a sign
-        normal() --> MultiVector
         """
 
         return self / np.sqrt(abs(self.mag2()))
 
-    def leftLaInv(self):
+    def leftLaInv(self) -> 'MultiVector':
         """Return left-inverse using a computational linear algebra method
         proposed by Christian Perwass.
          -1         -1
         M    where M  * M  == 1
-        leftLaInv() --> MultiVector
         """
         return self._newMV(self.layout.inv_func(self.value))
 
-    def normalInv(self):
+    def normalInv(self) -> 'MultiVector' :
         """Returns the inverse of itself if M*~M == |M|**2.
          -1
         M   = ~M / (M * ~M)
-        normalInv() --> MultiVector
         """
 
         Madjoint = ~self
@@ -1805,7 +1754,7 @@ class MultiVector(object):
 
 
 
-    def inv(self):
+    def inv(self) -> 'MultiVector':
         if (self*~self).isScalar():
             it =  self.normalInv()
         else:
@@ -1815,13 +1764,12 @@ class MultiVector(object):
     leftInv = leftLaInv
     rightInv = leftLaInv
 
-    def dual(self, I=None):
+    def dual(self, I=None) -> 'MultiVector':
         """Returns the dual of the multivector against the given subspace I.
         I defaults to the pseudoscalar.
 
         ~        -1
         M = M * I
-        dual(I=None) --> MultiVector
         """
         if I is None:
             return self.layout.MultiVector(value=self.layout.dual_func(self.value))
@@ -1830,32 +1778,29 @@ class MultiVector(object):
 
         return self * Iinv
 
-    def commutator(self, other):
+    def commutator(self, other) -> 'MultiVector':
         """Returns the commutator product of two multivectors.
 
         [M, N] = M X N = (M*N - N*M)/2
-        commutator(other) --> MultiVector
         """
 
         return ((self * other) - (other * self)) / 2
 
     x = commutator
 
-    def anticommutator(self, other):
+    def anticommutator(self, other) -> 'MultiVector':
         """Returns the anti-commutator product of two multivectors.
 
         (M*N + N*M)/2
-        anticommutator(other) --> MultiVector
         """
 
         return ((self * other) + (other * self)) / 2
 
-    def gradeInvol(self):
+    def gradeInvol(self) -> 'MultiVector':
         """Returns the grade involution of the multivector.
          *                    i
         M  = Sum[i, dims, (-1)  <M>  ]
                                    i
-        gradeInvol() --> MultiVector
         """
 
         signs = np.power(-1, self.layout.gradeList)
@@ -1865,7 +1810,7 @@ class MultiVector(object):
         return self._newMV(newValue)
 
     @property
-    def even(self):
+    def even(self) -> 'MultiVector':
         '''
         Even part of this mulivector
 
@@ -1875,7 +1820,7 @@ class MultiVector(object):
         return .5*(self + self.gradeInvol())
 
     @property
-    def odd(self):
+    def odd(self) -> 'MultiVector':
         '''
         Odd part of this mulivector
 
@@ -1884,22 +1829,20 @@ class MultiVector(object):
         '''
         return .5*(self - self.gradeInvol())
 
-    def conjugate(self):
+    def conjugate(self) -> 'MultiVector':
         """Returns the Clifford conjugate (reversion and grade involution).
          *
         M  --> (~M).gradeInvol()
-        conjugate() --> MultiVector
         """
 
         return (~self).gradeInvol()
 
     # Subspace operations
-    def project(self, other):
+    def project(self, other) -> 'MultiVector':
         """Projects the multivector onto the subspace represented by this blade.
                             -1
         P (M) = (M _| A) * A
          A
-        project(M) --> MultiVector
         """
 
         other, mv = self._checkOther(other, coerce=1)
@@ -1909,7 +1852,7 @@ class MultiVector(object):
 
         return other.lc(self) * self.inv()
 
-    def factorise(self):
+    def factorise(self) -> Tuple[List['MultiVector'], numbers.Number]:
         """
         Factorises a blade into basis vectors and an overall scale
         Uses Leo Dorsts algorithm from 21.6 of GA for Computer Science
@@ -1932,9 +1875,8 @@ class MultiVector(object):
         factors.reverse()
         return factors, scale
 
-    def basis(self):
+    def basis(self) -> List['MultiVector']:
         """Finds a vector basis of this subspace.
-        basis() --> [ MultiVector, MultiVector, ... ]
         """
         if not self.isBlade():
             raise ValueError("self is not a blade")
@@ -1973,11 +1915,10 @@ class MultiVector(object):
 
         return thisBasis
 
-    def join(self, other):
+    def join(self, other) -> 'MultiVector':
         """Returns the join of two blades.
               .
         J = A ^ B
-        join(other) --> MultiVector
         """
 
         other, mv = self._checkOther(other)
@@ -2041,14 +1982,13 @@ class MultiVector(object):
         else:
             raise ValueError("not blades")
 
-    def meet(self, other, subspace=None):
+    def meet(self, other, subspace=None) -> 'MultiVector':
         r"""Returns the meet of two blades.
 
         Computation is done with respect to a subspace that defaults to
         the join if none is given.
                      -1
         M \/i N = (Mi  ) * N
-        meet(other, subspace=None) --> MultiVector
         """
 
         other, mv = self._checkOther(other)
