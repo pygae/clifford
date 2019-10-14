@@ -1,4 +1,5 @@
 from functools import reduce
+import operator
 
 import pytest
 import numpy as np
@@ -180,6 +181,36 @@ class TestClifford:
         other_array_2 = np.array([t.dual().value for t in test_array])
         np.testing.assert_almost_equal(dual_array.value, other_array_2)
 
+    def test_comparison_operators(self):
+        layout, blades = Cl(3)
+        e1 = blades['e1']
+        e2 = blades['e2']
+
+        pytest.raises(TypeError, operator.lt, e1, e2)
+        pytest.raises(TypeError, operator.le, e1, e2)
+        pytest.raises(TypeError, operator.gt, e1, e2)
+        pytest.raises(TypeError, operator.ge, e1, e2)
+
+        assert operator.eq(e1, e1) == True
+        assert operator.eq(e1, e2) == False
+        assert operator.ne(e1, e1) == False
+        assert operator.ne(e1, e2) == True
+
+        assert operator.eq(e1, None) == False
+        assert operator.ne(e1, None) == True
+
+    def test_layout_comparison_operators(self):
+        l3a, _ = Cl(3)
+        l3b, _ = Cl(3)
+        l4, _ = Cl(4)
+
+        assert operator.eq(l3a, l3b) == True
+        assert operator.eq(l3a, l4) == False
+        assert operator.eq(l3a, None) == False
+
+        assert operator.ne(l3a, l3b) == False
+        assert operator.ne(l3a, l4) == True
+        assert operator.ne(l3a, None) == True
 
 
 class TestBasicConformal41:
@@ -324,10 +355,10 @@ class TestFrame:
         for k in range(3):
             try:
                 Ainv = A.inv
-            except(ValueError):
+            except ValueError:
                 pass
-        if Ainv ==None:
-            return True
+        if Ainv is None:
+            return
         for m, a in enumerate(A):
             for n, b in enumerate(A.inv):
                 if m == n:
