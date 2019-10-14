@@ -233,17 +233,21 @@ class TestClifford:
         assert str(-e1) == "-(1^e1)"
         assert str(1 - e1) == "1 - (1^e1)"
 
+    @pytest.mark.parametrize('dtype', [np.int64, np.float32, np.float64])
     @pytest.mark.parametrize('func', [
         operator.add,
         operator.sub,
+        operator.mul,
+        operator.xor,  # outer product
+        operator.or_,  # inner product
     ])
-    def test_binary_op_preserves_dtype(self, func):
+    def test_binary_op_preserves_dtype(self, dtype, func):
         """ test that simple binary ops on blades do not promote types """
         layout, blades = Cl(3)
-        e1 = blades['e1']
-        e2 = blades['e2']
-        assert func(e1, 1).value.dtype == e1.value.dtype
-        assert func(e1, e2).value.dtype == e1.value.dtype
+        e1 = blades['e1'].astype(dtype)
+        e2 = blades['e2'].astype(dtype)
+        assert func(e1, np.int8(1)).value.dtype == dtype
+        assert func(e1, e2).value.dtype == dtype
 
     @pytest.mark.parametrize('func', [
         operator.inv,

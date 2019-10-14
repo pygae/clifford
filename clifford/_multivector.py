@@ -990,3 +990,13 @@ class MultiVector(object):
             subspace = self.join(other)
 
         return (self * subspace.inv()) | other
+
+    def astype(self, *args, **kwargs):
+        """
+        Change the underlying scalar type of this vector.
+
+        Can be used to force lower-precision floats or integers
+
+        See `np.ndarray.astype` for argument descriptions.
+        """
+        return self._newMV(self.value.astype(*args, **kwargs))

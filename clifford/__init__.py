@@ -107,7 +107,8 @@ def _numba_construct_tables(
 
     lcmt_prod_mask = np.zeros(array_length, dtype=np.bool_)
 
-    mult_table_vals = np.zeros(array_length, dtype=np.float64)
+    # use as small a type as possible to minimize type promotion
+    mult_table_vals = np.zeros(array_length, dtype=np.int8)
 
     for i, grade_list_i in enumerate(gradeList):
         blade_bitmap_i = linear_map_to_bitmap[i]
@@ -171,7 +172,7 @@ def get_mult_function(mt: sparse.COO, gradeList,
 
     if filter_mask is not None:
         # We can pass the sparse filter mask directly
-        mt = sparse.where(filter_mask, mt, 0)
+        mt = sparse.where(filter_mask, mt, mt.dtype.type(0))
 
         return _get_mult_function(mt)
 
@@ -195,11 +196,15 @@ def _get_mult_function(mt: sparse.COO):
 
     @numba.njit
     def mv_mult(value, other_value):
-        output = np.zeros(dims)
-        for ind, k in enumerate(k_list):
-            m = m_list[ind]
-            l = l_list[ind]
-            output[l] += value[k] * mult_table_vals[ind] * other_value[m]
+        # choose an appropriate output type
+        ret_dtype = (value[:0] * mult_table_vals[:0] * other_value[:0]).dtype
+
+        # this casting should be done at jit-time
+        mult_table_vals_t = mult_table_vals.astype(ret_dtype)
+
+        output = np.zeros(dims, dtype=ret_dtype)
+        for k, l, m, val in zip(k_list, l_list, m_list, mult_table_vals_t):
+            output[l] += value[k] * val * other_value[m]
         return output
 
     return mv_mult
@@ -221,7 +226,13 @@ def _get_mult_function_runtime_sparse(mt: sparse.COO):
 
     @numba.njit
     def mv_mult(value, other_value):
-        output = np.zeros(dims)
+        # choose an appropriate output type
+        ret_dtype = (value[:0] * mult_table_vals[:0] * other_value[:0]).dtype
+
+        # this casting should be done at jit-time
+        mult_table_vals_t = mult_table_vals.astype(ret_dtype)
+
+        output = np.zeros(dims, dtype=ret_dtype)
         for ind, k in enumerate(k_list):
             v_val = value[k]
             if v_val != 0.0:
@@ -229,7 +240,7 @@ def _get_mult_function_runtime_sparse(mt: sparse.COO):
                 ov_val = other_value[m]
                 if ov_val != 0.0:
                     l = l_list[ind]
-                    output[l] += v_val * mult_table_vals[ind] * ov_val
+                    output[l] += v_val * mult_table_vals_t[ind] * ov_val
         return output
 
     return mv_mult
