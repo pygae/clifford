@@ -1076,15 +1076,14 @@ class MultiVector(object):
             else:
                 return other, False
 
-        elif (
-                isinstance(other, MultiVector) and
-                other.layout != self.layout):
-            raise ValueError(
-                "cannot operate on MultiVectors with different Layouts")
         elif isinstance(other, MultiVector):
-            return other, True
-
-        return other, False
+            if other.layout != self.layout:
+                raise ValueError(
+                    "cannot operate on MultiVectors with different Layouts")
+            else:
+                return other, True
+        else:
+            return other, False
 
     def _newMV(self, newValue=None) -> 'MultiVector':
         """Returns a new MultiVector (or derived class instance).
