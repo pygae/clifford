@@ -160,78 +160,50 @@ def get_mult_function(k_list, l_list, m_list, mult_table_vals, n_dims, gradeList
     '''
     Returns a function that implements the mult_table on two input multivectors
     '''
-    if product_mask is None:
-        k_list_copy = k_list
-        l_list_copy = l_list
-        m_list_copy = m_list
-        mult_table_vals_copy = mult_table_vals
-    else:
-        # We can pass the sparse filter mask directly
-        k_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
-        l_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
-        m_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
-        mult_table_vals_copy = np.zeros(product_mask.shape[0])
-        for i in range(product_mask.shape[0]):
-            k_list_copy[i] = k_list[product_mask[i]]
-            l_list_copy[i] = l_list[product_mask[i]]
-            m_list_copy[i] = m_list[product_mask[i]]
-            mult_table_vals_copy[i] = mult_table_vals[product_mask[i]]
+    if product_mask is not None:
+        k_list = k_list[product_mask]
+        l_list = l_list[product_mask]
+        m_list = m_list[product_mask]
+        mult_table_vals = mult_table_vals[product_mask]
+
+    if (filter_mask is None) and (grades_a is not None) and (grades_b is not None):
+        # If not specified explicitly, we can specify sparseness by grade
+        filter_mask = np.zeros(len(k_list), dtype=bool)
+        for i in range(len(filter_mask)):
+            if gradeList[k_list[i]] in grades_a:
+                if gradeList[m_list[i]] in grades_b:
+                    filter_mask[i] = 1
 
     if filter_mask is not None:
         # We can pass the sparse filter mask directly
-        k_list_copy = k_list_copy[filter_mask]
-        l_list_copy = l_list_copy[filter_mask]
-        m_list_copy = m_list_copy[filter_mask]
-        mult_table_vals_copy = mult_table_vals_copy[filter_mask]
+        k_list = k_list[filter_mask]
+        l_list = l_list[filter_mask]
+        m_list = m_list[filter_mask]
+        mult_table_vals = mult_table_vals[filter_mask]
 
         @numba.njit
         def mv_mult(value, other_value):
             output = np.zeros(n_dims)
-            for ind, k in enumerate(k_list_copy):
-                m = m_list_copy[ind]
-                l = l_list_copy[ind]
-                output[l] += value[k] * mult_table_vals_copy[ind] * other_value[m]
+            for ind, k in enumerate(k_list):
+                m = m_list[ind]
+                l = l_list[ind]
+                output[l] += value[k] * mult_table_vals[ind] * other_value[m]
             return output
 
-        return mv_mult
-
-    elif ((grades_a is not None) and (grades_b is not None)):
-        # We can also specify sparseness by grade
-        filter_mask = np.zeros(len(k_list_copy), dtype=bool)
-        for i in range(len(filter_mask)):
-            if gradeList[k_list_copy[i]] in grades_a:
-                if gradeList[m_list_copy[i]] in grades_b:
-                    filter_mask[i] = 1
-
-        k_list_copy = k_list_copy[filter_mask]
-        l_list_copy = l_list_copy[filter_mask]
-        m_list_copy = m_list_copy[filter_mask]
-        mult_table_vals_copy = mult_table_vals_copy[filter_mask]
-
+    else:
+        # This case we specify no sparseness in advance, the algorithm checks for zeros
         @numba.njit
         def mv_mult(value, other_value):
             output = np.zeros(n_dims)
-            for ind, k in enumerate(k_list_copy):
-                m = m_list_copy[ind]
-                l = l_list_copy[ind]
-                output[l] += value[k] * mult_table_vals_copy[ind] * other_value[m]
+            for ind, k in enumerate(k_list):
+                v_val = value[k]
+                if v_val != 0.0:
+                    m = m_list[ind]
+                    ov_val = other_value[m]
+                    if ov_val != 0.0:
+                        l = l_list[ind]
+                        output[l] += v_val * mult_table_vals[ind] * ov_val
             return output
-
-        return mv_mult
-
-    # This case we specify no sparseness in advance, the algorithm checks for zeros
-    @numba.njit
-    def mv_mult(value, other_value):
-        output = np.zeros(n_dims)
-        for ind, k in enumerate(k_list_copy):
-            v_val = value[k]
-            if v_val != 0.0:
-                m = m_list_copy[ind]
-                ov_val = other_value[m]
-                if ov_val != 0.0:
-                    l = l_list_copy[ind]
-                    output[l] += v_val * mult_table_vals_copy[ind] * ov_val
-        return output
 
     return mv_mult
 
