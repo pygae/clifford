@@ -35,20 +35,18 @@ Functions
 
 """
 
-from functools import reduce
-import sys
-import re
-
 # Standard library imports.
+from functools import reduce
+import os
+import re
 import math
 import numbers
 import itertools
-from warnings import warn
 from typing import List, Tuple
 
 # Major library imports.
 import numpy as np
-from numpy import linalg,zeros
+from numpy import linalg, zeros
 import numba
 
 
@@ -58,13 +56,12 @@ from clifford.io import write_ga_file, read_ga_file
 __version__ = '1.0.5'
 
 # The blade finding regex for parsing strings of mvs
-_blade_pattern =  r"((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))"
+_blade_pattern = r"((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))"
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
 
 
-import os
 try:
     NUMBA_DISABLE_PARALLEL = os.environ['NUMBA_DISABLE_PARALLEL']
 except KeyError:
@@ -81,8 +78,8 @@ def linear_operator_as_matrix(func, input_blades, output_blades):
     ndimin = len(input_blades)
     ndimout = len(output_blades)
     mat = np.zeros((ndimout, ndimin))
-    for i,b in enumerate(input_blades):
-       mat[:, i] = np.array([func(b)[j] for j in output_blades])
+    for i, b in enumerate(input_blades):
+        mat[:, i] = np.array([func(b)[j] for j in output_blades])
     return mat
 
 
@@ -90,7 +87,7 @@ def get_longest_string(string_array):
     """
     Return the longest string in a list of strings
     """
-    return max(string_array,key=len)
+    return max(string_array, key=len)
 
 
 def get_adjoint_function(gradeList):
@@ -106,9 +103,9 @@ def get_adjoint_function(gradeList):
 
 
 @numba.njit(parallel=NUMBA_PARALLEL, nogil=True)
-def construct_tables(gradeList, linear_map_to_bitmap,
-                 bitmap_to_linear_map, signature):
-
+def construct_tables(
+    gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
+):
     array_length = int(len(gradeList) * len(gradeList))
     k_list = np.zeros(array_length, dtype=np.uint64)
     l_list = np.zeros(array_length, dtype=np.uint64)
@@ -141,7 +138,7 @@ def construct_tables(gradeList, linear_map_to_bitmap,
 
             if imt_check(grade_list_idx, grade_list_i, grade_list_j):
                 # A_r . B_s = <A_r B_s>_|r-s|
-                # if r,s != 0
+                # if r, s != 0
                 imt_prod_mask[list_ind] = list_ind
 
             if omt_check(grade_list_idx, grade_list_i, grade_list_j):
@@ -170,9 +167,9 @@ def get_mult_function(k_list, l_list, m_list, mult_table_vals, n_dims, gradeList
         mult_table_vals_copy = mult_table_vals
     else:
         # We can pass the sparse filter mask directly
-        k_list_copy = np.zeros(product_mask.shape[0],dtype=np.int64)
-        l_list_copy = np.zeros(product_mask.shape[0],dtype=np.int64)
-        m_list_copy = np.zeros(product_mask.shape[0],dtype=np.int64)
+        k_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
+        l_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
+        m_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
         mult_table_vals_copy = np.zeros(product_mask.shape[0])
         for i in range(product_mask.shape[0]):
             k_list_copy[i] = k_list[product_mask[i]]
@@ -301,7 +298,7 @@ def get_leftLaInv(k_list, l_list, m_list, mult_table_vals, n_dims, gradeList):
 
     @numba.njit
     def leftLaInvJIT(value):
-        intermed = np.zeros((n_dims,n_dims))
+        intermed = np.zeros((n_dims, n_dims))
         for test_ind, i in enumerate(k_list):
             j = l_list[test_ind]
             k = m_list[test_ind]
@@ -327,7 +324,7 @@ def general_exp(x, max_order=15):
 
     # scale by power of 2 so that its norm is < 1
     max_val = int(np.max(np.abs(x.value)))
-    scale=1
+    scale = 1
     if max_val > 1:
         max_val <<= 1
     while max_val:
@@ -377,7 +374,7 @@ def generate_blade_tup_map(bladeTupList):
     multivector
     """
     blade_map = {}
-    for ind,blade in enumerate(bladeTupList):
+    for ind, blade in enumerate(bladeTupList):
         blade_map[blade] = ind
     return blade_map
 
@@ -469,6 +466,7 @@ def compute_bitmap_representation(blade, firstIdx):
     else:
         return 0
 
+
 def compute_blade_representation(bitmap, firstIdx):
     """
     Takes a bitmap representation and converts it to the tuple
@@ -491,7 +489,7 @@ def val_get_left_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
     This produces the matrix X that performs left multiplication with x
     eg. X@b == (x*b).value
     """
-    intermed = np.zeros((ndims,ndims))
+    intermed = np.zeros((ndims, ndims))
     test_ind = 0
     for k in k_list:
         j = l_list[test_ind]
@@ -500,13 +498,14 @@ def val_get_left_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
         test_ind = test_ind + 1
     return intermed
 
+
 @numba.njit
 def val_get_right_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
     """
     This produces the matrix X that performs right multiplication with x
     eg. X@b == (b*x).value
     """
-    intermed = np.zeros((ndims,ndims))
+    intermed = np.zeros((ndims, ndims))
     test_ind = 0
     for m in m_list:
         j = l_list[test_ind]
@@ -514,6 +513,7 @@ def val_get_right_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
         intermed[j, i] += mult_table_vals[test_ind] * x[m]
         test_ind = test_ind + 1
     return intermed
+
 
 class NoMorePermutations(Exception):
     """ No more permutations can be generated.
@@ -547,7 +547,7 @@ class Layout(object):
         singleton tuples.  Remember, the length of the list will be 2**dims.
 
         Example:
-          bladeTupList = [(), (0,), (1,), (0,1)]  # 2-D
+          bladeTupList = [(), (0,), (1,), (0, 1)]  # 2-D
 
     firstIdx : int
         The index of the first vector.  That is, some systems number
@@ -672,7 +672,7 @@ class Layout(object):
         omt_func = self.omt_func
         @numba.njit
         def vee(aval, bval):
-            return dual_func(omt_func(dual_func(aval),dual_func(bval)))
+            return dual_func(omt_func(dual_func(aval), dual_func(bval)))
         return vee
 
     @property
@@ -683,7 +683,7 @@ class Layout(object):
         """ Takes a dictionary of coefficient values and converts it into a MultiVector object """
         constructed_values = np.zeros(self.gaDims)
         for k in list(dict_in.keys()):
-          constructed_values[int(k)] = dict_in[k]
+            constructed_values[int(k)] = dict_in[k]
         return self._newMV(constructed_values)
 
     def __repr__(self):
@@ -692,7 +692,7 @@ class Layout(object):
                 self.bladeTupList, self.firstIdx, self.names))
         return s
 
-    def __eq__(self,other):
+    def __eq__(self, other):
         if other is self:
             return True
         elif isinstance(other, Layout):
@@ -700,7 +700,7 @@ class Layout(object):
         else:
             return NotImplemented
 
-    def __ne__(self,other):
+    def __ne__(self, other):
         if other is self:
             return False
         elif isinstance(other, Layout):
@@ -708,16 +708,16 @@ class Layout(object):
         else:
             return NotImplemented
 
-    def parse_multivector(self,mv_string):
+    def parse_multivector(self, mv_string):
         """ Parses a multivector string into a MultiVector object """
         # Get the names of the canonical blades
-        blade_name_index_map = {name:index for index,name in enumerate(self.names)}
+        blade_name_index_map = {name: index for index, name in enumerate(self.names)}
 
         # Clean up the input string a bit
-        cleaned_string = re.sub('[()]','',mv_string)
+        cleaned_string = re.sub('[()]', '', mv_string)
 
         # Apply the regex
-        search_result = re.findall(_blade_pattern,cleaned_string)
+        search_result = re.findall(_blade_pattern, cleaned_string)
 
         # Create a multivector
         mv_out = MultiVector(self)
@@ -737,7 +737,7 @@ class Layout(object):
                 if(len(stuff) == 1):
                     # Extract the value of the scalar
                     blade_val = float("".join(stuff[0].split()))
-                    blade_index = 0;
+                    blade_index = 0
                     mv_out[blade_index] = blade_val
         return mv_out
 
@@ -772,16 +772,18 @@ class Layout(object):
         for bitmap, linear in enumerate(self.bitmap_to_linear_map):
             self.linear_map_to_bitmap[linear] = int(bitmap)
 
-        k_list, l_list, m_list, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask = construct_tables(np.array(self.gradeList),
-                       self.linear_map_to_bitmap,
-                       self.bitmap_to_linear_map,
-                       self.sig)
+        k_list, l_list, m_list, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask = construct_tables(
+            np.array(self.gradeList),
+            self.linear_map_to_bitmap,
+            self.bitmap_to_linear_map,
+            self.sig
+        )
 
         # This generates the functions that will perform the various products
-        self.gmt_func = get_mult_function(k_list,l_list,m_list,mult_table_vals,self.gaDims,self.gradeList)
-        self.imt_func = get_mult_function(k_list,l_list,m_list,mult_table_vals,self.gaDims,self.gradeList,product_mask=imt_prod_mask)
-        self.omt_func = get_mult_function(k_list,l_list,m_list,mult_table_vals,self.gaDims,self.gradeList,product_mask=omt_prod_mask)
-        self.lcmt_func = get_mult_function(k_list,l_list,m_list,mult_table_vals,self.gaDims,self.gradeList,product_mask=lcmt_prod_mask)
+        self.gmt_func = get_mult_function(k_list, l_list, m_list, mult_table_vals, self.gaDims, self.gradeList)
+        self.imt_func = get_mult_function(k_list, l_list, m_list, mult_table_vals, self.gaDims, self.gradeList, product_mask=imt_prod_mask)
+        self.omt_func = get_mult_function(k_list, l_list, m_list, mult_table_vals, self.gaDims, self.gradeList, product_mask=omt_prod_mask)
+        self.lcmt_func = get_mult_function(k_list, l_list, m_list, mult_table_vals, self.gaDims, self.gradeList, product_mask=lcmt_prod_mask)
         self.inv_func = get_leftLaInv(k_list, l_list, m_list, mult_table_vals, self.gaDims, self.gradeList)
         self.k_list = k_list
         self.l_list = l_list
@@ -792,20 +794,28 @@ class Layout(object):
         self.lcmt_prod_mask = lcmt_prod_mask
 
     def gmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
-        return get_mult_function(self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
-                          grades_a = grades_a, grades_b = grades_b, filter_mask = filter_mask)
+        return get_mult_function(
+            self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
+            grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
+        )
 
     def imt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
-        return get_mult_function(self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
-                          grades_a = grades_a, grades_b = grades_b, filter_mask = filter_mask, product_mask=self.imt_prod_mask)
+        return get_mult_function(
+            self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
+            grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask, product_mask=self.imt_prod_mask
+        )
 
     def omt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
-        return get_mult_function(self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
-                          grades_a = grades_a, grades_b = grades_b, filter_mask = filter_mask, product_mask=self.omt_prod_mask)
+        return get_mult_function(
+            self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
+            grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask, product_mask=self.omt_prod_mask
+        )
 
     def lcmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
-        return get_mult_function(self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
-                          grades_a = grades_a, grades_b = grades_b, filter_mask = filter_mask, product_mask=self.lcmt_prod_mask)
+        return get_mult_function(
+            self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
+            grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask, product_mask=self.lcmt_prod_mask
+        )
 
     def get_grade_projection_matrix(self, grade):
         """
@@ -825,34 +835,38 @@ class Layout(object):
         for n in range(len(bl)):
             i = bl[n]
             j = bl[dims-1-n]
-            signval = (-1)**((i^j).value[-1]<0.001)
+            signval = (-1)**((i^j).value[-1] < 0.001)
             signlist[n] = signval
+
         @numba.njit
         def right_comp_func(Xval):
             Yval = np.zeros(dims)
-            for i,s in enumerate(signlist):
+            for i, s in enumerate(signlist):
                 Yval[i] = Xval[dims-1-i]*s
             return Yval
         return right_comp_func
-
 
     def get_left_gmt_matrix(self, x):
         """
         This produces the matrix X that performs left multiplication with x
         eg. X@b == (x*b).value
         """
-        return val_get_left_gmt_matrix(x.value, self.k_list, self.l_list,
-                                           self.m_list, self.mult_table_vals, self.gaDims)
+        return val_get_left_gmt_matrix(
+            x.value, self.k_list, self.l_list,
+            self.m_list, self.mult_table_vals, self.gaDims
+        )
 
     def get_right_gmt_matrix(self, x):
         """
         This produces the matrix X that performs right multiplication with x
         eg. X@b == (b*x).value
         """
-        return val_get_right_gmt_matrix(x.value, self.k_list, self.l_list,
-                                           self.m_list, self.mult_table_vals, self.gaDims)
+        return val_get_right_gmt_matrix(
+            x.value, self.k_list, self.l_list,
+            self.m_list, self.mult_table_vals, self.gaDims
+        )
 
-    def MultiVector(self,*args,**kw):
+    def MultiVector(self, *args, **kw):
         '''
         create a multivector in this layout
 
@@ -876,7 +890,11 @@ class Layout(object):
 
     @property
     def rotor_mask(self):
-        return sum((self.grade_mask(i) for i in range(self.dims + 1) if not i%2))
+        return sum(
+            self.grade_mask(i)
+            for i in range(self.dims + 1)
+            if not i % 2
+        )
 
     @property
     def metric(self):
@@ -896,7 +914,7 @@ class Layout(object):
 
         useful for forcing a MultiVector type
         '''
-        return self.MultiVector() +1
+        return self.MultiVector() + 1
 
     @property
     def pseudoScalar(self):
@@ -945,7 +963,7 @@ class Layout(object):
         d = self.basis_vectors
         return [d[k] for k in sorted(d.keys())]
 
-    def blades_of_grade(self,grade):
+    def blades_of_grade(self, grade):
         '''
         return all blades of a given grade,
 
@@ -958,10 +976,9 @@ class Layout(object):
         --------
         blades : list of MultiVectors
         '''
-        if grade ==0:
+        if grade == 0:
             return self.scalar
-        return  [k for k in self.blades_list[1:] if k.grades()==[grade]]
-
+        return [k for k in self.blades_list[1:] if k.grades() == [grade]]
 
     @property
     def blades_list(self):
@@ -976,7 +993,6 @@ class Layout(object):
     @property
     def blades(self):
         return self.bases()
-
 
     def bases(self, *args, **kw):
         '''
@@ -1089,7 +1105,7 @@ class MultiVector(object):
         """
         The vee product aka. the meet... To be optimised still
         """
-        return self.layout.MultiVector(value=self.layout.vee_func(self.value,other.value))
+        return self.layout.MultiVector(value=self.layout.vee_func(self.value, other.value))
 
     def __and__(self, other) -> 'MultiVector':
         """
@@ -1106,7 +1122,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = self.layout.gmt_func(self.value,other.value)
+            newValue = self.layout.gmt_func(self.value, other.value)
         else:
             if isinstance(other, np.ndarray):
                 obj = self.__array__()
@@ -1125,7 +1141,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = self.layout.gmt_func(other.value,self.value)
+            newValue = self.layout.gmt_func(other.value, self.value)
         else:
             if isinstance(other, np.ndarray):
                 obj = self.__array__()
@@ -1143,7 +1159,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = self.layout.omt_func(self.value,other.value)
+            newValue = self.layout.omt_func(self.value, other.value)
         else:
             if isinstance(other, np.ndarray):
                 obj = self.__array__()
@@ -1161,7 +1177,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other, coerce=0)
 
         if mv:
-            newValue = self.layout.omt_func(other.value,self.value)
+            newValue = self.layout.omt_func(other.value, self.value)
         else:
             if isinstance(other, np.ndarray):
                 obj = self.__array__()
@@ -1179,7 +1195,7 @@ class MultiVector(object):
         other, mv = self._checkOther(other)
 
         if mv:
-            newValue = self.layout.imt_func(self.value,other.value)
+            newValue = self.layout.imt_func(self.value, other.value)
         else:
             if isinstance(other, np.ndarray):
                 obj = self.__array__()
@@ -1346,7 +1362,7 @@ class MultiVector(object):
 
         Note in mixed signature spaces this may be negative
         """
-        mv_val = self.layout.gmt_func(self.layout.adjoint_func(self.value),self.value)
+        mv_val = self.layout.gmt_func(self.layout.adjoint_func(self.value), self.value)
         return mv_val[0]
 
     def __abs__(self) -> numbers.Number:
@@ -1396,7 +1412,7 @@ class MultiVector(object):
         return self.layout.gaDims
 
     def __getitem__(self, key) -> numbers.Number:
-        """If key is a blade tuple (e.g. (0,1) or (1,3)), or a blade,
+        """If key is a blade tuple (e.g. (0, 1) or (1, 3)), or a blade,
         (e.g. e12),  then return the (real) value of that blade's coefficient.
         Otherwise, treat key as an index into the list of coefficients.
 
@@ -1414,7 +1430,7 @@ class MultiVector(object):
         return self.value[key]
 
     def __setitem__(self, key, value: numbers.Number) -> None:
-        """If key is a blade tuple (e.g. (0,1) or (1,3)), then set
+        """If key is a blade tuple (e.g. (0, 1) or (1, 3)), then set
         the (real) value of that blade's coeficient.
         Otherwise treat key as an index into the list of coefficients.
 
@@ -1447,7 +1463,7 @@ class MultiVector(object):
             self.value[key] = 0
 
     # grade projection
-    def __call__(self, other,*others) -> 'MultiVector':
+    def __call__(self, other, *others) -> 'MultiVector':
         """Return a new multi-vector projected onto a grade OR a MV
 
 
@@ -1460,7 +1476,7 @@ class MultiVector(object):
         Examples
         --------
         >>>M(0)
-        >>>M(0,2)
+        >>>M(0, 2)
         """
         if isinstance(other, MultiVector):
             return other.project(self)
@@ -1468,10 +1484,8 @@ class MultiVector(object):
             # we are making a grade projection
             grade = other
 
-
-        if len(others) !=0:
+        if len(others) != 0:
             return sum([self.__call__(k) for k in (other,)+others])
-
 
         if grade not in self.layout.gradeList:
             raise ValueError("algebra does not have grade %s" % grade)
@@ -1610,10 +1624,9 @@ class MultiVector(object):
 
         other, mv = self._checkOther(other, coerce=1)
 
-        newValue = self.layout.lcmt_func(self.value,other.value)
+        newValue = self.layout.lcmt_func(self.value, other.value)
 
         return self._newMV(newValue)
-
 
     @property
     def pseudoScalar(self) -> 'MultiVector':
@@ -1702,7 +1715,7 @@ class MultiVector(object):
         """Return the grades contained in the multivector.
         """
 
-        return grades_present(self,_eps)
+        return grades_present(self, _eps)
 
     @property
     def blades_list(self) -> List['MultiVector']:
@@ -1736,7 +1749,7 @@ class MultiVector(object):
         """
         return self._newMV(self.layout.inv_func(self.value))
 
-    def normalInv(self) -> 'MultiVector' :
+    def normalInv(self) -> 'MultiVector':
         """Returns the inverse of itself if M*~M == |M|**2.
          -1
         M   = ~M / (M * ~M)
@@ -1751,14 +1764,11 @@ class MultiVector(object):
         else:
             raise ValueError("no inverse exists for this multivector")
 
-
-
-
     def inv(self) -> 'MultiVector':
         if (self*~self).isScalar():
-            it =  self.normalInv()
+            it = self.normalInv()
         else:
-            it =  self.leftLaInv()
+            it = self.leftLaInv()
         return it
 
     leftInv = leftLaInv
@@ -2041,7 +2051,7 @@ class MVArray(np.ndarray):
         return MVArray(v_new_mv(value_array))
 
     def save(self, filename, compression=True, transpose=False,
-                        sparse=False, support=False, compression_opts=1):
+             sparse=False, support=False, compression_opts=1):
         """
         Saves the array to a ga file
         """
@@ -2053,9 +2063,9 @@ class MVArray(np.ndarray):
         '''
         sum elements of this MVArray
         '''
-        out=self[0]
+        out = self[0]
         for k in self[1:]:
-            out+=k
+            out += k
         return out
 
     def gp(self):
@@ -2063,9 +2073,9 @@ class MVArray(np.ndarray):
         geometric product of all elements of this MVArray  (like reduce)
         like `self[0]*self[1]*....self[n]`
         '''
-        out=self[0]
+        out = self[0]
         for k in self[1:]:
-            out*=k
+            out *= k
         return out
 
     def op(self):
@@ -2073,9 +2083,9 @@ class MVArray(np.ndarray):
         outer product of all elements of this MVArray  (like reduce)
         like `self[0]^self[1]^....self[n]`
         '''
-        out=self[0]
+        out = self[0]
         for k in self[1:]:
-            out= out^k
+            out = out^k
         return out
 
     def normal(self):
@@ -2119,6 +2129,7 @@ def array(obj):
     else:
         return MVArray(obj)
 
+
 class Frame(MVArray):
     '''
     A frame of vectors
@@ -2161,7 +2172,7 @@ class Frame(MVArray):
 
         return Frame(vectors)
 
-    def is_innermorphic_to(self, other,eps=None):
+    def is_innermorphic_to(self, other, eps=None):
         '''
         Is this frame `innermorhpic` to  other?
 
@@ -2183,10 +2194,12 @@ class Frame(MVArray):
         pairs = list(itertools.combinations(range(len(self)), 2))
         a, b = self, other
         if eps is None:
-            eps=_eps
+            eps = _eps
 
-
-        return np.array([float((b[m]|b[n]) - (a[m]|a[n]))<eps for m, n in pairs]).all()
+        return np.array([
+            float((b[m]|b[n]) - (a[m]|a[n])) < eps
+            for m, n in pairs
+        ]).all()
 
 
 class BladeMap(object):
@@ -2197,18 +2210,18 @@ class BladeMap(object):
     -----------
     >>> from clifford import Cl
     >>> # Dirac Algebra  `D`
-    >>> D, D_blades = Cl(1,3, firstIdx=0, names='d')
+    >>> D, D_blades = Cl(1, 3, firstIdx=0, names='d')
     >>> locals().update(D_blades)
 
     >>> # Pauli Algebra  `P`
     >>> P, P_blades = Cl(3, names='p')
     >>> locals().update(P_blades)
-    >>> sta_split = BladeMap([(d01,p1),
-                              (d02,p2),
-                              (d03,p3),
-                              (d12,p12),
-                              (d23,p23),
-                              (d13,p13)])
+    >>> sta_split = BladeMap([(d01, p1),
+                              (d02, p2),
+                              (d03, p3),
+                              (d12, p12),
+                              (d23, p23),
+                              (d13, p13)])
 
     '''
     def __init__(self, blades_map, map_scalars=True):
@@ -2385,7 +2398,7 @@ def randomMV(
 
     Examples
     --------
-    >>>randomMV(layout, min=-2.0, max=2.0, grades=None, uniform=None,n=2)
+    >>>randomMV(layout, min=-2.0, max=2.0, grades=None, uniform=None, n=2)
 
     """
 
@@ -2478,62 +2491,62 @@ def print_precision(newVal):
 
 
 def gp(M, N):
-        """
-        Geometric product
+    """
+    Geometric product
 
-        gp(M,N) =  M * N
+    gp(M, N) =  M * N
 
-        M and N must be from the same layout
+    M and N must be from the same layout
 
-        This is useful in calculating series of products, with `reduce()`
-        for example
+    This is useful in calculating series of products, with `reduce()`
+    for example
 
-        >>>Ms = [M1,M2,M3] # list of multivectors
-        >>>reduce(gp, Ms) #  == M1*M2*M3
+    >>>Ms = [M1, M2, M3] # list of multivectors
+    >>>reduce(gp, Ms) #  == M1*M2*M3
 
-        """
+    """
 
-        return M*N
+    return M*N
 
 
 def ip(M, N):
-        """
-        Inner product function
+    """
+    Inner product function
 
-        ip(M,N) =  M | N
+    ip(M, N) =  M | N
 
-        M and N must be from the same layout
+    M and N must be from the same layout
 
-        """
+    """
 
-        return M ^ N
+    return M ^ N
 
 
 def op(M, N):
-        """
-        Outer product function
+    """
+    Outer product function
 
-        op(M,N) =  M ^ N
+    op(M, N) =  M ^ N
 
-        M and N must be from the same layout
+    M and N must be from the same layout
 
-        This is useful in calculating series of products, with `reduce()`
-        for example
+    This is useful in calculating series of products, with `reduce()`
+    for example
 
-        >>>Ms = [M1,M2,M3] # list of multivectors
-        >>>reduce(op, Ms) #  == M1^M2^M3
+    >>>Ms = [M1, M2, M3] # list of multivectors
+    >>>reduce(op, Ms) #  == M1^M2^M3
 
-        """
+    """
 
-        return M ^ N
+    return M ^ N
 
 
-def conformalize(layout, added_sig=[1,-1],**kw):
+def conformalize(layout, added_sig=[1, -1], **kw):
     '''
     Conformalize a Geometric Algebra
 
-    Given the `Layout` for a GA of signature (p,q), this
-    will produce a GA of signature (p+1,q+1), as well as
+    Given the `Layout` for a GA of signature (p, q), this
+    will produce a GA of signature (p+1, q+1), as well as
     return a new list of blades and some `stuff`. `stuff`
     is a dict containing the null basis blades, and some
     up/down functions for projecting in/out of the CGA.
@@ -2545,7 +2558,7 @@ def conformalize(layout, added_sig=[1,-1],**kw):
     layout: `clifford.Layout`
         layout of the GA to conformalize (the base)
     added_sig: list-like
-        list of +1,-1  denoted the added signatures
+        list of +1, -1  denoted the added signatures
     **kw: kwargs
         passed to Cl() used to generate conformal layout
 
@@ -2578,7 +2591,7 @@ def conformalize(layout, added_sig=[1,-1],**kw):
     '''
 
     sig_c = list(layout.sig) + added_sig
-    layout_c, blades_c = Cl(sig=sig_c,firstIdx=layout.firstIdx,**kw)
+    layout_c, blades_c = Cl(sig=sig_c, firstIdx=layout.firstIdx, **kw)
     basis_vectors = layout_c.basis_vectors
     added_keys = sorted(layout_c.basis_vectors.keys())[-2:]
     ep, en = [basis_vectors[k] for k in added_keys]
@@ -2593,7 +2606,8 @@ def conformalize(layout, added_sig=[1,-1],**kw):
 
     E0 = einf ^ eo
     I_base = layout_c.pseudoScalar*E0
-    #  some  convenience functions
+
+    # some convenience functions
     def up(x):
         try:
             if x.layout == layout:
@@ -2614,26 +2628,24 @@ def conformalize(layout, added_sig=[1,-1],**kw):
         return x*(-x | einf)(0).normalInv()  # homogenise conformal vector
 
     def down(x):
-        x_down =  (homo(x) ^ E0)*E0
-        #new_val = x_down.value[:layout.gaDims]
+        x_down = (homo(x) ^ E0)*E0
+        # new_val = x_down.value[:layout.gaDims]
         # create vector in layout (not cga)
-        #x_down = layout.MultiVector(value=new_val)
+        # x_down = layout.MultiVector(value=new_val)
         return x_down
 
     stuff = {}
     stuff.update({
         'ep': ep, 'en': en, 'eo': eo, 'einf': einf, 'E0': E0,
-        'up': up, 'down': down, 'homo': homo,'I_base':I_base})
+        'up': up, 'down': down, 'homo': homo, 'I_base': I_base
+    })
 
     return layout_c, blades_c, stuff
 
 
+# TODO: fix caching to work
+# generate pre-defined algebras and cache them
 
-## TODO: fix caching to work
-## generate pre-defined algebras and cache them
-
-#sigs = [(1,1,0),(2,0,0),(3,1,0),(3,0,0),(3,2,0),(4,0,0)]
-#current_module = sys.modules[__name__]
-#caching.build_or_read_cache_and_attach_submods(current_module,sigs=sigs)
-
-
+# sigs = [(1, 1, 0), (2, 0, 0), (3, 1, 0), (3, 0, 0), (3, 2, 0), (4, 0, 0)]
+# current_module = sys.modules[__name__]
+# caching.build_or_read_cache_and_attach_submods(current_module, sigs=sigs)
