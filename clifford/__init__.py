@@ -181,29 +181,71 @@ def get_mult_function(k_list, l_list, m_list, mult_table_vals, n_dims, gradeList
         m_list = m_list[filter_mask]
         mult_table_vals = mult_table_vals[filter_mask]
 
-        @numba.njit
-        def mv_mult(value, other_value):
-            output = np.zeros(n_dims)
-            for ind, k in enumerate(k_list):
-                m = m_list[ind]
-                l = l_list[ind]
-                output[l] += value[k] * mult_table_vals[ind] * other_value[m]
-            return output
+        return _get_mult_function(
+            k_list, l_list, m_list, mult_table_vals, n_dims)
 
     else:
-        # This case we specify no sparseness in advance, the algorithm checks for zeros
-        @numba.njit
-        def mv_mult(value, other_value):
-            output = np.zeros(n_dims)
-            for ind, k in enumerate(k_list):
-                v_val = value[k]
-                if v_val != 0.0:
-                    m = m_list[ind]
-                    ov_val = other_value[m]
-                    if ov_val != 0.0:
-                        l = l_list[ind]
-                        output[l] += v_val * mult_table_vals[ind] * ov_val
-            return output
+        return _get_mult_function_runtime_sparse(
+            k_list, l_list, m_list, mult_table_vals, n_dims)
+
+
+def _get_mult_function(k_list, l_list, m_list, mult_table_vals, n_dims):
+    """
+    Get a simple multiplication function.
+
+    Parameters
+    ----------
+    k_list : array_like (N,) of intp
+        The indices of the left operand
+    l_list : array_like (N,) of intp
+        The indices of the output
+    m_list : array_like (N,) of intp
+        The indices of the right operand
+    mult_table_vals : array_like (N,) of numbers.Real
+        The scalar multiplier.
+    n_dims: int
+        Length of the input and output vectors
+
+    Returns
+    -------
+    func : function (array_like (n_dims,), array_like (n_dims,)) -> array_like (n_dims,)
+        A function that computes the appropriate multiplication
+    """
+    @numba.njit
+    def mv_mult(value, other_value):
+        output = np.zeros(n_dims)
+        for ind, k in enumerate(k_list):
+            m = m_list[ind]
+            l = l_list[ind]
+            output[l] += value[k] * mult_table_vals[ind] * other_value[m]
+        return output
+
+    return mv_mult
+
+
+def _get_mult_function_runtime_sparse(k_list, l_list, m_list, mult_table_vals, n_dims):
+    """
+    Get a multiplication function that attempts to exploit runtime zeros
+
+    See `_get_mult_function` for parameter descriptions.
+
+    The returned function avoids performing multiplications if vectors contain
+    zeros.
+
+    TODO: determine if this actually helps.
+    """
+    @numba.njit
+    def mv_mult(value, other_value):
+        output = np.zeros(n_dims)
+        for ind, k in enumerate(k_list):
+            v_val = value[k]
+            if v_val != 0.0:
+                m = m_list[ind]
+                ov_val = other_value[m]
+                if ov_val != 0.0:
+                    l = l_list[ind]
+                    output[l] += v_val * mult_table_vals[ind] * ov_val
+        return output
 
     return mv_mult
 
