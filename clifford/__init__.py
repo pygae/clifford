@@ -368,11 +368,6 @@ def _myDot(a, b):
     return np.inner(a, newB)
 
 
-class NoMorePermutations(Exception):
-    """ No more permutations can be generated.
-    """
-
-
 class Layout(object):
     """ Layout stores information regarding the geometric algebra itself and the
     internal representation of multivectors.
