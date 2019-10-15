@@ -22,14 +22,34 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then lsb_release -a ; fi
 
 install:
-  - if [[ "${CONDA}" == "true" ]]; then
-      PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-linux}" source auto_version/travis_install_conda.sh numpy scipy numba pip h5py pytest;
+  - |
+    if [[ "${CONDA}" == "true" ]]; then
+      PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-linux}" source auto_version/travis_install_conda.sh \
+        numpy \
+        scipy \
+        numba \
+        pip \
+        h5py \
+        pytest \
+        pytest-cov;
       conda install -c numba numba==0.43;
+    else
+      pip install pytest-cov
     fi
   - python setup.py install
+  - pip install codecov
 
 script:
-  - pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml --durations=25
+  - |
+    pytest clifford/test \
+      --doctest-modules \
+      --junitxml=junit/test-results.xml \
+      --durations=25 \
+      --cov=clifford \
+      --cov-branch
+
+after_success:
+  - codecov
 
 deploy:
   provider: pypi
