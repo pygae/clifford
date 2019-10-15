@@ -2273,71 +2273,22 @@ class BladeMap(object):
         return B
 
 
-def comb(n, k):
-    """\
-    Returns /n\\
-            \\k/
-
-    comb(n, k) --> PyInt
-    """
-
-    def fact(n):
-        if n == 0:
-            return 1
-        return np.multiply.reduce(range(1, n+1))
-
-    return int(fact(n)/(fact(k)*fact(n - k)))
+# copied from the itertools docs
+def _powerset(iterable):
+    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    s = list(iterable)
+    return itertools.chain.from_iterable(
+        itertools.combinations(s, r) for r in range(len(s) + 1)
+    )
 
 
-def elements(dims, firstIdx=0):
+def elements(dims: int, firstIdx=0) -> List[Tuple[int, ...]]:
     """Return a list of tuples representing all 2**dims of blades
     in a dims-dimensional GA.
 
-    elements(dims, firstIdx=0) --> bladeTupList
+    Elements are sorted lexicographically.
     """
-
-    indcs = list(range(firstIdx, firstIdx + dims))
-
-    blades = [()]
-
-    for k in range(1, dims+1):
-        # k = grade
-
-        if k == 1:
-            for i in indcs:
-                blades.append((i,))
-            continue
-
-        curBladeX = indcs[:k]
-
-        for i in range(comb(dims, k)):
-            if curBladeX[-1] < firstIdx+dims-1:
-                # increment last index
-                blades.append(tuple(curBladeX))
-                curBladeX[-1] = curBladeX[-1] + 1
-
-            else:
-                marker = -2
-                tmp = curBladeX[:]  # copy
-                tmp.reverse()
-
-                # locate where the steady increase begins
-                for j in range(k-1):
-                    if tmp[j] - tmp[j+1] == 1:
-                        marker = marker - 1
-                    else:
-                        break
-
-                if marker < -k:
-                    blades.append(tuple(curBladeX))
-                    continue
-
-                # replace
-                blades.append(tuple(curBladeX))
-                curBladeX[marker:] = list(range(
-                    curBladeX[marker] + 1, curBladeX[marker] + 1 - marker))
-
-    return blades
+    return list(_powerset(range(firstIdx, firstIdx + dims)))
 
 
 def Cl(p=0, q=0, r=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
