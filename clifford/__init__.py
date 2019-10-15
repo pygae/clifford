@@ -515,11 +515,6 @@ def val_get_right_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
     return intermed
 
 
-class NoMorePermutations(Exception):
-    """ No more permutations can be generated.
-    """
-
-
 class Layout(object):
     """ Layout stores information regarding the geometric algebra itself and the
     internal representation of multivectors.
