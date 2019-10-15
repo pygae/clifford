@@ -25,50 +25,47 @@ be mixed freely and consistently in the form of mixed-grade multivectors.
    :width: 500 px
    :align: center
 
-If you think Geometric Algebra looks interesting and want to learn more, check out the `cambridge groups page <http://geometry.mrao.cam.ac.uk/>`_,  and here are some great introductory textbooks!
 
-* Geometric Algebra for Physicists, by Doran and Lasenby
-* Geometric Algebra for Computer Science, by Dorst, Fontijne and Mann
-* New Foundations for Classical Mechanics, by David Hestenes
+.. raw:: html
 
-Documentation
-------------------
+      <hr>
+      
+Docs
+====
+
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
     
-    Installation
-    QuickStartG2
-    TheAlgebraOfSpaceG3
-    EulerAngles
-    ConformalGeometricAlgebra
-    SpaceTimeAlgebra
-    InterfacingOtherMathSystems
-    PredefinedGAs
-    PerformanceCliffordTutorial
-    Example 1 Interpolating Conformal Objects
-    Example 2 Clustering Geometric Objects
+    tutorials
     
-API
-------
 
-    
+
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
     
     api
-
-Tools
-------
-
-.. toctree::
-    :maxdepth: 1
     
-    tools
+
+Slide Decks 
+---------------
+
+ * `Installing <https://slides.com/hugohadfield/installing-python-and-clifford#/>`_
+ * `Conformal Geometric Algeba with Python, Part 1 <https://slides.com/hugohadfield/cgapython#/>`_
+ * `Conformal Geometric Algeba with Python, Part 2 <https://slides.com/hugohadfield/cgapython-3#/>`_
+
+Videos 
+-------
+ * `Intro to Clifford <https://www.youtube.com/watch?v=P2ZxxoS5YD0>`_
+
+
+.. raw:: html
+
+      <hr><br><br>
 
 Links
---------
+=======
 
-* Symbolic geometric alebra module for python:  https://github.com/brombo/galgebra
+* Symbolic geometric algebra module for python:  https://github.com/brombo/galgebra
 
 * Cambridge GA group:   http://www.mrao.cam.ac.uk/~clifford
 
@@ -79,7 +76,11 @@ Links
 
     
 
+If you think Geometric Algebra looks interesting and want to learn more, check out the `cambridge groups page <http://geometry.mrao.cam.ac.uk/>`_,  and here are some great introductory textbooks!
 
+* Geometric Algebra for Physicists, by Doran and Lasenby
+* Geometric Algebra for Computer Science, by Dorst, Fontijne and Mann
+* New Foundations for Classical Mechanics, by David Hestenes
    
 
 

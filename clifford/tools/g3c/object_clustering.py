@@ -24,17 +24,22 @@ def compare_labels(old_labels, new_labels):
 
 
 def assign_measurements_to_objects_matrix(objects, objects_measurements, object_type='generic',
-                                          cuda=False):
+                                          cuda=False, symmetric=False):
     """
     Assigns each object in objects_measurements to one in objects based on minimum cost
     """
     if cuda:
         matrix = object_set_cost_cuda_mvs(objects, objects_measurements)
     else:
-        matrix = object_set_cost_matrix(objects, objects_measurements, object_type=object_type)
+        matrix = object_set_cost_matrix(objects, objects_measurements,
+                                        object_type=object_type,
+                                        symmetric=symmetric)
     labels = np.nanargmin(matrix, axis=0)
     costs = np.array([matrix[l, i] for i, l in enumerate(labels)])
     return [labels, costs]
+
+
+proximity_match = assign_measurements_to_objects_matrix
 
 
 def fit_object_to_objects(object_start, objects, averaging_method='unweighted'):
@@ -61,6 +66,8 @@ def fit_object_to_objects(object_start, objects, averaging_method='unweighted'):
             for i in range(10):
                 weights = (1.0 / (object_set_cost_matrix([final_object], objects) + 0.0001)).flatten()
                 final_object = average_objects(objects, weights=weights)
+        else:
+            raise ValueError('No averaging method defined')
     else:
         return 1.0*object_start
     return final_object
@@ -111,9 +118,9 @@ def n_clusters_objects(n, objects_measurements, initial_centroids=None, \
         t_shotgun_cost = sum(t_old_costs)
         if t_shotgun_cost < min_shotgun_cost:
             min_shotgun_cost = t_shotgun_cost
-            old_labels = [copy.deepcopy(l) for l in t_old_labels]
-            start_centroids = copy.deepcopy([c for c in centroids])
-            start_labels = [copy.deepcopy(l) for l in old_labels]
+            old_labels = [l for l in t_old_labels]
+            start_centroids = [c for c in centroids]
+            start_labels = [l for l in old_labels]
 
     #print("Clustering")
     for i in range(10000):
@@ -124,7 +131,7 @@ def n_clusters_objects(n, objects_measurements, initial_centroids=None, \
                                      centroid_index == old_labels[i]]
             new_object = fit_object_to_objects(object_start, assigned_measurements, averaging_method=averaging_method)
             new_centroids.append(new_object)
-        centroids = copy.deepcopy(new_centroids)
+        centroids = [c for c in new_centroids]
         # Assign the objects to the nearest centroid
         new_labels, new_costs = assign_measurements_to_objects_matrix(centroids, objects_measurements)
 
@@ -141,7 +148,10 @@ def n_clusters_objects(n, objects_measurements, initial_centroids=None, \
 
 def visualise_n_clusters(all_objects, centroids, labels, object_type='line',
                          color_1=np.array([255,0,0]),color_2=np.array([0,255,0])):
-
+    """ 
+    Utility method for visualising several clusters and their respective centroids
+    using GAOnline
+    """
     alpha_list = np.linspace(0, 1, num=len(centroids))
     sc = GAScene()
     for ind, this_obj in enumerate(all_objects):

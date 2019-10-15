@@ -1,10 +1,82 @@
 
-
+from .cuda_products import gmt_func as gp_device
+from .cuda_products import imt_func as ip_device
 import numpy as np
 import numba.cuda
 import numba
 import math
 import random
+
+from . import *
+
+
+
+def sequential_rotor_estimation_chunks(reference_model_array, query_model_array, n_samples, n_objects_per_sample, mutation_probability=None):
+
+    # Stack up a list of numbers
+    total_matches = n_samples*n_objects_per_sample
+    sample_indices = random.sample(range(total_matches), total_matches)
+
+    n_mvs = reference_model_array.shape[0]
+    sample_indices = [i%n_mvs for i in sample_indices]
+
+    if mutation_probability is not None:
+        reference_model_array_new = []
+        mutation_flag = np.random.binomial(1,mutation_probability,total_matches)
+        for mut, i in zip(mutation_flag, sample_indices):
+            if mut:
+                ref_ind = random.sample(range(len(reference_model_array)), 1)[0]
+            else:
+                ref_ind = i
+            reference_model_array_new.append(reference_model_array[ref_ind,:])
+        reference_model_array_new = np.array(reference_model_array_new)
+    else:
+        reference_model_array_new = np.array([reference_model_array[i,:] for i in sample_indices], dtype=np.float64)
+    query_model_array_new = np.array([query_model_array[i, :] for i in sample_indices], dtype=np.float64)
+
+    output = np.zeros((n_samples,32), dtype=np.float64)
+    cost_array = np.zeros(n_samples, dtype=np.float64)
+
+    sequential_rotor_estimation_chunks_jit(reference_model_array_new, query_model_array_new, output, cost_array)
+
+    return output, cost_array
+
+
+def sequential_rotor_estimation_chunks_mvs(reference_model_list, query_model_list, n_samples, n_objects_per_sample, mutation_probability=None):
+    query_model_array = np.array([l.value for l in query_model_list])
+    reference_model_array = np.array([l.value for l in reference_model_list])
+    output, cost_array = sequential_rotor_estimation_chunks(reference_model_array, query_model_array, n_samples, n_objects_per_sample, mutation_probability=mutation_probability)
+    output_mvs = [query_model_list[0]._newMV(output[i, :]) for i in range(output.shape[0])]
+    return output_mvs, cost_array
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @numba.cuda.jit(device=True)
 def set_as_unit_rotor_device(array):
@@ -89,7 +161,12 @@ def sequential_rotor_estimation_kernel(reference_model, query_model, output, cos
         cost_array[i] = total_cost
 
 
-def sequential_rotor_estimation_cuda(reference_model_array, query_model_array, n_samples, n_objects_per_sample, mutation_probability=None):
+def sequential_rotor_estimation_cuda(reference_model_array, query_model_array, n_samples=None, n_objects_per_sample=None, mutation_probability=None):
+
+    if n_samples is None:
+        n_samples = int(len(query_model_array)/2)
+    if n_objects_per_sample is None:
+        n_objects_per_sample = max(int(len(query_model_array)/10), 5)
 
     # Stack up a list of numbers
     total_matches = n_samples*n_objects_per_sample
@@ -139,6 +216,14 @@ def apply_rotor_device(mv, rotor, output):
     adjoint_device(rotor, rotor_adjoint)
     gp_device(mv, rotor_adjoint, temp)
     gp_device(rotor, temp, output)
+
+
+@numba.cuda.jit
+def apply_rotor_kernel(mv, rotor, output):
+    # This does elementwise gp with the input arrays into the ouput array
+    i = numba.cuda.grid(1)
+    if i < mv.shape[0]:
+        apply_rotor_device(mv[i, :], rotor[i, :], output[i, :])
 
 
 @numba.cuda.jit(device=True)
@@ -318,10 +403,21 @@ def rotor_between_objects_device(L1, L2, rotor):
         positive_root_device(sigma_val, k_value)
         annhilate_k_device(k_value, C_val, rotor)
     else:
-        gp_device(L2, L1, rotor)
+        L21 = numba.cuda.local.array(32, dtype=numba.float64)
+        L12 = numba.cuda.local.array(32, dtype=numba.float64)
+        gp_device(L2, L1, L21)
+        gp_device(L1, L2, L12)
+        sumval = 0.0
         for i in range(32):
-            rotor[i] = -rotor[i]
-        rotor[0] = rotor[0] + 1.0
+            if i == 0:
+                sumval += abs(L12[i] + L21[i] - 2.0)
+            else:
+                sumval += abs(L12[i] + L21[i])
+            rotor[i] = -L21[i]
+        if sumval < 0.0000001:
+            rotor[0] = rotor[0] - 1.0
+        else:
+            rotor[0] = rotor[0] + 1.0
         normalise_mv_device(rotor)
 
 
@@ -489,460 +585,3 @@ def line_set_cost_cuda_mvs(line_set_a, line_set_b):
     line_set_a_vals = np.array([l.value for l in line_set_a])
     line_set_b_vals = np.array([l.value for l in line_set_b])
     return line_set_cost_cuda_value(line_set_a_vals, line_set_b_vals)
-
-
-@numba.cuda.jit(device=True)
-def ip_device(value, other_value, output):
-    output[0] = value[1] * other_value[1] - value[27] * other_value[27] + value[26] * other_value[26] + value[4] * \
-                other_value[4] + value[25] * other_value[25] + value[24] * other_value[24] - value[5] * other_value[5] + \
-                value[23] * other_value[23] - value[6] * other_value[6] - value[22] * other_value[22] - value[7] * \
-                other_value[7] + value[21] * other_value[21] - value[8] * other_value[8] + value[20] * other_value[20] + \
-                value[9] * other_value[9] - value[19] * other_value[19] - value[10] * other_value[10] + value[18] * \
-                other_value[18] - value[11] * other_value[11] - value[17] * other_value[17] + value[12] * other_value[
-                    12] - value[13] * other_value[13] - value[16] * other_value[16] + value[14] * other_value[14] + \
-                value[3] * other_value[3] - value[28] * other_value[28] + value[15] * other_value[15] - value[31] * \
-                other_value[31] - value[29] * other_value[29] + value[2] * other_value[2] - value[30] * other_value[30]
-    output[1] = -value[11] * other_value[17] - value[4] * other_value[8] - value[10] * other_value[16] - value[16] * \
-                other_value[10] + value[15] * other_value[21] - value[25] * other_value[29] + value[5] * other_value[
-                    9] + value[12] * other_value[18] - value[17] * other_value[11] + value[22] * other_value[26] - \
-                value[24] * other_value[28] - value[2] * other_value[6] - value[23] * other_value[27] - value[31] * \
-                other_value[30] + value[6] * other_value[2] - value[13] * other_value[19] + value[18] * other_value[
-                    12] - value[30] * other_value[31] + value[7] * other_value[3] + value[27] * other_value[23] - value[
-                    19] * other_value[13] + value[8] * other_value[4] + value[20] * other_value[14] + value[21] * \
-                other_value[15] + value[14] * other_value[20] - value[26] * other_value[22] - value[9] * other_value[
-                    5] - value[3] * other_value[7] + value[29] * other_value[25] + value[28] * other_value[24]
-    output[2] = value[23] * other_value[14] - value[18] * other_value[9] + value[21] * other_value[28] - value[6] * \
-                other_value[1] - value[19] * other_value[26] + value[10] * other_value[3] + value[7] * other_value[16] - \
-                value[22] * other_value[13] - value[9] * other_value[18] + value[30] * other_value[25] - value[13] * \
-                other_value[22] - value[28] * other_value[21] - value[3] * other_value[10] + value[14] * other_value[
-                    23] + value[1] * other_value[6] + value[15] * other_value[24] - value[27] * other_value[20] + value[
-                    29] * other_value[31] + value[26] * other_value[19] + value[31] * other_value[29] - value[4] * \
-                other_value[11] + value[16] * other_value[7] + value[20] * other_value[27] - value[25] * other_value[
-                    30] - value[12] * other_value[5] + value[17] * other_value[8] + value[24] * other_value[15] + value[
-                    11] * other_value[4] + value[5] * other_value[12] + value[8] * other_value[17]
-    output[3] = -value[16] * other_value[6] - value[14] * other_value[5] - value[9] * other_value[20] + value[19] * \
-                other_value[8] - value[10] * other_value[2] - value[18] * other_value[27] - value[12] * other_value[
-                    23] + value[17] * other_value[26] + value[15] * other_value[25] + value[1] * other_value[7] + value[
-                    13] * other_value[4] + value[11] * other_value[22] - value[31] * other_value[28] - value[6] * \
-                other_value[16] + value[8] * other_value[19] + value[5] * other_value[14] + value[24] * other_value[
-                    30] - value[23] * other_value[12] + value[25] * other_value[15] + value[22] * other_value[11] - \
-                value[4] * other_value[13] + value[2] * other_value[10] + value[21] * other_value[29] - value[7] * \
-                other_value[1] - value[26] * other_value[17] - value[29] * other_value[21] - value[30] * other_value[
-                    24] + value[27] * other_value[18] - value[20] * other_value[9] - value[28] * other_value[31]
-    output[4] = value[26] * other_value[16] - value[14] * other_value[25] - value[24] * other_value[12] + value[31] * \
-                other_value[27] + value[3] * other_value[13] - value[16] * other_value[26] - value[13] * other_value[
-                    3] - value[25] * other_value[14] + value[27] * other_value[31] + value[1] * other_value[8] + value[
-                    29] * other_value[20] - value[15] * other_value[5] - value[12] * other_value[24] + value[2] * \
-                other_value[11] - value[17] * other_value[6] - value[11] * other_value[2] + value[30] * other_value[
-                    23] - value[19] * other_value[7] - value[20] * other_value[29] - value[9] * other_value[21] - value[
-                    7] * other_value[19] - value[8] * other_value[1] - value[6] * other_value[17] - value[10] * \
-                other_value[22] - value[18] * other_value[28] - value[21] * other_value[9] - value[22] * other_value[
-                    10] + value[5] * other_value[15] - value[23] * other_value[30] + value[28] * other_value[18]
-    output[5] = value[29] * other_value[19] - value[18] * other_value[6] - value[24] * other_value[11] + value[28] * \
-                other_value[17] + value[31] * other_value[26] - value[16] * other_value[27] - value[20] * other_value[
-                    7] + value[26] * other_value[31] - value[22] * other_value[30] + value[30] * other_value[22] + \
-                value[27] * other_value[16] - value[23] * other_value[10] - value[19] * other_value[29] - value[25] * \
-                other_value[13] - value[21] * other_value[8] - value[15] * other_value[4] - value[17] * other_value[
-                    28] - value[6] * other_value[18] - value[9] * other_value[1] + value[1] * other_value[9] - value[
-                    11] * other_value[24] + value[3] * other_value[14] - value[8] * other_value[21] - value[12] * \
-                other_value[2] + value[2] * other_value[12] - value[7] * other_value[20] - value[13] * other_value[25] - \
-                value[10] * other_value[23] - value[14] * other_value[3] + value[4] * other_value[15]
-    output[6] = value[25] * other_value[31] - value[18] * other_value[5] + value[3] * other_value[16] - value[5] * \
-                other_value[18] + value[17] * other_value[4] + value[14] * other_value[27] + value[27] * other_value[
-                    14] - value[26] * other_value[13] + value[16] * other_value[3] + value[31] * other_value[25] - \
-                value[13] * other_value[26] + value[15] * other_value[28] + value[4] * other_value[17] + value[28] * \
-                other_value[15]
-    output[7] = -value[2] * other_value[16] - value[24] * other_value[31] + value[26] * other_value[11] + value[19] * \
-                other_value[4] + value[4] * other_value[19] + value[29] * other_value[15] - value[20] * other_value[5] - \
-                value[5] * other_value[20] - value[31] * other_value[24] + value[15] * other_value[29] - value[27] * \
-                other_value[12] - value[12] * other_value[27] - value[16] * other_value[2] + value[11] * other_value[26]
-    output[8] = -value[10] * other_value[26] - value[28] * other_value[12] + value[23] * other_value[31] - value[21] * \
-                other_value[5] - value[14] * other_value[29] - value[29] * other_value[14] - value[2] * other_value[
-                    17] - value[19] * other_value[3] - value[12] * other_value[28] + value[31] * other_value[23] - \
-                value[3] * other_value[19] - value[17] * other_value[2] - value[26] * other_value[10] - value[5] * \
-                other_value[21]
-    output[9] = -value[11] * other_value[28] + value[22] * other_value[31] - value[28] * other_value[11] - value[29] * \
-                other_value[13] - value[4] * other_value[21] - value[13] * other_value[29] - value[21] * other_value[
-                    4] - value[3] * other_value[20] - value[18] * other_value[2] - value[2] * other_value[18] - value[
-                    10] * other_value[27] - value[20] * other_value[3] + value[31] * other_value[22] - value[27] * \
-                other_value[10]
-    output[10] = value[1] * other_value[16] - value[5] * other_value[23] + value[31] * other_value[21] - value[23] * \
-                 other_value[5] + value[30] * other_value[15] + value[22] * other_value[4] - value[8] * other_value[
-                     26] + value[16] * other_value[1] - value[26] * other_value[8] + value[4] * other_value[22] + value[
-                     9] * other_value[27] + value[21] * other_value[31] + value[15] * other_value[30] + value[27] * \
-                 other_value[9]
-    output[11] = value[28] * other_value[9] + value[26] * other_value[7] - value[24] * other_value[5] - value[3] * \
-                 other_value[22] - value[14] * other_value[30] + value[1] * other_value[17] - value[20] * other_value[
-                     31] + value[7] * other_value[26] - value[22] * other_value[3] + value[9] * other_value[28] - value[
-                     31] * other_value[20] + value[17] * other_value[1] - value[30] * other_value[14] - value[5] * \
-                 other_value[24]
-    output[12] = value[7] * other_value[27] + value[1] * other_value[18] - value[19] * other_value[31] + value[28] * \
-                 other_value[8] - value[3] * other_value[23] - value[4] * other_value[24] - value[24] * other_value[4] - \
-                 value[30] * other_value[13] - value[31] * other_value[19] + value[27] * other_value[7] - value[23] * \
-                 other_value[3] - value[13] * other_value[30] + value[18] * other_value[1] + value[8] * other_value[28]
-    output[13] = value[18] * other_value[31] + value[2] * other_value[22] - value[26] * other_value[6] + value[9] * \
-                 other_value[29] + value[12] * other_value[30] + value[31] * other_value[18] + value[19] * other_value[
-                     1] - value[5] * other_value[25] - value[25] * other_value[5] + value[1] * other_value[19] + value[
-                     22] * other_value[2] - value[6] * other_value[26] + value[29] * other_value[9] + value[30] * \
-                 other_value[12]
-    output[14] = -value[25] * other_value[4] + value[31] * other_value[17] - value[27] * other_value[6] + value[23] * \
-                 other_value[2] + value[29] * other_value[8] + value[11] * other_value[30] - value[4] * other_value[
-                     25] + value[17] * other_value[31] + value[30] * other_value[11] + value[1] * other_value[20] + \
-                 value[2] * other_value[23] - value[6] * other_value[27] + value[8] * other_value[29] + value[20] * \
-                 other_value[1]
-    output[15] = -value[30] * other_value[10] - value[29] * other_value[7] + value[1] * other_value[21] - value[28] * \
-                 other_value[6] - value[31] * other_value[16] + value[2] * other_value[24] + value[25] * other_value[
-                     3] + value[21] * other_value[1] - value[6] * other_value[28] - value[7] * other_value[29] - value[
-                     10] * other_value[30] - value[16] * other_value[31] + value[24] * other_value[2] + value[3] * \
-                 other_value[25]
-    output[16] = value[31] * other_value[15] + value[15] * other_value[31] - value[27] * other_value[5] - value[4] * \
-                 other_value[26] + value[5] * other_value[27] + value[26] * other_value[4]
-    output[17] = -value[14] * other_value[31] + value[3] * other_value[26] + value[5] * other_value[28] - value[31] * \
-                 other_value[14] - value[28] * other_value[5] - value[26] * other_value[3]
-    output[18] = -value[31] * other_value[13] + value[3] * other_value[27] - value[28] * other_value[4] - value[13] * \
-                 other_value[31] + value[4] * other_value[28] - value[27] * other_value[3]
-    output[19] = -value[2] * other_value[26] + value[12] * other_value[31] + value[5] * other_value[29] + value[31] * \
-                 other_value[12] + value[26] * other_value[2] - value[29] * other_value[5]
-    output[20] = value[4] * other_value[29] + value[27] * other_value[2] + value[11] * other_value[31] + value[31] * \
-                 other_value[11] - value[2] * other_value[27] - value[29] * other_value[4]
-    output[21] = -value[10] * other_value[31] - value[31] * other_value[10] - value[2] * other_value[28] + value[29] * \
-                 other_value[3] + value[28] * other_value[2] - value[3] * other_value[29]
-    output[22] = value[5] * other_value[30] - value[30] * other_value[5] - value[31] * other_value[9] + value[1] * \
-                 other_value[26] - value[9] * other_value[31] - value[26] * other_value[1]
-    output[23] = -value[30] * other_value[4] - value[31] * other_value[8] + value[4] * other_value[30] - value[8] * \
-                 other_value[31] + value[1] * other_value[27] - value[27] * other_value[1]
-    output[24] = -value[28] * other_value[1] + value[7] * other_value[31] + value[31] * other_value[7] + value[30] * \
-                 other_value[3] + value[1] * other_value[28] - value[3] * other_value[30]
-    output[25] = -value[31] * other_value[6] - value[29] * other_value[1] + value[2] * other_value[30] + value[1] * \
-                 other_value[29] - value[6] * other_value[31] - value[30] * other_value[2]
-    output[26] = -value[5] * other_value[31] - value[31] * other_value[5]
-    output[27] = -value[4] * other_value[31] - value[31] * other_value[4]
-    output[28] = value[31] * other_value[3] + value[3] * other_value[31]
-    output[29] = -value[31] * other_value[2] - value[2] * other_value[31]
-    output[30] = value[1] * other_value[31] + value[31] * other_value[1]
-
-
-@numba.cuda.jit(device=True)
-def gp_device(value, other_value, output):
-    output[0] = value[0] * other_value[0] + value[3] * other_value[3] + value[4] * other_value[4] - value[5] * \
-                other_value[5] - value[6] * other_value[6] - value[7] * other_value[7] - value[8] * other_value[8] + \
-                value[9] * other_value[9] - value[10] * other_value[10] - value[11] * other_value[11] + value[12] * \
-                other_value[12] - value[13] * other_value[13] + value[14] * other_value[14] + value[15] * other_value[
-                    15] + value[2] * other_value[2] - value[16] * other_value[16] + value[18] * other_value[18] - value[
-                    19] * other_value[19] + value[20] * other_value[20] + value[21] * other_value[21] - value[22] * \
-                other_value[22] + value[23] * other_value[23] + value[24] * other_value[24] + value[25] * other_value[
-                    25] + value[26] * other_value[26] - value[27] * other_value[27] - value[28] * other_value[28] - \
-                value[29] * other_value[29] - value[30] * other_value[30] - value[17] * other_value[17] + value[1] * \
-                other_value[1] - value[31] * other_value[31]
-    output[1] = -value[31] * other_value[30] + value[28] * other_value[24] - value[26] * other_value[22] + value[29] * \
-                other_value[25] + value[20] * other_value[14] - value[30] * other_value[31] - value[2] * other_value[
-                    6] - value[11] * other_value[17] - value[10] * other_value[16] - value[4] * other_value[8] - value[
-                    19] * other_value[13] + value[12] * other_value[18] + value[14] * other_value[20] - value[17] * \
-                other_value[11] + value[18] * other_value[12] - value[13] * other_value[19] - value[3] * other_value[
-                    7] + value[27] * other_value[23] + value[21] * other_value[15] + value[5] * other_value[9] + value[
-                    0] * other_value[1] - value[25] * other_value[29] + value[8] * other_value[4] + value[22] * \
-                other_value[26] - value[9] * other_value[5] + value[15] * other_value[21] - value[24] * other_value[
-                    28] - value[23] * other_value[27] + value[7] * other_value[3] + value[1] * other_value[0] + value[
-                    6] * other_value[2] - value[16] * other_value[10]
-    output[2] = value[23] * other_value[14] - value[18] * other_value[9] - value[13] * other_value[22] - value[3] * \
-                other_value[10] + value[7] * other_value[16] + value[30] * other_value[25] - value[12] * other_value[
-                    5] - value[25] * other_value[30] - value[4] * other_value[11] - value[27] * other_value[20] + value[
-                    24] * other_value[15] + value[11] * other_value[4] - value[22] * other_value[13] + value[20] * \
-                other_value[27] + value[26] * other_value[19] - value[9] * other_value[18] + value[5] * other_value[
-                    12] + value[10] * other_value[3] - value[6] * other_value[1] + value[21] * other_value[28] + value[
-                    8] * other_value[17] - value[28] * other_value[21] - value[19] * other_value[26] + value[31] * \
-                other_value[29] + value[17] * other_value[8] + value[0] * other_value[2] + value[16] * other_value[7] + \
-                value[15] * other_value[24] + value[14] * other_value[23] + value[2] * other_value[0] + value[29] * \
-                other_value[31] + value[1] * other_value[6]
-    output[3] = value[11] * other_value[22] + value[19] * other_value[8] - value[4] * other_value[13] - value[20] * \
-                other_value[9] - value[26] * other_value[17] - value[30] * other_value[24] + value[2] * other_value[
-                    10] + value[13] * other_value[4] + value[21] * other_value[29] - value[10] * other_value[2] + value[
-                    25] * other_value[15] - value[16] * other_value[6] - value[6] * other_value[16] - value[9] * \
-                other_value[20] + value[15] * other_value[25] + value[22] * other_value[11] + value[24] * other_value[
-                    30] + value[8] * other_value[19] - value[7] * other_value[1] + value[1] * other_value[7] - value[
-                    23] * other_value[12] - value[29] * other_value[21] + value[27] * other_value[18] + value[5] * \
-                other_value[14] - value[28] * other_value[31] - value[31] * other_value[28] - value[14] * other_value[
-                    5] + value[3] * other_value[0] - value[18] * other_value[27] + value[17] * other_value[26] - value[
-                    12] * other_value[23] + value[0] * other_value[3]
-    output[4] = -value[20] * other_value[29] + value[26] * other_value[16] - value[17] * other_value[6] + value[30] * \
-                other_value[23] - value[13] * other_value[3] + value[5] * other_value[15] - value[10] * other_value[
-                    22] + value[29] * other_value[20] - value[8] * other_value[1] - value[18] * other_value[28] - value[
-                    21] * other_value[9] - value[25] * other_value[14] - value[22] * other_value[10] - value[16] * \
-                other_value[26] + value[3] * other_value[13] - value[6] * other_value[17] - value[15] * other_value[5] - \
-                value[24] * other_value[12] - value[14] * other_value[25] - value[9] * other_value[21] + value[0] * \
-                other_value[4] + value[2] * other_value[11] - value[7] * other_value[19] - value[11] * other_value[2] - \
-                value[12] * other_value[24] + value[27] * other_value[31] + value[1] * other_value[8] + value[28] * \
-                other_value[18] + value[31] * other_value[27] - value[23] * other_value[30] - value[19] * other_value[
-                    7] + value[4] * other_value[0]
-    output[5] = -value[24] * other_value[11] - value[23] * other_value[10] + value[4] * other_value[15] + value[1] * \
-                other_value[9] - value[8] * other_value[21] - value[17] * other_value[28] - value[25] * other_value[
-                    13] + value[3] * other_value[14] - value[22] * other_value[30] - value[16] * other_value[27] - \
-                value[21] * other_value[8] - value[12] * other_value[2] - value[15] * other_value[4] - value[14] * \
-                other_value[3] - value[18] * other_value[6] - value[7] * other_value[20] + value[26] * other_value[31] - \
-                value[11] * other_value[24] + value[27] * other_value[16] + value[0] * other_value[5] + value[31] * \
-                other_value[26] - value[10] * other_value[23] + value[28] * other_value[17] + value[29] * other_value[
-                    19] - value[19] * other_value[29] + value[5] * other_value[0] - value[20] * other_value[7] - value[
-                    13] * other_value[25] - value[6] * other_value[18] + value[2] * other_value[12] - value[9] * \
-                other_value[1] + value[30] * other_value[22]
-    output[6] = value[17] * other_value[4] + value[28] * other_value[15] - value[8] * other_value[11] - value[24] * \
-                other_value[21] - value[13] * other_value[26] + value[15] * other_value[28] + value[30] * other_value[
-                    29] - value[7] * other_value[10] + value[1] * other_value[2] + value[22] * other_value[19] + value[
-                    27] * other_value[14] + value[3] * other_value[16] - value[12] * other_value[9] + value[9] * \
-                other_value[12] - value[5] * other_value[18] + value[10] * other_value[7] - value[29] * other_value[
-                    30] + value[14] * other_value[27] - value[26] * other_value[13] - value[18] * other_value[5] + \
-                value[21] * other_value[24] - value[19] * other_value[22] - value[23] * other_value[20] + value[25] * \
-                other_value[31] + value[16] * other_value[3] + value[0] * other_value[6] + value[31] * other_value[25] + \
-                value[6] * other_value[0] + value[4] * other_value[17] - value[2] * other_value[1] + value[20] * \
-                other_value[23] + value[11] * other_value[8]
-    output[7] = value[17] * other_value[22] - value[30] * other_value[28] + value[11] * other_value[26] + value[19] * \
-                other_value[4] - value[20] * other_value[5] - value[18] * other_value[23] + value[15] * other_value[
-                    29] - value[10] * other_value[6] - value[14] * other_value[9] - value[16] * other_value[2] + value[
-                    21] * other_value[25] - value[22] * other_value[17] + value[9] * other_value[14] + value[13] * \
-                other_value[8] - value[12] * other_value[27] + value[23] * other_value[18] - value[8] * other_value[
-                    13] + value[26] * other_value[11] + value[6] * other_value[10] - value[25] * other_value[21] - \
-                value[5] * other_value[20] - value[24] * other_value[31] - value[31] * other_value[24] + value[7] * \
-                other_value[0] + value[4] * other_value[19] - value[27] * other_value[12] + value[0] * other_value[7] + \
-                value[1] * other_value[3] - value[2] * other_value[16] + value[28] * other_value[30] + value[29] * \
-                other_value[15] - value[3] * other_value[1]
-    output[8] = value[30] * other_value[27] + value[6] * other_value[11] + value[9] * other_value[15] - value[21] * \
-                other_value[5] + value[25] * other_value[20] - value[10] * other_value[26] - value[20] * other_value[
-                    25] - value[5] * other_value[21] - value[29] * other_value[14] - value[3] * other_value[19] - value[
-                    16] * other_value[22] - value[19] * other_value[3] - value[4] * other_value[1] - value[14] * \
-                other_value[29] + value[1] * other_value[4] - value[17] * other_value[2] - value[13] * other_value[7] - \
-                value[28] * other_value[12] - value[27] * other_value[30] - value[12] * other_value[28] - value[18] * \
-                other_value[24] - value[26] * other_value[10] - value[11] * other_value[6] - value[2] * other_value[
-                    17] + value[0] * other_value[8] - value[15] * other_value[9] + value[24] * other_value[18] + value[
-                    8] * other_value[0] + value[7] * other_value[13] + value[31] * other_value[23] + value[23] * \
-                other_value[31] + value[22] * other_value[16]
-    output[9] = -value[5] * other_value[1] - value[21] * other_value[4] - value[10] * other_value[27] - value[15] * \
-                other_value[8] + value[25] * other_value[19] - value[20] * other_value[3] - value[12] * other_value[6] + \
-                value[7] * other_value[14] - value[4] * other_value[21] - value[27] * other_value[10] - value[2] * \
-                other_value[18] - value[16] * other_value[23] + value[23] * other_value[16] - value[14] * other_value[
-                    7] - value[17] * other_value[24] + value[30] * other_value[26] + value[8] * other_value[15] + value[
-                    6] * other_value[12] - value[26] * other_value[30] + value[31] * other_value[22] + value[0] * \
-                other_value[9] + value[1] * other_value[5] - value[13] * other_value[29] - value[3] * other_value[20] + \
-                value[9] * other_value[0] - value[19] * other_value[25] - value[11] * other_value[28] + value[24] * \
-                other_value[17] - value[18] * other_value[2] - value[28] * other_value[11] + value[22] * other_value[
-                    31] - value[29] * other_value[13]
-    output[10] = -value[11] * other_value[13] + value[16] * other_value[1] - value[26] * other_value[8] + value[29] * \
-                 other_value[28] - value[20] * other_value[18] - value[14] * other_value[12] + value[19] * other_value[
-                     17] + value[4] * other_value[22] + value[30] * other_value[15] - value[8] * other_value[26] - \
-                 value[17] * other_value[19] - value[23] * other_value[5] + value[24] * other_value[25] + value[10] * \
-                 other_value[0] + value[13] * other_value[11] + value[7] * other_value[6] + value[1] * other_value[16] + \
-                 value[18] * other_value[20] - value[3] * other_value[2] - value[6] * other_value[7] + value[12] * \
-                 other_value[14] - value[28] * other_value[29] + value[9] * other_value[27] + value[21] * other_value[
-                     31] - value[25] * other_value[24] + value[22] * other_value[4] + value[0] * other_value[10] + \
-                 value[31] * other_value[21] + value[2] * other_value[3] + value[27] * other_value[9] - value[5] * \
-                 other_value[23] + value[15] * other_value[30]
-    output[11] = value[28] * other_value[9] + value[7] * other_value[26] - value[19] * other_value[16] + value[18] * \
-                 other_value[21] - value[30] * other_value[14] - value[13] * other_value[10] + value[12] * other_value[
-                     15] - value[4] * other_value[2] + value[16] * other_value[19] - value[14] * other_value[30] + \
-                 value[27] * other_value[29] - value[3] * other_value[22] - value[24] * other_value[5] + value[0] * \
-                 other_value[11] + value[25] * other_value[23] + value[2] * other_value[4] - value[6] * other_value[8] - \
-                 value[22] * other_value[3] + value[9] * other_value[28] + value[1] * other_value[17] - value[23] * \
-                 other_value[25] - value[21] * other_value[18] - value[5] * other_value[24] + value[10] * other_value[
-                     13] - value[20] * other_value[31] - value[15] * other_value[12] + value[8] * other_value[6] + \
-                 value[26] * other_value[7] + value[11] * other_value[0] + value[17] * other_value[1] - value[29] * \
-                 other_value[27] - value[31] * other_value[20]
-    output[12] = value[18] * other_value[1] + value[1] * other_value[18] - value[23] * other_value[3] + value[9] * \
-                 other_value[6] - value[19] * other_value[31] - value[3] * other_value[23] + value[26] * other_value[
-                     29] - value[22] * other_value[25] + value[17] * other_value[21] - value[6] * other_value[9] - \
-                 value[30] * other_value[13] - value[24] * other_value[4] + value[7] * other_value[27] - value[15] * \
-                 other_value[11] - value[13] * other_value[30] + value[11] * other_value[15] + value[16] * other_value[
-                     20] - value[20] * other_value[16] - value[29] * other_value[26] + value[28] * other_value[8] + \
-                 value[0] * other_value[12] - value[31] * other_value[19] + value[10] * other_value[14] - value[4] * \
-                 other_value[24] + value[8] * other_value[28] - value[5] * other_value[2] + value[2] * other_value[5] + \
-                 value[25] * other_value[22] - value[21] * other_value[17] + value[12] * other_value[0] - value[14] * \
-                 other_value[10] + value[27] * other_value[7]
-    output[13] = value[30] * other_value[12] + value[28] * other_value[27] + value[2] * other_value[22] + value[17] * \
-                 other_value[16] + value[13] * other_value[0] - value[15] * other_value[14] + value[31] * other_value[
-                     18] - value[24] * other_value[23] - value[6] * other_value[26] + value[22] * other_value[2] + \
-                 value[9] * other_value[29] - value[21] * other_value[20] - value[25] * other_value[5] + value[1] * \
-                 other_value[19] - value[5] * other_value[25] + value[8] * other_value[7] - value[10] * other_value[
-                     11] - value[7] * other_value[8] + value[20] * other_value[21] + value[29] * other_value[9] - value[
-                     4] * other_value[3] + value[0] * other_value[13] + value[3] * other_value[4] + value[14] * \
-                 other_value[15] + value[18] * other_value[31] - value[26] * other_value[6] - value[16] * other_value[
-                     17] + value[12] * other_value[30] - value[27] * other_value[28] + value[19] * other_value[1] + \
-                 value[11] * other_value[10] + value[23] * other_value[24]
-    output[14] = value[1] * other_value[20] - value[16] * other_value[18] + value[14] * other_value[0] + value[29] * \
-                 other_value[8] + value[30] * other_value[11] - value[15] * other_value[13] + value[0] * other_value[
-                     14] - value[7] * other_value[9] + value[8] * other_value[29] + value[22] * other_value[24] - value[
-                     24] * other_value[22] - value[6] * other_value[27] + value[9] * other_value[7] - value[21] * \
-                 other_value[19] - value[25] * other_value[4] - value[5] * other_value[3] - value[10] * other_value[
-                     12] + value[31] * other_value[17] - value[26] * other_value[28] - value[4] * other_value[25] + \
-                 value[11] * other_value[30] + value[20] * other_value[1] + value[19] * other_value[21] + value[2] * \
-                 other_value[23] + value[28] * other_value[26] + value[17] * other_value[31] + value[13] * other_value[
-                     15] + value[23] * other_value[2] + value[3] * other_value[5] - value[27] * other_value[6] + value[
-                     12] * other_value[10] + value[18] * other_value[16]
-    output[15] = -value[29] * other_value[7] + value[23] * other_value[22] - value[28] * other_value[6] - value[22] * \
-                 other_value[23] + value[26] * other_value[27] + value[24] * other_value[2] - value[17] * other_value[
-                     18] + value[21] * other_value[1] + value[20] * other_value[19] - value[27] * other_value[26] + \
-                 value[25] * other_value[3] - value[16] * other_value[31] + value[0] * other_value[15] + value[18] * \
-                 other_value[17] - value[19] * other_value[20] + value[15] * other_value[0] - value[30] * other_value[
-                     10] - value[13] * other_value[14] + value[12] * other_value[11] - value[11] * other_value[12] - \
-                 value[10] * other_value[30] + value[14] * other_value[13] + value[9] * other_value[8] - value[8] * \
-                 other_value[9] - value[6] * other_value[28] - value[5] * other_value[4] - value[31] * other_value[16] - \
-                 value[7] * other_value[29] + value[1] * other_value[21] + value[3] * other_value[25] + value[2] * \
-                 other_value[24] + value[4] * other_value[5]
-    output[16] = -value[4] * other_value[26] - value[29] * other_value[24] - value[17] * other_value[13] + value[12] * \
-                 other_value[20] + value[18] * other_value[14] - value[11] * other_value[19] + value[1] * other_value[
-                     10] + value[19] * other_value[11] + value[10] * other_value[1] + value[28] * other_value[25] - \
-                 value[20] * other_value[12] - value[9] * other_value[23] + value[21] * other_value[30] + value[8] * \
-                 other_value[22] - value[27] * other_value[5] - value[22] * other_value[8] + value[0] * other_value[
-                     16] - value[7] * other_value[2] + value[13] * other_value[17] + value[23] * other_value[9] + value[
-                     6] * other_value[3] - value[24] * other_value[29] + value[5] * other_value[27] + value[3] * \
-                 other_value[6] + value[26] * other_value[4] + value[25] * other_value[28] - value[2] * other_value[7] + \
-                 value[31] * other_value[15] + value[15] * other_value[31] + value[16] * other_value[0] - value[14] * \
-                 other_value[18] + value[30] * other_value[21]
-    output[17] = value[16] * other_value[13] + value[18] * other_value[15] + value[1] * other_value[11] + value[11] * \
-                 other_value[1] - value[7] * other_value[22] - value[31] * other_value[14] - value[2] * other_value[8] - \
-                 value[26] * other_value[3] + value[5] * other_value[28] + value[23] * other_value[29] - value[25] * \
-                 other_value[27] - value[28] * other_value[5] + value[10] * other_value[19] - value[8] * other_value[
-                     2] + value[12] * other_value[21] + value[4] * other_value[6] - value[21] * other_value[12] - value[
-                     19] * other_value[10] + value[3] * other_value[26] + value[0] * other_value[17] - value[30] * \
-                 other_value[20] + value[6] * other_value[4] + value[24] * other_value[9] - value[20] * other_value[
-                     30] - value[27] * other_value[25] + value[17] * other_value[0] + value[22] * other_value[7] + \
-                 value[29] * other_value[23] - value[14] * other_value[31] - value[15] * other_value[18] - value[13] * \
-                 other_value[16] - value[9] * other_value[24]
-    output[18] = value[18] * other_value[0] + value[10] * other_value[20] - value[28] * other_value[4] - value[19] * \
-                 other_value[30] + value[4] * other_value[28] - value[31] * other_value[13] + value[11] * other_value[
-                     21] - value[20] * other_value[10] - value[21] * other_value[11] - value[27] * other_value[3] + \
-                 value[3] * other_value[27] - value[2] * other_value[9] - value[26] * other_value[25] - value[9] * \
-                 other_value[2] + value[16] * other_value[14] - value[14] * other_value[16] + value[6] * other_value[
-                     5] + value[22] * other_value[29] + value[24] * other_value[8] + value[29] * other_value[22] + \
-                 value[23] * other_value[7] - value[13] * other_value[31] - value[15] * other_value[17] + value[17] * \
-                 other_value[15] + value[5] * other_value[6] + value[1] * other_value[12] - value[7] * other_value[23] + \
-                 value[0] * other_value[18] - value[30] * other_value[19] - value[25] * other_value[26] - value[8] * \
-                 other_value[24] + value[12] * other_value[1]
-    output[19] = value[25] * other_value[9] + value[0] * other_value[19] - value[8] * other_value[3] - value[22] * \
-                 other_value[6] + value[13] * other_value[1] - value[9] * other_value[25] - value[3] * other_value[8] + \
-                 value[31] * other_value[12] + value[12] * other_value[31] - value[23] * other_value[28] + value[6] * \
-                 other_value[22] + value[20] * other_value[15] + value[27] * other_value[24] + value[18] * other_value[
-                     30] - value[29] * other_value[5] + value[24] * other_value[27] - value[10] * other_value[17] + \
-                 value[14] * other_value[21] + value[17] * other_value[10] - value[16] * other_value[11] + value[7] * \
-                 other_value[4] + value[5] * other_value[29] - value[28] * other_value[23] + value[30] * other_value[
-                     18] - value[15] * other_value[20] + value[4] * other_value[7] + value[1] * other_value[13] + value[
-                     26] * other_value[2] - value[2] * other_value[26] + value[19] * other_value[0] + value[11] * \
-                 other_value[16] - value[21] * other_value[14]
-    output[20] = value[5] * other_value[7] + value[25] * other_value[8] + value[7] * other_value[5] + value[6] * \
-                 other_value[23] - value[22] * other_value[28] + value[24] * other_value[26] + value[26] * other_value[
-                     24] - value[21] * other_value[13] - value[3] * other_value[9] + value[31] * other_value[11] - \
-                 value[9] * other_value[3] + value[14] * other_value[1] + value[4] * other_value[29] - value[23] * \
-                 other_value[6] - value[8] * other_value[25] + value[20] * other_value[0] + value[30] * other_value[
-                     17] + value[12] * other_value[16] + value[11] * other_value[31] + value[1] * other_value[14] - \
-                 value[28] * other_value[22] + value[0] * other_value[20] + value[18] * other_value[10] + value[17] * \
-                 other_value[30] + value[13] * other_value[21] - value[10] * other_value[18] - value[2] * other_value[
-                     27] - value[29] * other_value[4] + value[27] * other_value[2] + value[19] * other_value[15] - \
-                 value[16] * other_value[12] - value[15] * other_value[19]
-    output[21] = value[15] * other_value[1] - value[31] * other_value[10] + value[28] * other_value[2] - value[4] * \
-                 other_value[9] + value[8] * other_value[5] + value[18] * other_value[11] - value[10] * other_value[
-                     31] + value[22] * other_value[27] + value[12] * other_value[17] - value[25] * other_value[7] + \
-                 value[7] * other_value[25] + value[1] * other_value[15] - value[17] * other_value[12] - value[13] * \
-                 other_value[20] - value[23] * other_value[26] + value[5] * other_value[8] - value[24] * other_value[
-                     6] + value[29] * other_value[3] + value[6] * other_value[24] + value[14] * other_value[19] - value[
-                     26] * other_value[23] - value[16] * other_value[30] - value[3] * other_value[29] - value[11] * \
-                 other_value[18] + value[27] * other_value[22] - value[19] * other_value[14] + value[20] * other_value[
-                     13] + value[21] * other_value[0] - value[9] * other_value[4] - value[2] * other_value[28] - value[
-                     30] * other_value[16] + value[0] * other_value[21]
-    output[22] = -value[21] * other_value[27] + value[25] * other_value[12] - value[31] * other_value[9] + value[28] * \
-                 other_value[20] + value[7] * other_value[17] + value[1] * other_value[26] + value[13] * other_value[
-                     2] - value[27] * other_value[21] + value[22] * other_value[0] + value[23] * other_value[15] + \
-                 value[20] * other_value[28] + value[5] * other_value[30] - value[24] * other_value[14] - value[29] * \
-                 other_value[18] - value[6] * other_value[19] + value[10] * other_value[4] - value[17] * other_value[
-                     7] - value[3] * other_value[11] - value[12] * other_value[25] - value[8] * other_value[16] - value[
-                     15] * other_value[23] + value[19] * other_value[6] - value[30] * other_value[5] + value[2] * \
-                 other_value[13] + value[4] * other_value[10] - value[11] * other_value[3] - value[18] * other_value[
-                     29] - value[9] * other_value[31] + value[0] * other_value[22] - value[26] * other_value[1] + value[
-                     16] * other_value[8] + value[14] * other_value[24]
-    output[23] = -value[27] * other_value[1] + value[2] * other_value[14] + value[10] * other_value[5] - value[15] * \
-                 other_value[22] + value[14] * other_value[2] + value[20] * other_value[6] - value[26] * other_value[
-                     21] + value[16] * other_value[9] + value[5] * other_value[10] - value[11] * other_value[25] + \
-                 value[13] * other_value[24] - value[3] * other_value[12] - value[24] * other_value[13] + value[19] * \
-                 other_value[28] + value[23] * other_value[0] - value[17] * other_value[29] + value[28] * other_value[
-                     19] + value[0] * other_value[23] - value[9] * other_value[16] - value[30] * other_value[4] + value[
-                     25] * other_value[11] - value[12] * other_value[3] - value[21] * other_value[26] + value[4] * \
-                 other_value[30] + value[22] * other_value[15] - value[29] * other_value[17] + value[7] * other_value[
-                     18] - value[18] * other_value[7] - value[31] * other_value[8] + value[1] * other_value[27] - value[
-                     8] * other_value[31] - value[6] * other_value[20]
-    output[24] = value[29] * other_value[16] - value[3] * other_value[30] + value[31] * other_value[7] + value[5] * \
-                 other_value[11] + value[15] * other_value[2] - value[27] * other_value[19] + value[1] * other_value[
-                     28] - value[28] * other_value[1] + value[26] * other_value[20] - value[25] * other_value[10] - \
-                 value[4] * other_value[12] + value[24] * other_value[0] + value[2] * other_value[15] + value[14] * \
-                 other_value[22] - value[18] * other_value[8] + value[8] * other_value[18] + value[23] * other_value[
-                     13] - value[9] * other_value[17] + value[21] * other_value[6] + value[17] * other_value[9] + value[
-                     16] * other_value[29] - value[12] * other_value[4] - value[13] * other_value[23] - value[19] * \
-                 other_value[27] + value[7] * other_value[31] + value[0] * other_value[24] - value[22] * other_value[
-                     14] + value[30] * other_value[3] + value[11] * other_value[5] + value[20] * other_value[26] + \
-                 value[10] * other_value[25] - value[6] * other_value[21]
-    output[25] = -value[18] * other_value[26] - value[26] * other_value[18] - value[9] * other_value[19] + value[22] * \
-                 other_value[12] + value[21] * other_value[7] + value[25] * other_value[0] - value[4] * other_value[
-                     14] + value[11] * other_value[23] + value[19] * other_value[9] - value[12] * other_value[22] + \
-                 value[1] * other_value[29] - value[31] * other_value[6] - value[28] * other_value[16] + value[15] * \
-                 other_value[3] - value[14] * other_value[4] + value[0] * other_value[25] - value[20] * other_value[8] - \
-                 value[6] * other_value[31] - value[29] * other_value[1] - value[10] * other_value[24] + value[24] * \
-                 other_value[10] + value[3] * other_value[15] + value[13] * other_value[5] - value[7] * other_value[
-                     21] - value[16] * other_value[28] - value[30] * other_value[2] + value[8] * other_value[20] + \
-                 value[27] * other_value[17] + value[5] * other_value[13] - value[23] * other_value[11] + value[2] * \
-                 other_value[30] + value[17] * other_value[27]
-    output[26] = value[19] * other_value[2] - value[21] * other_value[23] + value[3] * other_value[17] - value[15] * \
-                 other_value[27] + value[27] * other_value[15] + value[10] * other_value[8] - value[31] * other_value[
-                     5] - value[11] * other_value[7] - value[2] * other_value[19] + value[26] * other_value[0] + value[
-                     9] * other_value[30] + value[14] * other_value[28] + value[29] * other_value[12] + value[6] * \
-                 other_value[13] + value[13] * other_value[6] + value[24] * other_value[20] + value[16] * other_value[
-                     4] - value[5] * other_value[31] - value[17] * other_value[3] - value[23] * other_value[21] + value[
-                     8] * other_value[10] - value[7] * other_value[11] + value[1] * other_value[22] + value[20] * \
-                 other_value[24] - value[25] * other_value[18] - value[28] * other_value[14] - value[4] * other_value[
-                     16] - value[12] * other_value[29] - value[18] * other_value[25] - value[22] * other_value[1] - \
-                 value[30] * other_value[9] + value[0] * other_value[26]
-    output[27] = value[29] * other_value[11] - value[18] * other_value[3] + value[16] * other_value[5] + value[13] * \
-                 other_value[28] - value[28] * other_value[13] + value[1] * other_value[23] + value[27] * other_value[
-                     0] + value[19] * other_value[24] - value[31] * other_value[4] - value[2] * other_value[20] - value[
-                     17] * other_value[25] - value[12] * other_value[7] + value[10] * other_value[9] - value[11] * \
-                 other_value[29] + value[14] * other_value[6] - value[25] * other_value[17] + value[8] * other_value[
-                     30] + value[20] * other_value[2] - value[22] * other_value[21] - value[15] * other_value[26] - \
-                 value[21] * other_value[22] + value[26] * other_value[15] - value[7] * other_value[12] - value[23] * \
-                 other_value[1] - value[5] * other_value[16] - value[30] * other_value[8] + value[0] * other_value[27] - \
-                 value[4] * other_value[31] + value[24] * other_value[19] + value[6] * other_value[14] + value[9] * \
-                 other_value[10] + value[3] * other_value[18]
-    output[28] = value[25] * other_value[16] - value[29] * other_value[10] + value[14] * other_value[26] + value[22] * \
-                 other_value[20] + value[28] * other_value[0] + value[31] * other_value[3] - value[23] * other_value[
-                     19] + value[1] * other_value[24] - value[7] * other_value[30] - value[13] * other_value[27] - \
-                 value[12] * other_value[8] + value[17] * other_value[5] + value[4] * other_value[18] + value[16] * \
-                 other_value[25] - value[24] * other_value[1] - value[5] * other_value[17] + value[6] * other_value[
-                     15] + value[20] * other_value[22] + value[21] * other_value[2] + value[30] * other_value[7] - \
-                 value[18] * other_value[4] + value[3] * other_value[31] - value[2] * other_value[21] - value[19] * \
-                 other_value[23] - value[26] * other_value[14] + value[0] * other_value[28] + value[10] * other_value[
-                     29] + value[27] * other_value[13] + value[11] * other_value[9] + value[15] * other_value[6] - \
-                 value[8] * other_value[12] + value[9] * other_value[11]
-    output[29] = value[29] * other_value[0] - value[3] * other_value[21] - value[20] * other_value[4] - value[5] * \
-                 other_value[19] + value[9] * other_value[13] + value[13] * other_value[9] - value[14] * other_value[
-                     8] + value[19] * other_value[5] + value[23] * other_value[17] + value[6] * other_value[30] - value[
-                     10] * other_value[28] - value[24] * other_value[16] - value[18] * other_value[22] - value[12] * \
-                 other_value[26] + value[17] * other_value[23] + value[11] * other_value[27] + value[4] * other_value[
-                     20] - value[25] * other_value[1] - value[8] * other_value[14] - value[22] * other_value[18] + \
-                 value[7] * other_value[15] + value[21] * other_value[3] + value[28] * other_value[10] + value[0] * \
-                 other_value[29] - value[30] * other_value[6] + value[1] * other_value[25] + value[26] * other_value[
-                     12] + value[15] * other_value[7] - value[31] * other_value[2] - value[2] * other_value[31] - value[
-                     27] * other_value[11] - value[16] * other_value[24]
-    output[30] = value[0] * other_value[30] - value[28] * other_value[7] + value[1] * other_value[31] + value[2] * \
-                 other_value[25] - value[3] * other_value[24] + value[4] * other_value[23] - value[5] * other_value[
-                     22] - value[6] * other_value[29] + value[7] * other_value[28] - value[8] * other_value[27] + value[
-                     9] * other_value[26] + value[10] * other_value[15] - value[11] * other_value[14] + value[12] * \
-                 other_value[13] + value[13] * other_value[12] + value[29] * other_value[6] - value[14] * other_value[
-                     11] + value[15] * other_value[10] + value[16] * other_value[21] - value[17] * other_value[20] + \
-                 value[18] * other_value[19] + value[19] * other_value[18] - value[20] * other_value[17] + value[21] * \
-                 other_value[16] + value[22] * other_value[5] - value[23] * other_value[4] + value[24] * other_value[
-                     3] - value[25] * other_value[2] - value[26] * other_value[9] + value[27] * other_value[8] + value[
-                     30] * other_value[0] + value[31] * other_value[1]
-    output[31] = value[15] * other_value[16] - value[29] * other_value[2] + value[0] * other_value[31] + value[1] * \
-                 other_value[30] - value[2] * other_value[29] + value[3] * other_value[28] - value[4] * other_value[
-                     27] + value[5] * other_value[26] + value[6] * other_value[25] - value[7] * other_value[24] + value[
-                     8] * other_value[23] - value[9] * other_value[22] + value[10] * other_value[21] - value[11] * \
-                 other_value[20] + value[12] * other_value[19] + value[30] * other_value[1] + value[13] * other_value[
-                     18] + value[16] * other_value[15] - value[17] * other_value[14] + value[18] * other_value[13] + \
-                 value[19] * other_value[12] - value[20] * other_value[11] + value[21] * other_value[10] - value[22] * \
-                 other_value[9] + value[23] * other_value[8] - value[24] * other_value[7] + value[25] * other_value[6] + \
-                 value[26] * other_value[5] - value[27] * other_value[4] + value[28] * other_value[3] - value[14] * \
-                 other_value[17] + value[31] * other_value[0]
-
-

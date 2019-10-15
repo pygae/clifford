@@ -50,6 +50,7 @@ from clifford.g3c import *
 import clifford as cf
 import math
 import numpy as np
+import numba
 
 I3 = e123
 
@@ -58,26 +59,20 @@ def quaternion_to_rotor(quaternion):
     """
     Converts a quaternion into a pure rotation rotor
     """
-    quat_W = quaternion[0]
-    quat_X = quaternion[1]
-    quat_Y = quaternion[2]
-    quat_Z = quaternion[3]
-    i = e23
-    j = e13
-    k = e12
-    return quat_W + quat_X * i + quat_Y * j + quat_Z * k
+    Q = layout.MultiVector()
+    Q.value[1:4] = quaternion[1:4]
+    Q = -e123*Q
+    Q[0] = quaternion[0]
+    return Q
 
 
-def rotor_to_quaternion(rotor):
+def rotor_to_quaternion(R):
     """
     Converts a pure rotation rotor into a quaternion
     """
-    quat = np.zeros(4)
-    quat[0] = rotor[0]
-    quat[1] = rotor[(2, 3)]
-    quat[2] = rotor[(1, 3)]
-    quat[3] = rotor[(1, 2)]
-    return quat
+    Q = (e123*R).value[0:4]
+    Q[0] = R[0]
+    return Q
 
 
 def quaternion_to_matrix(q):
@@ -149,9 +144,20 @@ def random_unit_vector():
     return (np_to_euc_mv(np.random.randn(3))).normal()
 
 
+@numba.njit
+def val_random_euc_mv(l_max=10):
+    """ Creates a random vector normally distributed with length l_max """
+    output = np.zeros(32)
+    np_in = l_max*np.random.randn(3)
+    output[1] = np_in[0]
+    output[2] = np_in[1]
+    output[3] = np_in[2]
+    return output
+
+
 def random_euc_mv(l_max=10):
-    """ Creates a random vector of length uniform up to l_max """
-    return l_max*random_unit_vector()*np.random.rand()
+    """ Creates a random vector normally distributed with length l_max """
+    return np_to_euc_mv(l_max*np.random.randn(3))
 
 
 def generate_rotation_rotor(theta, euc_vector_m, euc_vector_n):
@@ -161,7 +167,7 @@ def generate_rotation_rotor(theta, euc_vector_m, euc_vector_n):
     euc_vector_n = euc_vector_n / abs(euc_vector_n)
     euc_vector_m = euc_vector_m / abs(euc_vector_m)
     bivector_B = (euc_vector_m ^ euc_vector_n)
-    bivector_B = bivector_B / (math.sqrt(-bivector_B * bivector_B))
+    bivector_B = bivector_B / (math.sqrt((-bivector_B * bivector_B)[0]))
     rotor = math.cos(theta / 2) - bivector_B * math.sin(theta / 2)
     return rotor
 
@@ -181,7 +187,11 @@ def angle_between_vectors(v1, v2):
 
 def np_to_euc_mv(np_in):
     """ Converts a 3d numpy vector to a 3d GA point """
-    return np_in[0]*e1 + np_in[1]*e2 + np_in[2]*e3
+    output = np.zeros(32)
+    output[1] = np_in[0]
+    output[2] = np_in[1]
+    output[3] = np_in[2]
+    return layout.MultiVector(value=output)
 
 
 def euc_mv_to_np(euc_point):

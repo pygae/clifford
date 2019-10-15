@@ -1,15 +1,13 @@
 channels:
     - conda-forge
 dependencies:
-    - python=3.6
+    - python=3.7
     - ipython
     - numpy
-    - numba
+    - numba=0.43
     - scipy
     - matplotlib
-    - nose
-    - future
     - pandoc
-    - nbconvert
     - ipykernel
     - nbsphinx
+    - nbconvert=5.4.1

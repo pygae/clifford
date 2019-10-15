@@ -1,0 +1,186 @@
+# Python package
+# Create and test a Python package on multiple Python versions.
+# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/python
+
+trigger:
+- master
+
+jobs:
+- job: 'Test'
+  strategy:
+    matrix:
+      linuxPython35Numba0.45.1:
+        imageName: 'ubuntu-16.04'
+        python.version: '3.5'
+        numbacommand: '-c numba numba=0.45.1'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
+      linuxPython36Numba0.45.1:
+        imageName: 'ubuntu-16.04'
+        python.version: '3.6'
+        numbacommand: '-c numba numba=0.45.1'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
+      linuxPython37Numba0.45.1:
+        imageName: 'ubuntu-16.04'
+        python.version: '3.7'
+        numbacommand: '-c numba numba=0.45.1'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
+      linuxPython36NumbaDev:
+        imageName: 'ubuntu-16.04'
+        python.version: '3.6'
+        numbacommand: '-c numba/label/dev numba'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
+      linuxPython37NumbaDev:
+        imageName: 'ubuntu-16.04'
+        python.version: '3.7'
+        numbacommand: '-c numba/label/dev numba'
+        installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
+
+
+      macPython35Numba0.45.1:
+        imageName: 'macos-10.13'
+        python.version: '3.5'
+        numbacommand: '-c numba numba=0.45.1'
+        installPackageCommand: 'sudo python setup.py develop --no-deps'
+      macPython36Numba0.45.1:
+        imageName: 'macos-10.13'
+        python.version: '3.6'
+        numbacommand: '-c numba numba=0.45.1'
+        installPackageCommand: 'sudo python setup.py develop --no-deps'
+      macPython37Numba0.45.1:
+        imageName: 'macos-10.13'
+        python.version: '3.7'
+        numbacommand: '-c numba numba=0.45.1'
+        installPackageCommand: 'sudo python setup.py develop --no-deps'
+      macPython36NumbaDev:
+        imageName: 'macos-10.13'
+        python.version: '3.6'
+        numbacommand: '-c numba/label/dev numba'
+        installPackageCommand: 'sudo python setup.py develop --no-deps'
+      macPython37NumbaDev:
+        imageName: 'macos-10.13'
+        python.version: '3.7'
+        numbacommand: '-c numba/label/dev numba'
+        installPackageCommand: 'sudo python setup.py develop --no-deps'
+
+
+      windowsPython35Numba0.45.1:
+        imageName: 'vs2017-win2016'
+        python.version: '3.5'
+        numbacommand: '-c numba numba=0.45.1'
+        installPackageCommand: 'python setup.py install'
+      windowsPython36Numba0.45.1:
+        imageName: 'vs2017-win2016'
+        python.version: '3.6'
+        numbacommand: '-c numba numba=0.45.1'
+        installPackageCommand: 'python setup.py develop'
+      windowsPython37Numba0.45.1:
+        imageName: 'vs2017-win2016'
+        python.version: '3.7'
+        numbacommand: '-c numba numba=0.45.1'
+        installPackageCommand: 'python setup.py develop'
+      windowsPython36NumbaDev:
+        imageName: 'vs2017-win2016'
+        python.version: '3.6'
+        numbacommand: '-c numba/label/dev numba'
+        installPackageCommand: 'python setup.py develop'
+      windowsPython37NumbaDev:
+        imageName: 'vs2017-win2016'
+        python.version: '3.7'
+        numbacommand: '-c numba/label/dev numba'
+        installPackageCommand: 'python setup.py develop'
+  
+  pool:
+    vmImage: $(imageName)
+
+  steps:
+  - bash: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
+    displayName: Add conda to PATH linux
+    condition: eq(variables['imageName'], 'ubuntu-16.04')
+
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH mac
+    condition: eq(variables['imageName'], 'macos-10.13')
+
+  - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+    displayName: Add conda to PATH windows
+    condition: eq(variables['imageName'], 'vs2017-win2016')
+
+
+  - script: conda create --yes --quiet --name myEnvironment
+    displayName: Create Anaconda environment windows
+    condition: eq(variables['imageName'], 'vs2017-win2016')
+
+  - bash: conda create --yes --quiet --name myEnvironment
+    displayName: Create Conda environment not windows
+    condition: ne(variables['imageName'], 'vs2017-win2016')
+
+  - script: |
+      call activate myEnvironment
+      conda update -n base -y -c defaults conda
+      conda update -y conda
+    displayName: Update conda env windows
+    condition: eq(variables['imageName'], 'vs2017-win2016')
+
+  - script: |
+      call activate myEnvironment
+      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy
+    displayName: Install dependencies windows
+    condition: eq(variables['imageName'], 'vs2017-win2016')
+
+  - script: |
+      call activate myEnvironment
+      conda install --yes $(numbacommand)
+    displayName: Install conda windows
+    condition: eq(variables['imageName'], 'vs2017-win2016')
+
+  - script: |
+      call activate myEnvironment
+      $(installPackageCommand)
+    displayName: Install package windows
+    condition: eq(variables['imageName'], 'vs2017-win2016')
+
+  - bash: |
+      source activate myEnvironment
+      conda update -n base -y -c defaults conda
+      conda update -y conda
+      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy
+      conda install --yes $(numbacommand)
+      python -m pip install -U pytest
+      $(installPackageCommand)
+    displayName: Install dependencies not windows
+    condition: ne(variables['imageName'], 'vs2017-win2016')
+
+  - bash: |
+      source activate myEnvironment
+      pip install -U pytest
+      pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml
+    displayName: pytest not windows
+    condition: ne(variables['imageName'], 'vs2017-win2016')
+
+  - script: |
+      call activate myEnvironment
+      pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml
+    displayName: pytest windows
+    condition: eq(variables['imageName'], 'vs2017-win2016')
+
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFiles: '**/test-results.xml'
+      testRunTitle: 'Python $(imageName) $(python.version)'
+    condition: succeededOrFailed()
+
+- job: 'Publish'
+  dependsOn: 'Test'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+      architecture: 'x64'
+
+  - script: python setup.py sdist
+    displayName: 'Build sdist'

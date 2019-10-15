@@ -1,8 +1,25 @@
 """
+.. currentmodule:: clifford.tools
+
+========================================
+tools (:mod:`clifford.tools`)
+========================================
+
 Algorithms and tools of various kinds.
 
+
+Tools for specific ga's
+---------------------------------
+
+.. autosummary::
+    :toctree: generated/
+    
+    g3
+    g3c
+
+
 Determining Rotors From Frame Pairs or Orthogonal Matrices
-==========================================================
+-----------------------------------------------------------
 
 Given two frames that are related by a orthogonal transform, we seek a rotor
 which enacts the transform. Details of the mathematics and psuedo-code used the
@@ -23,12 +40,11 @@ translated into a Verser.
 
 """
 
-from __future__ import absolute_import, division
-from __future__ import print_function, unicode_literals
 from functools import reduce
 
 from math import sqrt
-from numpy import eye, array, sign, zeros
+from numpy import eye, array, sign, zeros, sin,arccos
+import itertools
 from .. import Cl, gp, Frame
 from .. import eps as global_eps
 
@@ -291,8 +307,9 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
     spinor = False
     # store peudoscalar of frame B, in case known det (see end)
     try:
+        B = Frame(B)
         B_En = B.En
-    except:
+    except Exception:
         pass
     N = len(A)
 
@@ -312,7 +329,7 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
             spinor = True
             # we have a spinor, remove the scaling (add it back in at the end)
             B = [b / alpha for b in B]
-    except:
+    except Exception:
         # probably  A and B are not pure vector correspondence
         # whatever,  it might still work
         pass
@@ -358,7 +375,7 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
     # if det is known a priori check to see if it's correct, if not add
     # an extra reflection which leaves all points in B invarianct
     if det is not None:
-        I = R.pseudoScalar()
+        I = R.pseudoScalar
         our_det = (R * I * ~R * I.inv())(0)
         if sign(float(our_det)) != det:
             R = B_En.dual() * R
@@ -430,4 +447,18 @@ def rotor_decomp(V, x):
     return H, U
 
 
+def sinc(x):
+    return sin(x)/x
 
+def log_rotor(V):
+    '''
+    Logarithm of a simple rotor
+    '''
+    if (V(2)**2).grades() !=[0]:
+        print(V)
+        #raise ValueError('Bivector is not a Blade.')
+    if abs(V(2))<global_eps():
+        return log(float(V(0)))
+    # numpy's trig correctly chooses hyperbolic or not with Complex args
+    theta = arccos(complex(V(0)))
+    return V(2)/sinc(theta).real

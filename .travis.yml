@@ -6,8 +6,11 @@ language: python
 matrix:
   include:
     - os: linux
-      python: '2.7'
-      env: CONDA=true
+      python: '3.5'
+      env: CONDA=false
+    - os: linux
+      python: '3.6'
+      env: CONDA=false
     - os: linux
       python: '3.5'
       env: CONDA=true
@@ -15,23 +18,18 @@ matrix:
       python: '3.6'
       env: CONDA=true
 
-
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then lsb_release -a ; fi
 
 install:
   - if [[ "${CONDA}" == "true" ]]; then
-      PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-linux}" source auto_version/travis_install_conda.sh future numpy scipy numba pip nose;
+      PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-linux}" source auto_version/travis_install_conda.sh numpy scipy numba pip h5py pytest;
+      conda install -c numba numba==0.43;
     fi
-  - pip install coverage
-  - pip install python-coveralls
   - python setup.py install
 
 script:
-  - nosetests --with-coverage --cover-package=clifford test_clifford.py
-
-after_success:
-  - coveralls
+  - pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml
 
 deploy:
   provider: pypi

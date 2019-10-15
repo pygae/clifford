@@ -40,11 +40,14 @@ Geometry Methods
     :toctree: generated/
 
     intersect_line_and_plane_to_point
+    val_intersect_line_and_plane_to_point
     quaternion_and_vector_to_rotor
     get_center_from_sphere
     get_radius_from_sphere
     point_pair_to_end_points
+    val_point_pair_to_end_points
     get_circle_in_euc
+    circle_to_sphere
     line_to_point_and_direction
     get_plane_origin_distance
     get_plane_normal
@@ -55,18 +58,29 @@ Geometry Methods
     convert_2D_point_to_conformal
     val_distance_point_to_line
     distance_polar_line_to_euc_point_2d
-
+    midpoint_between_lines
+    val_midpoint_between_lines
+    midpoint_of_line_cluster
+    val_midpoint_of_line_cluster
+    val_midpoint_of_line_cluster_grad
+    get_line_intersection
+    val_get_line_intersection
+    project_points_to_plane
+    project_points_to_sphere
+    project_points_to_circle
+    project_points_to_line
 
 Misc
 --------------------
 
 .. autosummary::
     :toctree: generated/
-    
-    
+
+
     meet_val
     meet
     normalise_n_minus_1
+    val_normalise_n_minus_1
     val_apply_rotor
     apply_rotor
     val_apply_rotor_inv
@@ -87,6 +101,12 @@ Misc
     fast_dual
     disturb_object
     project_val
+    get_line_reflection_matrix
+    val_get_line_reflection_matrix
+    val_truncated_get_line_reflection_matrix
+    interpret_multivector_as_object
+    normalise_TR_to_unit_T
+    scale_TR_translation
 
 
 Root Finding
@@ -94,7 +114,7 @@ Root Finding
 
 .. autosummary::
     :toctree: generated/
-    
+
     dorst_norm_val
     check_sigma_for_positive_root_val
     check_sigma_for_positive_root
@@ -108,16 +128,23 @@ Root Finding
     negative_root
     general_root_val
     general_root
-    val_annhilate_k
-    annhilate_k
+    val_annihilate_k
+    annihilate_k
     pos_twiddle_root_val
     neg_twiddle_root_val
     pos_twiddle_root
     neg_twiddle_root
     square_roots_of_rotor
+    n_th_rotor_root
     interp_objects_root
+    general_object_interpolation
     average_objects
+    val_average_objects_with_weights
+    val_average_objects
     rotor_between_objects
+    val_rotor_between_objects_root
+    val_rotor_between_objects_explicit
+    calculate_S_over_mu
     val_rotor_between_lines
     rotor_between_lines
     rotor_between_planes
@@ -129,13 +156,23 @@ import math
 import numba
 import numpy as np
 from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
-    random_rotation_rotor, generate_rotation_rotor
+    random_rotation_rotor, generate_rotation_rotor, val_random_euc_mv
 from clifford.g3c import *
 import clifford as cf
-from clifford import get_mult_function
+from clifford import val_get_left_gmt_matrix, val_get_right_gmt_matrix, \
+    grades_present, NUMBA_PARALLEL, MVArray
 import warnings
+from scipy.interpolate import interp1d
 
-# Allow sytactic alternatives to the standard included in the clifford package
+try:
+    import pyganja as ganja
+    from pyganja import draw
+    pyganja_available = True
+except ImportError:
+    pyganja_available = False
+
+
+# Allow syntactic alternatives to the standard included in the clifford package
 ninf = einf
 no = -eo
 
@@ -144,11 +181,13 @@ E = ninf ^ (no)
 I5 = e12345
 I3 = e123
 E0 = ninf ^ -no
+niono = ninf ^ no
 E0_val = E0.value
 I5_val = I5.value
 ninf_val = ninf.value
 no_val = no.value
 I3_val = I3.value
+eo_val = eo.value
 
 unit_scalar_mv = 1.0 + 0.0*e1
 unit_scalar_mv_val = unit_scalar_mv.value
@@ -157,8 +196,495 @@ adjoint_func = layout.adjoint_func
 gmt_func = layout.gmt_func
 omt_func = layout.omt_func
 imt_func = layout.imt_func
-rightLaInv = layout.rightLaInv_func
 
+epsilon = 10*10**(-6)
+
+
+mask0 = layout.get_grade_projection_matrix(0)
+mask1 = layout.get_grade_projection_matrix(1)
+mask2 = layout.get_grade_projection_matrix(2)
+mask3 = layout.get_grade_projection_matrix(3)
+mask4 = layout.get_grade_projection_matrix(4)
+mask5 = layout.get_grade_projection_matrix(5)
+mask_2minus4 = mask2 - mask4
+
+
+def interpret_multivector_as_object(mv):
+    """
+    Takes an input multivector and returns what kind of object it is
+    -1 -> not a blade
+    0 -> a 1 vector but not a point
+    1 -> a euclidean point
+    2 -> a conformal point
+    3 -> a point pair
+    4 -> a circle
+    5 -> a line
+    6 -> a sphere
+    7 -> a plane
+    """
+    g_pres = grades_present(mv, 0.00000001)
+    if len(g_pres) != 1:  # Definitely not a blade
+        return -1
+    grade = g_pres[0]
+    if grade == 1:
+        # This can now either be a euc mv or a conformal point or something else
+        if mv(e123) == mv:
+            return 1  # Euclidean point
+        elif np.sum(np.abs((mv**2).value)) < 0.00000001:
+            return 2  # Conformal point
+        else:
+            return 0  # Unknown mv
+    elif mv.isBlade():
+        if grade == 2:
+            return 3  # Point pair
+        elif grade == 3:  # Line or circle
+            if abs(mv[e123]) > epsilon:
+                return 4  # Circle
+            else:
+                return 5  # Line
+        elif grade == 4:  # Sphere or plane
+            if abs(((mv*I5)|no)[0]) > epsilon:
+                return 7  # Plane
+            else:
+                return 6  # Sphere
+    else:
+        return -1
+
+
+@numba.njit
+def val_sphere_line_intersect(s, l):
+    """
+    Checks for intersection between a sphere and a line
+    """
+    mv = meet_val(s, l)
+    return imt_func(mv, mv)[0] > 0
+
+
+def sphere_line_intersect(s, l):
+    """
+    Checks for intersection between a sphere and a line
+    """
+    return val_sphere_line_intersect(s.value, l.value)
+
+
+def sphere_in_sphere(S1, S2, tolerance=10**-6):
+    """
+    Checks if one sphere is inside the other
+    (S1|S2)[0] < -1
+    """
+    return (unsign_sphere(S1)|unsign_sphere(S2))[0] <= -1 + tolerance
+
+
+def sphere_beyond_plane(sphere, plane):
+    """
+    Check if the sphere is fully beyond the plane in the direction of
+    the plane normal
+    """
+    snorm = unsign_sphere(sphere)
+    return (snorm|plane)[0] < -get_radius_from_sphere(snorm)
+
+
+def sphere_behind_plane(sphere, plane):
+    """
+    Check if the sphere is fully behind the plane in the direction of
+    the plane normal, ie the opposite of sphere_beyond_plane
+    """
+    snorm = unsign_sphere(sphere)
+    return (snorm|plane)[0] > get_radius_from_sphere(snorm)
+
+
+def point_beyond_plane(point, plane):
+    """
+    Check if the point is fully beyond the plane in the direction of
+    the plane normal
+    """
+    return (point|(I5*plane))[0] < 0
+
+
+def unsign_sphere(S):
+    """
+    Normalises the sign of a sphere
+    """
+    return -normalised(S * ((I5 * S) | einf)[0])
+
+
+def val_unsign_sphere(S):
+    """
+    Normalises the sign of a sphere
+    """
+    return val_normalised(S*(-imt_func(dual_func(S),ninf_val)[0]))
+
+
+def join_spheres(S1in, S2in):
+    """
+    Find the smallest sphere that encloses both spheres
+    """
+    s1 = unsign_sphere(S1in)
+    s2 = unsign_sphere(S2in)
+    L = normalised(((s1 * I5) ^ (s2 * I5) ^ einf)(3))
+    pp1 = normalised(meet(s1, L)(2))
+    pp2 = normalised(meet(s2, L)(2))
+    p1 = point_pair_to_end_points(pp1)[0]
+    p2 = point_pair_to_end_points(pp2)[1]
+    if (p1|(s2*I5))[0] > 0.0:
+        opt_sphere = s2(4)
+    elif (p2|(s1*I5))[0] > 0.0:
+        opt_sphere = s1(4)
+    else:
+        p12 = p1 ^ p2
+        L2 = normalised(p12 * (p12 ^ einf))
+        opt_sphere = (L2*I5)(4)
+    return unsign_sphere(opt_sphere)
+
+
+def enclosing_sphere(spheres):
+    """
+    For a given set of spheres this finds a sphere that encloses all of them
+    Tries to find the smallest one it can
+    """
+    nspheres = len(spheres)
+    if nspheres == 1:
+        return spheres[0]
+    elif nspheres == 2:
+        return join_spheres(spheres[0], spheres[1])
+    mins = spheres[0]
+    for i in range(1, nspheres):
+        mins = join_spheres(mins, spheres[i])
+    return mins
+
+    
+def project_points_to_plane(point_list, plane):
+    """ 
+    Takes a load of points and projects them onto a plane
+    """
+    projected_list = []
+    for point in point_list:
+        proj_point = ((point|plane)*plane)
+        proj_point = normalise_n_minus_1((proj_point*einf*proj_point)(1))
+        projected_list.append(proj_point)
+    return projected_list
+
+
+def project_points_to_sphere(point_list, sphere, closest=True):
+    """
+    Takes a load of points and projects them onto a sphere
+    """
+    if closest:
+        point_index = 1
+    else:
+        point_index = 0
+    projected_list = []
+    C = sphere*einf*sphere
+    for point in point_list:
+        proj_point = point_pair_to_end_points(meet(normalised(point^C^einf),sphere))[point_index]
+        projected_list.append(proj_point)
+    return projected_list
+
+
+def project_points_to_circle(point_list, circle, closest=True):
+    """
+    Takes a load of point and projects them onto a circle
+    The closest flag determines if it should be the closest or furthest point on the circle
+    """
+    circle_plane = normalised(circle^einf)
+    planar_points = project_points_to_plane(point_list,circle_plane)
+    circle_points = project_points_to_sphere(planar_points, -circle*circle_plane*I5, closest=closest)
+    return circle_points
+
+
+def project_points_to_line(point_list, line):
+    """
+    Takes a load of points and projects them onto a line
+    """
+    projected_list = []
+    for point in point_list:
+        pp = point|line
+        proj_point = (pp*einf*pp)(1)
+        projected_list.append(proj_point)
+    return projected_list
+
+
+def closest_points_on_circles(C1,C2,niterations=20):
+    """
+    Given two circles C1 and C2 this calculates the closest
+    points on each of them to the other
+    """
+    cav = average_objects([C1,C2])
+    cav2 = average_objects([C1,-C2])
+    PP = meet(cav,cav2^einf).normal()
+    P_list = point_pair_to_end_points(PP)
+    dmin = np.inf
+    for Ptest in P_list:
+        d = -(project_points_to_circle([Ptest],C1)[0](1)|project_points_to_circle([Ptest],C2)[0](1))[0]
+        if d < dmin:
+            dmin = d
+            P2 = Ptest
+    P1 = project_points_to_circle([P2], C1)[0](1)
+    P2 = project_points_to_circle([P1], C2)[0](1)
+    for i in range(niterations):
+        P1 = project_points_to_circle([P2],C1)[0](1)
+        P2 = project_points_to_circle([P1],C2)[0](1)
+    return P1, P2
+
+
+def closest_points_circle_line(C,L,niterations=20):
+    """
+    Given a circle C and line L this calculates the closest
+    points on each of them to the other
+    """
+    cav = average_objects([C,L])
+    cav2 = average_objects([C,-L])
+    PP = meet(cav,cav2^einf).normal()
+    P_list = point_pair_to_end_points(PP)
+    dmin = np.inf
+    for Ptest in P_list:
+        d = -(project_points_to_circle([Ptest],C)[0](1)|project_points_to_line([Ptest],L)[0](1))[0]
+        if d < dmin:
+            dmin = d
+            P2 = Ptest
+    P1 = project_points_to_circle([P2], C)[0](1)
+    P2 = project_points_to_line([P1], L)[0](1)
+    for i in range(niterations):
+        P1 = project_points_to_circle([P2],C)[0](1)
+        P2 = project_points_to_line([P1],L)[0](1)
+    return P1, P2
+
+
+def furthest_points_on_circles(C1,C2,niterations=20):
+    """
+    Given two circles C1 and C2 this calculates the closest
+    points on each of them to the other
+    """
+    P2 = random_conformal_point()
+    P1 = project_points_to_circle([P2], C1, closest=False)[0](1)
+    P2 = project_points_to_circle([P1], C2, closest=False)[0](1)
+    for i in range(niterations):
+        P1 = project_points_to_circle([P2],C1,closest=False)[0](1)
+        P2 = project_points_to_circle([P1],C2,closest=False)[0](1)
+    return P1, P2
+
+
+def normalise_TR_to_unit_T(TR):
+    """
+    Takes in a TR rotor
+    extracts the R and T
+    normalises the T to unit displacement magnitude
+    rebuilds the TR rotor with the new displacement rotor
+    returns the new TR and the original length of the T rotor
+    """
+    R_only = TR(e123)
+    T_only = (TR*~R_only).normal()
+    t = -2*(T_only|no)
+    scale = abs(t)
+    t = t/scale
+    new_TR = (generate_translation_rotor(t)*R_only).normal()
+    return new_TR, scale
+
+
+def scale_TR_translation(TR, scale):
+    """
+    Takes in a TR rotor and a scale
+    extracts the R and T
+    scales the T displacement magnitude by scale
+    rebuilds the TR rotor with the new displacement rotor
+    returns the new TR rotor
+    """
+    R_only = TR(e123)
+    T_only = (TR*~R_only).normal()
+    t = -2*(T_only|no)*scale
+    new_TR = (generate_translation_rotor(t)*R_only).normal()
+    return new_TR
+
+def left_gmt_generator():
+    k_list = layout.k_list
+    l_list = layout.l_list
+    m_list = layout.m_list
+    mult_table_vals = layout.mult_table_vals
+    gaDims = layout.gaDims
+    @numba.njit
+    def get_left_gmt(x_val):
+        return val_get_left_gmt_matrix(x_val, k_list, l_list,
+                                m_list, mult_table_vals, gaDims)
+    return get_left_gmt
+
+def right_gmt_generator():
+    k_list = layout.k_list
+    l_list = layout.l_list
+    m_list = layout.m_list
+    mult_table_vals = layout.mult_table_vals
+    gaDims = layout.gaDims
+    @numba.njit
+    def get_right_gmt(x_val):
+        return val_get_right_gmt_matrix(x_val, k_list, l_list,
+                                m_list, mult_table_vals, gaDims)
+    return get_right_gmt
+
+get_left_gmt_matrix = left_gmt_generator()
+get_right_gmt_matrix = right_gmt_generator()
+def get_line_reflection_matrix(lines, n_power=1):
+    """
+    Generates the matrix that sums the reflection of a point in many lines
+    """
+    mat2solve = np.zeros((32,32), dtype=np.float64)
+    for Li in lines:
+        LiMat = get_left_gmt_matrix(Li.value)
+        tmat = np.matmul(np.matmul(LiMat, mask_2minus4), LiMat)
+        mat2solve += tmat
+    mat = np.matmul(mask1,mat2solve)
+    if n_power != 1:
+        mat = np.linalg.matrix_power(mat, n_power)
+    return mat
+
+@numba.njit
+def val_get_line_reflection_matrix(line_array, n_power):
+    """
+    Generates the matrix that sums the reflection of a point in many lines
+    """
+    mat2solve = np.zeros((32,32), dtype=np.float64)
+    for i in range(line_array.shape[0]):
+        LiMat = get_left_gmt_matrix(line_array[i,:])
+        tmat = np.matmul(np.matmul(LiMat, mask_2minus4), LiMat)
+        mat2solve += tmat
+    mat = np.matmul(mask1,mat2solve)
+    if n_power != 1:
+        mat = np.linalg.matrix_power(mat, n_power)
+    return mat
+
+
+@numba.njit
+def val_truncated_get_line_reflection_matrix(line_array, n_power):
+    """
+    Generates the truncated matrix that sums the
+    reflection of a point in many lines
+    n_power should be 1 or a power of 2
+    """
+    mat2solve = np.zeros((32,32), dtype=np.float64)
+    for i in range(line_array.shape[0]):
+        LiMat = get_left_gmt_matrix(line_array[i,:])
+        tmat = np.matmul(np.matmul(LiMat, mask_2minus4), LiMat)
+        mat2solve += tmat
+    mat_val = np.matmul(mask1,mat2solve)
+    mat_val = mat_val[1:6, 1:6].copy()/line_array.shape[0]
+    if n_power != 1:
+        c_pow = 1
+        while c_pow < n_power:
+            mat_val = np.matmul(mat_val,mat_val)
+            c_pow=c_pow*2
+    return mat_val
+
+
+@numba.njit
+def val_get_line_intersection(L3_val,Ldd_val):
+    """
+    Gets the point of intersection of two orthogonal lines that meet
+    Xdd = Ldd*no*Ldd + no
+    Xddd = L3*Xdd*L3
+    Pd = 0.5*(Xdd+Xddd)
+    P = -(Pd*ninf*Pd)(1)/(2*(Pd|einf)**2)[0]
+    """
+    Xdd = gmt_func(gmt_func(Ldd_val,no_val),Ldd_val) + no_val
+    Xddd = gmt_func(gmt_func(L3_val,Xdd),L3_val)
+    Pd = 0.5*(Xdd+Xddd)
+    P = -gmt_func(gmt_func(Pd,ninf_val),Pd)
+    imt_value = imt_func(Pd,ninf_val)
+    P_denominator = 2*(gmt_func(imt_value,imt_value))[0]
+    return project_val(P/P_denominator,1)
+
+
+def get_line_intersection(L3,Ldd):
+    """
+    Gets the point of intersection of two orthogonal lines that meet
+    Xdd = Ldd*no*Ldd + no
+    Xddd = L3*Xdd*L3
+    Pd = 0.5*(Xdd+Xddd)
+    P = -(Pd*ninf*Pd)(1)/(2*(Pd|einf)**2)[0]
+    """
+    return layout.MultiVector(value=val_get_line_intersection(L3.value,Ldd.value))
+
+
+@numba.njit
+def val_midpoint_between_lines(L1_val, L2_val):
+    """
+    Gets the point that is maximally close to both lines
+    Hadfield and Lasenby AGACSE2018
+    """
+    L3 = val_normalised(L1_val + L2_val)
+    Ldd = val_normalised(L1_val - L2_val)
+    S = val_normalised(gmt_func(I5_val,val_get_line_intersection(L3,Ldd)))
+    return val_normalise_n_minus_1(gmt_func(S,gmt_func(ninf_val,S)))
+
+
+def midpoint_between_lines(L1, L2):
+    """
+    Gets the point that is maximally close to both lines
+    Hadfield and Lasenby AGACSE2018
+    """
+    return layout.MultiVector(value=val_midpoint_between_lines(L1.value,L2.value))
+
+
+def midpoint_of_line_cluster(line_cluster):
+    """
+    Gets a center point of a line cluster
+    Hadfield and Lasenby AGACSE2018
+    """
+    return layout.MultiVector(value=val_midpoint_of_line_cluster(MVArray(line_cluster).value))
+
+
+@numba.njit
+def val_midpoint_of_line_cluster(array_line_cluster):
+    """
+    Gets a center point of a line cluster
+    Hadfield and Lasenby AGACSE2018
+    """
+    # Allocate some space for our finished matrix
+    accumulator_matrix = np.zeros((32, 32))
+
+    # Loop over our lines and construct the matrix
+    for i in range(array_line_cluster.shape[0]):
+        # Get the line as a left gmt matrix
+        L_i_l = get_left_gmt_matrix(array_line_cluster[i, :])
+        # Get the line as a right gmt matrix
+        L_i_r = get_right_gmt_matrix(array_line_cluster[i, :])
+        # Multiply and add
+        accumulator_matrix += L_i_r @ L_i_l
+
+    # Raise the matrix to a very high power
+    power_mat = np.linalg.matrix_power(accumulator_matrix / array_line_cluster.shape[0], 256)
+
+    # Get a point that lies on the first line as an approximation to the e-vector
+    pp_val = imt_func(array_line_cluster[0, :], eo_val)
+    p_start = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(pp_val, ninf_val), pp_val), 1))
+
+    # Apply the matrix
+    p_end = project_val(power_mat @ p_start, 1)
+
+    # Remove any junk that has come along with it
+    final_point = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(p_end, ninf_val), p_end), 1))
+    return final_point
+
+
+@numba.njit(parallel=NUMBA_PARALLEL)
+def val_midpoint_of_line_cluster_grad(array_line_cluster):
+    """
+    Gets an approximate center point of a line cluster
+    Hadfield and Lasenby AGACSE2018
+    """
+    average_line = val_average_objects(array_line_cluster)
+    val_point_track = np.zeros(32)
+    for i in range(array_line_cluster.shape[0]):
+        p = val_midpoint_between_lines(average_line, array_line_cluster[i,:])
+        val_point_track += p
+    S = gmt_func(I5_val,val_point_track)
+    center_point = val_normalise_n_minus_1(project_val(gmt_func(S,gmt_func(ninf_val,S)),1))
+    # Take a derivative of the cost function at this point
+    grad = np.zeros(32)
+    for i in range(array_line_cluster.shape[0]):
+        l_val = array_line_cluster[i, :]
+        grad += (gmt_func(gmt_func(l_val, center_point), l_val))
+    grad = val_normalise_n_minus_1(project_val(grad, 1))
+    s_val = gmt_func(I5_val, project_val(center_point + grad, 1))
+    center_point = val_normalise_n_minus_1(gmt_func(gmt_func(s_val, ninf_val), s_val))
+    return center_point
 
 
 def get_circle_in_euc(circle):
@@ -168,16 +694,28 @@ def get_circle_in_euc(circle):
     inPlaneDual = circle*Ic
     mag = float((inPlaneDual|ninf)[0])
     inPlaneDual = -inPlaneDual/mag
-    radius = math.sqrt((inPlaneDual*inPlaneDual)[0])
-    #GAcentre = down(circle*ninf*circle)
+    radius_squared = (inPlaneDual*inPlaneDual)[0]
+    radius = math.sqrt(abs(radius_squared))
+    if radius_squared < 0:
+        # We have an imaginary circle, return it as a negative radius as our signal
+        radius = -radius
     GAcentre = down(inPlaneDual*(1+0.5*inPlaneDual*ninf))
     return [GAcentre,GAnormal,radius]
 
 
+def circle_to_sphere(C):
+    """
+    returns the sphere for which the input circle is the perimeter
+    """
+    Ic = (C ^ einf).normal()
+    sphere = C * Ic * I5
+    return sphere
+
+
 def line_to_point_and_direction(line):
-    """ 
-    converts a line to the conformal nearest point to the origin and a 
-    euc direction vector in direction of the line 
+    """
+    converts a line to the conformal nearest point to the origin and a
+    euc direction vector in direction of the line
     """
     L_star = line*I5
     T = L_star|no
@@ -281,7 +819,17 @@ def generate_translation_rotor(euc_vector_a):
     """
     Generates a rotor that translates objects along the euclidean vector euc_vector_a
     """
-    return (1 + ninf * euc_vector_a / 2)
+    return layout.MultiVector(value=val_generate_translation_rotor(euc_vector_a.value))
+
+
+@numba.njit
+def val_generate_translation_rotor(euc_vector_a):
+    """
+    Generates a rotor that translates objects along the euclidean vector euc_vector_a
+    """
+    T = gmt_func(ninf_val, euc_vector_a)/ 2
+    T[0] += 1
+    return T
 
 
 @numba.njit
@@ -301,27 +849,56 @@ def meet(A, B):
     return cf.MultiVector(layout, meet_val(A.value, B.value))
 
 
+@numba.njit
+def val_intersect_line_and_plane_to_point(line_val, plane_val):
+    """
+    Returns the point at the intersection of a line and plane
+    """
+    m = meet_val(line_val, plane_val)
+    if gmt_func(m, m)[0] < 0.000001:
+        return np.array([-1.])
+    output = np.zeros(32)
+    A = val_normalised(m)
+    if A[15] < 0:
+        output[1] = A[8]
+        output[2] = A[11]
+        output[3] = A[14]
+    else:
+        output[1] = -A[8]
+        output[2] = -A[11]
+        output[3] = -A[14]
+    output = val_up(output)
+    return output
+
+
 def intersect_line_and_plane_to_point(line, plane):
     """
     Returns the point at the intersection of a line and plane
     If there is no intersection it returns None
     """
-    bivector = (meet(line, plane)).normal()
-    if (bivector*bivector)[0] > 0:
-        return bivector | no
-    else:
+    ans = val_intersect_line_and_plane_to_point(line.value, plane.value)
+    if ans[0] == -1.:
         return None
+    return layout.MultiVector(value=ans)
+
+
+@numba.njit
+def val_normalise_n_minus_1(mv_val):
+    """
+    Normalises a conformal point so that it has an inner product of -1 with einf
+    """
+    scale = imt_func(mv_val,ninf_val)[0]
+    if scale != 0.0:
+        return -mv_val/scale
+    else:
+        raise ZeroDivisionError('Multivector has 0 einf component')
 
 
 def normalise_n_minus_1(mv):
     """
     Normalises a conformal point so that it has an inner product of -1 with einf
     """
-    scale = (mv|ninf)[0]
-    if scale != 0.0:
-        return -mv/scale
-    else:
-        raise ZeroDivisionError('Multivector has 0 einf component')
+    return layout.MultiVector(value=val_normalise_n_minus_1(mv.value))
 
 
 def quaternion_and_vector_to_rotor(quaternion, vector):
@@ -329,10 +906,9 @@ def quaternion_and_vector_to_rotor(quaternion, vector):
     Takes in a quaternion and a vector and returns a conformal rotor that
     implements the transformation
     """
-    rotation = quaternion_to_rotor(quaternion)
-    translation = generate_translation_rotor(
-        vector[0] * e1 + vector[1] * e2 * vector[3] * e3)
-    return translation * rotation
+    rotation = quaternion_to_rotor(quaternion)(0,2,4)
+    translation = generate_translation_rotor(vector[0] * e1 + vector[1] * e2 + vector[2] * e3) (0,2,4)
+    return (translation * rotation).normal()
 
 
 def get_center_from_sphere(sphere):
@@ -349,20 +925,36 @@ def get_radius_from_sphere(sphere):
     Returns the radius of a sphere
     """
     dual_sphere = sphere * I5
-    dual_sphere = dual_sphere / (-dual_sphere | ninf)
+    dual_sphere = dual_sphere / (-dual_sphere | ninf)[0]
     return math.sqrt(abs(dual_sphere * dual_sphere))
+
+
+@numba.njit
+def val_point_pair_to_end_points(T):
+    """
+    Extracts the end points of a point pair bivector
+    """
+    beta = np.sqrt(abs(gmt_func(T, T)[0]))
+    F = T / beta
+    P =  0.5*F
+    P[0] += 0.5
+    P_twiddle = -0.5*F
+    P_twiddle[0] += 0.5
+    A = val_normalise_n_minus_1(-gmt_func(P_twiddle , imt_func(T, ninf_val)))
+    B = val_normalise_n_minus_1(gmt_func(P,imt_func(T, ninf_val)))
+    output = np.zeros((2,32))
+    output[0,:]=A
+    output[1,:]=B
+    return output
 
 
 def point_pair_to_end_points(T):
     """
     Extracts the end points of a point pair bivector
     """
-    beta = math.sqrt(abs((T * T)[0]))
-    F = T / beta
-    P = 0.5 * (1 + F)
-    P_twiddle = 0.5 * (1 - F)
-    A = normalise_n_minus_1(-P_twiddle * (T | ninf))
-    B = normalise_n_minus_1(P * (T | ninf))
+    output = val_point_pair_to_end_points(T.value)
+    A = layout.MultiVector(value=output[0,:])
+    B = layout.MultiVector(value=output[1,:])
     return A, B
 
 
@@ -477,7 +1069,7 @@ def general_root_val(sigma_value):
         return output
     elif check_infinite_roots_val(sigma_value):
         output = np.zeros((2, sigma_value.shape[0]))
-        output[0, :] = 1.0
+        output[:, 0] = 1.0
         return output
     else:
         raise ValueError('No root exists')
@@ -490,16 +1082,17 @@ def general_root(sigma):
 
 
 @numba.njit
-def val_annhilate_k(K_val, C_val):
+def val_annihilate_k(K_val, C_val):
     """ Removes K from C = KX via (K[0] - K[4])*C """
     k_4 = -project_val(K_val, 4)
     k_4[0] += K_val[0]
     return val_normalised(gmt_func(k_4, C_val))
 
 
-def annhilate_k(K, C):
+def annihilate_k(K, C):
     """ Removes K from C = KX via (K[0] - K[4])*C """
-    return cf.MultiVector(layout, val_annhilate_k(K.value, C.value))
+    return cf.MultiVector(layout, val_annihilate_k(K.value, C.value))
+
 
 
 @numba.njit
@@ -513,8 +1106,8 @@ def pos_twiddle_root_val(C_value):
     sigma_val = gmt_func(C_value, adjoint_func(C_value))
     k_value = general_root_val(sigma_val)
     output = np.zeros((2,32))
-    output[0, :] = val_annhilate_k(k_value[0, :], C_value)
-    output[1, :] = val_annhilate_k(k_value[1, :], C_value)
+    output[0, :] = val_annihilate_k(k_value[0, :], C_value)
+    output[1, :] = val_annihilate_k(k_value[1, :], C_value)
     return output
 
 
@@ -529,8 +1122,8 @@ def neg_twiddle_root_val(C_value):
     sigma_val = -gmt_func(C_value, adjoint_func(C_value))
     k_value = general_root_val(sigma_val)
     output = np.zeros((2, 32))
-    output[0, :] = val_annhilate_k(k_value[0, :], C_value)
-    output[1, :] = val_annhilate_k(k_value[1, :], C_value)
+    output[0, :] = val_annihilate_k(k_value[0, :], C_value)
+    output[1, :] = val_annihilate_k(k_value[1, :], C_value)
     return output
 
 
@@ -566,17 +1159,75 @@ def square_roots_of_rotor(R):
     return pos_twiddle_root(1 + R)
 
 
+def n_th_rotor_root(R, n):
+    """
+    Takes the n_th root of rotor R
+    n must be a power of 2
+    """
+    if not (((n & (n - 1)) == 0) and n != 0):
+        raise ValueError('n is not a power of 2')
+    if n == 1:
+        return R
+    else:
+        return n_th_rotor_root(square_roots_of_rotor(R)[0], int(n/2))
+
+
 def interp_objects_root(C1, C2, alpha):
     """
     Hadfield and Lasenby, Direct Linear Interpolation of Geometric Objects, AGACSE2018
     Directly linearly interpolates conformal objects
     Return a valid object from the addition result C
     """
-    C = alpha * C1 + (1 - alpha) * C2
-    return (neg_twiddle_root(C)[0]).normal()
+    C = (1 - alpha) * C1 + alpha*C2
+    C3 = normalised(neg_twiddle_root(C)[0])
+    if cf.grade_obj(C1, 0.00001) != cf.grade_obj(C3, 0.00001):
+        raise ValueError('Created object is not same grade')
+    return C3
 
 
-def average_objects(obj_list, weights=[]):
+
+def general_object_interpolation(object_alpha_array, object_list, new_alpha_array, kind='linear'):
+    """
+    Hadfield and Lasenby, Direct Linear Interpolation of Geometric Objects, AGACSE2018
+    This is a general interpolation through the
+    """
+    obj_array = np.transpose(MVArray(object_list).value)
+    f = interp1d(object_alpha_array, obj_array, kind=kind)
+    new_value_array = np.transpose(f(new_alpha_array))
+    new_conf_array = MVArray.from_value_array(layout, new_value_array)
+    return [normalised(neg_twiddle_root(C)[0]) for C in new_conf_array]
+
+
+@numba.njit
+def val_average_objects_with_weights(obj_array, weights_array):
+    """
+    Hadfield and Lasenby, Direct Linear Interpolation of Geometric Objects, AGACSE2018
+    Directly averages conformal objects
+    Return a valid object from the addition result C
+    """
+    C_val = np.zeros(32)
+    for i in range(obj_array.shape[0]):
+        C_val += obj_array[i, :]*weights_array[i]
+    C3 = val_normalised(neg_twiddle_root_val(C_val)[0, :])
+    return C3
+
+
+@numba.njit
+def val_average_objects(obj_array):
+    """
+    Hadfield and Lasenby, Direct Linear Interpolation of Geometric Objects, AGACSE2018
+    Directly averages conformal objects
+    Return a valid object from the addition result C
+    """
+    C_val = np.zeros(32)
+    for i in range(obj_array.shape[0]):
+        C_val += obj_array[i,:]
+    C_val = C_val / obj_array.shape[0]
+    C3 = val_normalised(neg_twiddle_root_val(C_val)[0, :])
+    return C3
+
+
+def average_objects(obj_list, weights=[], check_grades=True):
     """
     Hadfield and Lasenby, Direct Linear Interpolation of Geometric Objects, AGACSE2018
     Directly averages conformal objects
@@ -586,27 +1237,239 @@ def average_objects(obj_list, weights=[]):
         C = sum([o * w for o, w in zip(obj_list, weights)])
     else:
         C = sum(obj_list) / len(obj_list)
-    return (neg_twiddle_root(C)[0]).normal()
+    C3 = normalised(neg_twiddle_root(C)[0])
+    if check_grades:
+        if cf.grade_obj(obj_list[0], 0.00001) != cf.grade_obj(C3, 0.00001):
+            raise ValueError('Created object is not same grade \n' + str(obj_list[0]) +'\n'+ str(C3))
+    return C3
 
 
-def rotor_between_objects(C1, C2):
+def rotor_between_objects(X1, X2):
     """
-    Hadfield and Lasenby AGACSE2018
-    For any two conformal objects C1 and C2 this returns a rotor that takes C1 to C2
-    Return a valid object from the addition result 1 + C2C1
+    Lasenby and Hadfield AGACSE2018
+    For any two conformal objects X1 and X2 this returns a rotor that takes X1 to X2
+    Return a valid object from the addition result 1 + gamma*X2X1
     """
-    if float(gmt_func(C1.value, C1.value)[0]) > 0:
-        C = 1 + cf.MultiVector(layout,gmt_func(C2.value, C1.value))
-        R = pos_twiddle_root(C)[0]
+    return cf.MultiVector(layout,
+                          val_rotor_between_objects_root(val_normalised(X1.value),
+                                                    val_normalised(X2.value)))
+
+
+def TRS_between_rounds(X1, X2):
+    """
+    Calculate the TRS rotor between any pair of rounds of the same grade
+    Bring rounds to origin, line up carriers, calculate scale
+    """
+    T1 = generate_translation_rotor(-down((X1 * einf * X1)(1)))
+    X1h = normalised(T1 * X1 * ~T1)
+    T2 = generate_translation_rotor(-down((X2 * einf * X2)(1)))
+    X2h = normalised(T2 * X2 * ~T2)
+    X1f = normalised(X1h ^ einf)
+    X2f = normalised(X2h ^ einf)
+    Rc = rotor_between_objects(X1f, X2f)
+    S = generate_dilation_rotor(get_radius_from_sphere(normalised(X2h*X2f*I5))/get_radius_from_sphere(normalised(X1h*X1f*I5)))
+    return normalised((~T2)*S*Rc*T1)
+
+
+def motor_between_rounds(X1, X2):
+    """
+    Calculate the motor between any pair of rounds of the same grade
+    Line up the carriers, then line up the centers
+    """
+    return layout.MultiVector(value=val_motor_between_rounds(X1.value, X2.value))
+
+
+@numba.njit
+def val_motor_between_rounds(X1, X2):
+    """
+    Calculate the motor between any pair of rounds of the same grade
+    Line up the carriers, then line up the centers
+
+    Optimised form of this:
+
+    R = rotor_between_objects(normalised(X1^einf), normalised(X2^einf))
+    X3 = apply_rotor(X1, R)
+    C1 = normalise_n_minus_1((X3 * einf * X3)(1)).value[1:4]
+    C2 = normalise_n_minus_1((X2 * einf * X2)(1)).value[1:4]
+    t = layout.MultiVector()
+    t.value[1:4] = C2 - C1
+    T = generate_translation_rotor(t)
+    return normalised(T*R)
+    """
+    F1 = val_normalised(omt_func(X1,ninf_val))
+    F2 = val_normalised(omt_func(X2,ninf_val))
+
+    if np.abs(F1[31]) > 1E-5:
+        # Its spheres we are dealing with
+        R = unit_scalar_mv_val
+        X3 = X1
+    else:
+        R = val_rotor_between_objects_root(F1, F2)
+        X3 = val_apply_rotor(X1, R)
+
+    C1 = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(X3, ninf_val), X3), 1))
+    C2 = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(X2, ninf_val), X2), 1))
+
+    t = np.zeros(32)
+    t[1:4] = (C2 - C1)[1:4]
+    T = val_generate_translation_rotor(t)
+    return val_normalised(gmt_func(T, R))
+
+
+@numba.njit
+def val_motor_between_objects(X1, X2):
+    """
+    Calculates a motor that takes X1 to X2
+    """
+    carrier = omt_func(X1, ninf_val)
+    if np.sum(np.abs(carrier)) < 1E-4:
+        # They are flats
+        return val_rotor_between_objects_root(X1, X2)
+    else:
+        # Rounds
+        return val_motor_between_rounds(X1, X2)
+
+
+def motor_between_objects(X1, X2):
+    """
+    Calculates a motor that takes X1 to X2
+    """
+    return layout.MultiVector(value=val_motor_between_objects(X1.value, X2.value))
+
+
+def calculate_S_over_mu(X1, X2):
+    """
+    Lasenby and Hadfield AGACSE2018
+    For any two conformal objects X1 and X2 this returns a factor that corrects
+    the X1 + X2 back to a blade
+    """
+    gamma1 = (X1 * X1)[0]
+    gamma2 = (X2 * X2)[0]
+
+    M12 = X1 * X2 + X2 * X1
+    K = 2 + gamma1 * M12
+    mu = (K[0]**2 - K(4)**2)[0]
+
+    if sum(np.abs(M12(4).value)) > 0.0000001:
+        lamb = (-(K(4) * K(4)))[0]
+        mu = K[0] ** 2 + lamb
+        root_mu = np.sqrt(mu)
+        if abs(lamb) < 0.0000001:
+            beta = 1.0 / (2 * np.sqrt(K[0]))
+        else:
+            beta_sqrd = 1 / (2 * (root_mu + K[0]))
+            beta = np.sqrt(beta_sqrd)
+        S = -gamma1/(2*beta) + beta*M12(4)
+        return S/np.sqrt(mu)
+    else:
+        S = np.sqrt(abs(K[0]))
+    return S/np.sqrt(mu)
+
+I5eoval = (I5 * eo).value
+biv3dmask = (e12+e13+e23).value
+
+@numba.njit
+def val_rotor_between_objects_root(X1, X2):
+    """
+    Lasenby and Hadfield AGACSE2018
+    For any two conformal objects X1 and X2 this returns a rotor that takes X1 to X2
+    Uses the square root of rotors for efficiency and numerical stability
+    """
+    X21 = gmt_func(X2, X1)
+    X12 = gmt_func(X1, X2)
+    gamma = gmt_func(X1, X1)[0]
+    if gamma > 0:
+        C_val = gamma*gmt_func(X2, X1)
+        C_val[0] += 1
+        if abs(C_val[0]) < 1E-6:
+            R = val_normalised(project_val(gmt_func(I5eoval, X21), 2))
+            return val_normalised(gmt_func(R, val_rotor_between_objects_root(X1, -X2)))
+        return val_normalised(pos_twiddle_root_val(C_val)[0, :])
+    else:
+        C_val = -X21
+        C_val[0] += 1
+        if abs(C_val[0]) < 1E-6:
+            R = project_val(gmt_func(I5eoval, X21), 2)
+            R = val_normalised(project_val(gmt_func(R,biv3dmask),2))
+            R2 = val_normalised(val_rotor_between_objects_root(val_apply_rotor(X1, R), X2))
+            return val_normalised(gmt_func(R2,R))
+        else:
+            return val_normalised(C_val)
+
+
+@numba.njit
+def val_rotor_between_objects_explicit(X1, X2):
+    """
+    Lasenby and Hadfield AGACSE2018
+    For any two conformal objects X1 and X2 this returns a rotor that takes X1 to X2
+
+    Implements an optimised version of:
+
+    gamma1 = (X1 * X1)[0]
+    gamma2 = (X2 * X2)[0]
+
+    M12 = X1*X2 + X2*X1
+    K = 2 + gamma1*M12
+
+    if np.sum(np.abs(K.value)) < 0.0000001:
+        return 1 + 0*e1
+
+    if sum(np.abs(M12(4).value)) > 0.0000001:
+        lamb = (-(K(4) * K(4)))[0]
+        mu = K[0]**2 + lamb
+        root_mu = np.sqrt(mu)
+        if abs(lamb) < 0.0000001:
+            beta = 1.0/(2*np.sqrt(K[0]))
+        else:
+            beta_sqrd = 1/(2*(root_mu + K[0]))
+            beta = np.sqrt(beta_sqrd)
+        R = ( beta*K(4) - (1/(2*beta)) )*(1 + gamma1*X2*X1)/(root_mu)
         return R
     else:
-        return (1 - cf.MultiVector(layout,gmt_func(C2.value, C1.value))).normal()
+        return (1 + gamma1*X2*X1)/(np.sqrt(abs(K[0])))
+
+    """
+    gamma1 = gmt_func(X1, X1)[0]
+    gamma2 = gmt_func(X2, X2)[0]
+
+    # if abs(abs(gamma1) - 1.0) > 0.00001:
+    #     raise ValueError('X1 must be normalised to give abs(X1*X1) == 1')
+    # elif abs(abs(gamma2) - 1.0) > 0.00001:
+    #     raise ValueError('X1 must be normalised to give abs(X1*X1) == 1')
+    # elif abs(gamma1 - gamma2) > 0.00001:
+    #     raise ValueError('X1 and X2 must square to the same value')
+
+    M12_val = gmt_func(X1, X2) + gmt_func(X2, X1)
+    K_val = gamma1 * M12_val
+    K_val[0] = K_val[0] + 2
+
+    if np.sum(np.abs(K_val)) < 0.0000001:
+        return unit_scalar_mv_val
+
+    if np.sum(np.abs(project_val(M12_val, 4))) > 0.00001:
+        K_val_4 = project_val(K_val, 4)
+        lamb = -gmt_func(K_val_4, K_val_4)[0]
+        mu = K_val[0] ** 2 + lamb
+
+        root_mu = np.sqrt(mu)
+        beta_sqrd = 1 / (2 *root_mu + 2 *K_val[0])
+        beta = np.sqrt(beta_sqrd)
+
+        temp_1 = beta * K_val_4
+        temp_1[0] = temp_1[0] - (1 / (2 * beta))
+
+        temp_2 = gamma1*gmt_func(X2,X1)
+        temp_2[0] = temp_2[0] + 1.0
+
+        R_val = gmt_func(temp_1, temp_2) / root_mu
+        return R_val
+    else:
+        temp_1 = gamma1 * gmt_func(X2, X1)
+        temp_1[0] += 1.0
+        return temp_1/(np.sqrt(abs(K_val[0])))
 
 
-sparse_line_gmt = get_mult_function(
-    layout.gmt, layout.gaDims, layout.gradeList, grades_a=[3], grades_b=[3])
-
-
+sparse_line_gmt = layout.gmt_func_generator(grades_a=[3], grades_b=[3])
 
 
 @numba.njit
@@ -672,8 +1535,7 @@ def val_rotor_rotor_between_planes(P1_val, P2_val):
 def random_bivector():
     """
     Creates a random bivector on the form described by R. Wareham in
-    TODO: Dig out the name of the interpolation paper
-
+    Mesh Vertex Pose and Position Interpolation using Geometric Algebra.
     $$ B =  ab + c*n_{\inf}$$ where $a, b, c \in \mathcal(R)^3$
     """
     a = random_euc_mv()
@@ -709,6 +1571,7 @@ def random_point_pair():
 
 
 def standard_line_at_origin():
+    """ Creates a standard line at the origin """
     return (standard_point_pair_at_origin()^einf).normal()
 
 
@@ -747,19 +1610,18 @@ def random_circle():
     """
     Creates a random circle
     """
-    mv_a = random_euc_mv()
-    mv_b = random_euc_mv()
-    mv_c = random_euc_mv()
-    line_a = ((up(mv_a) ^ up(mv_b) ^ up(mv_c))).normal()
-    return line_a
+    mv_a = val_random_euc_mv()
+    mv_b = val_random_euc_mv()
+    mv_c = val_random_euc_mv()
+    return layout.MultiVector(value=val_normalised(omt_func(omt_func(val_up(mv_a), val_up(mv_b)), val_up(mv_c))))
 
 
 def random_sphere_at_origin():
     """
     Creates a random sphere at the origin
     """
-    pp = random_point_pair_at_origin()
-    sphere = (I5*pp).normal()
+    C = random_circle_at_origin()
+    sphere = circle_to_sphere(C)
     return sphere
 
 
@@ -788,8 +1650,9 @@ def random_plane():
     """
     Creates a random plane
     """
-    line_a = ((random_circle() ^ ninf)).normal()
-    return line_a
+    c = random_circle()
+    plane = (c ^ ninf).normal()
+    return plane
 
 
 @numba.njit
@@ -910,8 +1773,8 @@ def distance_polar_line_to_euc_point_2d(rho, theta, x, y):
     return val_distance_point_to_line(point, line)
 
 
-dual_gmt_func = get_mult_function(layout.gmt, layout.gaDims, layout.gradeList, grades_a=[
-                                  5], grades_b=[0, 1, 2, 3, 4, 5])
+dual_gmt_func = layout.gmt_func_generator(grades_a=[5], grades_b=[0, 1, 2, 3, 4, 5])
+
 
 @numba.njit
 def dual_func(a_val):
@@ -932,6 +1795,17 @@ class ConformalMVArray(cf.MVArray):
     """
     This class is for storing arrays of conformal multivectors
     """
+    def draw(self):
+        '''
+        display mvarray using a given visualization backend
+        
+        currently supports pyganja. 
+        '''
+        if pyganja_available:
+            return draw([mv for mv in self])
+        else:
+            pass  
+                   
     def up(self):
         """
         Up mapping
@@ -976,8 +1850,7 @@ class ConformalMVArray(cf.MVArray):
         Constructs an array of mvs from a value array
         """
         return ConformalMVArray(v_new_mv(value_array))
-
-# This is the vectorisation of functions to allow the conformal mv array to work
+    
 v_dual = np.vectorize(fast_dual, otypes=[ConformalMVArray])
 v_new_mv = np.vectorize(lambda v: cf.MultiVector(layout, v), otypes=[ConformalMVArray], signature='(n)->()')
 v_up = np.vectorize(fast_up, otypes=[ConformalMVArray])
