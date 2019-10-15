@@ -2,7 +2,7 @@ from clifford import Cl
 
 import unittest
 
-from clifford.tools import orthoFrames2Verser as of2v
+from clifford.tools import orthoFrames2Versor as of2v
 import numpy as np
 
 from numpy import exp, float64, testing
@@ -24,26 +24,26 @@ class ToolsTests(unittest.TestCase):
         # create rotated frame
         B = [R*a*~R for a in A]
 
-        # find verser from both frames
+        # find versor from both frames
         R_found, rs = of2v(A, B)
 
         # Rotor is determiend correctly, within a sign
         self.assertTrue(R == R_found or R == -R_found)
 
-        # Determined Verser implements desired transformation
+        # Determined Versor implements desired transformation
         self.assertTrue([R_found*a*~R_found for a in A] == B)
 
-    def testOrthoFrames2VerserEuclidean(self):
+    def testOrthoFrames2VersorEuclidean(self):
         for p, q in [(2, 0), (3, 0), (4, 0)]:
             self.checkit(p=p, q=q)
 
     @unittest.skip("reason unknown")  # fails
-    def testOrthoFrames2VerserMinkowski(self):
+    def testOrthoFrames2VersorMinkowski(self):
         for p, q in [(1, 1), (2, 1), (3, 1)]:
             self.checkit(p=p, q=q)
 
     @unittest.skip("reason unknown")  # fails
-    def testOrthoFrames2VerserBalanced(self):
+    def testOrthoFrames2VersorBalanced(self):
         for p, q in [(2, 2)]:
             self.checkit(p=p, q=q)
 

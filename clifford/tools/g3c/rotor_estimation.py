@@ -8,7 +8,7 @@ from scipy.optimize import minimize
 from .rotor_parameterisation import rotorconversion
 from . import rotor_between_objects, apply_rotor, square_roots_of_rotor, rotor_between_lines, normalised
 from clifford.g3c import *
-from clifford.tools import orthoFrames2Verser as cartan
+from clifford.tools import orthoFrames2Versor as cartan
 from clifford.tools.g3c import *
 from .cost_functions import object_set_cost_sum, rotor_cost, val_rotor_cost_sparse
 from clifford import grade_obj, MVArray
