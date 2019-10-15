@@ -29,7 +29,7 @@ install:
   - python setup.py install
 
 script:
-  - pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml
+  - pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml --durations=25
 
 deploy:
   provider: pypi
