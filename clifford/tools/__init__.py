@@ -29,13 +29,13 @@ create the algorithms below can be found at Allan Cortzen's website.
 
 There are also some helper functions which can be used to translate matrices
 into GA frames, so an orthogonal (or complex unitary ) matrix can be directly
-translated into a Verser.
+translated into a Versor.
 
 .. autosummary::
     :toctree: generated/
 
-    orthoFrames2Verser
-    orthoMat2Verser
+    orthoFrames2Versor
+    orthoMat2Versor
     mat2Frame
 
 """
@@ -176,9 +176,9 @@ def frame2Mat(B, A=None, is_complex=None):
     M = array(M).reshape(len(B), len(B))
 
 
-def orthoFrames2Verser_dist(A, B, eps=None):
+def orthoFrames2Versor_dist(A, B, eps=None):
     '''
-    Determines verser for two frames related by an orthogonal transform
+    Determines versor for two frames related by an orthogonal transform
 
     The frames themselves do not have to be othorgonal.
 
@@ -233,10 +233,10 @@ def orthoFrames2Verser_dist(A, B, eps=None):
     return R, r_list
 
 
-def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
+def orthoFrames2Versor(B, A=None, delta=1e-3, eps=None, det=None,
                        remove_scaling=False):
     '''
-    Determines verser for two frames related by an orthogonal transform
+    Determines versor for two frames related by an orthogonal transform
 
     Based on [1,2]. This works  in Euclidean spaces and, under special
     circumstances in other signatures. see [1] for limitaions/details
@@ -334,9 +334,9 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
         # whatever,  it might still work
         pass
    
-    # Find the Verser
+    # Find the Versor
 
-    # store each reflector/rotor  in a list,  make full verser at the
+    # store each reflector/rotor  in a list,  make full versor at the
     # end of the loop
     r_list = []
 
@@ -390,13 +390,13 @@ def orthoFrames2Verser(B, A=None, delta=1e-3, eps=None, det=None,
     return R, r_list
 
 
-def orthoMat2Verser(A, eps=None, layout=None, is_complex=None):
+def orthoMat2Versor(A, eps=None, layout=None, is_complex=None):
     '''
-    Translates an orthogonal (or unitary) matrix to a Verser
+    Translates an orthogonal (or unitary) matrix to a Versor
 
     `A` is interpreted as the frame produced by transforming a
     orthonormal frame by an orthogonal transform. Given this relation,
-    this function will find the verser which enacts this transform.
+    this function will find the versor which enacts this transform.
 
 
     Parameters
@@ -409,7 +409,7 @@ def orthoMat2Verser(A, eps=None, layout=None, is_complex=None):
     # if (A.dot(A.conj().T) -eye(N/2)).max()>eps:
     #     warn('A doesnt appear to be a rotation. ')
     A, layout = mat2Frame(eye(N), layout=layout, is_complex=False)
-    return orthoFrames2Verser(A=A, B=B, eps=eps)
+    return orthoFrames2Versor(A=A, B=B, eps=eps)
 
 
 def rotor_decomp(V, x):
