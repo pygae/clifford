@@ -109,14 +109,11 @@ def construct_tables(
     array_length = int(len(gradeList) * len(gradeList))
     k_list = np.zeros(array_length, dtype=np.uint64)
     l_list = np.zeros(array_length, dtype=np.uint64)
-    imt_prod_mask = np.zeros(array_length, dtype=np.int64)
-    imt_prod_mask[:] = -1
+    imt_prod_mask = np.zeros(array_length, dtype=np.bool_)
 
-    omt_prod_mask = np.zeros(array_length, dtype=np.int64)
-    omt_prod_mask[:] = -1
+    omt_prod_mask = np.zeros(array_length, dtype=np.bool_)
 
-    lcmt_prod_mask = np.zeros(array_length, dtype=np.int64)
-    lcmt_prod_mask[:] = -1
+    lcmt_prod_mask = np.zeros(array_length, dtype=np.bool_)
 
     m_list = np.zeros(array_length, dtype=np.uint64)
     mult_table_vals = np.zeros(array_length, dtype=np.float64)
@@ -136,22 +133,21 @@ def construct_tables(
             mult_table_vals[list_ind] = mul
             grade_list_idx = gradeList[v]
 
-            if imt_check(grade_list_idx, grade_list_i, grade_list_j):
-                # A_r . B_s = <A_r B_s>_|r-s|
-                # if r, s != 0
-                imt_prod_mask[list_ind] = list_ind
+            # A_r . B_s = <A_r B_s>_|r-s|
+            # if r, s != 0
+            imt_prod_mask[list_ind] = imt_check(grade_list_idx, grade_list_i, grade_list_j)
 
-            if omt_check(grade_list_idx, grade_list_i, grade_list_j):
-                # A_r ^ B_s = <A_r B_s>_|r+s|
-                omt_prod_mask[list_ind] = list_ind
+            # A_r ^ B_s = <A_r B_s>_|r+s|
+            omt_prod_mask[list_ind] = omt_check(grade_list_idx, grade_list_i, grade_list_j)
 
-            if lcmt_check(grade_list_idx, grade_list_i, grade_list_j):
-                # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
-                lcmt_prod_mask[list_ind] = list_ind
-    # Now filter out the -1s
-    imt_prod_mask = imt_prod_mask[imt_prod_mask != -1]
-    omt_prod_mask = omt_prod_mask[omt_prod_mask != -1]
-    lcmt_prod_mask = lcmt_prod_mask[lcmt_prod_mask != -1]
+            # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
+            lcmt_prod_mask[list_ind] = lcmt_check(grade_list_idx, grade_list_i, grade_list_j)
+
+    # Convert boolean masks to indices
+    imt_prod_mask, = imt_prod_mask.nonzero()
+    omt_prod_mask, = omt_prod_mask.nonzero()
+    lcmt_prod_mask, = lcmt_prod_mask.nonzero()
+
     return k_list, l_list, m_list, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask
 
 
