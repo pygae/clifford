@@ -319,7 +319,7 @@ def general_exp(x, max_order=15):
     """
 
     result = 1.0
-    if (max_order == 0):
+    if max_order == 0:
         return result
 
     # scale by power of 2 so that its norm is < 1
@@ -432,8 +432,8 @@ def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
     bitmap = bitmap_a & bitmap_b
     output_sign = canonical_reordering_sign_euclidean(bitmap_a, bitmap_b)
     i = 0
-    while (bitmap != 0):
-        if ((bitmap & 1) != 0):
+    while bitmap != 0:
+        if (bitmap & 1) != 0:
             output_sign *= metric[i]
         i = i + 1
         bitmap = bitmap >> 1
@@ -476,7 +476,7 @@ def compute_blade_representation(bitmap, firstIdx):
     blade = []
     n = firstIdx
     while bmp > 0:
-        if (bmp & 1):
+        if bmp & 1:
             blade.append(n)
         bmp = bmp >> 1
         n = n + 1
@@ -728,17 +728,16 @@ class Layout(object):
             # Split on the '^'
             stuff = cleaned_match.split('^')
 
-            if (len(stuff) == 2):
+            if len(stuff) == 2:
                 # Extract the value of the blade and the index of the blade
                 blade_val = float("".join(stuff[0].split()))
                 blade_index = blade_name_index_map[stuff[1].strip()]
                 mv_out[blade_index] = blade_val
-            else:
-                if(len(stuff) == 1):
-                    # Extract the value of the scalar
-                    blade_val = float("".join(stuff[0].split()))
-                    blade_index = 0
-                    mv_out[blade_index] = blade_val
+            elif len(stuff) == 1:
+                # Extract the value of the scalar
+                blade_val = float("".join(stuff[0].split()))
+                blade_index = 0
+                mv_out[blade_index] = blade_val
         return mv_out
 
     def _checkList(self):
@@ -1077,15 +1076,14 @@ class MultiVector(object):
             else:
                 return other, False
 
-        elif (
-                isinstance(other, MultiVector) and
-                other.layout != self.layout):
-            raise ValueError(
-                "cannot operate on MultiVectors with different Layouts")
         elif isinstance(other, MultiVector):
-            return other, True
-
-        return other, False
+            if other.layout != self.layout:
+                raise ValueError(
+                    "cannot operate on MultiVectors with different Layouts")
+            else:
+                return other, True
+        else:
+            return other, False
 
     def _newMV(self, newValue=None) -> 'MultiVector':
         """Returns a new MultiVector (or derived class instance).
