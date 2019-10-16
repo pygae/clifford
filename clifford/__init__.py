@@ -179,7 +179,7 @@ class _MultiplicationTable:
         self._val_list = val_list
         self._dims = dims
 
-    # fake being an array
+    # fake being an array, for compatibility with older code
     @property
     def ndim(self):
         return 3
@@ -191,6 +191,32 @@ class _MultiplicationTable:
     @property
     def dtype(self):
         return self._val_list.dtype
+
+    def nonzero(self):
+        val_nonzero = self._val_list.nonzero()
+        return (
+            self._k_list[val_nonzero],
+            self._l_list[val_nonzero],
+            self._m_list[val_nonzero],
+        )
+
+    def __getitem__(self, item):
+        k, l, m = item
+        # add an axis to use for matching
+        k = np.asarray(k)[...,None]
+        l = np.asarray(l)[...,None]
+        m = np.asarray(m)[...,None]
+
+        # reshape the array to handle broadcasting
+        index_shape = np.broadcast(k, l, m, self._val_list).shape
+        broadcast_vals = np.broadcast_to(self._val_list, index_shape)
+
+        matching = (k == self._k_list) & (l == self._l_list) & (m == self._m_list)
+        try:
+            # numpy 1.17
+            return np.sum(broadcast_vals, where=matching, axis=-1)
+        except TypeError:
+            return np.sum(broadcast_vals*matching, axis=-1)
 
     @property
     def T(self):
