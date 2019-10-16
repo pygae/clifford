@@ -99,7 +99,7 @@ def get_adjoint_function(gradeList):
 
 
 @numba.njit(parallel=NUMBA_PARALLEL, nogil=True)
-def construct_tables(
+def _construct_tables(
     gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
 ):
     array_length = int(len(gradeList) * len(gradeList))
@@ -147,44 +147,18 @@ def construct_tables(
     return k_list, l_list, m_list, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask
 
 
-def get_mult_function(k_list, l_list, m_list, mult_table_vals, n_dims, gradeList, product_mask=None,
-                      grades_a=None, grades_b=None, filter_mask=None):
-    '''
-    Returns a function that implements the mult_table on two input multivectors
-    '''
-    if product_mask is not None:
-        k_list = k_list[product_mask]
-        l_list = l_list[product_mask]
-        m_list = m_list[product_mask]
-        mult_table_vals = mult_table_vals[product_mask]
-
-    if (filter_mask is None) and (grades_a is not None) and (grades_b is not None):
-        # If not specified explicitly, we can specify sparseness by grade
-        filter_mask = np.zeros(len(k_list), dtype=bool)
-        for i in range(len(filter_mask)):
-            if gradeList[k_list[i]] in grades_a:
-                if gradeList[m_list[i]] in grades_b:
-                    filter_mask[i] = 1
-
-    if filter_mask is not None:
-        # We can pass the sparse filter mask directly
-        k_list = k_list[filter_mask]
-        l_list = l_list[filter_mask]
-        m_list = m_list[filter_mask]
-        mult_table_vals = mult_table_vals[filter_mask]
-
-        return _get_mult_function(
-            k_list, l_list, m_list, mult_table_vals, n_dims)
-
-    else:
-        return _get_mult_function_runtime_sparse(
-            k_list, l_list, m_list, mult_table_vals, n_dims)
+def construct_tables(
+    gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
+):
+    # wrap the numba one
+    k_list, l_list, m_list, mult_table_vals, *masks = _construct_tables(
+        gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
+    )
+    return (_MultiplicationTable(k_list, l_list, m_list, mult_table_vals, dims=len(gradeList)), *masks)
 
 
-def _get_mult_function(k_list, l_list, m_list, mult_table_vals, n_dims):
+class _MultiplicationTable:
     """
-    Get a simple multiplication function.
-
     Parameters
     ----------
     k_list : array_like (N,) of intp
@@ -193,53 +167,168 @@ def _get_mult_function(k_list, l_list, m_list, mult_table_vals, n_dims):
         The indices of the output
     m_list : array_like (N,) of intp
         The indices of the right operand
-    mult_table_vals : array_like (N,) of numbers.Real
+    val_list : array_like (N,) of numbers.Real
         The scalar multiplier.
-    n_dims: int
+    dims: int
         Length of the input and output vectors
-
-    Returns
-    -------
-    func : function (array_like (n_dims,), array_like (n_dims,)) -> array_like (n_dims,)
-        A function that computes the appropriate multiplication
     """
-    @numba.njit
-    def mv_mult(value, other_value):
-        output = np.zeros(n_dims)
-        for ind, k in enumerate(k_list):
-            m = m_list[ind]
-            l = l_list[ind]
-            output[l] += value[k] * mult_table_vals[ind] * other_value[m]
+    def __init__(self, k_list, l_list, m_list, val_list, dims):
+        self._k_list = k_list
+        self._l_list = l_list
+        self._m_list = m_list
+        self._val_list = val_list
+        self._dims = dims
+
+    # fake being an array
+    @property
+    def ndim(self):
+        return 3
+
+    @property
+    def shape(self):
+        return (self._dims,)*3
+
+    @property
+    def dtype(self):
+        return self._val_list.dtype
+
+    @property
+    def T(self):
+        # swap the m and k axes
+        return _MultiplicationTable(
+            k_list=self._m_list,
+            l_list=self._l_list,
+            m_list=self._k_list,
+            val_list=self._val_list,
+            dims=self._dims
+        )
+
+    def __array__(self):
+        output = np.zeros(self.shape, dtype=self.dtype)
+        for k, l, m, val in zip(self._k_list, self._l_list, self._m_list, self._val_list):
+            output[k, l, m] += val
         return output
 
-    return mv_mult
+    def masked(self, mask):
+        """ Get a copy with all the entries specified by `mask` replaced by 0 """
+        return _MultiplicationTable(
+            k_list=self._k_list[mask],
+            l_list=self._l_list[mask],
+            m_list=self._m_list[mask],
+            val_list=self._val_list[mask],
+            dims=self._dims
+        )
 
+    def get_mult_function(self, gradeList, product_mask=None,
+                          grades_a=None, grades_b=None, filter_mask=None):
+        '''
+        Returns a function that implements the mult_table on two input multivectors
+        '''
+        if product_mask is not None:
+            self = self.masked(product_mask)
 
-def _get_mult_function_runtime_sparse(k_list, l_list, m_list, mult_table_vals, n_dims):
-    """
-    Get a multiplication function that attempts to exploit runtime zeros
+        if (filter_mask is None) and (grades_a is not None) and (grades_b is not None):
+            # If not specified explicitly, we can specify sparseness by grade
+            filter_mask = np.zeros(len(self._k_list), dtype=bool)
+            for i in range(len(filter_mask)):
+                if gradeList[self._k_list[i]] in grades_a:
+                    if gradeList[self._m_list[i]] in grades_b:
+                        filter_mask[i] = 1
 
-    See `_get_mult_function` for parameter descriptions.
+        if filter_mask is not None:
+            # We can pass the sparse filter mask directly
+            self = self.masked(filter_mask)
 
-    The returned function avoids performing multiplications if vectors contain
-    zeros.
+            return self._get_mult_function()
 
-    TODO: determine if this actually helps.
-    """
-    @numba.njit
-    def mv_mult(value, other_value):
-        output = np.zeros(n_dims)
-        for ind, k in enumerate(k_list):
-            v_val = value[k]
-            if v_val != 0.0:
+        else:
+            return self._get_mult_function_runtime_sparse()
+
+    def _get_mult_function(self):
+        """
+        Get a simple multiplication function.
+
+        Returns
+        -------
+        func : function (array_like (n_dims,), array_like (n_dims,)) -> array_like (n_dims,)
+            A function that computes the appropriate multiplication
+        """
+        # unpack for numba
+        dims = self._dims
+        k_list = self._k_list
+        l_list = self._l_list
+        m_list = self._m_list
+        mult_table_vals = self._val_list
+
+        @numba.njit
+        def mv_mult(value, other_value):
+            output = np.zeros(dims)
+            for ind, k in enumerate(k_list):
                 m = m_list[ind]
-                ov_val = other_value[m]
-                if ov_val != 0.0:
-                    l = l_list[ind]
-                    output[l] += v_val * mult_table_vals[ind] * ov_val
-        return output
+                l = l_list[ind]
+                output[l] += value[k] * mult_table_vals[ind] * other_value[m]
+            return output
 
-    return mv_mult
+        return mv_mult
+
+    def _get_mult_function_runtime_sparse(self):
+        """
+        Get a multiplication function that attempts to exploit runtime zeros
+
+        The returned function avoids performing multiplications if vectors contain
+        zeros.
+
+        TODO: determine if this actually helps.
+        """
+        # unpack for numba
+        dims = self._dims
+        k_list = self._k_list
+        l_list = self._l_list
+        m_list = self._m_list
+        mult_table_vals = self._val_list
+
+        @numba.njit
+        def mv_mult(value, other_value):
+            output = np.zeros(dims)
+            for ind, k in enumerate(k_list):
+                v_val = value[k]
+                if v_val != 0.0:
+                    m = m_list[ind]
+                    ov_val = other_value[m]
+                    if ov_val != 0.0:
+                        l = l_list[ind]
+                        output[l] += v_val * mult_table_vals[ind] * ov_val
+            return output
+
+        return mv_mult
+
+    @staticmethod
+    @numba.njit
+    def _numba_val_get_left_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
+        intermed = np.zeros((ndims, ndims))
+        test_ind = 0
+        for k in k_list:
+            j = l_list[test_ind]
+            i = m_list[test_ind]
+            intermed[j, i] += mult_table_vals[test_ind] * x[k]
+            test_ind = test_ind + 1
+        return intermed
+
+    def _val_get_left_matrix(self, x):
+        """
+        This produces the matrix X that performs left multiplication with x
+        eg. X@b == (x*b).value
+        """
+        return _MultiplicationTable._numba_val_get_left_matrix(
+            x, self._k_list, self._l_list, self._m_list, self._val_list, self._dims
+        )
+
+    def _val_get_right_matrix(self, x):
+        """
+        This produces the matrix X that performs right multiplication with x
+        eg. X@b == (b*x).value
+        """
+        return self.T._val_get_left_matrix(x)
 
 
 @numba.njit
@@ -291,7 +380,7 @@ def grade_obj_func(objin_val, gradeList, threshold):
     return np.argmax(modal_value_count)
 
 
-def get_leftLaInv(k_list, l_list, m_list, mult_table_vals, n_dims, gradeList):
+def get_leftLaInv(mult_table, gradeList):
     """
     Get a function that returns left-inverse using a computational linear algebra method
     proposed by Christian Perwass.
@@ -299,8 +388,14 @@ def get_leftLaInv(k_list, l_list, m_list, mult_table_vals, n_dims, gradeList):
     M    where M  * M  == 1
     """
 
-    identity = np.zeros((n_dims,))
+    identity = np.zeros((mult_table._dims,))
     identity[gradeList.index(0)] = 1
+
+    k_list = mult_table._k_list
+    l_list = mult_table._l_list
+    m_list = mult_table._m_list
+    mult_table_vals = mult_table._val_list
+    n_dims = mult_table._dims
 
     @numba.njit
     def leftLaInvJIT(value):
@@ -487,38 +582,6 @@ def compute_blade_representation(bitmap, firstIdx):
         bmp = bmp >> 1
         n = n + 1
     return tuple(blade)
-
-
-@numba.njit
-def val_get_left_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
-    """
-    This produces the matrix X that performs left multiplication with x
-    eg. X@b == (x*b).value
-    """
-    intermed = np.zeros((ndims, ndims))
-    test_ind = 0
-    for k in k_list:
-        j = l_list[test_ind]
-        i = m_list[test_ind]
-        intermed[j, i] += mult_table_vals[test_ind] * x[k]
-        test_ind = test_ind + 1
-    return intermed
-
-
-@numba.njit
-def val_get_right_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
-    """
-    This produces the matrix X that performs right multiplication with x
-    eg. X@b == (b*x).value
-    """
-    intermed = np.zeros((ndims, ndims))
-    test_ind = 0
-    for m in m_list:
-        j = l_list[test_ind]
-        i = k_list[test_ind]
-        intermed[j, i] += mult_table_vals[test_ind] * x[m]
-        test_ind = test_ind + 1
-    return intermed
 
 
 class Layout(object):
@@ -771,7 +834,7 @@ class Layout(object):
         for bitmap, linear in enumerate(self.bitmap_to_linear_map):
             self.linear_map_to_bitmap[linear] = int(bitmap)
 
-        k_list, l_list, m_list, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask = construct_tables(
+        self.gmt, imt_prod_mask, omt_prod_mask, lcmt_prod_mask = construct_tables(
             np.array(self.gradeList),
             self.linear_map_to_bitmap,
             self.bitmap_to_linear_map,
@@ -779,40 +842,36 @@ class Layout(object):
         )
 
         # This generates the functions that will perform the various products
-        self.gmt_func = get_mult_function(k_list, l_list, m_list, mult_table_vals, self.gaDims, self.gradeList)
-        self.imt_func = get_mult_function(k_list, l_list, m_list, mult_table_vals, self.gaDims, self.gradeList, product_mask=imt_prod_mask)
-        self.omt_func = get_mult_function(k_list, l_list, m_list, mult_table_vals, self.gaDims, self.gradeList, product_mask=omt_prod_mask)
-        self.lcmt_func = get_mult_function(k_list, l_list, m_list, mult_table_vals, self.gaDims, self.gradeList, product_mask=lcmt_prod_mask)
-        self.inv_func = get_leftLaInv(k_list, l_list, m_list, mult_table_vals, self.gaDims, self.gradeList)
-        self.k_list = k_list
-        self.l_list = l_list
-        self.m_list = m_list
-        self.mult_table_vals = mult_table_vals
+        self.gmt_func = self.gmt.get_mult_function(self.gradeList)
+        self.imt_func = self.gmt.get_mult_function(self.gradeList, product_mask=imt_prod_mask)
+        self.omt_func = self.gmt.get_mult_function(self.gradeList, product_mask=omt_prod_mask)
+        self.lcmt_func = self.gmt.get_mult_function(self.gradeList, product_mask=lcmt_prod_mask)
+        self.inv_func = get_leftLaInv(self.gmt, self.gradeList)
         self.imt_prod_mask = imt_prod_mask
         self.omt_prod_mask = omt_prod_mask
         self.lcmt_prod_mask = lcmt_prod_mask
 
     def gmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
-        return get_mult_function(
-            self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
+        return self.gmt.get_mult_function(
+            self.gradeList,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
     def imt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
-        return get_mult_function(
-            self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
+        return self.gmt.get_mult_function(
+            self.gradeList,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask, product_mask=self.imt_prod_mask
         )
 
     def omt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
-        return get_mult_function(
-            self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
+        return self.gmt.get_mult_function(
+            self.gradeList,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask, product_mask=self.omt_prod_mask
         )
 
     def lcmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
-        return get_mult_function(
-            self.k_list, self.l_list, self.m_list, self.mult_table_vals, self.gaDims, self.gradeList,
+        return self.gmt.get_mult_function(
+            self.gradeList,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask, product_mask=self.lcmt_prod_mask
         )
 
@@ -850,20 +909,14 @@ class Layout(object):
         This produces the matrix X that performs left multiplication with x
         eg. X@b == (x*b).value
         """
-        return val_get_left_gmt_matrix(
-            x.value, self.k_list, self.l_list,
-            self.m_list, self.mult_table_vals, self.gaDims
-        )
+        return self.gmt._val_get_left_matrix(x.value)
 
     def get_right_gmt_matrix(self, x):
         """
         This produces the matrix X that performs right multiplication with x
         eg. X@b == (b*x).value
         """
-        return val_get_right_gmt_matrix(
-            x.value, self.k_list, self.l_list,
-            self.m_list, self.mult_table_vals, self.gaDims
-        )
+        return self.gmt._val_get_right_matrix(x.value)
 
     def MultiVector(self, *args, **kw):
         '''

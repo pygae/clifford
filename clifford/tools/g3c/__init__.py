@@ -159,8 +159,7 @@ from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
     random_rotation_rotor, generate_rotation_rotor, val_random_euc_mv
 from clifford.g3c import *
 import clifford as cf
-from clifford import val_get_left_gmt_matrix, val_get_right_gmt_matrix, \
-    grades_present, NUMBA_PARALLEL, MVArray
+from clifford import grades_present, NUMBA_PARALLEL, MVArray
 import warnings
 from scipy.interpolate import interp1d
 
@@ -495,29 +494,24 @@ def scale_TR_translation(TR, scale):
     new_TR = (generate_translation_rotor(t)*R_only).normal()
     return new_TR
 
-def left_gmt_generator():
-    k_list = layout.k_list
-    l_list = layout.l_list
-    m_list = layout.m_list
-    mult_table_vals = layout.mult_table_vals
-    gaDims = layout.gaDims
+
+def left_gmt_generator(mt=layout.gmt):
+    # unpack for numba
+    k_list = mt._k_list
+    l_list = mt._l_list
+    m_list = mt._m_list
+    mult_table_vals = mt._val_list
+    gaDims = mt._dims
+    val_get_left_gmt_matrix = cf._MultiplicationTable._numba_val_get_left_matrix
+
     @numba.njit
     def get_left_gmt(x_val):
         return val_get_left_gmt_matrix(x_val, k_list, l_list,
                                 m_list, mult_table_vals, gaDims)
     return get_left_gmt
 
-def right_gmt_generator():
-    k_list = layout.k_list
-    l_list = layout.l_list
-    m_list = layout.m_list
-    mult_table_vals = layout.mult_table_vals
-    gaDims = layout.gaDims
-    @numba.njit
-    def get_right_gmt(x_val):
-        return val_get_right_gmt_matrix(x_val, k_list, l_list,
-                                m_list, mult_table_vals, gaDims)
-    return get_right_gmt
+def right_gmt_generator(mt=layout.gmt):
+    return left_gmt_generator(mt.T)
 
 get_left_gmt_matrix = left_gmt_generator()
 get_right_gmt_matrix = right_gmt_generator()
