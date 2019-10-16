@@ -58,8 +58,7 @@ __version__ = '1.0.5'
 # The blade finding regex for parsing strings of mvs
 _blade_pattern = re.compile(r"""
     ((^|\s)-?\s?\d+(\.\d+)?)\s|
-    (     -\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|
-    ((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))
+    ((^|\+|-)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))
 """, re.VERBOSE)
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
