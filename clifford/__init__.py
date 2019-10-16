@@ -1066,11 +1066,11 @@ class MultiVector(object):
         # we are a scalar, and the only appropriate dtype is an object array
         return MVArray([self])
 
-    def _checkOther(self, other, coerce=1) -> Tuple['MultiVector', bool]:
+    def _checkOther(self, other, coerce=True) -> Tuple['MultiVector', bool]:
         """Ensure that the other argument has the same Layout or coerce value if
         necessary/requested.
 
-        _checkOther(other, coerce=1) --> newOther, isMultiVector
+        _checkOther(other, coerce=True) --> newOther, isMultiVector
         """
         if isinstance(other, numbers.Number):
             if coerce:
@@ -1122,7 +1122,7 @@ class MultiVector(object):
         M * N --> MN
         """
 
-        other, mv = self._checkOther(other, coerce=0)
+        other, mv = self._checkOther(other, coerce=False)
 
         if mv:
             newValue = self.layout.gmt_func(self.value, other.value)
@@ -1141,7 +1141,7 @@ class MultiVector(object):
         N * M --> NM
         """
 
-        other, mv = self._checkOther(other, coerce=0)
+        other, mv = self._checkOther(other, coerce=False)
 
         if mv:
             newValue = self.layout.gmt_func(other.value, self.value)
@@ -1159,7 +1159,7 @@ class MultiVector(object):
         M ^ N
         """
 
-        other, mv = self._checkOther(other, coerce=0)
+        other, mv = self._checkOther(other, coerce=False)
 
         if mv:
             newValue = self.layout.omt_func(self.value, other.value)
@@ -1177,7 +1177,7 @@ class MultiVector(object):
         N ^ M
         """
 
-        other, mv = self._checkOther(other, coerce=0)
+        other, mv = self._checkOther(other, coerce=False)
 
         if mv:
             newValue = self.layout.omt_func(other.value, self.value)
@@ -1265,7 +1265,7 @@ class MultiVector(object):
         M / N --> M * N
         """
 
-        other, mv = self._checkOther(other, coerce=0)
+        other, mv = self._checkOther(other, coerce=False)
 
         if mv:
             return self * other.inv()
@@ -1625,7 +1625,7 @@ class MultiVector(object):
         M _| N
         """
 
-        other, mv = self._checkOther(other, coerce=1)
+        other, mv = self._checkOther(other, coerce=True)
 
         newValue = self.layout.lcmt_func(self.value, other.value)
 
@@ -1672,7 +1672,7 @@ class MultiVector(object):
                 if grade is None:
                     grade = self.layout.gradeList[i]
                 elif self.layout.gradeList[i] != grade:
-                    return 0
+                    return False
 
         Vhat = self.gradeInvol()
         Vrev = ~self
@@ -1685,9 +1685,9 @@ class MultiVector(object):
                     for e in basis_vectors(self.layout).values():
                         gpres = grades_present(Vhat*e*Vrev, 0.000001)
                         if not (len(gpres) == 1 and gpres[0] == 1):
-                            return 0
-                    return 1
-        return 0
+                            return False
+                    return True
+        return False
 
     def isVersor(self) -> bool:
         """Returns true if multivector is a versor.
@@ -1706,13 +1706,13 @@ class MultiVector(object):
                     for e in basis_vectors(self.layout).values():
                         gpres = grades_present(Vhat*e*Vrev, 0.000001)
                         if not (len(gpres) == 1 and gpres[0] == 1):
-                            return 0
+                            return False
                     gpres = grades_present(self, 0.000001)
                     if len(gpres) == 1:
-                        return 0
+                        return False
                     else:
-                        return 1
-        return 0
+                        return True
+        return False
 
     def grades(self) -> List[int]:
         """Return the grades contained in the multivector.
@@ -1858,7 +1858,7 @@ class MultiVector(object):
          A
         """
 
-        other, mv = self._checkOther(other, coerce=1)
+        other, mv = self._checkOther(other, coerce=True)
 
         if not self.isBlade():
             raise ValueError("self is not a blade")
