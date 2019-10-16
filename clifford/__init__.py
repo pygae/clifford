@@ -48,6 +48,7 @@ from typing import List, Tuple
 import numpy as np
 from numpy import linalg, zeros
 import numba
+import sparse
 
 
 from clifford.io import write_ga_file, read_ga_file
@@ -103,15 +104,17 @@ def _construct_tables(
     gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
 ):
     array_length = int(len(gradeList) * len(gradeList))
-    k_list = np.zeros(array_length, dtype=np.uint64)
-    l_list = np.zeros(array_length, dtype=np.uint64)
+    indices = np.zeros((3, array_length), dtype=np.uint64)
+    k_list = indices[0, :]
+    l_list = indices[1, :]
+    m_list = indices[2, :]
+
     imt_prod_mask = np.zeros(array_length, dtype=np.bool_)
 
     omt_prod_mask = np.zeros(array_length, dtype=np.bool_)
 
     lcmt_prod_mask = np.zeros(array_length, dtype=np.bool_)
 
-    m_list = np.zeros(array_length, dtype=np.uint64)
     mult_table_vals = np.zeros(array_length, dtype=np.float64)
 
     for i, grade_list_i in enumerate(gradeList):
@@ -144,106 +147,58 @@ def _construct_tables(
     omt_prod_mask, = omt_prod_mask.nonzero()
     lcmt_prod_mask, = lcmt_prod_mask.nonzero()
 
-    return k_list, l_list, m_list, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask
+    return indices, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask
 
 
 def construct_tables(
     gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
 ):
     # wrap the numba one
-    k_list, l_list, m_list, mult_table_vals, *masks = _construct_tables(
+    indices, mult_table_vals, *masks = _construct_tables(
         gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
     )
-    return (_MultiplicationTable(k_list, l_list, m_list, mult_table_vals, dims=len(gradeList)), *masks)
+    dims = len(gradeList)
+    table = _MultiplicationTable(
+        coords=indices, data=mult_table_vals, shape=(dims, dims, dims),
+          # allow sparse to resort or de-duplicate breaks our masking
+        has_duplicates=False,
+        sorted=True
+    )
+    return (table, *masks)
 
 
-class _MultiplicationTable:
-    """
-    Parameters
-    ----------
-    k_list : array_like (N,) of intp
-        The indices of the left operand
-    l_list : array_like (N,) of intp
-        The indices of the output
-    m_list : array_like (N,) of intp
-        The indices of the right operand
-    val_list : array_like (N,) of numbers.Real
-        The scalar multiplier.
-    dims: int
-        Length of the input and output vectors
-    """
-    def __init__(self, k_list, l_list, m_list, val_list, dims):
-        self._k_list = k_list
-        self._l_list = l_list
-        self._m_list = m_list
-        self._val_list = val_list
-        self._dims = dims
-
-    # fake being an array, for compatibility with older code
-    @property
-    def ndim(self):
-        return 3
-
-    @property
-    def shape(self):
-        return (self._dims,)*3
-
-    @property
-    def dtype(self):
-        return self._val_list.dtype
-
-    def nonzero(self):
-        val_nonzero = self._val_list.nonzero()
-        return (
-            self._k_list[val_nonzero],
-            self._l_list[val_nonzero],
-            self._m_list[val_nonzero],
-        )
-
-    def __getitem__(self, item):
-        k, l, m = item
-        # add an axis to use for matching
-        k = np.asarray(k)[...,None]
-        l = np.asarray(l)[...,None]
-        m = np.asarray(m)[...,None]
-
-        # reshape the array to handle broadcasting
-        index_shape = np.broadcast(k, l, m, self._val_list).shape
-        broadcast_vals = np.broadcast_to(self._val_list, index_shape)
-
-        matching = (k == self._k_list) & (l == self._l_list) & (m == self._m_list)
-        try:
-            # numpy 1.17
-            return np.sum(broadcast_vals, where=matching, axis=-1)
-        except TypeError:
-            return np.sum(broadcast_vals*matching, axis=-1)
-
-    @property
-    def T(self):
-        # swap the m and k axes
-        return _MultiplicationTable(
-            k_list=self._m_list,
-            l_list=self._l_list,
-            m_list=self._k_list,
-            val_list=self._val_list,
-            dims=self._dims
-        )
-
-    def __array__(self):
-        output = np.zeros(self.shape, dtype=self.dtype)
-        for k, l, m, val in zip(self._k_list, self._l_list, self._m_list, self._val_list):
-            output[k, l, m] += val
-        return output
-
+class _MultiplicationTable(sparse.COO):
     def masked(self, mask):
         """ Get a copy with all the entries specified by `mask` replaced by 0 """
         return _MultiplicationTable(
-            k_list=self._k_list[mask],
-            l_list=self._l_list[mask],
-            m_list=self._m_list[mask],
-            val_list=self._val_list[mask],
-            dims=self._dims
+            coords=self.coords[:, mask],
+            data=self.data[mask],
+            shape=self.shape,
+            sorted=True  # allow sparse to resort breaks our masking
         )
+
+    # sparse doesn't work for `arr[arr.nonzero()]`, try and special case it
+    def __getitem__(self, item):
+        try:
+            return super().__getitem__(item)
+        except TypeError:
+            k, l, m = item
+            # add an axis to use for matching
+            k = np.asarray(k)[...,None]
+            l = np.asarray(l)[...,None]
+            m = np.asarray(m)[...,None]
+
+            # reshape the array to handle broadcasting
+            index_shape = np.broadcast(k, l, m, self.data).shape
+            broadcast_vals = np.broadcast_to(self.data, index_shape)
+            k_list, l_list, m_list = self.coords
+
+            matching = (k == k_list) & (l == l_list) & (m == m_list)
+            try:
+                # numpy 1.17
+                return np.sum(broadcast_vals, where=matching, axis=-1)
+            except TypeError:
+                return np.sum(broadcast_vals*matching, axis=-1)
 
     def get_mult_function(self, gradeList, product_mask=None,
                           grades_a=None, grades_b=None, filter_mask=None):
@@ -255,10 +210,11 @@ class _MultiplicationTable:
 
         if (filter_mask is None) and (grades_a is not None) and (grades_b is not None):
             # If not specified explicitly, we can specify sparseness by grade
-            filter_mask = np.zeros(len(self._k_list), dtype=bool)
+            filter_mask = np.zeros(self.nnz, dtype=bool)
+            k_list, _, m_list = self.coords
             for i in range(len(filter_mask)):
-                if gradeList[self._k_list[i]] in grades_a:
-                    if gradeList[self._m_list[i]] in grades_b:
+                if gradeList[k_list[i]] in grades_a:
+                    if gradeList[m_list[i]] in grades_b:
                         filter_mask[i] = 1
 
         if filter_mask is not None:
@@ -280,11 +236,9 @@ class _MultiplicationTable:
             A function that computes the appropriate multiplication
         """
         # unpack for numba
-        dims = self._dims
-        k_list = self._k_list
-        l_list = self._l_list
-        m_list = self._m_list
-        mult_table_vals = self._val_list
+        dims = self.shape[1]
+        k_list, l_list, m_list = self.coords
+        mult_table_vals = self.data
 
         @numba.njit
         def mv_mult(value, other_value):
@@ -307,11 +261,9 @@ class _MultiplicationTable:
         TODO: determine if this actually helps.
         """
         # unpack for numba
-        dims = self._dims
-        k_list = self._k_list
-        l_list = self._l_list
-        m_list = self._m_list
-        mult_table_vals = self._val_list
+        dims = self.shape[1]
+        k_list, l_list, m_list = self.coords
+        mult_table_vals = self.data
 
         @numba.njit
         def mv_mult(value, other_value):
@@ -345,8 +297,10 @@ class _MultiplicationTable:
         This produces the matrix X that performs left multiplication with x
         eg. X@b == (x*b).value
         """
+        dims = self.shape[1]
+        k_list, l_list, m_list = self.coords
         return _MultiplicationTable._numba_val_get_left_matrix(
-            x, self._k_list, self._l_list, self._m_list, self._val_list, self._dims
+            x, k_list, l_list, m_list, self.data, dims
         )
 
     def _val_get_right_matrix(self, x):
@@ -414,14 +368,12 @@ def get_leftLaInv(mult_table, gradeList):
     M    where M  * M  == 1
     """
 
-    identity = np.zeros((mult_table._dims,))
-    identity[gradeList.index(0)] = 1
+    k_list, l_list, m_list = mult_table.coords
+    mult_table_vals = mult_table.data
+    n_dims = mult_table.shape[1]
 
-    k_list = mult_table._k_list
-    l_list = mult_table._l_list
-    m_list = mult_table._m_list
-    mult_table_vals = mult_table._val_list
-    n_dims = mult_table._dims
+    identity = np.zeros((n_dims,))
+    identity[gradeList.index(0)] = 1
 
     @numba.njit
     def leftLaInvJIT(value):

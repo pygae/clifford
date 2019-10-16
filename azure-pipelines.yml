@@ -144,7 +144,7 @@ jobs:
       source activate myEnvironment
       conda update -n base -y -c defaults conda
       conda update -y conda
-      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy
+      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy sparse
       conda install --yes $(numbacommand)
       python -m pip install -U pytest
       $(installPackageCommand)

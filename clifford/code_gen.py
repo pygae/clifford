@@ -9,11 +9,9 @@ def generate_mult_function_batch_compile(gmt,
     if product_mask is not None:
         gmt = gmt.masked(product_mask)
 
-    k_list = gmt._k_list
-    l_list = gmt._l_list
-    m_list = gmt._m_list
-    mult_table_vals = gmt._val_list
-    n_dims = gmt._dims
+    k_list, l_list, m_list = gmt.coords
+    mult_table_vals = gmt.data
+    n_dims = gmt.shape[1]
 
     # Sort them by l list
     arg_list = np.argsort(l_list)

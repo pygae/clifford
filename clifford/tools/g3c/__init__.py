@@ -497,11 +497,9 @@ def scale_TR_translation(TR, scale):
 
 def left_gmt_generator(mt=layout.gmt):
     # unpack for numba
-    k_list = mt._k_list
-    l_list = mt._l_list
-    m_list = mt._m_list
-    mult_table_vals = mt._val_list
-    gaDims = mt._dims
+    k_list, l_list, m_list = mt.coords
+    mult_table_vals = mt.data
+    gaDims = mt.shape[1]
     val_get_left_gmt_matrix = cf._MultiplicationTable._numba_val_get_left_matrix
 
     @numba.njit
