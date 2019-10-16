@@ -6,24 +6,14 @@ def generate_mult_function_batch_compile(k_list, l_list, m_list, mult_table_vals
     """
     Takes a given product and generates the code for a function that evaluates it
     """
-    if product_mask is None:
-        k_list_copy = k_list
-        l_list_copy = l_list
-        m_list_copy = m_list
-        mult_table_vals_copy = mult_table_vals
-    else:
-        k_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
-        l_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
-        m_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
-        mult_table_vals_copy = np.zeros(product_mask.shape[0])
-        for i in range(product_mask.shape[0]):
-            k_list_copy[i] = k_list[product_mask[i]]
-            l_list_copy[i] = l_list[product_mask[i]]
-            m_list_copy[i] = m_list[product_mask[i]]
-            mult_table_vals_copy[i] = mult_table_vals[product_mask[i]]
+    if product_mask is not None:
+        k_list = k_list[product_mask]
+        l_list = l_list[product_mask]
+        m_list = m_list[product_mask]
+        mult_table_vals = mult_table_vals[product_mask]
 
     # Sort them by l list
-    arg_list = np.argsort(l_list_copy)
+    arg_list = np.argsort(l_list)
 
     def get_output_func_f_string(l_value):
         if cuda:
@@ -34,11 +24,11 @@ def generate_mult_function_batch_compile(k_list, l_list, m_list, mult_table_vals
         f_string += 'def ' + fname + '(value, other_value):\n'
         f_string += '    return 0'
         for ind in arg_list:
-            l = l_list_copy[ind]
+            l = l_list[ind]
             if l == l_value:
-                k = k_list_copy[ind]
-                m = m_list_copy[ind]
-                mtv = mult_table_vals_copy[ind]
+                k = k_list[ind]
+                m = m_list[ind]
+                mtv = mult_table_vals[ind]
                 f_string += ' + ' + str(mtv) + '*value[' + str(k) + ']*other_value[' + str(m) + ']'
 
         return f_string
