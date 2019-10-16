@@ -43,6 +43,11 @@ export PATH="$HOME/miniconda/bin:$PATH"
 hash -r
 conda info -a
 conda config --set always_yes yes --set changeps1 no
+
+# workaround for https://github.com/conda/conda/issues/9337
+pip uninstall -y setuptools
+conda install setuptools
+
 conda update -q conda
 conda create -q -n test-environment python="${PYTHON_VERSION:-3}" $*
 source activate test-environment
