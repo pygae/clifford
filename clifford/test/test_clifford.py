@@ -5,8 +5,8 @@ import pytest
 import numpy as np
 import numpy.testing
 
-from clifford import Cl, randomMV, Frame, get_mult_function, \
-    conformalize, grade_obj, val_get_right_gmt_matrix, MultiVector, MVArray
+from clifford import Cl, randomMV, Frame, \
+    conformalize, grade_obj, MultiVector, MVArray
 
 
 class TestClifford:
@@ -349,8 +349,7 @@ class TestBasicAlgebra:
         for i in range(1000):
             a = layout.randomMV()
             b = layout.randomMV()
-            b_right = val_get_right_gmt_matrix(b.value, layout.k_list, layout.l_list, layout.m_list,
-                                               layout.mult_table_vals, layout.gaDims)
+            b_right = layout.get_right_gmt_matrix(b)
             res = a*b
             res2 = layout.MultiVector(value=b_right@a.value)
             np.testing.assert_almost_equal(res.value, res2.value)
