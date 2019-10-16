@@ -224,6 +224,14 @@ class TestClifford:
         assert str(-e1) == "-(1^e1)"
         assert str(1 - e1) == "1 - (1^e1)"
 
+    def test_add_preserves_dtype(self):
+        """ test that adding blades does not promote types """
+        layout, blades = Cl(3)
+        e1 = blades['e1']
+        e2 = blades['e2']
+        assert (e1 + 1).value.dtype == e1.value.dtype
+        assert (e1 + e2).value.dtype == e1.value.dtype
+
 
 class TestBasicConformal41:
     def test_metric(self):

@@ -185,7 +185,7 @@ def de_keninck_twist(Y, X, guess=None):
     Estimates the rotation between vectors
     """
     if guess is None:
-        guess = (1 + 0*e1)
+        guess = (1.0 + 0*e1)
     return layout.MultiVector(value=val_de_keninck_twist(Y.value, X.value, guess.value))
 
 

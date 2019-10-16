@@ -56,7 +56,10 @@ from clifford.io import write_ga_file, read_ga_file
 __version__ = '1.0.5'
 
 # The blade finding regex for parsing strings of mvs
-_blade_pattern = r"((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))"
+_blade_pattern = re.compile(r"""
+    ((^|\s)-?\s?\d+(\.\d+)?)\s|
+    ((^|\+|-)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))
+""", re.VERBOSE)
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
@@ -81,13 +84,6 @@ def linear_operator_as_matrix(func, input_blades, output_blades):
     for i, b in enumerate(input_blades):
         mat[:, i] = np.array([func(b)[j] for j in output_blades])
     return mat
-
-
-def get_longest_string(string_array):
-    """
-    Return the longest string in a list of strings
-    """
-    return max(string_array, key=len)
 
 
 def get_adjoint_function(gradeList):
@@ -713,7 +709,7 @@ class Layout(object):
         else:
             return NotImplemented
 
-    def parse_multivector(self, mv_string):
+    def parse_multivector(self, mv_string: str) -> 'MultiVector':
         """ Parses a multivector string into a MultiVector object """
         # Get the names of the canonical blades
         blade_name_index_map = {name: index for index, name in enumerate(self.names)}
@@ -721,14 +717,13 @@ class Layout(object):
         # Clean up the input string a bit
         cleaned_string = re.sub('[()]', '', mv_string)
 
-        # Apply the regex
-        search_result = re.findall(_blade_pattern, cleaned_string)
-
         # Create a multivector
         mv_out = MultiVector(self)
-        for res in search_result:
+
+        # Apply the regex
+        for m in _blade_pattern.finditer(cleaned_string):
             # Clean up the search result
-            cleaned_match = get_longest_string(res)
+            cleaned_match = m.group(0)
 
             # Split on the '^'
             stuff = cleaned_match.split('^')
@@ -1044,7 +1039,7 @@ class MultiVector(object):
     * M[N] : blade projection
     """
 
-    def __init__(self, layout, value=None, string=None) -> None:
+    def __init__(self, layout, value=None, string=None, *, dtype: np.dtype = np.float64) -> None:
         """Constructor."""
 
         self.layout = layout
@@ -1052,7 +1047,7 @@ class MultiVector(object):
 
         if value is None:
             if string is None:
-                self.value = np.zeros((self.layout.gaDims,), dtype=float)
+                self.value = np.zeros((self.layout.gaDims,), dtype=dtype)
             else:
                 self.value = layout.parse_multivector(string).value
         else:
@@ -1066,16 +1061,16 @@ class MultiVector(object):
         # we are a scalar, and the only appropriate dtype is an object array
         return MVArray([self])
 
-    def _checkOther(self, other, coerce=1) -> Tuple['MultiVector', bool]:
+    def _checkOther(self, other, coerce=True) -> Tuple['MultiVector', bool]:
         """Ensure that the other argument has the same Layout or coerce value if
         necessary/requested.
 
-        _checkOther(other, coerce=1) --> newOther, isMultiVector
+        _checkOther(other, coerce=True) --> newOther, isMultiVector
         """
         if isinstance(other, numbers.Number):
             if coerce:
                 # numeric scalar
-                newOther = self._newMV()
+                newOther = self._newMV(dtype=np.result_type(other))
                 newOther[()] = other
                 return newOther, True
             else:
@@ -1090,13 +1085,13 @@ class MultiVector(object):
         else:
             return other, False
 
-    def _newMV(self, newValue=None) -> 'MultiVector':
+    def _newMV(self, newValue=None, *, dtype: np.dtype = None) -> 'MultiVector':
         """Returns a new MultiVector (or derived class instance).
-
-        _newMV(self, newValue=None)
         """
+        if newValue is None and dtype is None:
+            raise TypeError("Must specify either a type or value")
 
-        return self.__class__(self.layout, newValue)
+        return self.__class__(self.layout, newValue, dtype=dtype)
 
     # numeric special methods
     # binary
@@ -1122,7 +1117,7 @@ class MultiVector(object):
         M * N --> MN
         """
 
-        other, mv = self._checkOther(other, coerce=0)
+        other, mv = self._checkOther(other, coerce=False)
 
         if mv:
             newValue = self.layout.gmt_func(self.value, other.value)
@@ -1141,7 +1136,7 @@ class MultiVector(object):
         N * M --> NM
         """
 
-        other, mv = self._checkOther(other, coerce=0)
+        other, mv = self._checkOther(other, coerce=False)
 
         if mv:
             newValue = self.layout.gmt_func(other.value, self.value)
@@ -1159,7 +1154,7 @@ class MultiVector(object):
         M ^ N
         """
 
-        other, mv = self._checkOther(other, coerce=0)
+        other, mv = self._checkOther(other, coerce=False)
 
         if mv:
             newValue = self.layout.omt_func(self.value, other.value)
@@ -1177,7 +1172,7 @@ class MultiVector(object):
         N ^ M
         """
 
-        other, mv = self._checkOther(other, coerce=0)
+        other, mv = self._checkOther(other, coerce=False)
 
         if mv:
             newValue = self.layout.omt_func(other.value, self.value)
@@ -1203,7 +1198,8 @@ class MultiVector(object):
             if isinstance(other, np.ndarray):
                 obj = self.__array__()
                 return obj|other
-            return self._newMV()  # l * M = M * l = 0 for scalar l
+            # l * M = M * l = 0 for scalar l
+            return self._newMV(dtype=np.result_type(self.value.dtype, other))
 
         return self._newMV(newValue)
 
@@ -1265,7 +1261,7 @@ class MultiVector(object):
         M / N --> M * N
         """
 
-        other, mv = self._checkOther(other, coerce=0)
+        other, mv = self._checkOther(other, coerce=False)
 
         if mv:
             return self * other.inv()
@@ -1620,7 +1616,7 @@ class MultiVector(object):
         M _| N
         """
 
-        other, mv = self._checkOther(other, coerce=1)
+        other, mv = self._checkOther(other, coerce=True)
 
         newValue = self.layout.lcmt_func(self.value, other.value)
 
@@ -1667,7 +1663,7 @@ class MultiVector(object):
                 if grade is None:
                     grade = self.layout.gradeList[i]
                 elif self.layout.gradeList[i] != grade:
-                    return 0
+                    return False
 
         Vhat = self.gradeInvol()
         Vrev = ~self
@@ -1680,9 +1676,9 @@ class MultiVector(object):
                     for e in basis_vectors(self.layout).values():
                         gpres = grades_present(Vhat*e*Vrev, 0.000001)
                         if not (len(gpres) == 1 and gpres[0] == 1):
-                            return 0
-                    return 1
-        return 0
+                            return False
+                    return True
+        return False
 
     def isVersor(self) -> bool:
         """Returns true if multivector is a versor.
@@ -1701,13 +1697,13 @@ class MultiVector(object):
                     for e in basis_vectors(self.layout).values():
                         gpres = grades_present(Vhat*e*Vrev, 0.000001)
                         if not (len(gpres) == 1 and gpres[0] == 1):
-                            return 0
+                            return False
                     gpres = grades_present(self, 0.000001)
                     if len(gpres) == 1:
-                        return 0
+                        return False
                     else:
-                        return 1
-        return 0
+                        return True
+        return False
 
     def grades(self) -> List[int]:
         """Return the grades contained in the multivector.
@@ -1853,7 +1849,7 @@ class MultiVector(object):
          A
         """
 
-        other, mv = self._checkOther(other, coerce=1)
+        other, mv = self._checkOther(other, coerce=True)
 
         if not self.isBlade():
             raise ValueError("self is not a blade")
@@ -2227,8 +2223,8 @@ class BladeMap(object):
 
         if map_scalars:
             # make scalars in each algebra map
-            s1 = self.b1[0]._newMV()+1
-            s2 = self.b2[0]._newMV()+1
+            s1 = self.b1[0]._newMV(dtype=int)+1
+            s2 = self.b2[0]._newMV(dtype=int)+1
             self.blades_map = [(s1, s2)] + self.blades_map
 
     @property
@@ -2262,7 +2258,7 @@ class BladeMap(object):
             raise ValueError('A doesnt belong to either Algebra in this Map')
 
         # create empty MV, and map values
-        B = to_b[0]._newMV()
+        B = to_b[0]._newMV(dtype=int)
         for from_obj, to_obj in zip(from_b, to_b):
             B += (sum(A.value*from_obj.value)*to_obj)
         return B
