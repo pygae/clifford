@@ -212,6 +212,18 @@ class TestClifford:
         assert operator.ne(l3a, l4) == True
         assert operator.ne(l3a, None) == True
 
+    def test_mv_str(self):
+        """ Test the __str__ magic method """
+        layout, blades = Cl(3)
+        e1 = blades['e1']
+        e2 = blades['e2']
+        e12 = blades['e12']
+
+        assert str(e1) == "(1^e1)"
+        assert str(1 + e1) == "1 + (1^e1)"
+        assert str(-e1) == "-(1^e1)"
+        assert str(1 - e1) == "1 - (1^e1)"
+
     def test_add_preserves_dtype(self):
         """ test that adding blades does not promote types """
         layout, blades = Cl(3)

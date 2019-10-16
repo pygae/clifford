@@ -1506,7 +1506,7 @@ class MultiVector(object):
         s = ''
         p = _print_precision
 
-        for i in range(self.layout.gaDims):
+        for grade, name, coeff in zip(self.layout.gradeList, self.layout.names, self.value):
             # if we have nothing yet, don't use + and - as operators but
             # use - as an unary prefix if necessary
             if s:
@@ -1514,25 +1514,20 @@ class MultiVector(object):
             else:
                 seps = ('', '-')
 
-            if self.layout.gradeList[i] == 0:
-                # scalar
-                if abs(self.value[i]) >= _eps:
-                    if self.value[i] > 0:
-                        s = '%s%s%s' % (s, seps[0], round(self.value[i], p))
-                    else:
-                        s = '%s%s%s' % (s, seps[1], -round(self.value[i], p))
+            if abs(coeff) >= _eps:
+                if coeff > 0:
+                    sep = seps[0]
+                    abs_coeff = round(coeff, p)
+                else:
+                    sep = seps[1]
+                    abs_coeff = -round(coeff, p)
 
-            else:
-                if abs(self.value[i]) >= _eps:
+                if grade == 0:
+                    # scalar
+                    s = '%s%s%s' % (s, sep, abs_coeff)
+                else:
                     # not a scalar
-                    if self.value[i] > 0:
-                        s = '%s%s(%s^%s)' % (
-                            s, seps[0], round(self.value[i], p),
-                            self.layout.names[i])
-                    else:
-                        s = '%s%s(%s^%s)' % (
-                            s, seps[1], -round(self.value[i], p),
-                            self.layout.names[i])
+                    s = '%s%s(%s^%s)' % (s, sep, abs_coeff, name)
         if s:
             # non-zero
             return s
