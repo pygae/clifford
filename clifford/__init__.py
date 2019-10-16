@@ -709,7 +709,7 @@ class Layout(object):
         else:
             return NotImplemented
 
-    def parse_multivector(self, mv_string):
+    def parse_multivector(self, mv_string: str) -> 'MultiVector':
         """ Parses a multivector string into a MultiVector object """
         # Get the names of the canonical blades
         blade_name_index_map = {name: index for index, name in enumerate(self.names)}
