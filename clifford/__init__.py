@@ -1039,7 +1039,7 @@ class MultiVector(object):
     * M[N] : blade projection
     """
 
-    def __init__(self, layout, value=None, string=None) -> None:
+    def __init__(self, layout, value=None, string=None, *, dtype: np.dtype = np.float64) -> None:
         """Constructor."""
 
         self.layout = layout
@@ -1047,7 +1047,7 @@ class MultiVector(object):
 
         if value is None:
             if string is None:
-                self.value = np.zeros((self.layout.gaDims,), dtype=float)
+                self.value = np.zeros((self.layout.gaDims,), dtype=dtype)
             else:
                 self.value = layout.parse_multivector(string).value
         else:
@@ -1070,7 +1070,7 @@ class MultiVector(object):
         if isinstance(other, numbers.Number):
             if coerce:
                 # numeric scalar
-                newOther = self._newMV()
+                newOther = self._newMV(dtype=np.result_type(other))
                 newOther[()] = other
                 return newOther, True
             else:
@@ -1085,13 +1085,13 @@ class MultiVector(object):
         else:
             return other, False
 
-    def _newMV(self, newValue=None) -> 'MultiVector':
+    def _newMV(self, newValue=None, *, dtype: np.dtype = None) -> 'MultiVector':
         """Returns a new MultiVector (or derived class instance).
-
-        _newMV(self, newValue=None)
         """
+        if newValue is None and dtype is None:
+            raise TypeError("Must specify either a type or value")
 
-        return self.__class__(self.layout, newValue)
+        return self.__class__(self.layout, newValue, dtype=dtype)
 
     # numeric special methods
     # binary
@@ -1198,7 +1198,8 @@ class MultiVector(object):
             if isinstance(other, np.ndarray):
                 obj = self.__array__()
                 return obj|other
-            return self._newMV()  # l * M = M * l = 0 for scalar l
+            # l * M = M * l = 0 for scalar l
+            return self._newMV(dtype=np.result_type(self.value.dtype, other))
 
         return self._newMV(newValue)
 
@@ -2227,8 +2228,8 @@ class BladeMap(object):
 
         if map_scalars:
             # make scalars in each algebra map
-            s1 = self.b1[0]._newMV()+1
-            s2 = self.b2[0]._newMV()+1
+            s1 = self.b1[0]._newMV(dtype=int)+1
+            s2 = self.b2[0]._newMV(dtype=int)+1
             self.blades_map = [(s1, s2)] + self.blades_map
 
     @property
@@ -2262,7 +2263,7 @@ class BladeMap(object):
             raise ValueError('A doesnt belong to either Algebra in this Map')
 
         # create empty MV, and map values
-        B = to_b[0]._newMV()
+        B = to_b[0]._newMV(dtype=int)
         for from_obj, to_obj in zip(from_b, to_b):
             B += (sum(A.value*from_obj.value)*to_obj)
         return B

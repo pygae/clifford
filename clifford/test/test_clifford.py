@@ -212,6 +212,14 @@ class TestClifford:
         assert operator.ne(l3a, l4) == True
         assert operator.ne(l3a, None) == True
 
+    def test_add_preserves_dtype(self):
+        """ test that adding blades does not promote types """
+        layout, blades = Cl(3)
+        e1 = blades['e1']
+        e2 = blades['e2']
+        assert (e1 + 1).value.dtype == e1.value.dtype
+        assert (e1 + e2).value.dtype == e1.value.dtype
+
 
 class TestBasicConformal41:
     def test_metric(self):
