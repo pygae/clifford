@@ -56,7 +56,10 @@ from clifford.io import write_ga_file, read_ga_file
 __version__ = '1.0.5'
 
 # The blade finding regex for parsing strings of mvs
-_blade_pattern = r"((^|\s)-?\s?\d+(\.\d+)?)\s|(-\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))|((^|\+)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))"
+_blade_pattern = re.compile(r"""
+    ((^|\s)-?\s?\d+(\.\d+)?)\s|
+    ((^|\+|-)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))
+""", re.VERBOSE)
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
@@ -81,13 +84,6 @@ def linear_operator_as_matrix(func, input_blades, output_blades):
     for i, b in enumerate(input_blades):
         mat[:, i] = np.array([func(b)[j] for j in output_blades])
     return mat
-
-
-def get_longest_string(string_array):
-    """
-    Return the longest string in a list of strings
-    """
-    return max(string_array, key=len)
 
 
 def get_adjoint_function(gradeList):
@@ -713,7 +709,7 @@ class Layout(object):
         else:
             return NotImplemented
 
-    def parse_multivector(self, mv_string):
+    def parse_multivector(self, mv_string: str) -> 'MultiVector':
         """ Parses a multivector string into a MultiVector object """
         # Get the names of the canonical blades
         blade_name_index_map = {name: index for index, name in enumerate(self.names)}
@@ -721,14 +717,13 @@ class Layout(object):
         # Clean up the input string a bit
         cleaned_string = re.sub('[()]', '', mv_string)
 
-        # Apply the regex
-        search_result = re.findall(_blade_pattern, cleaned_string)
-
         # Create a multivector
         mv_out = MultiVector(self)
-        for res in search_result:
+
+        # Apply the regex
+        for m in _blade_pattern.finditer(cleaned_string):
             # Clean up the search result
-            cleaned_match = get_longest_string(res)
+            cleaned_match = m.group(0)
 
             # Split on the '^'
             stuff = cleaned_match.split('^')
