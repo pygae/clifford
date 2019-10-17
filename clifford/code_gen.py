@@ -1,5 +1,6 @@
 from __future__ import print_function
 import numpy as np
+import sparse
 
 def generate_mult_function_batch_compile(gmt,
                                          product_name, product_mask=None, cuda=False):
@@ -7,7 +8,7 @@ def generate_mult_function_batch_compile(gmt,
     Takes a given product and generates the code for a function that evaluates it
     """
     if product_mask is not None:
-        gmt = gmt.masked(product_mask)
+        gmt = sparse.where(product_mask, gmt, 0)
 
     k_list, l_list, m_list = gmt.coords
     mult_table_vals = gmt.data
