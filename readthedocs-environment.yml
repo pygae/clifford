@@ -4,8 +4,9 @@ dependencies:
     - python=3.7
     - ipython
     - numpy
-    - numba=0.43
+    - numba
     - scipy
+    - sparse
     - matplotlib
     - pandoc
     - ipykernel
