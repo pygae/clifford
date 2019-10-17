@@ -31,9 +31,9 @@ install:
         pip \
         h5py \
         pytest \
-        sparse \
         pytest-cov;
-      conda install -c numba numba==0.43;
+      conda install -c conda-forge sparse;
+      conda install -c numba numba==0.45.1;
     else
       pip install pytest-cov
     fi

@@ -124,14 +124,10 @@ jobs:
 
   - script: |
       call activate myEnvironment
-      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy sparse
-    displayName: Install dependencies windows
-    condition: eq(variables['imageName'], 'vs2017-win2016')
-
-  - script: |
-      call activate myEnvironment
+      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy
+      conda install --yes -c conda-forge sparse
       conda install --yes $(numbacommand)
-    displayName: Install conda windows
+    displayName: Install dependencies windows
     condition: eq(variables['imageName'], 'vs2017-win2016')
 
   - script: |
@@ -144,7 +140,8 @@ jobs:
       source activate myEnvironment
       conda update -n base -y -c defaults conda
       conda update -y conda
-      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy sparse
+      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy
+      conda install --yes -c conda-forge sparse
       conda install --yes $(numbacommand)
       python -m pip install -U pytest
       $(installPackageCommand)
