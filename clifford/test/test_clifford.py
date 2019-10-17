@@ -292,6 +292,39 @@ class TestBasicConformal41:
         t[0] = -1
         np.testing.assert_almost_equal(t, (e12*e12).value)
 
+    def test_categorization(self):
+        layout = Cl(3)[0]
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+
+        blades = [
+            layout.scalar,
+            e1,
+            e1 ^ e2,
+            (e1 + e2) ^ e2,
+        ]
+        for b in blades:
+            assert b.isBlade()
+            assert not b.isVersor()
+
+        versors = [
+            1 + (e1^e2),
+            e1 + (e1^e2^e3),
+        ]
+        for v in versors:
+            assert not v.isBlade()
+            assert v.isVersor()
+
+        neither = [
+            layout.scalar*0,
+            1 + e1,
+            1 + (e1^e2^e3)
+        ]
+        for n in neither:
+            assert not n.isBlade()
+            assert not n.isVersor()
+
 
 class TestBasicSpaceTime:
     def test_initialise(self):
