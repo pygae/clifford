@@ -178,7 +178,7 @@ def get_mult_function(mt: sparse.COO, gradeList, product_mask=None,
             if gradeList[k_list[i]] in grades_a:
                 if gradeList[m_list[i]] in grades_b:
                     filter_mask[i] = 1
-        filter_mask = sparse.COO(coords=mt.coords, data=filter_mask)
+        filter_mask = sparse.COO(coords=mt.coords, data=filter_mask, shape=mt.shape)
 
     if filter_mask is not None:
         # We can pass the sparse filter mask directly
