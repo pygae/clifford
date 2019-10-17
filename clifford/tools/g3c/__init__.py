@@ -500,7 +500,7 @@ def left_gmt_generator(mt=layout.gmt):
     k_list, l_list, m_list = mt.coords
     mult_table_vals = mt.data
     gaDims = mt.shape[1]
-    val_get_left_gmt_matrix = cf._MultiplicationTable._numba_val_get_left_matrix
+    val_get_left_gmt_matrix = cf._numba_val_get_left_gmt_matrix
 
     @numba.njit
     def get_left_gmt(x_val):

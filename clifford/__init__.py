@@ -100,7 +100,7 @@ def get_adjoint_function(gradeList):
 
 
 @numba.njit(parallel=NUMBA_PARALLEL, nogil=True)
-def _construct_tables(
+def _numba_construct_tables(
     gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
 ):
     array_length = int(len(gradeList) * len(gradeList))
@@ -149,7 +149,7 @@ def construct_tables(
     gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
 ) -> Tuple[sparse.COO, sparse.COO, sparse.COO, sparse.COO]:
     # wrap the numba one
-    indices, *arrs = _construct_tables(
+    indices, *arrs = _numba_construct_tables(
         gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
     )
     dims = len(gradeList)
@@ -191,7 +191,7 @@ def get_mult_function(mt: sparse.COO, gradeList, product_mask=None,
 
 def _get_mult_function(mt: sparse.COO):
     """
-    Get a simple multiplication function.
+    Get a function similar to `` lambda a, b: np.einsum('i,ijk,k->j', a, mt, b)``
 
     Returns
     -------
@@ -214,9 +214,10 @@ def _get_mult_function(mt: sparse.COO):
 
     return mv_mult
 
+
 def _get_mult_function_runtime_sparse(mt: sparse.COO):
     """
-    Get a multiplication function that attempts to exploit runtime zeros
+    A variant of `_get_mult_function` that attempts to exploit runtime zeros
 
     The returned function avoids performing multiplications if vectors contain
     zeros.
@@ -242,36 +243,6 @@ def _get_mult_function_runtime_sparse(mt: sparse.COO):
         return output
 
     return mv_mult
-
-@staticmethod
-@numba.njit
-def _numba_val_get_left_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
-    intermed = np.zeros((ndims, ndims))
-    test_ind = 0
-    for k in k_list:
-        j = l_list[test_ind]
-        i = m_list[test_ind]
-        intermed[j, i] += mult_table_vals[test_ind] * x[k]
-        test_ind = test_ind + 1
-    return intermed
-
-def _val_get_left_matrix(mt: sparse.COO, x):
-    """
-    This produces the matrix X that performs left multiplication with x
-    eg. X@b == (x*b).value
-    """
-    dims = mt.shape[1]
-    k_list, l_list, m_list = mt.coords
-    return _numba_val_get_left_matrix(
-        x, k_list, l_list, m_list, mt.data, dims
-    )
-
-def _val_get_right_matrix(mt: sparse.COO, x):
-    """
-    This produces the matrix X that performs right multiplication with x
-    eg. X@b == (b*x).value
-    """
-    return _val_get_left_matrix(mt.T, x)
 
 
 @numba.njit
@@ -523,6 +494,39 @@ def compute_blade_representation(bitmap, firstIdx):
         bmp = bmp >> 1
         n = n + 1
     return tuple(blade)
+
+
+# todo: work out how to let numba use the COO objects directly
+@numba.njit
+def _numba_val_get_left_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
+    intermed = np.zeros((ndims, ndims))
+    test_ind = 0
+    for k in k_list:
+        j = l_list[test_ind]
+        i = m_list[test_ind]
+        intermed[j, i] += mult_table_vals[test_ind] * x[k]
+        test_ind = test_ind + 1
+    return intermed
+
+
+def val_get_left_gmt_matrix(mt: sparse.COO, x):
+    """
+    This produces the matrix X that performs left multiplication with x
+    eg. X@b == (x*b).value
+    """
+    dims = mt.shape[1]
+    k_list, l_list, m_list = mt.coords
+    return _numba_val_get_left_gmt_matrix(
+        x, k_list, l_list, m_list, mt.data, dims
+    )
+
+
+def val_get_right_gmt_matrix(mt: sparse.COO, x):
+    """
+    This produces the matrix X that performs right multiplication with x
+    eg. X@b == (b*x).value
+    """
+    return val_get_left_gmt_matrix(mt.T, x)
 
 
 class Layout(object):
@@ -793,26 +797,26 @@ class Layout(object):
         self.lcmt_prod_mask = lcmt_prod_mask
 
     def gmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
-        return get_mult_function(self.gmt,
-            self.gradeList,
+        return get_mult_function(
+            self.gmt, self.gradeList,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
     def imt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
-        return get_mult_function(self.gmt,
-            self.gradeList,
+        return get_mult_function(
+            self.gmt, self.gradeList,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask, product_mask=self.imt_prod_mask
         )
 
     def omt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
-        return get_mult_function(self.gmt,
-            self.gradeList,
+        return get_mult_function(
+            self.gmt, self.gradeList,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask, product_mask=self.omt_prod_mask
         )
 
     def lcmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
-        return get_mult_function(self.gmt,
-            self.gradeList,
+        return get_mult_function(
+            self.gmt, self.gradeList,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask, product_mask=self.lcmt_prod_mask
         )
 
@@ -850,14 +854,14 @@ class Layout(object):
         This produces the matrix X that performs left multiplication with x
         eg. X@b == (x*b).value
         """
-        return _val_get_left_matrix(self.gmt, x.value)
+        return val_get_left_gmt_matrix(self.gmt, x.value)
 
     def get_right_gmt_matrix(self, x):
         """
         This produces the matrix X that performs right multiplication with x
         eg. X@b == (b*x).value
         """
-        return _val_get_right_matrix(self.gmt, x.value)
+        return val_get_right_gmt_matrix(self.gmt, x.value)
 
     def MultiVector(self, *args, **kw):
         '''
