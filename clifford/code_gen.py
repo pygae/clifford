@@ -10,9 +10,12 @@ def generate_mult_function_batch_compile(gmt,
     if product_mask is not None:
         gmt = sparse.where(product_mask, gmt, 0)
 
-    k_list, l_list, m_list = gmt.coords
-    mult_table_vals = gmt.data
-    n_dims = gmt.shape[1]
+    # Transpose to get the original memory order before sparse.COO changed it.
+    # This doesn't really matter, but doing this prevents cuda_products.py changing.
+    gmt_T = gmt.transpose((0, 2, 1))
+    k_list, m_list, l_list = gmt_T.coords
+    mult_table_vals = gmt_T.data
+    n_dims = gmt_T.shape[2]
 
     # Sort them by l list
     arg_list = np.argsort(l_list)
