@@ -162,14 +162,11 @@ def construct_tables(
     )
 
 
-def get_mult_function(mt: sparse.COO, gradeList, product_mask=None,
+def get_mult_function(mt: sparse.COO, gradeList,
                       grades_a=None, grades_b=None, filter_mask=None):
     '''
     Returns a function that implements the mult_table on two input multivectors
     '''
-    if product_mask is not None:
-        mt = sparse.where(product_mask, mt, 0)
-
     if (filter_mask is None) and (grades_a is not None) and (grades_b is not None):
         # If not specified explicitly, we can specify sparseness by grade
         filter_mask = np.zeros(mt.nnz, dtype=bool)
@@ -785,13 +782,18 @@ class Layout(object):
             self.bitmap_to_linear_map,
             self.sig
         )
+        self.omt = sparse.where(omt_prod_mask, self.gmt, 0)
+        self.imt = sparse.where(imt_prod_mask, self.gmt, 0)
+        self.lcmt = sparse.where(lcmt_prod_mask, self.gmt, 0)
 
         # This generates the functions that will perform the various products
         self.gmt_func = get_mult_function(self.gmt, self.gradeList)
-        self.imt_func = get_mult_function(self.gmt, self.gradeList, product_mask=imt_prod_mask)
-        self.omt_func = get_mult_function(self.gmt, self.gradeList, product_mask=omt_prod_mask)
-        self.lcmt_func = get_mult_function(self.gmt, self.gradeList, product_mask=lcmt_prod_mask)
+        self.imt_func = get_mult_function(self.imt, self.gradeList)
+        self.omt_func = get_mult_function(self.omt, self.gradeList)
+        self.lcmt_func = get_mult_function(self.lcmt, self.gradeList)
         self.inv_func = get_leftLaInv(self.gmt, self.gradeList)
+
+        # these are probably not useful, but someone might want them
         self.imt_prod_mask = imt_prod_mask
         self.omt_prod_mask = omt_prod_mask
         self.lcmt_prod_mask = lcmt_prod_mask
@@ -805,19 +807,19 @@ class Layout(object):
     def imt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(
             self.gmt, self.gradeList,
-            grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask, product_mask=self.imt_prod_mask
+            grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
     def omt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(
             self.gmt, self.gradeList,
-            grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask, product_mask=self.omt_prod_mask
+            grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
     def lcmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(
             self.gmt, self.gradeList,
-            grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask, product_mask=self.lcmt_prod_mask
+            grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
     def get_grade_projection_matrix(self, grade):
