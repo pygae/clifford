@@ -1652,45 +1652,16 @@ class MultiVector(object):
 
     def isBlade(self) -> bool:
         """Returns true if multivector is a blade.
-        From Leo Dorsts GA for computer science section 21.5
         """
-
-        grade = None
-
-        for i in range(self.layout.gaDims):
-            if abs(self.value[i]) > _eps:
-                if grade is None:
-                    grade = self.layout.gradeList[i]
-                elif self.layout.gradeList[i] != grade:
-                    return False
-
-        Vhat = self.gradeInvol()
-        Vrev = ~self
-        Vinv = Vrev/(self*Vrev)[0]
-
-        # Test if the versor inverse (~V)/(V * ~V) is truly the inverse of the
-        # multivector V
-        if grades_present(Vhat*Vinv, 0.000001) != {0}:
-            return False
-        if not np.sum(np.abs((Vhat*Vinv).value - (Vinv*Vhat).value)) < 0.0001:
+        if len(self.grades()) != 1:
             return False
 
-        # applying a versor (and hence an invertible blade) to a vector should
-        # not change the grade
-        if not all(
-            grades_present(Vhat*e*Vrev, 0.000001) == {1}
-            for e in basis_vectors(self.layout).values()
-        ):
-            return False
-
-        return True
+        return self.isVersor()
 
     def isVersor(self) -> bool:
         """Returns true if multivector is a versor.
-        From Leo Dorsts GA for computer science section 21.5
-        isBlade() --> Boolean
+        From Leo Dorsts GA for computer science section 21.5, definition from 7.6.4
         """
-
         Vhat = self.gradeInvol()
         Vrev = ~self
         Vinv = Vrev/(self*Vrev)[0]
@@ -1708,9 +1679,6 @@ class MultiVector(object):
             grades_present(Vhat*e*Vrev, 0.000001) == {1}
             for e in basis_vectors(self.layout).values()
         ):
-            return False
-
-        if len(grades_present(self, 0.000001)) == 1:
             return False
 
         return True

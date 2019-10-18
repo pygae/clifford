@@ -305,8 +305,9 @@ class TestBasicConformal41:
             (e1 + e2) ^ e2,
         ]
         for b in blades:
+            # all invertible blades are also versors
             assert b.isBlade()
-            assert not b.isVersor()
+            assert b.isVersor()
 
         versors = [
             1 + (e1^e2),
