@@ -1,21 +1,17 @@
 from __future__ import print_function
 import numpy as np
-import sparse
 
-def generate_mult_function_batch_compile(gmt,
-                                         product_name, product_mask=None, cuda=False):
+
+def generate_mult_function_batch_compile(mt, product_name, cuda=False):
     """
     Takes a given product and generates the code for a function that evaluates it
     """
-    if product_mask is not None:
-        gmt = sparse.where(product_mask, gmt, 0)
-
     # Transpose to get the original memory order before sparse.COO changed it.
     # This doesn't really matter, but doing this prevents cuda_products.py changing.
-    gmt_T = gmt.transpose((0, 2, 1))
-    k_list, m_list, l_list = gmt_T.coords
-    mult_table_vals = gmt_T.data
-    n_dims = gmt_T.shape[2]
+    mt_T = mt.transpose((0, 2, 1))
+    k_list, m_list, l_list = mt_T.coords
+    mult_table_vals = mt_T.data
+    n_dims = mt_T.shape[2]
 
     # Sort them by l list
     arg_list = np.argsort(l_list)
@@ -52,13 +48,11 @@ def generate_mult_function_batch_compile(gmt,
     return total_string
 
 
-def write_mult_function_batch_compile(gmt, product_name, file_obj,
-                                             product_mask=None, cuda=False):
+def write_mult_function_batch_compile(mt, product_name, file_obj, cuda=False):
     """
     Takes a given product and generates the code for a function that evaluates it, saves this to file
     """
-    total_string = generate_mult_function_batch_compile(gmt,
-                                                        product_name, product_mask=product_mask, cuda=cuda)
+    total_string = generate_mult_function_batch_compile(mt, product_name, cuda=cuda)
     print(total_string, file=file_obj)
 
 
@@ -72,11 +66,9 @@ def write_algebra(file_name, layout, cuda=False):
         # Write the gmt
         write_mult_function_batch_compile(layout.gmt, 'gmt_func', file_obj, cuda=cuda)
         # Write the omt
-        write_mult_function_batch_compile(layout.gmt, 'omt_func', file_obj,
-                                          product_mask=layout.omt_prod_mask, cuda=cuda)
+        write_mult_function_batch_compile(layout.omt, 'omt_func', file_obj, cuda=cuda)
         # Write the imt
-        write_mult_function_batch_compile(layout.gmt, 'imt_func', file_obj,
-                                          product_mask=layout.imt_prod_mask, cuda=cuda)
+        write_mult_function_batch_compile(layout.imt, 'imt_func', file_obj, cuda=cuda)
 
 if __name__ == '__main__':
     from clifford.g3c import *
