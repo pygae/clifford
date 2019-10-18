@@ -224,7 +224,7 @@ def interpret_multivector_as_object(mv):
     g_pres = grades_present(mv, 0.00000001)
     if len(g_pres) != 1:  # Definitely not a blade
         return -1
-    grade = g_pres[0]
+    grade, = g_pres
     if grade == 1:
         # This can now either be a euc mv or a conformal point or something else
         if mv(e123) == mv:

@@ -42,7 +42,7 @@ import re
 import math
 import numbers
 import itertools
-from typing import List, Tuple
+from typing import List, Tuple, Set
 
 # Major library imports.
 import numpy as np
@@ -369,17 +369,16 @@ def grade_obj(objin, threshold=0.0000001):
     return grade_obj_func(objin.value, objin.layout.gradeList, threshold)
 
 
-def grades_present(objin, threshold=0.0000001):
+def grades_present(objin: 'MultiVector', threshold=0.0000001) -> Set[int]:
     '''
     Returns all the grades of a multivector with coefficient magnitude bigger than threshold
     '''
-    grades = []
-    for i in range(objin.layout.gaDims):
-        if abs(objin.value[i]) > threshold and \
-                objin.layout.gradeList[i] not in grades:
-            grades.append(objin.layout.gradeList[i])
-    return grades
-
+    nonzero = abs(objin.value) > threshold
+    return {
+        grade_i
+        for grade_i, nonzero_i in zip(objin.layout.gradeList, nonzero)
+        if nonzero_i
+    }
 
 def generate_blade_tup_map(bladeTupList):
     """
@@ -1669,7 +1668,7 @@ class MultiVector(object):
 
         # Test if the versor inverse (~V)/(V * ~V) is truly the inverse of the
         # multivector V
-        if grades_present(Vhat*Vinv, 0.000001) != [0]:
+        if grades_present(Vhat*Vinv, 0.000001) != {0}:
             return False
         if not np.sum(np.abs((Vhat*Vinv).value - (Vinv*Vhat).value)) < 0.0001:
             return False
@@ -1677,7 +1676,7 @@ class MultiVector(object):
         # applying a versor (and hence an invertible blade) to a vector should
         # not change the grade
         if not all(
-            grades_present(Vhat*e*Vrev, 0.000001) == [1]
+            grades_present(Vhat*e*Vrev, 0.000001) == {1}
             for e in basis_vectors(self.layout).values()
         ):
             return False
@@ -1696,7 +1695,7 @@ class MultiVector(object):
 
         # Test if the versor inverse (~V)/(V * ~V) is truly the inverse of the
         # multivector V
-        if grades_present(Vhat*Vinv, 0.000001) != [0]:
+        if grades_present(Vhat*Vinv, 0.000001) != {0}:
             return False
         if not np.sum(np.abs((Vhat*Vinv).value - (Vinv*Vhat).value)) < 0.0001:
             return False
@@ -1704,7 +1703,7 @@ class MultiVector(object):
         # applying a versor (and hence an invertible blade) to a vector should
         # not change the grade
         if not all(
-            grades_present(Vhat*e*Vrev, 0.000001) == [1]
+            grades_present(Vhat*e*Vrev, 0.000001) == {1}
             for e in basis_vectors(self.layout).values()
         ):
             return False
@@ -1714,10 +1713,11 @@ class MultiVector(object):
 
         return True
 
-    def grades(self) -> List[int]:
+    def grades(self) -> Set[int]:
         """Return the grades contained in the multivector.
+        .. versionchanged:: 1.1.0
+            Now returns a set instead of a list
         """
-
         return grades_present(self, _eps)
 
     @property
@@ -1894,7 +1894,8 @@ class MultiVector(object):
         if not self.isBlade():
             raise ValueError("self is not a blade")
 
-        gr = self.grades()
+        # only one grade, since this is a blade
+        gr, = self.grades()
 
         selfInv = self.inv()
 
@@ -1923,7 +1924,7 @@ class MultiVector(object):
             if J2 != 0:
                 J = J2
                 thisBasis.append(Pei)
-                if len(thisBasis) == gr[0]:  # we have a complete set
+                if len(thisBasis) == gr:  # we have a complete set
                     break
 
         return thisBasis
@@ -1941,6 +1942,8 @@ class MultiVector(object):
 
         if len(grSelf) == len(grOther) == 1:
             # both blades
+            grSelf, = grSelf
+            grOther, = grOther
 
             # try the outer product first
             J = self ^ other
@@ -1956,7 +1959,7 @@ class MultiVector(object):
                 J = (self * C.rightInv()) ^ other
                 return J.normal()
 
-            if grSelf[0] >= grOther[0]:
+            if grSelf >= grOther:
                 A = self
                 B = other
             else:
@@ -2138,7 +2141,7 @@ class Frame(MVArray):
     A frame of vectors
     '''
     def __new__(cls, input_array):
-        if not np.all([k.grades() == [1] for k in input_array]):
+        if not np.all([k.grades() == {1} for k in input_array]):
             raise TypeError('Frames must be made from vectors')
 
         obj = MVArray.__new__(cls, input_array)
