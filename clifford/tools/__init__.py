@@ -454,7 +454,7 @@ def log_rotor(V):
     '''
     Logarithm of a simple rotor
     '''
-    if (V(2)**2).grades() !=[0]:
+    if (V(2)**2).grades() != {0}:
         print(V)
         #raise ValueError('Bivector is not a Blade.')
     if abs(V(2))<global_eps():

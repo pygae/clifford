@@ -284,8 +284,7 @@ class TestG3CTools:
             basis, scale = X1.factorise()
             for b in basis:
                 gpres = grades_present(b, 0.0001)
-                assert len(gpres) == 1
-                assert gpres[0] == 1
+                assert gpres == {1}
             new_blade = (reduce(lambda a, b: a ^ b, basis) * scale)
             try:
                 npt.assert_almost_equal(new_blade.value, X1.value, 3)

@@ -78,7 +78,7 @@ class CGAThing(object):
     '''
     def __call__(self, other):
         if isinstance(other, MultiVector):
-            if other.grades() ==[1]:
+            if other.grades() == {1}:
                 null= self.cga.null_vector(other)
                 return self.mv*null*~self.mv
             return self.mv*other*~self.mv
@@ -263,7 +263,8 @@ class Round(CGAThing):
         '''
         dimension of this round
         '''
-        return self.mv.grades()[0] - 2
+        gr, = self.mv.grades()
+        return gr - 2
     
     @property
     def center(self):
@@ -332,10 +333,10 @@ class Translation(CGAThing):
         elif len(args)==1:
             arg = args[0]
             if isinstance(arg, MultiVector):
-                if arg.grades()==[1]:
+                if arg.grades()=={1}:
                     # we have vector 
                     mv = 1 - self.cga.straight_up(arg)*self.cga.einf/2.     
-                if arg.grades()==[0,2]:
+                if arg.grades()=={0,2}:
                     # we have ro tor  
                     ## TODO ensure its a translation
                     mv = args[0]
@@ -373,10 +374,10 @@ class Dilation(CGAThing):
         if len(args)==1:
             arg = args[0]
             if isinstance(arg, MultiVector):
-                if arg.grades()==[0,2]:
+                if arg.grades()=={0,2}:
                     # we have a rotor 
                     mv = arg
-                if arg.grades == [0]:
+                if arg.grades == {0}:
                     arg = float(arg)
             
             if arg<0:
@@ -428,11 +429,11 @@ class Rotation(CGAThing):
         elif len(args)==1:
             arg = args[0]
             if isinstance(arg, MultiVector):
-                if arg.grades()==[0,2]:
+                if arg.grades()=={0,2}:
                     # we have a rotor 
                     self.mv = arg
                 
-                elif arg.grades() == [2]:
+                elif arg.grades() == {2}:
                     # we have a bivector, make sure its in base space
                     if arg^self.cga.I_base != 0:
                         arg = self.cga.I_base.project(arg)
