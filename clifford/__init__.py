@@ -446,11 +446,14 @@ def compute_reordering_sign_and_canonical_form(blade, metric, firstIdx):
     Takes a tuple blade representation and converts it to a canonical
     tuple blade representation
     """
-    blade_out = blade[0]
+    bitmap_out = 0
     s = 1
-    for b in blade[1:]:
-        s = s*canonical_reordering_sign(blade_out, b, metric)
-    return s, compute_blade_representation(compute_bitmap_representation(blade, firstIdx), firstIdx)
+    for b in blade:
+        # split into basis blades, which are always canonical
+        bitmap_b = compute_bitmap_representation((b,), firstIdx)
+        s *= canonical_reordering_sign(bitmap_out, bitmap_b, metric)
+        bitmap_out ^= bitmap_b
+    return s, compute_blade_representation(bitmap_out, firstIdx)
 
 
 def compute_bitmap_representation(blade: Tuple[int, ...], firstIdx: int) -> int:
