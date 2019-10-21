@@ -6,17 +6,25 @@ language: python
 matrix:
   include:
     - os: linux
+      python: '3.6'
+      script: flake8 clifford
+      stage: Lint
+    - os: linux
       python: '3.5'
       env: CONDA=false
+      stage: Test
     - os: linux
       python: '3.6'
       env: CONDA=false
+      stage: Test
     - os: linux
       python: '3.5'
       env: CONDA=true
+      stage: Test
     - os: linux
       python: '3.6'
       env: CONDA=true
+      stage: Test
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then lsb_release -a ; fi
@@ -35,7 +43,7 @@ install:
       conda install -c conda-forge sparse;
       conda install -c numba numba==0.45.1;
     else
-      pip install pytest-cov
+      pip install pytest-cov flake8
     fi
   - python setup.py install
   - pip install codecov

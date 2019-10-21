@@ -178,6 +178,7 @@ def get_mult_function(mt: sparse.COO, gradeList,
     else:
         return _get_mult_function_runtime_sparse(mt)
 
+
 def _get_mult_function(mt: sparse.COO):
     """
     Get a function similar to `` lambda a, b: np.einsum('i,ijk,k->j', a, mt, b)``
@@ -369,6 +370,7 @@ def grades_present(objin: 'MultiVector', threshold=0.0000001) -> Set[int]:
         if nonzero_i
     }
 
+
 def generate_blade_tup_map(bladeTupList):
     """
     Generates a mapping from blade tuple to linear index into
@@ -518,9 +520,9 @@ def val_get_right_gmt_matrix(mt: sparse.COO, x):
 
 
 # TODO: Move this to the top once we remove circular imports
-from ._layout import Layout
-from ._multivector import MultiVector
-from ._mvarray import MVArray
+from ._layout import Layout  # noqa: E402
+from ._multivector import MultiVector  # noqa: E402
+from ._mvarray import MVArray  # noqa: E402
 
 
 def array(obj):
