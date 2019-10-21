@@ -49,14 +49,14 @@ def fit_object_to_objects(object_start, objects, averaging_method='unweighted'):
     """
     if len(objects) > 0:
         if averaging_method == 'bivector':
-            #print('Checking other starting possibilities')
+            # print('Checking other starting possibilities')
             min_cost = object_set_cost_matrix_sum([object_start], objects)
             for a in objects:
                 this_cost = object_set_cost_matrix_sum([a], objects)
                 if this_cost < min_cost:
                     min_cost = this_cost
                     object_start = a
-            #print('Beginning optimisation')
+            # print('Beginning optimisation')
             rotor, cost = estimate_rotor_objects(objects, [object_start])
             final_object = (rotor * object_start * ~rotor).normal()
         elif averaging_method == 'unweighted':
@@ -86,14 +86,14 @@ def reassign_unused_centroids(labels, costs, n):
     return new_labels
 
 
-def n_clusters_objects(n, objects_measurements, initial_centroids=None, \
+def n_clusters_objects(n, objects_measurements, initial_centroids=None,
                        n_shotgunning=1, averaging_method='unweighted'):
     """
     Performs n means clustering with geometric objects
     Includes shotgunning for initial cluster position
     averaging_method flag determines if bivector parameterised optimisation or averaging of objects is used
     """
-    #print("Initialising")
+    # print("Initialising")
     min_shotgun_cost = np.finfo(float).max
     for i in range(n_shotgunning):
         if initial_centroids is None:
@@ -122,7 +122,7 @@ def n_clusters_objects(n, objects_measurements, initial_centroids=None, \
             start_centroids = [c for c in centroids]
             start_labels = [l for l in old_labels]
 
-    #print("Clustering")
+    # print("Clustering")
     for i in range(10000):
         # Optimise the centroids to fit better their respective clusters
         new_centroids = []
@@ -147,8 +147,8 @@ def n_clusters_objects(n, objects_measurements, initial_centroids=None, \
 
 
 def visualise_n_clusters(all_objects, centroids, labels, object_type='line',
-                         color_1=np.array([255,0,0]),color_2=np.array([0,255,0])):
-    """ 
+                         color_1=np.array([255, 0, 0]), color_2=np.array([0, 255, 0])):
+    """
     Utility method for visualising several clusters and their respective centroids
     using GAOnline
     """
@@ -164,4 +164,3 @@ def visualise_n_clusters(all_objects, centroids, labels, object_type='line',
         sc.add_object(c, object_type, 'rgb(0,0,0)')
 
     return sc
-

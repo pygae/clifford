@@ -55,13 +55,13 @@ def midpoint_and_error_of_line_cluster_eig(line_cluster):
     as well as an estimate of the error
     Uses the eigenvalue and explicit derivatives
     """
-    line_cluster_array = np.array([l.value for l in  line_cluster], dtype=np.float64)
+    line_cluster_array = np.array([l.value for l in line_cluster], dtype=np.float64)
     mat2solve = val_truncated_get_line_reflection_matrix(line_cluster_array, 128)
-    start = imt_func(no_val,sum(l.value for l in line_cluster))
-    start = gmt_func(gmt_func(start,ninf_val),start)[1:6]
+    start = imt_func(no_val, sum(l.value for l in line_cluster))
+    start = gmt_func(gmt_func(start, ninf_val), start)[1:6]
 
     point_val = np.zeros(32)
-    point_val[1:6] = np.matmul(mat2solve,start)
+    point_val[1:6] = np.matmul(mat2solve, start)
     new_mv = layout.MultiVector(value=point_val)
     new_mv = normalise_n_minus_1((new_mv * einf * new_mv)(1))
     return new_mv, val_point_to_line_cluster_distance(new_mv.value, line_cluster_array)
@@ -80,13 +80,13 @@ def midpoint_and_error_of_line_cluster_svd(line_cluster):
     column_mask = np.array(layout.gradeList) == grade_val
     mat_test = mat2solve[:, column_mask][1:6]
     print(mat_test)
-    w,v = np.linalg.eig(mat_test)
+    w, v = np.linalg.eig(mat_test)
 
     point_val = np.zeros(32)
-    point_val[np.array(layout.gradeList) == grade_val] = v[:,1]
+    point_val[np.array(layout.gradeList) == grade_val] = v[:, 1]
     new_mv = layout.MultiVector(value=point_val)
     # new_mv = normalise_n_minus_1(new_mv * einf * new_mv)
-    new_point = normalise_n_minus_1(new_mv)#up(down(new_mv) / 2)
+    new_point = normalise_n_minus_1(new_mv)  # up(down(new_mv) / 2)
     return new_point, val_point_to_line_cluster_distance(new_point.value, line_cluster_array)
 
 
@@ -117,8 +117,8 @@ def line_plane_cost(line, plane):
     A cost function for a line and a plane
     """
     P = normalised((line|plane)*I5)
-    L = normalised(meet(P,plane))
-    return line_cost_function(L,line)
+    L = normalised(meet(P, plane))
+    return line_cost_function(L, line)
 
 
 def midline_and_error_of_plane_cluster(plane_cluster):
@@ -298,7 +298,7 @@ def val_line_cost_function(obj_a_val, obj_b_val):
     if grade_a != grade_b:
         return max_float
     else:
-        if imt_func(obj_a_val,obj_b_val)[0] < 0:
+        if imt_func(obj_a_val, obj_b_val)[0] < 0:
             R_val = val_rotor_between_lines(obj_a_val, -obj_b_val)
         else:
             R_val = val_rotor_between_lines(obj_a_val, obj_b_val)

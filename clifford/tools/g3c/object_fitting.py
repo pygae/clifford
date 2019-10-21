@@ -17,7 +17,7 @@ def val_fit_circle(point_list):
     accumulator_matrix = np.zeros((32, 32))
     for i in range(point_list.shape[0]):
         # Get the point as a left gmt matrix
-        P_i_l = get_left_gmt_matrix(point_list[i,:])
+        P_i_l = get_left_gmt_matrix(point_list[i, :])
         # Multiply and add
         accumulator_matrix += P_i_l @ mask0 @ P_i_l
     accumulator_matrix = accumulator_matrix @ mask1
@@ -35,7 +35,7 @@ def val_fit_circle(point_list):
             min_eval_index = i
     best_sphere = val_normalised(mask1@np.real(e_vecs[:, min_eval_index]))
     second_best_sphere = val_normalised(mask1@np.real(e_vecs[:, min_eval_index2]))
-    best_circle = val_normalised(mask3@dual_func(omt_func(best_sphere,second_best_sphere)))
+    best_circle = val_normalised(mask3@dual_func(omt_func(best_sphere, second_best_sphere)))
     return best_circle
 
 
@@ -71,7 +71,7 @@ def val_fit_line(point_list):
         if e_vals[i] < min_eval and e_vals[i] > 0:
             min_eval = e_vals[i]
             min_eval_index = i
-    best_line = mask3@omt_func(dual_func(e_vecs[:, min_eval_index]),ninf_val)
+    best_line = mask3@omt_func(dual_func(e_vecs[:, min_eval_index]), ninf_val)
     return val_normalised(best_line)
 
 
