@@ -160,11 +160,9 @@ from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
 from clifford.g3c import *
 import clifford as cf
 from clifford import grades_present, NUMBA_PARALLEL, MVArray
-import warnings
 from scipy.interpolate import interp1d
 
 try:
-    import pyganja as ganja
     from pyganja import draw
     pyganja_available = True
 except ImportError:
