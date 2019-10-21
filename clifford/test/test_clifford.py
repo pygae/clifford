@@ -232,6 +232,26 @@ class TestClifford:
         assert (e1 + 1).value.dtype == e1.value.dtype
         assert (e1 + e2).value.dtype == e1.value.dtype
 
+    def test_indexing_blade_tuple(self):
+        # gh-151
+        layout, blades = Cl(3)
+        mv = layout.MultiVector(value=np.arange(2**3) + 1)
+
+        # one swap makes the sign flip
+        assert mv[1, 2] == -mv[2, 1]
+        assert mv[2, 3] == -mv[3, 2]
+        assert mv[3, 1] == -mv[1, 3]
+
+        assert mv[1, 2, 3] == -mv[2, 1, 3]
+        assert mv[1, 2, 3] == -mv[1, 3, 2]
+
+        # two swaps does not
+        assert mv[1, 2, 3] == mv[2, 3, 1] == mv[3, 1, 2]
+        assert mv[3, 2, 1] == mv[2, 1, 3] == mv[1, 3, 2]
+
+        # three swaps does
+        assert mv[1, 2, 3] == -mv[3, 2, 1]
+
 
 class TestBasicConformal41:
     def test_metric(self):
