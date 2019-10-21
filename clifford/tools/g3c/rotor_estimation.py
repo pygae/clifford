@@ -21,7 +21,7 @@ inv_func = layout.inv_func
 adjoint_func = layout.adjoint_func
 e4_val = e4.value
 ninf_val = einf.value
-e123inf =e123*einf
+e123inf = e123*einf
 
 motor_basis = [1 + 0 * e1, e12, e13, e23,
                e1 * einf, e2 * einf, e3 * einf,
@@ -53,27 +53,30 @@ def two_line_rotor_estimate(LA, LB):
 
     L1 = LA[0]
     L2 = LA[1]
-    Lp = average_objects([L1,L2])
-    Lm = average_objects([L1,-L2])
+    Lp = average_objects([L1, L2])
+    Lm = average_objects([L1, -L2])
     L3 = LB[0]
     L4 = LB[1]
-    Lp2 = average_objects([L3,L4])
-    Lm2 = average_objects([L3,-L4])
-    R1 = rotor_between_objects(Lp,Lp2)
-    R2 = rotor_between_objects(normalised(R1*Lm*~R1),Lm2)
+    Lp2 = average_objects([L3, L4])
+    Lm2 = average_objects([L3, -L4])
+    R1 = rotor_between_objects(Lp, Lp2)
+    R2 = rotor_between_objects(normalised(R1*Lm*~R1), Lm2)
     return normalised(R2*R1)
     """
-    return layout.MultiVector(value=val_two_line_rotor_estimate(np.array([l.value for l in LA]),
-                                                       np.array([l.value for l in LB])))
+    return layout.MultiVector(value=val_two_line_rotor_estimate(
+        np.array([l.value for l in LA]),
+        np.array([l.value for l in LB])
+    ))
 
 
-def three_plane_rotor_estimate(PA,PB):
+def three_plane_rotor_estimate(PA, PB):
     """
         Get the rotor between two pairs of
         three oriented planes
     """
-    return two_line_rotor_estimate([normalised(meet(PA[0],PA[1])), normalised(meet(PA[1],PA[2]))],
-                          [normalised(meet(PB[0],PB[1])), normalised(meet(PB[1],PB[2]))])
+    return two_line_rotor_estimate(
+        [normalised(meet(PA[0], PA[1])), normalised(meet(PA[1], PA[2]))],
+        [normalised(meet(PB[0], PB[1])), normalised(meet(PB[1], PB[2]))])
 
 
 def extract_rotor_from_TRS_mat_est(mat_est):
@@ -86,7 +89,10 @@ def extract_rotor_from_TRS_mat_est(mat_est):
     T = generate_translation_rotor(t)
     S = generate_dilation_rotor(get_radius_from_sphere(sph2*I5)/get_radius_from_sphere(sph*I5))
     TS = T*S
-    Rest = 1 + sum((1/ layout.MultiVector( value=val_apply_rotor(mat_est@ebase.value,(~TS).value) ))*ebase for ebase in [e1,e2,e3])
+    Rest = 1 + sum(
+        (1 / layout.MultiVector(value=val_apply_rotor(mat_est@ebase.value, (~TS).value)))*ebase
+        for ebase in [e1, e2, e3]
+    )
     return (TS*Rest).normal()
 
 
@@ -101,11 +107,11 @@ def lambda_estimate(Y_point_list, X_point_list, n_samples=50):
         j = indices[1]
         k = indices[2]
         lambdai2 = (X_point_list[i]|X_point_list[j])[0]
-        lambdai2*=(X_point_list[i]|X_point_list[k])[0]
-        lambdai2*=(Y_point_list[j]|Y_point_list[k])[0]
+        lambdai2 *= (X_point_list[i]|X_point_list[k])[0]
+        lambdai2 *= (Y_point_list[j]|Y_point_list[k])[0]
         denom = (Y_point_list[i]|Y_point_list[j])[0]
-        denom*= (Y_point_list[i]|Y_point_list[k])[0]
-        denom*= (X_point_list[j]|X_point_list[k])[0]
+        denom *= (Y_point_list[i]|Y_point_list[k])[0]
+        denom *= (X_point_list[j]|X_point_list[k])[0]
         lamb2est += lambdai2/denom
     return np.sqrt(lamb2est/n_samples)
 
@@ -124,14 +130,14 @@ def direct_TRS_extraction(Y, X):
 
 @numba.njit
 def val_project_bv(bv, x):
-    return -imt_func(imt_func(x,bv),bv)
+    return -imt_func(imt_func(x, bv), bv)
 
 
 @numba.njit
 def val_calc_error(R, A, Y):
     sumout = 0
     for i in range(A.shape[0]):
-        sumout += val_norm(Y[i,:] - val_apply_rotor(A[i,:], R))
+        sumout += val_norm(Y[i, :] - val_apply_rotor(A[i, :], R))
     return sumout/A.shape[0]
 
 
@@ -140,12 +146,12 @@ def val_in_plane_estimate_rotation(bv, A, Y):
     rightside = np.zeros(32)
     leftside = np.zeros(32)
     for i in range(A.shape[0]):
-        Abv = val_project_bv(bv, A[i,:])
-        Ybv = val_project_bv(bv, Y[i,:])
+        Abv = val_project_bv(bv, A[i, :])
+        Ybv = val_project_bv(bv, Y[i, :])
         revAbv = adjoint_func(Abv)
         rightside += gmt_func(revAbv, Ybv)
-        leftside += gmt_func(revAbv,Abv)
-    R = gmt_func(inv_func(leftside),rightside)
+        leftside += gmt_func(revAbv, Abv)
+    R = gmt_func(inv_func(leftside), rightside)
     R[0] += 1
     return adjoint_func(val_normalised(R))
 
@@ -164,16 +170,16 @@ def val_de_keninck_twist(Y, X, guess):
     """
     lasterr = 1E20
     nmvs = X.shape[0]
-    A = np.zeros((nmvs,32))
+    A = np.zeros((nmvs, 32))
     for steps in range(1, 100):
         for i in range(nmvs):
-            A[i,:] = val_apply_rotor(X[i,:], guess)
+            A[i, :] = val_apply_rotor(X[i, :], guess)
         biv = dekeninckbivmat[steps % 3, :]
         newguess = val_normalised(gmt_func(val_in_plane_estimate_rotation(biv, A, Y), guess))
         newerr = val_calc_error(newguess, X, Y)
         if newerr < lasterr:
             guess = newguess
-        if abs(lasterr-newerr)<1E-6:
+        if abs(lasterr-newerr) < 1E-6:
             break
         lasterr = newerr
     return guess
@@ -226,7 +232,7 @@ def estimate_rotor_objects_subsample(reference_model, query_model, n_repeats=Non
             if new_cost < min_cost:
                 min_cost = new_cost
                 min_rotor = rotor
-            #print('SAMPLE: ', i, '  cost  ', min_cost)
+            # print('SAMPLE: ', i, '  cost  ', min_cost)
     elif int(pool_size) > 1:
         def estimate_mot(Y, X):
             """ Alternate motor estimation func"""
@@ -246,7 +252,7 @@ def estimate_rotor_objects_subsample(reference_model, query_model, n_repeats=Non
                 else:
                     starmap_output = pool_obj.starmap(estimate_rotor_objects, object_sample_pairs)
             min_rotor, min_cost = min(starmap_output, key=lambda x: x[1])
-            #print('SAMPLE: ', n_repeats, '  cost  ', min_cost)
+            # print('SAMPLE: ', n_repeats, '  cost  ', min_cost)
     else:
         raise ValueError('Pool size is not valid')
     return min_rotor, min_cost
@@ -307,7 +313,7 @@ def dorst_motor_estimate(Q_in, P_in):
 
 
 def estimate_rotor_objects_subsample_sequential(reference_model, query_model, n_repeats=None, objects_per_sample=None,
-                                     maxfev=20000, print_res=False, pool_size=1, object_type='generic'):
+                                                maxfev=20000, print_res=False, pool_size=1, object_type='generic'):
     """
     Estimates the rotor that takes one set of objects to another
     """
@@ -323,7 +329,7 @@ def estimate_rotor_objects_subsample_sequential(reference_model, query_model, n_
         object_sample_query = [query_model[j] for j in indices]
         try:
             rotor, e_flag = sequential_object_rotor_estimation(object_sample_reference, object_sample_query,
-                                                                 object_type=object_type)
+                                                               object_type=object_type)
         except Exception:
             rotor = 1.0 + 0*e1
             print('ERROR')
@@ -332,7 +338,7 @@ def estimate_rotor_objects_subsample_sequential(reference_model, query_model, n_
         if new_cost < min_cost:
             min_cost = new_cost
             min_rotor = rotor
-        #print('SAMPLE: ', i, '  cost  ', min_cost)
+        # print('SAMPLE: ', i, '  cost  ', min_cost)
     return min_rotor, min_cost
 
 
@@ -351,24 +357,24 @@ def estimate_rotor_objects(reference_model, query_model, maxfev=20000,
 
     def minimisation_func(x):
         R = rotorconversion(x)
-        query_model_remapped = [normalised((apply_rotor(l, R))(grade_list[i])) for i,l in enumerate(query_model)]
+        query_model_remapped = [normalised((apply_rotor(l, R))(grade_list[i])) for i, l in enumerate(query_model)]
         return object_set_cost_sum(reference_model, query_model_remapped,
                                    object_type=object_type, motor=motor,
                                    symmetric=symmetric)
 
-    res = minimize(minimisation_func, x0, method='SLSQP', options={'ftol': 10.0 ** (-16), \
-                                                                      'maxiter': 1000, \
-                                                                      'disp': False})
+    res = minimize(minimisation_func, x0, method='SLSQP', options={'ftol': 10.0 ** (-16),
+                                                                   'maxiter': 1000,
+                                                                   'disp': False})
     if print_res:
         print(res)
-    res = minimize(minimisation_func, res.x, method='L-BFGS-B', options={'ftol':10.0**(-16), \
-                                                                       'maxiter':1000, \
-                                                                       'disp': False, \
-                                                                        'maxls':40})
+    res = minimize(minimisation_func, res.x, method='L-BFGS-B', options={'ftol': 10.0**(-16),
+                                                                         'maxiter': 1000,
+                                                                         'disp': False,
+                                                                         'maxls': 40})
     if print_res:
         print(res)
     rotor = rotorconversion(res.x)
-    query_model_remapped = [normalised((apply_rotor(l, rotor))(grade_list[i])) for i,l in enumerate(query_model)]
+    query_model_remapped = [normalised((apply_rotor(l, rotor))(grade_list[i])) for i, l in enumerate(query_model)]
     cost = object_set_cost_sum(reference_model, query_model_remapped, object_type=object_type, motor=motor,
                                symmetric=symmetric)
     return rotor, cost
@@ -376,15 +382,15 @@ def estimate_rotor_objects(reference_model, query_model, maxfev=20000,
 
 def cartans_lines(obj_list_a, obj_list_b):
     """ Performs the extended cartans algorithm as suggested by Alex Arsenovic """
-    V_found,rs = cartan(A=obj_list_a,B=obj_list_b)
+    V_found, rs = cartan(A=obj_list_a, B=obj_list_b)
     theta = ((V_found*~V_found)*e1234)(0)
     V_found = e**(-theta/2*e123inf)*V_found
     return V_found
 
 
 def sequential_object_rotor_estimation(reference_model, query_model, n_iterations=500,
-                                                             cost_tolerance=10*(10**-16), random_sequence=False,
-                                                             object_type='generic', motor=True):
+                                       cost_tolerance=10*(10**-16), random_sequence=False,
+                                       object_type='generic', motor=True):
     """
     Performs a sequential rotor update based on the rotors between individual objects
     Exits when a full rotation through all objects produces a very small update of rotor
@@ -400,13 +406,13 @@ def sequential_object_rotor_estimation(reference_model, query_model, n_iteration
             indices = range(len(query_model))
         for i in indices:
             grade = grade_list[i]
-            new_obj = normalised(apply_rotor(query_model[i],R_total)(grade))
+            new_obj = normalised(apply_rotor(query_model[i], R_total)(grade))
             C1 = normalised(new_obj)
             C2 = normalised(reference_model[i])
             if abs(C1 + C2) < 0.0001:
                 C1 = -C1
             if object_type == 'lines':
-                rroot = normalised(square_roots_of_rotor((rotor_between_objects(C1,C2)))[0])
+                rroot = normalised(square_roots_of_rotor((rotor_between_objects(C1, C2)))[0])
             else:
                 if motor:
                     if grade_obj(C1, 0.00001) == 4:
@@ -415,8 +421,8 @@ def sequential_object_rotor_estimation(reference_model, query_model, n_iteration
                         rroot = normalised(square_roots_of_rotor(motor_between_objects(C1, C2))[0])
                 else:
                     rroot = normalised(square_roots_of_rotor(rotor_between_objects(C1, C2))[0])
-            r_set = normalised((rroot*r_set)(0,2,4))
-            R_total = normalised((rroot * R_total)(0,2,4))
+            r_set = normalised((rroot*r_set)(0, 2, 4))
+            R_total = normalised((rroot * R_total)(0, 2, 4))
         if rotor_cost(r_set) < cost_tolerance:
             exit_flag = 0
             return R_total, exit_flag
@@ -426,7 +432,7 @@ def sequential_object_rotor_estimation(reference_model, query_model, n_iteration
 
 @numba.njit
 def set_as_unit_rotor_jit(array):
-    for j in range(1,32):
+    for j in range(1, 32):
         array[j] = 0.0
     array[0] = 1.0
 
@@ -484,8 +490,8 @@ def sequential_rotor_estimation_jit(reference_model, query_model, rotor_output,
                 # Now calculate the cost of this transform
                 total_cost = 0.0
                 for object_ind in range(query_model.shape[0]):
-                    r_temp = val_apply_rotor(query_model[object_ind,:], rotor_output)
-                    total_cost += np.abs(val_rotor_cost_sparse( val_rotor_between_objects_root(r_temp, reference_model[object_ind, :] )))
+                    r_temp = val_apply_rotor(query_model[object_ind, :], rotor_output)
+                    total_cost += np.abs(val_rotor_cost_sparse(val_rotor_between_objects_root(r_temp, reference_model[object_ind, :])))
                 return total_cost
     # Return whatever we have
     r_temp = val_normalised(r_running)
@@ -495,7 +501,7 @@ def sequential_rotor_estimation_jit(reference_model, query_model, rotor_output,
     total_cost = 0.0
     for object_ind in range(query_model.shape[0]):
         r_temp = val_apply_rotor(query_model[object_ind, :], rotor_output)
-        total_cost += np.abs(val_rotor_cost_sparse( val_rotor_between_objects_root(r_temp, reference_model[object_ind, :])))
+        total_cost += np.abs(val_rotor_cost_sparse(val_rotor_between_objects_root(r_temp, reference_model[object_ind, :])))
     return total_cost
 
 
@@ -509,6 +515,3 @@ def sequential_rotor_estimation_chunks_jit(reference_model, query_model, output,
         qer = query_model[i*n_objects_per_chunk:(i+1)*n_objects_per_chunk]
         total_cost = sequential_rotor_estimation_jit(ref, qer, output[i, :])
         cost_array[i] = total_cost
-
-
-

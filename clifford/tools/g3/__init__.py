@@ -88,7 +88,7 @@ def quaternion_to_matrix(q):
     qyw = 2*q[2]*q[0]
     qyz = 2*q[2]*q[3]
     qzw = 2*q[3]*q[0]
-    return np.array([[1-qy2-qz2, qxy-qzw, qxz+qyw],[qxy+qzw , 1-qx2-qz2, qyz-qxw],[qxz-qyw, qyz+qxw, 1-qx2-qy2]])
+    return np.array([[1-qy2-qz2, qxy-qzw, qxz+qyw], [qxy+qzw, 1-qx2-qz2, qyz-qxw], [qxz-qyw, qyz+qxw, 1-qx2-qy2]])
 
 
 def rotor_to_rotation_matrix(R):
@@ -104,31 +104,31 @@ def rotation_matrix_to_quaternion(a):
     Converts a rotation matrix into a quaternion
     """
     trace = a[0][0] + a[1][1] + a[2][2]
-    if( trace > 0 ):
-        s = 0.5 / math.sqrt(trace+ 1.0)
+    if trace > 0:
+        s = 0.5 / math.sqrt(trace + 1.0)
         w = 0.25 / s
-        x = ( a[2][1] - a[1][2] ) * s
-        y = ( a[0][2] - a[2][0] ) * s
-        z = ( a[1][0] - a[0][1] ) * s
-    elif ( a[0][0] > a[1][1] and a[0][0] > a[2][2] ):
-        s = 2.0 * math.sqrt( 1.0 + a[0][0] - a[1][1] - a[2][2])
-        w = (a[2][1] - a[1][2] ) / s
+        x = (a[2][1] - a[1][2]) * s
+        y = (a[0][2] - a[2][0]) * s
+        z = (a[1][0] - a[0][1]) * s
+    elif a[0][0] > a[1][1] and a[0][0] > a[2][2]:
+        s = 2.0 * math.sqrt(1.0 + a[0][0] - a[1][1] - a[2][2])
+        w = (a[2][1] - a[1][2]) / s
         x = 0.25 * s
-        y = (a[0][1] + a[1][0] ) / s
-        z = (a[0][2] + a[2][0] ) / s
-    elif (a[1][1] > a[2][2]):
-        s = 2.0 * math.sqrt( 1.0 + a[1][1] - a[0][0] - a[2][2])
-        w = (a[0][2] - a[2][0] ) / s
-        x = (a[0][1] + a[1][0] ) / s
+        y = (a[0][1] + a[1][0]) / s
+        z = (a[0][2] + a[2][0]) / s
+    elif a[1][1] > a[2][2]:
+        s = 2.0 * math.sqrt(1.0 + a[1][1] - a[0][0] - a[2][2])
+        w = (a[0][2] - a[2][0]) / s
+        x = (a[0][1] + a[1][0]) / s
         y = 0.25 * s
-        z = (a[1][2] + a[2][1] ) / s
+        z = (a[1][2] + a[2][1]) / s
     else:
-        s = 2.0 * math.sqrt( 1.0 + a[2][2] - a[0][0] - a[1][1] )
-        w = (a[1][0] - a[0][1] ) / s
-        x = (a[0][2] + a[2][0] ) / s
-        y = (a[1][2] + a[2][1] ) / s
+        s = 2.0 * math.sqrt(1.0 + a[2][2] - a[0][0] - a[1][1])
+        w = (a[1][0] - a[0][1]) / s
+        x = (a[0][2] + a[2][0]) / s
+        y = (a[1][2] + a[2][1]) / s
         z = 0.25 * s
-    return w,x,y,z
+    return w, x, y, z
 
 
 def rotation_matrix_to_rotor(M):
@@ -181,7 +181,7 @@ def angle_between_vectors(v1, v2):
     """
     Returns the angle between two conformal vectors
     """
-    clipped = np.clip( (v1 | v2)[0], -1.0, 1.0)
+    clipped = np.clip((v1 | v2)[0], -1.0, 1.0)
     return math.acos(clipped)
 
 
@@ -199,7 +199,7 @@ def euc_mv_to_np(euc_point):
     return euc_point[1:4].copy()
 
 
-def euc_cross_prod(euc_a,euc_b):
+def euc_cross_prod(euc_a, euc_b):
     """ Implements the cross product in GA """
     return (-(euc_a^euc_b)*I3).normal()
 
@@ -217,13 +217,13 @@ def rotor_vector_to_vector(v1, v2):
 
 def correlation_matrix(u_list, v_list):
     """ Creates a correlation matrix between vector lists """
-    F_output = np.zeros((3,3))
+    F_output = np.zeros((3, 3))
     for i in range(3):
         for j in range(3):
             for ind in range(len(u_list)):
                 u = u_list[ind]
                 v = v_list[ind]
-                F_output[i,j]+= v[i+1]*u[j+1]
+                F_output[i, j] += v[i+1]*u[j+1]
     return F_output
 
 

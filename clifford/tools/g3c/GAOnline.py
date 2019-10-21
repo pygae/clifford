@@ -14,7 +14,7 @@ def interpolate_colors(alpha, rgb_a, rgb_b):
 
 
 class Sphere():
-    def __init__(self,mv,color):
+    def __init__(self, mv, color):
         self.mv = mv
         self.color = color
 
@@ -24,7 +24,7 @@ class Sphere():
 
 
 class Plane():
-    def __init__(self,mv,color):
+    def __init__(self, mv, color):
         self.mv = mv
         self.color = color
 
@@ -34,7 +34,7 @@ class Plane():
 
 
 class Line():
-    def __init__(self,mv,color):
+    def __init__(self, mv, color):
         self.mv = mv
         self.color = color
 
@@ -44,7 +44,7 @@ class Line():
 
 
 class Circle():
-    def __init__(self,mv,color):
+    def __init__(self, mv, color):
         self.mv = mv
         self.color = color
 
@@ -54,7 +54,7 @@ class Circle():
 
 
 class PointPair():
-    def __init__(self,mv,color):
+    def __init__(self, mv, color):
         self.mv = mv
         self.color = color
 
@@ -64,7 +64,7 @@ class PointPair():
 
 
 class EucPoint():
-    def __init__(self,mv,color):
+    def __init__(self, mv, color):
         self.mv = mv
         self.color = color
 
@@ -74,7 +74,7 @@ class EucPoint():
 
 
 class ConfPoint():
-    def __init__(self,mv,color):
+    def __init__(self, mv, color):
         self.mv = mv
         self.color = color
 
@@ -88,11 +88,11 @@ class GAScene():
     def __init__(self):
         self.objects = []
 
-    def add(self,object_added):
+    def add(self, object_added):
         self.objects.append(object_added)
 
-    def concat(self,other):
-        if isinstance(other,GAScene):
+    def concat(self, other):
+        if isinstance(other, GAScene):
             for obj in other.objects:
                 self.add(obj)
         else:
@@ -108,40 +108,40 @@ class GAScene():
         s = s[:-1]
         return s
 
-    def add_euc_point(self,mv,color='rgb(0,0,0)'):
+    def add_euc_point(self, mv, color='rgb(0,0,0)'):
         if grade_obj(mv) != 1:
             raise ValueError('Input is not a euc_point')
-        self.add(EucPoint(mv,color))
+        self.add(EucPoint(mv, color))
 
-    def add_conf_point(self,mv,color='rgb(0,0,0)'):
+    def add_conf_point(self, mv, color='rgb(0,0,0)'):
         if grade_obj(mv) != 1:
             raise ValueError('Input is not a conf_point')
         self.add(ConfPoint(mv, color))
 
-    def add_circle(self,mv,color='rgb(0,0,0)'):
+    def add_circle(self, mv, color='rgb(0,0,0)'):
         if grade_obj(mv) != 3:
             raise ValueError('Input is not a circle')
-        self.add(Circle(mv,color))
+        self.add(Circle(mv, color))
 
-    def add_line(self,mv,color='rgb(0,0,0)'):
+    def add_line(self, mv, color='rgb(0,0,0)'):
         if grade_obj(mv) != 3:
             raise ValueError('Input is not a line')
-        self.add(Line(mv,color))
+        self.add(Line(mv, color))
 
-    def add_plane(self,mv,color='rgb(0,0,0)'):
+    def add_plane(self, mv, color='rgb(0,0,0)'):
         if grade_obj(mv) != 4:
             raise ValueError('Input is not a plane')
-        self.add(Plane(mv,color))
+        self.add(Plane(mv, color))
 
-    def add_sphere(self,mv,color='rgb(0,0,0)'):
+    def add_sphere(self, mv, color='rgb(0,0,0)'):
         if grade_obj(mv) != 4:
             raise ValueError('Input is not a sphere')
-        self.add(Sphere(mv,color))
+        self.add(Sphere(mv, color))
 
-    def add_point_pair(self,mv,color='rgb(0,0,0)'):
+    def add_point_pair(self, mv, color='rgb(0,0,0)'):
         if grade_obj(mv) != 2:
             raise ValueError('Input is not a point_pair')
-        self.add(PointPair(mv,color))
+        self.add(PointPair(mv, color))
 
     def add_object(self, mv, mv_type='interp', color='rgb(0,0,0)'):
         if mv_type == 'line':
@@ -173,9 +173,9 @@ class GAScene():
             return_val = interpret_multivector_as_object(mv)
             if return_val > 0:
                 if return_val == 1:
-                    self.add_euc_point(mv,color=color)
+                    self.add_euc_point(mv, color=color)
                 elif return_val == 2:
-                    self.add_conf_point(mv,color=color)
+                    self.add_conf_point(mv, color=color)
                 elif return_val == 3:
                     self.add_point_pair(mv, color=color)
                 elif return_val == 4:
@@ -191,12 +191,12 @@ class GAScene():
         else:
             raise ValueError(str(mv_type) + ' is not a valid mv_type. You must specify a valid mv_type.')
 
-    def add_object_array(self,mv_array,mv_type='interp',color='rgb(0,0,0)'):
+    def add_object_array(self, mv_array, mv_type='interp', color='rgb(0,0,0)'):
         for mv in mv_array:
             self.add_object(mv, mv_type, color=color)
 
     def save_to_file(self, filename):
-        with open(filename,'w') as fobj:
+        with open(filename, 'w') as fobj:
             print(self, file=fobj)
 
 
@@ -264,7 +264,7 @@ def draw_objects(objects, mv_type='interp', color='rgb(0,0,0)', print_scene=True
     """
     if isinstance(objects, str):
         data_array, metric, basis_names, support = read_ga_file(objects)
-        mv_list = [layout.MultiVector(value=data_array[i,:]) for i in range(data_array.shape[0])]
+        mv_list = [layout.MultiVector(value=data_array[i, :]) for i in range(data_array.shape[0])]
         sc = GAScene()
         sc.add_object_array(mv_list, mv_type, color=color)
         if print_scene:
@@ -284,7 +284,7 @@ class GAAnimation():
     def __init__(self):
         self.scenes = []
 
-    def add_scene(self,scene):
+    def add_scene(self, scene):
         self.scenes.append(scene)
 
     def __repr__(self):
@@ -294,6 +294,6 @@ class GAAnimation():
         s = s[:-1]
         return s
 
-    def save_to_file(self,filename):
-        with open(filename,'w') as fobj:
-            print(self,file=fobj)
+    def save_to_file(self, filename):
+        with open(filename, 'w') as fobj:
+            print(self, file=fobj)

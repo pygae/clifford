@@ -237,10 +237,10 @@ def extractRotorComponents(R):
     Mesh Vertex Pose and Position Interpolation using Geometric Algebra.
     Rich Wareham and Joan Lasenby
     """
-    phi = np.arccos(float(R[0]))             #scalar
-    phi2 = phi * phi                  #scalar
-    #Notice: np.sinc(pi * x)/(pi x)
-    phi_sinc = np.sinc(phi/np.pi)             #scalar
+    phi = np.arccos(float(R[0]))             # scalar
+    phi2 = phi * phi                  # scalar
+    # Notice: np.sinc(pi * x)/(pi x)
+    phi_sinc = np.sinc(phi/np.pi)             # scalar
     phiP = ((R(2)*ninf)|ep)/(phi_sinc)
     t_normal_n = -((phiP * R(4))/(phi2 * phi_sinc))
     t_perpendicular_n = -(phiP * (phiP * R(2))(2))/(phi2 * phi_sinc)
@@ -275,6 +275,7 @@ def val_vec_repr_to_bivector(x):
     B_val[10] += x[5]
     return B_val
 
+
 val_TR_biv_params_to_biv = val_vec_repr_to_bivector
 
 
@@ -287,6 +288,7 @@ def val_TR_biv_params_to_rotor(x):
     R_val = val_exp(B_val)
     return R_val
 
+
 val_rotorconversion = val_TR_biv_params_to_rotor
 
 
@@ -295,6 +297,7 @@ def TR_biv_params_to_rotor(x):
     Converts between the parameters of a TR bivector and the rotor that it is generating
     """
     return cf.MultiVector(layout, val_TR_biv_params_to_rotor(x))
+
 
 rotorconversion = TR_biv_params_to_rotor
 
@@ -317,4 +320,3 @@ def R_biv_params_to_rotor(x):
     Converts between the parameters of a R bivector and the rotor that it is generating
     """
     return cf.MultiVector(layout, val_R_biv_params_to_rotor(x))
-

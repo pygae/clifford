@@ -10,7 +10,6 @@ import random
 from . import *
 
 
-
 def sequential_rotor_estimation_chunks(reference_model_array, query_model_array, n_samples, n_objects_per_sample, mutation_probability=None):
 
     # Stack up a list of numbers
@@ -18,23 +17,23 @@ def sequential_rotor_estimation_chunks(reference_model_array, query_model_array,
     sample_indices = random.sample(range(total_matches), total_matches)
 
     n_mvs = reference_model_array.shape[0]
-    sample_indices = [i%n_mvs for i in sample_indices]
+    sample_indices = [i % n_mvs for i in sample_indices]
 
     if mutation_probability is not None:
         reference_model_array_new = []
-        mutation_flag = np.random.binomial(1,mutation_probability,total_matches)
+        mutation_flag = np.random.binomial(1, mutation_probability, total_matches)
         for mut, i in zip(mutation_flag, sample_indices):
             if mut:
                 ref_ind = random.sample(range(len(reference_model_array)), 1)[0]
             else:
                 ref_ind = i
-            reference_model_array_new.append(reference_model_array[ref_ind,:])
+            reference_model_array_new.append(reference_model_array[ref_ind, :])
         reference_model_array_new = np.array(reference_model_array_new)
     else:
-        reference_model_array_new = np.array([reference_model_array[i,:] for i in sample_indices], dtype=np.float64)
+        reference_model_array_new = np.array([reference_model_array[i, :] for i in sample_indices], dtype=np.float64)
     query_model_array_new = np.array([query_model_array[i, :] for i in sample_indices], dtype=np.float64)
 
-    output = np.zeros((n_samples,32), dtype=np.float64)
+    output = np.zeros((n_samples, 32), dtype=np.float64)
     cost_array = np.zeros(n_samples, dtype=np.float64)
 
     sequential_rotor_estimation_chunks_jit(reference_model_array_new, query_model_array_new, output, cost_array)
@@ -80,7 +79,7 @@ def sequential_rotor_estimation_chunks_mvs(reference_model_list, query_model_lis
 
 @numba.cuda.jit(device=True)
 def set_as_unit_rotor_device(array):
-    for j in range(1,32):
+    for j in range(1, 32):
         array[j] = 0.0
     array[0] = 1.0
 
@@ -135,7 +134,7 @@ def sequential_rotor_estimation_device(reference_model, query_model, rotor_outpu
                 # Now calculate the cost of this transform
                 total_cost = 0.0
                 for object_ind in range(query_model.shape[0]):
-                    apply_rotor_device(query_model[object_ind,:], rotor_output, r_temp)
+                    apply_rotor_device(query_model[object_ind, :], rotor_output, r_temp)
                     total_cost += cost_between_objects_device(r_temp, reference_model[object_ind, :])
                 return total_cost
     # Return whatever we have
@@ -173,23 +172,23 @@ def sequential_rotor_estimation_cuda(reference_model_array, query_model_array, n
     sample_indices = random.sample(range(total_matches), total_matches)
 
     n_mvs = reference_model_array.shape[0]
-    sample_indices = [i%n_mvs for i in sample_indices]
+    sample_indices = [i % n_mvs for i in sample_indices]
 
     if mutation_probability is not None:
         reference_model_array_new = []
-        mutation_flag = np.random.binomial(1,mutation_probability,total_matches)
+        mutation_flag = np.random.binomial(1, mutation_probability, total_matches)
         for mut, i in zip(mutation_flag, sample_indices):
             if mut:
                 ref_ind = random.sample(range(len(reference_model_array)), 1)[0]
             else:
                 ref_ind = i
-            reference_model_array_new.append(reference_model_array[ref_ind,:])
+            reference_model_array_new.append(reference_model_array[ref_ind, :])
         reference_model_array_new = np.array(reference_model_array_new)
     else:
-        reference_model_array_new = np.array([reference_model_array[i,:] for i in sample_indices], dtype=np.float64)
+        reference_model_array_new = np.array([reference_model_array[i, :] for i in sample_indices], dtype=np.float64)
     query_model_array_new = np.array([query_model_array[i, :] for i in sample_indices], dtype=np.float64)
 
-    output = np.zeros((n_samples,32), dtype=np.float64)
+    output = np.zeros((n_samples, 32), dtype=np.float64)
     cost_array = np.zeros(n_samples, dtype=np.float64)
 
     blockdim = 64
@@ -206,7 +205,6 @@ def sequential_rotor_estimation_cuda_mvs(reference_model_list, query_model_list,
     output, cost_array = sequential_rotor_estimation_cuda(reference_model_array, query_model_array, n_samples, n_objects_per_sample, mutation_probability=mutation_probability)
     output_mvs = [query_model_list[0]._newMV(output[i, :]) for i in range(output.shape[0])]
     return output_mvs, cost_array
-
 
 
 @numba.cuda.jit(device=True)
@@ -248,7 +246,7 @@ def square_root_of_rotor_kernel(value, output):
 
 @numba.cuda.jit(device=True)
 def adjoint_device(value, output):
-    for j in range(0,6):
+    for j in range(0, 6):
         output[j] = value[j]
     output[6] = -value[6]
     output[7] = -value[7]
@@ -270,7 +268,7 @@ def adjoint_device(value, output):
     output[23] = -value[23]
     output[24] = -value[24]
     output[25] = -value[25]
-    for j in range(26,32):
+    for j in range(26, 32):
         output[j] = value[j]
 
 
