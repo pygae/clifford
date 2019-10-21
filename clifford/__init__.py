@@ -453,22 +453,18 @@ def compute_reordering_sign_and_canonical_form(blade, metric, firstIdx):
     return s, compute_blade_representation(compute_bitmap_representation(blade, firstIdx), firstIdx)
 
 
-def compute_bitmap_representation(blade, firstIdx):
+def compute_bitmap_representation(blade: Tuple[int, ...], firstIdx: int) -> int:
     """
     Takes a tuple blade representation and converts it to the
     bitmap representation
     """
-    if len(blade) > 0:
-        bitmap = 1 << (blade[0]-firstIdx)
-        if len(blade) > 1:
-            for b in blade[1:]:
-                bitmap = bitmap ^ (1 << (b-firstIdx))
-        return bitmap
-    else:
-        return 0
+    bitmap = 0
+    for b in blade:
+        bitmap = bitmap ^ (1 << (b-firstIdx))
+    return bitmap
 
 
-def compute_blade_representation(bitmap, firstIdx):
+def compute_blade_representation(bitmap: int, firstIdx: int) -> Tuple[int, ...]:
     """
     Takes a bitmap representation and converts it to the tuple
     blade representation
