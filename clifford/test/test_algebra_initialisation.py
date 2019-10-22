@@ -10,7 +10,7 @@ from clifford import Cl, conformalize
 class TestInitialisation:
 
     def test_speed(self):
-        algebras = range(2,9)
+        algebras = range(2, 9)
         print()  # So that the first number is on a new line
         for i in algebras:
             t_start = time.time()
@@ -30,17 +30,17 @@ class TestInitialisation:
         b = layout.randomMV()
         # Project the multivectors to the grades required
         grades_possibilities = []
-        for r in range(1,len(layout.sig)):
+        for r in range(1, len(layout.sig)):
             possible_grades = [list(m) for m in list(itertools.combinations(range(len(layout.sig)), r))]
             grades_possibilities += possible_grades
-        for i,grades_a in enumerate(grades_possibilities):
+        for i, grades_a in enumerate(grades_possibilities):
             sparse_mv_a = sum([a(k) for k in grades_a])
-            for j,grades_b in enumerate(grades_possibilities):
+            for j, grades_b in enumerate(grades_possibilities):
                 sparse_mv_b = sum([b(k) for k in grades_b])
                 # Compute results
-                gp = layout.gmt_func_generator(grades_a=grades_a,grades_b=grades_b)
-                result_sparse = gp(sparse_mv_a.value,sparse_mv_b.value)
+                gp = layout.gmt_func_generator(grades_a=grades_a, grades_b=grades_b)
+                result_sparse = gp(sparse_mv_a.value, sparse_mv_b.value)
                 result_dense = (sparse_mv_a*sparse_mv_b).value
                 # Check they are the same
                 np.testing.assert_almost_equal(result_sparse, result_dense)
-                print(j+i*len(grades_possibilities),len(grades_possibilities)**2)
+                print(j+i*len(grades_possibilities), len(grades_possibilities)**2)
