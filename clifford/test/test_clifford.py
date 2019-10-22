@@ -35,7 +35,7 @@ class TestClifford:
         is a linear multiple of the pseudoscalar
         """
         layout, blades = algebra
-        ps = MVArray([kv[1] for kv, i in zip(blades.items(), range(layout.dims))]).op()
+        ps = functools.reduce(clifford.op, layout.blades_of_grade(1))
         ps2 = layout.pseudoScalar
         assert np.linalg.matrix_rank(np.column_stack((ps.value, ps2.value))) == 1
 
