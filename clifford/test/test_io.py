@@ -9,7 +9,7 @@ class TestParseMultivector(unittest.TestCase):
 
     def test_parse_multivector(self):
         A = layout.randomMV()
-        B = layout.parse_multivector( str(A, ) )
+        B = layout.parse_multivector(str(A))
         np.testing.assert_almost_equal(A.value, B.value, 3)
 
 
@@ -50,7 +50,7 @@ class TestJSONBasicIO(unittest.TestCase):
 
         mv_array = ConformalMVArray([random_point_pair() for i in range(1000)]).value
         write_json_file(file_name, mv_array, layout.metric, basis_names, compression=True,
-                      transpose=False, sparse=False, support=False)
+                        transpose=False, sparse=False, support=False)
 
         data_array, metric_2, basis_names_2, support = read_json_file(file_name)
 

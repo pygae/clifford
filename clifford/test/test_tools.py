@@ -48,7 +48,6 @@ class ToolsTests(unittest.TestCase):
             self.checkit(p=p, q=q)
 
 
-
 class G3ToolsTests(unittest.TestCase):
 
     def test_quaternion_conversions(self):
@@ -131,7 +130,7 @@ class PointProcessingTests(unittest.TestCase):
         point_list = [random_conformal_point() for i in range(100)]
         hull = GAConvexHull(point_list, hull_dims=3)
         conf_vertices = [hull.GApoints[i] for i in hull.vertices]
-        
+
         # from pyganja import GanjaScene, draw
         # gs = GanjaScene()
         # gs.add_objects(point_list, static=True, color=int('00000000', 16))
@@ -190,7 +189,7 @@ class PointProcessingTests(unittest.TestCase):
         point_list_flat = project_points_to_plane(point_list, (up(0)^up(e1)^up(e2)^einf).normal())
         hull = GADelaunay(point_list_flat, hull_dims=2)
         facets = hull.conformal_facets()
-        
+
         # from pyganja import GanjaScene, draw
         # gs = GanjaScene()
         # gs.add_objects(point_list_flat, static=True, color=int('00000000', 16))
