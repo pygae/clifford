@@ -13,7 +13,7 @@ Tools for specific ga's
 
 .. autosummary::
     :toctree: generated/
-    
+
     g3
     g3c
 
@@ -43,8 +43,7 @@ translated into a Versor.
 from functools import reduce
 
 from math import sqrt
-from numpy import eye, array, sign, zeros, sin,arccos
-import itertools
+from numpy import eye, array, sign, zeros, sin, arccos
 from .. import Cl, gp, Frame
 from .. import eps as global_eps
 
@@ -157,10 +156,12 @@ def mat2Frame(A, layout=None, is_complex=None):
             for m in range(M // 2):
                 m_ = 2 * m
 
-                a[n_] = (a[n_]) + ((A[m, n].real) ^ e_[m_]) \
-                        + ((A[m, n].imag) ^ e_[m_ + 1])
-                a[n_ + 1] = (a[n_ + 1]) + ((-A[m, n].imag) ^ e_[m_]) \
-                            + ((A[m, n].real) ^ e_[m_ + 1])
+                a[n_] = (a[n_]) \
+                    + ((A[m, n].real) ^ e_[m_]) \
+                    + ((A[m, n].imag) ^ e_[m_ + 1])
+                a[n_ + 1] = (a[n_ + 1]) \
+                    + ((-A[m, n].imag) ^ e_[m_]) \
+                    + ((A[m, n].real) ^ e_[m_ + 1])
     return a, layout
 
 
@@ -314,11 +315,10 @@ def orthoFrames2Versor(B, A=None, delta=1e-3, eps=None, det=None,
     N = len(A)
 
     # Determine and remove scaling factors caused by homogenization
-    if remove_scaling == True:
+    if remove_scaling:
         lam = omoh(A, B)
         B = Frame([B[k] * lam[k] for k in range(N)])
 
-    
     try:
         # compute ratio of volumes for each frame. take Nth root
         A = Frame(A[:])
@@ -333,7 +333,7 @@ def orthoFrames2Versor(B, A=None, delta=1e-3, eps=None, det=None,
         # probably  A and B are not pure vector correspondence
         # whatever,  it might still work
         pass
-   
+
     # Find the Versor
 
     # store each reflector/rotor  in a list,  make full versor at the
@@ -450,14 +450,15 @@ def rotor_decomp(V, x):
 def sinc(x):
     return sin(x)/x
 
+
 def log_rotor(V):
     '''
     Logarithm of a simple rotor
     '''
     if (V(2)**2).grades() != {0}:
         print(V)
-        #raise ValueError('Bivector is not a Blade.')
-    if abs(V(2))<global_eps():
+        # raise ValueError('Bivector is not a Blade.')
+    if abs(V(2)) < global_eps():
         return log(float(V(0)))
     # numpy's trig correctly chooses hyperbolic or not with Complex args
     theta = arccos(complex(V(0)))

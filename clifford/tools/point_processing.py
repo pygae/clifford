@@ -10,14 +10,14 @@ import functools
 
 class GADelaunay(scipy.spatial.Delaunay):
     """
-    Uses scipy to produce an hull_dims dimensional Delaunay triangulation of the input 
+    Uses scipy to produce an hull_dims dimensional Delaunay triangulation of the input
     points
 
     if hull_dims is not provided it will use the dimension of the input layout
     if hull_dims is provided it will use the first hull_dims basis vectors
     """
     def __init__(self, points, hull_dims=None, furthest_site=False,
-        incremental=False, qhull_options=None):
+                 incremental=False, qhull_options=None):
 
         # Prep the GA specific stuff
         self.layout = points[0].layout
@@ -30,8 +30,8 @@ class GADelaunay(scipy.spatial.Delaunay):
         # Run the superclass constructor
         scipy.spatial.Delaunay.__init__(self, point_array,
                                         furthest_site=furthest_site,
-                                          incremental=incremental,
-                                          qhull_options=qhull_options)
+                                        incremental=incremental,
+                                        qhull_options=qhull_options)
         # Keep the GAversion
         self.GApoints = points
 
@@ -100,7 +100,7 @@ class GAConvexHull(scipy.spatial.ConvexHull):
 
 def naiive_subspace_detector(point_list, grade,
                              point_cost_threshold=0.1,
-                            flat_flag=True, n_tests=1000):
+                             flat_flag=True, n_tests=1000):
     """
     Given a point cloud extract objects of the given grade
     This only works for conformal algebras at the moment
@@ -124,7 +124,7 @@ def naiive_subspace_detector(point_list, grade,
 
         # Sample from the generator
         n_samples = int(min([n_tests, nchoosek]))
-        sampled_objects_list = random.sample(list(combos),n_samples)
+        sampled_objects_list = random.sample(list(combos), n_samples)
 
         # Wedge the results
         output_list = []
@@ -158,4 +158,3 @@ def naiive_subspace_detector(point_list, grade,
                                                        object_list,
                                                        point_cost_threshold=point_cost_threshold)
     return point_associations, object_list
-
