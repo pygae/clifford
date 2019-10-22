@@ -84,7 +84,7 @@ def get_adjoint_function(gradeList):
     This function returns a fast jitted adjoint function
     '''
     grades = np.array(gradeList)
-    signs = np.power(-1, grades*(grades-1)/2)
+    signs = np.power(-1, grades*(grades-1)//2)
     @numba.njit
     def adjoint_func(value):
         return signs * value  # elementwise multiplication
