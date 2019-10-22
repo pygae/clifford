@@ -326,6 +326,14 @@ class TestBasicConformal41:
             assert not n.isBlade()
             assert not n.isVersor()
 
+    def test_blades_of_grade(self):
+        layout = Cl(3)[0]
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        assert layout.blades_of_grade(1) == [e1, e2, e3]
+        assert layout.blades_of_grade(2) == [e1^e2, e1^e3, e2^e3]
+        assert layout.blades_of_grade(3) == [e1^e2^e3]
 
 class TestBasicSpaceTime:
     def test_initialise(self):

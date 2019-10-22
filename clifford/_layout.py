@@ -480,7 +480,7 @@ class Layout(object):
         '''
         if grade == 0:
             return self.scalar
-        return [k for k in self.blades_list[1:] if k.grades() == [grade]]
+        return [k for k in self.blades_list[1:] if k.grades() == {grade}]
 
     @property
     def blades_list(self):
