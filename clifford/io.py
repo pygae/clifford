@@ -5,7 +5,7 @@ import json
 
 
 def write_json_file(file_name, mv_array, metric, basis_names, compression=True,
-                   transpose=False, sparse=False, support=None, compression_opts=1):
+                    transpose=False, sparse=False, support=None, compression_opts=1):
     """
     Writes a json ga file of format version 0.0.1
     """
@@ -70,7 +70,7 @@ def read_json_file(file_name):
 
 
 def write_ga_file(file_name, mv_array, metric, basis_names, compression=True,
-                   transpose=False, sparse=False, support=None, compression_opts=1):
+                  transpose=False, sparse=False, support=None, compression_opts=1):
     """
     Writes a ga file of format version 0.0.1
     """
