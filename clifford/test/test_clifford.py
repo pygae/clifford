@@ -224,13 +224,29 @@ class TestClifford:
         assert str(-e1) == "-(1^e1)"
         assert str(1 - e1) == "1 - (1^e1)"
 
-    def test_add_preserves_dtype(self):
-        """ test that adding blades does not promote types """
+    @pytest.mark.parametrize('func', [
+        operator.add,
+        operator.sub,
+    ])
+    def test_binary_op_preserves_dtype(self, func):
+        """ test that simple binary ops on blades do not promote types """
         layout, blades = Cl(3)
         e1 = blades['e1']
         e2 = blades['e2']
-        assert (e1 + 1).value.dtype == e1.value.dtype
-        assert (e1 + e2).value.dtype == e1.value.dtype
+        assert func(e1, 1).value.dtype == e1.value.dtype
+        assert func(e1, e2).value.dtype == e1.value.dtype
+
+    @pytest.mark.parametrize('func', [
+        operator.inv,
+        operator.pos,
+        operator.neg,
+        MultiVector.gradeInvol,
+    ])
+    def test_unary_op_preserves_dtype(self, func):
+        """ test that simple unary ops on blades do not promote types """
+        layout, blades = Cl(3)
+        e1 = blades['e1']
+        assert func(e1).value.dtype == e1.value.dtype
 
     def test_indexing_blade_tuple(self):
         # gh-151
