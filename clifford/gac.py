@@ -19,4 +19,3 @@ def up(x):
 
 def down(x):
     return (x|e1)[0]*e1 + (x|e2)[0]*e2
-
