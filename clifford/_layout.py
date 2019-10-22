@@ -1,5 +1,6 @@
 import re
 from functools import reduce
+from typing import List
 
 import numpy as np
 import numba
@@ -465,7 +466,7 @@ class Layout(object):
         d = self.basis_vectors
         return [d[k] for k in sorted(d.keys())]
 
-    def blades_of_grade(self, grade):
+    def blades_of_grade(self, grade: int) -> List['MultiVector']:
         '''
         return all blades of a given grade,
 
@@ -478,19 +479,15 @@ class Layout(object):
         --------
         blades : list of MultiVectors
         '''
-        if grade == 0:
-            return self.scalar
-        return [k for k in self.blades_list[1:] if k.grades() == {grade}]
+        return [k for k in self.blades_list if k.grades() == {grade}]
 
     @property
-    def blades_list(self):
+    def blades_list(self) -> List['MultiVector']:
         '''
-        Ordered list of blades in this layout (with scalar as [0])
+        List of blades in this layout matching the order of `self.bladeTupList`
         '''
         blades = self.blades
-        names = self.names
-        N = self.gaDims
-        return [1.0] + [blades[names[k]] for k in range(1, N)]
+        return [blades[n] for n in self.names]
 
     @property
     def blades(self):

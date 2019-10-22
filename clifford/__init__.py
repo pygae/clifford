@@ -39,7 +39,7 @@ Functions
 from functools import reduce
 import os
 import itertools
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Container, Dict, Optional
 
 # Major library imports.
 import numpy as np
@@ -724,7 +724,7 @@ def Cl(p=0, q=0, r=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
     return layout, blades
 
 
-def bases(layout, mvClass=MultiVector, grades=None):
+def bases(layout, mvClass=MultiVector, grades: Optional[Container[int]] = None) -> Dict[str, MultiVector]:
     """Returns a dictionary mapping basis element names to their MultiVector
     instances, optionally for specific grades
 
@@ -733,18 +733,18 @@ def bases(layout, mvClass=MultiVector, grades=None):
 
     >>> locals().update(layout.blades())
 
-    bases(layout) --> {'name': baseElement, ...}
+    .. versionchanged:: 1.1.0
+        This dictionary includes the scalar
     """
 
     dict = {}
     for i in range(layout.gaDims):
         grade = layout.gradeList[i]
-        if grade != 0:
-            if grades is not None and grade not in grades:
-                continue
-            v = np.zeros((layout.gaDims,), dtype=int)
-            v[i] = 1
-            dict[layout.names[i]] = mvClass(layout, v)
+        if grades is not None and grade not in grades:
+            continue
+        v = np.zeros((layout.gaDims,), dtype=int)
+        v[i] = 1
+        dict[layout.names[i]] = mvClass(layout, v)
     return dict
 
 
