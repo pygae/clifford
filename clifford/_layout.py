@@ -286,9 +286,9 @@ class Layout(object):
             self.bitmap_to_linear_map,
             self.sig
         )
-        self.omt = sparse.where(omt_prod_mask, self.gmt, 0)
-        self.imt = sparse.where(imt_prod_mask, self.gmt, 0)
-        self.lcmt = sparse.where(lcmt_prod_mask, self.gmt, 0)
+        self.omt = sparse.where(omt_prod_mask, self.gmt, self.gmt.dtype.type(0))
+        self.imt = sparse.where(imt_prod_mask, self.gmt, self.gmt.dtype.type(0))
+        self.lcmt = sparse.where(lcmt_prod_mask, self.gmt, self.gmt.dtype.type(0))
 
         # This generates the functions that will perform the various products
         self.gmt_func = get_mult_function(self.gmt, self.gradeList)

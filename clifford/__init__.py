@@ -107,7 +107,8 @@ def _numba_construct_tables(
 
     lcmt_prod_mask = np.zeros(array_length, dtype=np.bool_)
 
-    mult_table_vals = np.zeros(array_length, dtype=np.float64)
+    # use as small a type as possible to minimize type promotion
+    mult_table_vals = np.zeros(array_length, dtype=np.int8)
 
     for i, grade_list_i in enumerate(gradeList):
         blade_bitmap_i = linear_map_to_bitmap[i]
@@ -171,12 +172,18 @@ def get_mult_function(mt: sparse.COO, gradeList,
 
     if filter_mask is not None:
         # We can pass the sparse filter mask directly
-        mt = sparse.where(filter_mask, mt, 0)
+        mt = sparse.where(filter_mask, mt, mt.dtype.type(0))
 
         return _get_mult_function(mt)
 
     else:
         return _get_mult_function_runtime_sparse(mt)
+
+
+def _get_mult_function_result_type(a: numba.types.Type, b: numba.types.Type, mt: np.dtype):
+    a_dt = numba.numpy_support.as_dtype(getattr(a, 'dtype', a))
+    b_dt = numba.numpy_support.as_dtype(getattr(b, 'dtype', b))
+    return np.result_type(a_dt, mt, b_dt)
 
 
 def _get_mult_function(mt: sparse.COO):
@@ -193,14 +200,19 @@ def _get_mult_function(mt: sparse.COO):
     k_list, l_list, m_list = mt.coords
     mult_table_vals = mt.data
 
-    @numba.njit
+    @numba.generated_jit(nopython=True)
     def mv_mult(value, other_value):
-        output = np.zeros(dims)
-        for ind, k in enumerate(k_list):
-            m = m_list[ind]
-            l = l_list[ind]
-            output[l] += value[k] * mult_table_vals[ind] * other_value[m]
-        return output
+        # this casting will be done at jit-time
+        ret_dtype = _get_mult_function_result_type(value, other_value, mult_table_vals.dtype)
+        mult_table_vals_t = mult_table_vals.astype(ret_dtype)
+
+        def mult_inner(value, other_value):
+            output = np.zeros(dims, dtype=ret_dtype)
+            for k, l, m, val in zip(k_list, l_list, m_list, mult_table_vals_t):
+                output[l] += value[k] * val * other_value[m]
+            return output
+
+        return mult_inner
 
     return mv_mult
 
@@ -219,18 +231,24 @@ def _get_mult_function_runtime_sparse(mt: sparse.COO):
     k_list, l_list, m_list = mt.coords
     mult_table_vals = mt.data
 
-    @numba.njit
+    @numba.generated_jit(nopython=True)
     def mv_mult(value, other_value):
-        output = np.zeros(dims)
-        for ind, k in enumerate(k_list):
-            v_val = value[k]
-            if v_val != 0.0:
-                m = m_list[ind]
-                ov_val = other_value[m]
-                if ov_val != 0.0:
-                    l = l_list[ind]
-                    output[l] += v_val * mult_table_vals[ind] * ov_val
-        return output
+        # this casting will be done at jit-time
+        ret_dtype = _get_mult_function_result_type(value, other_value, mult_table_vals.dtype)
+        mult_table_vals_t = mult_table_vals.astype(ret_dtype)
+
+        def mult_inner(value, other_value):
+            output = np.zeros(dims, dtype=ret_dtype)
+            for ind, k in enumerate(k_list):
+                v_val = value[k]
+                if v_val != 0.0:
+                    m = m_list[ind]
+                    ov_val = other_value[m]
+                    if ov_val != 0.0:
+                        l = l_list[ind]
+                        output[l] += v_val * mult_table_vals_t[ind] * ov_val
+            return output
+        return mult_inner
 
     return mv_mult
 
