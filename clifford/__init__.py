@@ -301,12 +301,7 @@ def get_leftLaInv(mult_table, gradeList):
 
     @numba.njit
     def leftLaInvJIT(value):
-        intermed = np.zeros((n_dims, n_dims))
-        for test_ind, i in enumerate(k_list):
-            j = l_list[test_ind]
-            k = m_list[test_ind]
-            intermed[i, j] += mult_table_vals[test_ind] * value[k]
-        intermed = np.transpose(intermed)
+        intermed = _numba_val_get_left_gmt_matrix(value, k_list, l_list, m_list, mult_table_vals, n_dims)
         if abs(linalg.det(intermed)) < _eps:
             raise ValueError("multivector has no left-inverse")
         sol = linalg.solve(intermed, identity)
