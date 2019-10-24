@@ -12,6 +12,7 @@ class TestInitialisation:
     def test_speed(self):
         algebras = range(2, 9)
         print()  # So that the first number is on a new line
+        Cl.cache_clear()
         for i in algebras:
             t_start = time.time()
             Cl(i)

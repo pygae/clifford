@@ -36,7 +36,7 @@ Functions
 """
 
 # Standard library imports.
-from functools import reduce
+from functools import reduce, lru_cache
 import os
 import itertools
 from typing import List, Tuple, Set, Container, Dict, Optional
@@ -718,6 +718,8 @@ def elements(dims: int, firstIdx=0) -> List[Tuple[int, ...]]:
     return list(_powerset(range(firstIdx, firstIdx + dims)))
 
 
+# small, since these objects are large
+@lru_cache(maxsize=8)
 def Cl(p=0, q=0, r=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
     """Returns a Layout and basis blades for the geometric algebra Cl_p,q.
 
@@ -971,7 +973,7 @@ def conformalize(layout, added_sig=[1, -1], **kw):
     >>> locals().update(stuff)
     '''
 
-    sig_c = list(layout.sig) + added_sig
+    sig_c = tuple(layout.sig) + tuple(added_sig)
     layout_c, blades_c = Cl(sig=sig_c, firstIdx=layout.firstIdx, **kw)
     basis_vectors = layout_c.basis_vectors
     added_keys = sorted(layout_c.basis_vectors.keys())[-2:]

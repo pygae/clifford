@@ -1,5 +1,6 @@
 from functools import reduce
 import operator
+import copy
 
 import pytest
 import numpy as np
@@ -210,7 +211,7 @@ class TestClifford:
 
     def test_layout_comparison_operators(self):
         l3a, _ = Cl(3)
-        l3b, _ = Cl(3)
+        l3b = copy.deepcopy(l3a)  # needed since Cl is cached
         l4, _ = Cl(4)
 
         assert operator.eq(l3a, l3b) is True
