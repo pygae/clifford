@@ -1400,30 +1400,30 @@ def val_rotor_between_objects_explicit(X1, X2):
     Lasenby and Hadfield AGACSE2018
     For any two conformal objects X1 and X2 this returns a rotor that takes X1 to X2
 
-    Implements an optimised version of:
+    Implements an optimised version of::
 
-    gamma1 = (X1 * X1)[0]
-    gamma2 = (X2 * X2)[0]
+        gamma1 = (X1 * X1)[0]
+        gamma2 = (X2 * X2)[0]
 
-    M12 = X1*X2 + X2*X1
-    K = 2 + gamma1*M12
+        M12 = X1*X2 + X2*X1
+        K = 2 + gamma1*M12
 
-    if np.sum(np.abs(K.value)) < 0.0000001:
-        return 1 + 0*e1
+        if np.sum(np.abs(K.value)) < 0.0000001:
+            return 1 + 0*e1
 
-    if sum(np.abs(M12(4).value)) > 0.0000001:
-        lamb = (-(K(4) * K(4)))[0]
-        mu = K[0]**2 + lamb
-        root_mu = np.sqrt(mu)
-        if abs(lamb) < 0.0000001:
-            beta = 1.0/(2*np.sqrt(K[0]))
+        if sum(np.abs(M12(4).value)) > 0.0000001:
+            lamb = (-(K(4) * K(4)))[0]
+            mu = K[0]**2 + lamb
+            root_mu = np.sqrt(mu)
+            if abs(lamb) < 0.0000001:
+                beta = 1.0/(2*np.sqrt(K[0]))
+            else:
+                beta_sqrd = 1/(2*(root_mu + K[0]))
+                beta = np.sqrt(beta_sqrd)
+            R = ( beta*K(4) - (1/(2*beta)) )*(1 + gamma1*X2*X1)/(root_mu)
+            return R
         else:
-            beta_sqrd = 1/(2*(root_mu + K[0]))
-            beta = np.sqrt(beta_sqrd)
-        R = ( beta*K(4) - (1/(2*beta)) )*(1 + gamma1*X2*X1)/(root_mu)
-        return R
-    else:
-        return (1 + gamma1*X2*X1)/(np.sqrt(abs(K[0])))
+            return (1 + gamma1*X2*X1)/(np.sqrt(abs(K[0])))
 
     """
     gamma1 = gmt_func(X1, X1)[0]

@@ -2,10 +2,10 @@
 Tools for 3DGA (g3)
 
 3DGA Tools
-==========================================================
+==========
 
 Rotation Conversion Methods
---------------------
+---------------------------
 
 .. autosummary::
     :toctree: generated/
@@ -17,7 +17,7 @@ Rotation Conversion Methods
 
 
 Generation Methods
---------------------
+------------------
 
 .. autosummary::
     :toctree: generated/
@@ -29,7 +29,7 @@ Generation Methods
 
 
 Misc
---------------------
+----
 
 .. autosummary::
     :toctree: generated/
@@ -43,7 +43,7 @@ Misc
     GA_SVD
     rotation_matrix_align_vecs
     rotor_align_vecs
-s
+
 """
 
 from clifford.g3c import *

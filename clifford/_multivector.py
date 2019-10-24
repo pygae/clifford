@@ -13,30 +13,27 @@ from . import (
 
 
 class MultiVector(object):
-    """An  element of the algebra
+    """An element of the algebra
 
     Parameters
     -------------
-    layout: instance of `clifford.Layout`
+    layout: instance of :class:`clifford.Layout`
         the layout of the algebra
 
-    value : sequence of length layout.gaDims
+    value : sequence of length ``layout.gaDims``
         the coefficients of the base blades
 
     Notes
     ------
-    The following operators are overloaded as follows:
+    The following operators are overloaded:
 
-    * * : geometric product
-    * ^ : outer product
-    * | : inner product
-    * ~ : reversion
-    * ||: abs value, this is  sqrt(abs(~M*M))
-
-    sequence method
-
-    * M(N) : grade or subspace projection
-    * M[N] : blade projection
+    * ``A * B`` : geometric product
+    * ``A ^ B`` : outer product
+    * ``A | B`` : inner product
+    * ``A << B`` : left contraction
+    * ``~M`` : reversion
+    * ``M(N)`` : grade or subspace projection
+    * ``M[N]`` : blade projection
     """
 
     def __init__(self, layout, value=None, string=None, *, dtype: np.dtype = np.float64) -> None:
@@ -112,10 +109,7 @@ class MultiVector(object):
         return self.vee(other)
 
     def __mul__(self, other) -> 'MultiVector':
-        """Geometric product
-
-        M * N --> MN
-        """
+        """Geometric product :math:`MN` """
 
         other, mv = self._checkOther(other, coerce=False)
 
@@ -131,10 +125,7 @@ class MultiVector(object):
         return self._newMV(newValue)
 
     def __rmul__(self, other) -> 'MultiVector':
-        """Right-hand geometric product
-
-        N * M --> NM
-        """
+        """Right-hand geometric product, :math:`NM`"""
 
         other, mv = self._checkOther(other, coerce=False)
 
@@ -149,10 +140,7 @@ class MultiVector(object):
         return self._newMV(newValue)
 
     def __xor__(self, other) -> 'MultiVector':
-        """Outer product
-
-        M ^ N
-        """
+        r""" Outer product, :math:`M \wedge N` """
 
         other, mv = self._checkOther(other, coerce=False)
 
@@ -167,10 +155,7 @@ class MultiVector(object):
         return self._newMV(newValue)
 
     def __rxor__(self, other) -> 'MultiVector':
-        """Right-hand outer product
-
-        N ^ M
-        """
+        r"""Right-hand outer product, :math:`N \wedge M` """
 
         other, mv = self._checkOther(other, coerce=False)
 
@@ -185,10 +170,7 @@ class MultiVector(object):
         return self._newMV(newValue)
 
     def __or__(self, other) -> 'MultiVector':
-        """Inner product
-
-        M | N
-        """
+        r""" Inner product, :math:`M \cdot N` """
 
         other, mv = self._checkOther(other)
 
@@ -256,10 +238,7 @@ class MultiVector(object):
         return self.layout.MultiVector(value=self.layout.right_complement_func(self.value))
 
     def __truediv__(self, other) -> 'MultiVector':
-        """Division
-                       -1
-        M / N --> M * N
-        """
+        """Division, :math:`M N^{-1}`"""
 
         other, mv = self._checkOther(other, coerce=False)
 
@@ -273,10 +252,7 @@ class MultiVector(object):
             return self._newMV(newValue)
 
     def __rtruediv__(self, other) -> 'MultiVector':
-        """Right-hand division
-                       -1
-        N / M --> N * M
-        """
+        """Right-hand division, :math:`N M^{-1}`"""
 
         other, mv = self._checkOther(other)
         if isinstance(other, np.ndarray):
@@ -286,10 +262,7 @@ class MultiVector(object):
         return other * self.inv()
 
     def __pow__(self, other) -> 'MultiVector':
-        """Exponentiation of a multivector by an integer
-                    n
-        M ** n --> M
-        """
+        """Exponentiation of a multivector by an integer, :math:`M^{n}` """
 
         if not isinstance(other, (int, float)):
             raise ValueError("exponent must be a Python int or float")
@@ -310,10 +283,7 @@ class MultiVector(object):
         return newMV
 
     def __rpow__(self, other) -> 'MultiVector':
-        """Exponentiation of a real by a multivector
-                  M
-        r**M --> r
-        """
+        """Exponentiation of a real by a multivector, :math:`r^{M}`"""
 
         # Let math.log() check that other is a Python number, not something
         # else.
@@ -325,17 +295,14 @@ class MultiVector(object):
 
     def __lshift__(self, other) -> 'MultiVector':
         """
-        The << operator is the left contraction
+        The ``<<`` operator is the left contraction
         """
         return self.lc(other)
 
     # unary
 
     def __neg__(self) -> 'MultiVector':
-        """Negation
-
-        -M
-        """
+        """Negation, :math:`-M`"""
 
         newValue = -self.value
 
@@ -345,19 +312,14 @@ class MultiVector(object):
         return self.value
 
     def __pos__(self) -> 'MultiVector':
-        """Positive (just a copy)
-
-        +M
-        """
+        """Positive (just a copy), :math:`+M` """
 
         newValue = self.value + 0  # copy
 
         return self._newMV(newValue)
 
     def mag2(self) -> numbers.Number:
-        """Magnitude (modulus) squared
-           2
-        |M|
+        """Magnitude (modulus) squared, :math:`{|M|}^2`
 
         Note in mixed signature spaces this may be negative
         """
@@ -365,11 +327,9 @@ class MultiVector(object):
         return mv_val[0]
 
     def __abs__(self) -> numbers.Number:
-        """Magnitude (modulus)
+        """Magnitude (modulus), :math::`|M|`
 
-        abs(M) --> |M|
-
-        This is sqrt(abs(~M*M)).
+        This is ``sqrt(abs(~M*M))``.
 
         The abs inside the sqrt is need for spaces of mixed signature
         """
@@ -377,10 +337,12 @@ class MultiVector(object):
         return np.sqrt(abs(self.mag2()))
 
     def adjoint(self) -> 'MultiVector':
-        """Adjoint / reversion
-               _
-        ~M --> M (any one of several conflicting notations)
-        ~(N * M) --> ~M * ~N
+        r"""Adjoint / reversion, :math:`\tilde M`
+
+        Aliased as ``~M`` to reflect :math:`\tilde M`, one of several
+        conflicting notations.
+
+        Note that ``~(N * M) == ~M * ~N``.
         """
         # The multivector created by reversing all multiplications
         return self._newMV(self.layout.adjoint_func(self.value))
@@ -580,8 +542,6 @@ class MultiVector(object):
         """Sets coefficients whose absolute value is < eps to exactly 0.
 
         eps defaults to the current value of the global cf._eps.
-
-        clean(eps=None)
         """
 
         if eps is None:
@@ -598,8 +558,6 @@ class MultiVector(object):
         """Rounds all coefficients according to Python's rounding rules.
 
         eps defaults to the current value of the global cf._eps.
-
-        round(eps=None)
         """
 
         if eps is None:
@@ -611,10 +569,7 @@ class MultiVector(object):
 
     # Geometric Algebraic functions
     def lc(self, other) -> 'MultiVector':
-        """Returns the left-contraction of two multivectors.
-
-        M _| N
-        """
+        r"""The left-contraction of two multivectors, :math:`M\rfloor N`"""
 
         other, mv = self._checkOther(other, coerce=True)
 
@@ -686,6 +641,7 @@ class MultiVector(object):
 
     def grades(self) -> Set[int]:
         """Return the grades contained in the multivector.
+
         .. versionchanged:: 1.1.0
             Now returns a set instead of a list
         """
@@ -703,14 +659,14 @@ class MultiVector(object):
         return [k for k in b if k != 0]
 
     def normal(self) -> 'MultiVector':
-        """Return the (mostly) normalized multivector.
+        r"""Return the (mostly) normalized multivector.
 
         The _mostly_ comes from the fact that some multivectors have a
         negative squared-magnitude.  So, without introducing formally
         imaginary numbers, we can only fix the normalized multivector's
         magnitude to +-1.
 
-        M / |M|  up to a sign
+        :math:`\frac{M}{|M|}` up to a sign
         """
 
         return self / np.sqrt(abs(self.mag2()))
@@ -718,15 +674,15 @@ class MultiVector(object):
     def leftLaInv(self) -> 'MultiVector':
         """Return left-inverse using a computational linear algebra method
         proposed by Christian Perwass.
-         -1         -1
-        M    where M  * M  == 1
         """
         return self._newMV(self.layout.inv_func(self.value))
 
     def normalInv(self) -> 'MultiVector':
-        """Returns the inverse of itself if M*~M == |M|**2.
-         -1
-        M   = ~M / (M * ~M)
+        r"""The inverse of itself if :math:`M \tilde M = |M|^2`.
+
+        ..math::
+
+            M^{-1} = \tilde M / (M \tilde M)
         """
 
         Madjoint = ~self
@@ -749,11 +705,9 @@ class MultiVector(object):
     rightInv = leftLaInv
 
     def dual(self, I=None) -> 'MultiVector':
-        """Returns the dual of the multivector against the given subspace I.
-        I defaults to the pseudoscalar.
+        r"""The dual of the multivector against the given subspace I, :math:`\tilde M = MI^{-1}`
 
-        ~        -1
-        M = M * I
+        I defaults to the pseudoscalar.
         """
         if I is None:
             return self.layout.MultiVector(value=self.layout.dual_func(self.value))
@@ -763,9 +717,9 @@ class MultiVector(object):
         return self * Iinv
 
     def commutator(self, other) -> 'MultiVector':
-        """Returns the commutator product of two multivectors.
+        r"""The commutator product of two multivectors.
 
-        [M, N] = M X N = (M*N - N*M)/2
+        :math:`[M, N] = M \cross N = (MN + NM)/2`
         """
 
         return ((self * other) - (other * self)) / 2
@@ -773,18 +727,16 @@ class MultiVector(object):
     x = commutator
 
     def anticommutator(self, other) -> 'MultiVector':
-        """Returns the anti-commutator product of two multivectors.
-
-        (M*N + N*M)/2
-        """
+        """The anti-commutator product of two multivectors, :math:`(MN + NM)/2` """
 
         return ((self * other) + (other * self)) / 2
 
     def gradeInvol(self) -> 'MultiVector':
-        """Returns the grade involution of the multivector.
-         *                    i
-        M  = Sum[i, dims, (-1)  <M>  ]
-                                   i
+        r"""The grade involution of the multivector.
+
+        .. math::
+            M^* = \sum_{i=0}^{\text{dims}}
+                  {(-1)^i \left<M\right>_i}
         """
 
         signs = np.power(-1, self.layout.gradeList)
@@ -796,37 +748,35 @@ class MultiVector(object):
     @property
     def even(self) -> 'MultiVector':
         '''
-        Even part of this mulivector
+        Even part of this multivector
 
         defined as
-        M + M.gradInvol()
+        ``M + M.gradInvol()``
         '''
         return .5*(self + self.gradeInvol())
 
     @property
     def odd(self) -> 'MultiVector':
         '''
-        Odd part of this mulivector
+        Odd part of this mulitvector
 
         defined as
-        M +- M.gradInvol()
+        ``M +- M.gradInvol()``
         '''
         return .5*(self - self.gradeInvol())
 
     def conjugate(self) -> 'MultiVector':
-        """Returns the Clifford conjugate (reversion and grade involution).
-         *
-        M  --> (~M).gradeInvol()
-        """
+        """The Clifford conjugate (reversion and grade involution).
 
+        :math:`M^*` = ``(~M).gradeInvol()``
+        """
         return (~self).gradeInvol()
 
     # Subspace operations
     def project(self, other) -> 'MultiVector':
-        """Projects the multivector onto the subspace represented by this blade.
-                            -1
-        P (M) = (M _| A) * A
-         A
+        r"""Projects the multivector onto the subspace represented by this blade.
+
+        :math:`P_A(M) = (M \rfloor A) A^{-1}`
         """
 
         other, mv = self._checkOther(other, coerce=True)
@@ -838,7 +788,8 @@ class MultiVector(object):
 
     def factorise(self) -> Tuple[List['MultiVector'], numbers.Number]:
         """
-        Factorises a blade into basis vectors and an overall scale
+        Factorises a blade into basis vectors and an overall scale.
+
         Uses Leo Dorsts algorithm from 21.6 of GA for Computer Science
         """
         if not self.isBlade():
@@ -901,9 +852,9 @@ class MultiVector(object):
         return thisBasis
 
     def join(self, other) -> 'MultiVector':
-        """Returns the join of two blades.
-              .
-        J = A ^ B
+        r"""The join of two blades.
+
+        :math:`J = A \wedge B`
         """
 
         other, mv = self._checkOther(other)
@@ -970,12 +921,12 @@ class MultiVector(object):
             raise ValueError("not blades")
 
     def meet(self, other, subspace=None) -> 'MultiVector':
-        r"""Returns the meet of two blades.
+        r"""The meet of two blades.
 
         Computation is done with respect to a subspace that defaults to
         the join if none is given.
-                     -1
-        M \/i N = (Mi  ) * N
+
+        :math:`M \vee_i N = M_i^{-1}N`
         """
 
         other, mv = self._checkOther(other)
