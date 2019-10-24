@@ -8,6 +8,8 @@ import numpy.testing
 from clifford import Cl, randomMV, Frame, \
     conformalize, grade_obj, MultiVector, MVArray
 
+import clifford
+
 
 class TestClifford:
 
@@ -28,6 +30,16 @@ class TestClifford:
                 assert abs((a * a_inv)-1.) < 1.e-11
                 assert abs((a_inv * a)-1.) < 1.e-11
                 assert abs(a_inv - 1./a) < 1.e-11
+
+    def test_pseudoscalar(self, algebra):
+        """
+        Check if the outer product of the basis elements
+        is a linear multiple of the pseudoscalar
+        """
+        layout, blades = algebra
+        ps = reduce(clifford.op, layout.blades_of_grade(1))
+        ps2 = layout.pseudoScalar
+        assert np.linalg.matrix_rank(np.column_stack((ps.value, ps2.value))) == 1
 
     def test_grade_masks(self, algebra):
         layout, blades = algebra
