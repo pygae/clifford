@@ -8,6 +8,8 @@ import numpy.testing
 from clifford import Cl, randomMV, Frame, \
     conformalize, grade_obj, MultiVector, MVArray
 
+import clifford
+
 
 class TestClifford:
 
