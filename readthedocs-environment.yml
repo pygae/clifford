@@ -12,3 +12,5 @@ dependencies:
     - ipykernel
     - nbsphinx
     - nbconvert=5.4.1
+    - pip:
+        - pyganja
