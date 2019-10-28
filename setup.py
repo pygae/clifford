@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
 from distutils.core import Extension
+import os
 
-VERSION = '1.0.5'
+version_path = os.path.join('clifford', '_version.py')
+exec(open(version_path).read())
+
 LONG_DESCRIPTION = """
 A numerical geometric algebra module for python. BSD License.
 """
+
 setup(
     name='clifford',
-    version=VERSION,
+    version=__version__,
     license='bsd',
     description='Numerical Geometric Algebra Module',
     long_description=LONG_DESCRIPTION,
