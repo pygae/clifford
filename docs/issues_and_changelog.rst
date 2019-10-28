@@ -105,6 +105,55 @@ tests.
 ChangeLog
 =========
 
+Changes in 1.1.0
+++++++++++++++++
+
+ * Restores ``layout.gmt``, ``Layout.omt``, ``Layout.imt``, and ``Layout.lcmt``.
+   A few releases ago, these existed but were dense.
+   For memory reasons, they were then removed entirely.
+   They have now been reinstated as :class:`sparse.COO` matrix objects, which
+   behave much the same as the original dense arrays.
+
+
+ * ``MultiVector``\ s preserve their data type in addition, subtraction, and
+   products. This means that integers remain integers until combined with
+   floats. Note that this means in principle integer overflow is possible, so
+   working with floats is still recommended. This also adds support for floating
+   point types of other precision, such as ``np.float32``.
+
+ * ``setup.py`` is now configured such that ``pip2 install clifford`` will not
+   attempt to download this version, since it does not work at all on python 2.
+
+ * Documentation now includes examples of ``pyganja`` visualizations.
+
+Compatibility notes
+-------------------
+
+ * ``Layout.blades()`` now includes the scalar ``1``, as do other similar
+   functions.
+
+ * ``MultiVector.grades()`` now returns a :class:`set` not a :class:`list`.
+   This means code like ``mv.grades() == [0]`` will need to change to
+   ``mv.grades() == {0}``, or to work both before and after this change,
+   ``set(mv.grades()) == {0}``.
+
+Bugs fixed
+----------
+
+ * ``mv[(i, j)]`` would sometimes fail if the indices were not in canonical order.
+ * ``mv == None`` and ``layout == None`` would crash rather than return ``False``.
+ * ``blade.isVersor()`` would return ``False``.
+ * ``layout.blades_of_grade(0)`` would not return the list it claimed to return.
+
+Internal changes
+----------------
+
+ * Switch to ``pytest`` for testing.
+ * Enable code coverage.
+ * Split into smaller files.
+ * Remove python 2 compatibility code, which already no longer worked.
+
+
 Changes 0.6-0.7
 +++++++++++++++++
 
