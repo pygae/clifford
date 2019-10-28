@@ -76,6 +76,10 @@ class CGAThing(object):
 
     maps versor product to `__call__`.
     '''
+    def __init__(self, cga: 'CGA'):
+        self.cga = cga
+        self.layout = cga.layout
+
     def __call__(self, other):
         if isinstance(other, MultiVector):
             if other.grades() == {1}:
@@ -138,9 +142,7 @@ class Flat(CGAThing):
         '''
     # could inherent some generic CGAObject class
     def __init__(self, cga, *args):
-
-        self.cga = cga
-        self.layout = cga.layout  # note: self.layout is the cga layout
+        super().__init__(cga)
         self.einf = self.cga.einf  # we use this alot
 
         if len(args) == 0:
@@ -204,9 +206,7 @@ class Round(CGAThing):
     '''
     # could inherent some generic CGAObject class
     def __init__(self, cga, *args):
-        # me
-        self.cga = cga
-        self.layout = cga.layout  # note: self.layout is the cga layout
+        super().__init__(cga)
 
         if len(args) == 0:
             # generate random highest dimension round
@@ -322,8 +322,7 @@ class Translation(CGAThing):
     >>> T = cga.translation(T.mv)  # from existing translation rotor
     '''
     def __init__(self, cga, *args):
-        self.cga = cga
-        self.layout = cga.layout
+        super().__init__(cga)
 
         if len(args) == 0:
             # generate generator!
@@ -364,8 +363,7 @@ class Dilation(CGAThing):
     >>> D = cga.dilation(.4)        # from number
     '''
     def __init__(self, cga, *args):
-        self.cga = cga
-        self.layout = cga.layout
+        super().__init__(cga)
 
         if len(args) == 0:
             # generate a dilation
@@ -416,8 +414,7 @@ class Rotation(CGAThing):
     >>> R = cga.rotation(R.mv)   # from bivector
     '''
     def __init__(self, cga, *args):
-        self.cga = cga
-        self.layout = cga.layout
+        super().__init__(cga)
 
         if len(args) == 0:
             # generate a rotation
@@ -482,6 +479,7 @@ class Transversion(Translation):
     >>> K = cga.transversion(T.mv)  # from existing translation rotor
     '''
     def __init__(self, cga, *args):
+        CGAThing.__init__(self, cga)
         self.mv = Translation(cga, *args).inverted()
 
     def __repr__(self):
