@@ -58,6 +58,7 @@ Meta-Class
 '''
 
 from functools import reduce
+from typing import overload
 from . import conformalize, op, gp, MultiVector, Cl
 from numpy import zeros, e, log
 from numpy.random import rand
@@ -76,11 +77,17 @@ class CGAThing(object):
 
     maps versor product to `__call__`.
     '''
-    def __init__(self, cga: 'CGA'):
+    def __init__(self, cga: 'CGA') -> None:
         self.cga = cga
         self.layout = cga.layout
 
-    def __call__(self, other):
+    @overload  # noqa: F811
+    def __call__(self, other: MultiVector) -> MultiVector: pass
+
+    @overload  # noqa: F811
+    def __call__(self, other: 'CGAThing') -> 'CGAThing': pass
+
+    def __call__(self, other):  # noqa: F811
         if isinstance(other, MultiVector):
             if other.grades() == {1}:
                 null = self.cga.null_vector(other)
@@ -90,7 +97,7 @@ class CGAThing(object):
             klass = other.__class__
             return klass(self.cga, self.mv*other.mv*~self.mv)
 
-    def inverted(self):
+    def inverted(self) -> MultiVector:
         '''
         inverted version of this thing.
 
@@ -100,7 +107,7 @@ class CGAThing(object):
         '''
         return self.cga.ep * self.mv * self.cga.ep
 
-    def involuted(self):
+    def involuted(self) -> MultiVector:
         '''
         inverted version of this thing.
 
@@ -141,7 +148,7 @@ class Flat(CGAThing):
         >>> cga.flat(cga.flat().mv)  # from existing multivector
         '''
     # could inherent some generic CGAObject class
-    def __init__(self, cga, *args):
+    def __init__(self, cga, *args) -> None:
         super().__init__(cga)
         self.einf = self.cga.einf  # we use this alot
 
@@ -172,7 +179,7 @@ class Flat(CGAThing):
 
         self.mv = self.mv.normal()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '%i-Flat' % self.dim
 
 
@@ -205,7 +212,7 @@ class Round(CGAThing):
     >>> cga.round(cga.flat().mv)  # from existing multivector
     '''
     # could inherent some generic CGAObject class
-    def __init__(self, cga, *args):
+    def __init__(self, cga, *args) -> None:
         super().__init__(cga)
 
         if len(args) == 0:
@@ -248,7 +255,7 @@ class Round(CGAThing):
         self.mv = (center - .5*radius**2*self.cga.einf).normal().dual()
         return self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         names = {4: 'Sphere', 3: 'Circle', 2: 'Point Pair', 1: 'Point'}
         if self.dim <= 4:
             return names[self.dim + 2]
@@ -321,7 +328,7 @@ class Translation(CGAThing):
     >>> T = cga.translation(cga.up(e1+e2)) # from null vector
     >>> T = cga.translation(T.mv)  # from existing translation rotor
     '''
-    def __init__(self, cga, *args):
+    def __init__(self, cga, *args) -> None:
         super().__init__(cga)
 
         if len(args) == 0:
@@ -343,7 +350,7 @@ class Translation(CGAThing):
 
         self.mv = mv
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Translation'
 
 
@@ -362,7 +369,7 @@ class Dilation(CGAThing):
     >>> D = cga.dilation()          # from  none
     >>> D = cga.dilation(.4)        # from number
     '''
-    def __init__(self, cga, *args):
+    def __init__(self, cga, *args) -> None:
         super().__init__(cga)
 
         if len(args) == 0:
@@ -388,7 +395,7 @@ class Dilation(CGAThing):
 
         self.mv = mv
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Dilation'
 
 
@@ -413,7 +420,7 @@ class Rotation(CGAThing):
     >>> R = cga.rotation(e12+e23)   # from bivector
     >>> R = cga.rotation(R.mv)   # from bivector
     '''
-    def __init__(self, cga, *args):
+    def __init__(self, cga, *args) -> None:
         super().__init__(cga)
 
         if len(args) == 0:
@@ -446,7 +453,7 @@ class Rotation(CGAThing):
             # more than 1 arg
             raise ValueError('bad input')
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Rotation'
 
 
@@ -478,11 +485,11 @@ class Transversion(Translation):
     >>> K = cga.transversion(cga.up(e1+e2)) # from null vector
     >>> K = cga.transversion(T.mv)  # from existing translation rotor
     '''
-    def __init__(self, cga, *args):
+    def __init__(self, cga, *args) -> None:
         CGAThing.__init__(self, cga)
         self.mv = Translation(cga, *args).inverted()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Transversion'
 
 
@@ -509,7 +516,7 @@ class CGA(object):
     >>> g3c = CGA(3)
 
     '''
-    def __init__(self, layout_orig):
+    def __init__(self, layout_orig) -> None:
         if isinstance(layout_orig, int):
             layout_orig, blades = Cl(layout_orig)
         self.layout_orig = layout_orig
@@ -517,13 +524,13 @@ class CGA(object):
         self.__dict__.update(stuff)
 
     # Objects
-    def base_vector(self):
+    def base_vector(self) -> MultiVector:
         '''
         random vector in the lower(original) space
         '''
         return self.I_base.project(self.layout.randomV())
 
-    def null_vector(self, x=None):
+    def null_vector(self, x=None) -> MultiVector:
         '''
         generates random null vector if x is None, or
         returns a null vector from base vector x, if  x^self.I_base ==0
@@ -538,45 +545,45 @@ class CGA(object):
                 return self.up(x)
             return x
 
-    def round(self, *args):
+    def round(self, *args) -> Round:
         '''
         see :class:`Round`
         '''
         return Round(self, *args)
 
-    def flat(self, *args):
+    def flat(self, *args) -> Flat:
         '''
         see :class:`Flat`
         '''
         return Flat(self, *args)
 
     #  Operators
-    def translation(self, *args):
+    def translation(self, *args) -> Translation:
         '''
         see :class:`Translation`
         '''
         return Translation(self, *args)
 
-    def transversion(self, *args):
+    def transversion(self, *args) -> Transversion:
         '''
         see :class:`Transversion`
         '''
         return Transversion(self, *args)
 
-    def dilation(self, *args):
+    def dilation(self, *args) -> Dilation:
         '''
         see :class:`Dilation`
         '''
         return Dilation(self, *args)
 
-    def rotation(self, *args):
+    def rotation(self, *args) -> Rotation:
         '''
         see :class:`Rotation`
         '''
         return Rotation(self, *args)
 
     #  methods
-    def straight_up(self, x):
+    def straight_up(self, x) -> MultiVector:
         '''
         place a vector from layout_orig into this CGA, without up()
         '''
