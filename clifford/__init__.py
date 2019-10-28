@@ -50,8 +50,7 @@ import sparse
 
 from clifford.io import write_ga_file, read_ga_file  # noqa: F401
 
-
-__version__ = '1.0.5'
+from ._version import __version__  # noqa: F401
 
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
