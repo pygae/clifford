@@ -62,5 +62,3 @@ def simplify_scene(objects, threshold, symmetric=False):
             cost_matrix[:, b_ind] = cost_to_others
             cost_matrix[b_ind, :] = cost_to_others
             np.fill_diagonal(cost_matrix, np.finfo(float).max)
-
-

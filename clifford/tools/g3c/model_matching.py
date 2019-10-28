@@ -31,9 +31,9 @@ def match_by_fingerprint(reference_model, query_model, nbins=None, max_cost=None
     if nbins is None:
         nbins = len(query_model)
     if max_cost is None:
-        a = np.max(np.max(np.abs( np.array([[cost_func(obj, o_obj) for o_obj in query_model] for obj in query_model]))))
-        b = np.max(np.max(np.abs( np.array([[cost_func(obj, o_obj) for o_obj in reference_model] for obj in reference_model]))))
-        max_cost = max(a,b)
+        a = np.max(np.max(np.abs(np.array([[cost_func(obj, o_obj) for o_obj in query_model] for obj in query_model]))))
+        b = np.max(np.max(np.abs(np.array([[cost_func(obj, o_obj) for o_obj in reference_model] for obj in reference_model]))))
+        max_cost = max(a, b)
     labels = []
     min_costs = []
     for j in range(len(query_model)):
@@ -44,7 +44,7 @@ def match_by_fingerprint(reference_model, query_model, nbins=None, max_cost=None
         min_cost_ind = 0
         for i in range(len(reference_model)):
             ref_plane_bins = fingerprint_function(reference_model[i], reference_model,
-                                          nbins=nbins, max_cost=max_cost, cost_func=cost_func)
+                                                  nbins=nbins, max_cost=max_cost, cost_func=cost_func)
             cost_match = np.sum(np.abs(query_bins-ref_plane_bins))
             if cost_match < min_cost_match:
                 min_cost_match = cost_match
@@ -55,7 +55,7 @@ def match_by_fingerprint(reference_model, query_model, nbins=None, max_cost=None
 
 
 def iterative_model_match_sequential(reference_model, query_model, iterations=100,
-                                    object_type='generic', cuda=False, print_rotor=False,
+                                     object_type='generic', cuda=False, print_rotor=False,
                                      r_track=None, start_labels=None):
     """
     Matches the query model to the reference model and estimates the motor between them
@@ -78,8 +78,8 @@ def iterative_model_match_sequential(reference_model, query_model, iterations=10
         reordered_list_ref = [reference_model[i] for i in labels]
         # Estimate the rotor
         r_est_update, exit_flag = sequential_object_rotor_estimation(reordered_list_ref, remapped_objects,
-                                                                             random_sequence=True, n_iterations=10,
-                                                                             object_type=object_type)
+                                                                     random_sequence=True, n_iterations=10,
+                                                                     object_type=object_type)
         # Now update our running estimate
         r_est = (r_est_update*r_est)
         r_est = r_est.normal()
@@ -145,7 +145,7 @@ def iterative_model_match(reference_model, query_model, iterations=100,
 
 def REFORM(reference_model, query_model, n_samples=100, objects_per_sample=5,
            iterations=100, covergence_threshold=0.00000001,
-           pool_size=1,object_type='generic', cuda=False,
+           pool_size=1, object_type='generic', cuda=False,
            print_rotor=False, start_labels=None, motor=True):
     #  Get the starting labels
     if start_labels is None:
@@ -173,7 +173,7 @@ def REFORM(reference_model, query_model, n_samples=100, objects_per_sample=5,
         r_est = (r_est_update * r_est)
         r_est = r_est.normal()
         # Re map with our new rotor
-        remapped_objects = [apply_rotor(l,r_est).normal() for l in query_model]
+        remapped_objects = [apply_rotor(l, r_est).normal() for l in query_model]
         # Get the new matching
         labels, costs = assign_measurements_to_objects_matrix(reference_model, remapped_objects,
                                                               object_type=object_type, cuda=cuda)
@@ -195,7 +195,7 @@ def REFORM(reference_model, query_model, n_samples=100, objects_per_sample=5,
 
 def REFORM_sequential(reference_model, query_model, n_samples=100, objects_per_sample=5,
                       iterations=100, covergence_threshold=0.00000001,
-           pool_size=1,object_type='generic', cuda=False, start_labels=None):
+                      pool_size=1, object_type='generic', cuda=False, start_labels=None):
 
     #  Get the starting labels
     if start_labels is None:
@@ -214,14 +214,14 @@ def REFORM_sequential(reference_model, query_model, n_samples=100, objects_per_s
         # Reorder and estimate the rotor
         reordered_list_a = [reference_model[i] for i in labels]
         r_est_update, cost = estimate_rotor_objects_subsample_sequential(reordered_list_a, remapped_objects,
-                                                              n_samples,
-                                                              objects_per_sample,
-                                                              pool_size=pool_size,
-                                                              object_type=object_type)
+                                                                         n_samples,
+                                                                         objects_per_sample,
+                                                                         pool_size=pool_size,
+                                                                         object_type=object_type)
         r_est = (r_est_update * r_est)
         r_est = r_est.normal()
         # Re map with our new rotor
-        remapped_objects = [apply_rotor(l,r_est).normal() for l in query_model]
+        remapped_objects = [apply_rotor(l, r_est).normal() for l in query_model]
         # Get the new matching
         labels, costs = assign_measurements_to_objects_matrix(reference_model, remapped_objects,
                                                               object_type=object_type, cuda=cuda)
@@ -261,9 +261,9 @@ def REFORM_cuda(reference_model, query_model, n_samples=100, objects_per_sample=
         # Reorder and estimate the rotor
         reordered_list_a = [reference_model[i] for i in labels]
         r_list, cost_array = sequential_rotor_estimation_cuda_mvs(reordered_list_a,
-                                                                       remapped_objects,
-                                                              n_samples,
-                                                              objects_per_sample,
+                                                                  remapped_objects,
+                                                                  n_samples,
+                                                                  objects_per_sample,
                                                                   mutation_probability=mutation_probability)
         min_cost_index = np.argmin(cost_array)
         min_cost = cost_array[min_cost_index]
@@ -271,7 +271,7 @@ def REFORM_cuda(reference_model, query_model, n_samples=100, objects_per_sample=
         r_est = (r_est_update * r_est)
         r_est = r_est.normal()
         # Re map with our new rotor
-        remapped_objects = [apply_rotor(l,r_est).normal() for l in query_model]
+        remapped_objects = [apply_rotor(l, r_est).normal() for l in query_model]
         # Get the new matching
         labels, costs = assign_measurements_to_objects_matrix(reference_model, remapped_objects, cuda=True)
         current_cost = np.sum(costs)

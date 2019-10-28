@@ -1,19 +1,14 @@
-from __future__ import absolute_import, division
-from __future__ import print_function, unicode_literals
-from past.builtins import range
-
 from clifford import Cl
 
 import unittest
 
-from clifford.tools import orthoFrames2Verser as of2v
+from clifford.tools import orthoFrames2Versor as of2v
 import numpy as np
 
 from numpy import exp, float64, testing
 
-from nose.plugins.skip import SkipTest
 
-@SkipTest
+@unittest.skip("reason unknown")
 class ToolsTests(unittest.TestCase):
 
     def checkit(self, p, q):
@@ -29,29 +24,28 @@ class ToolsTests(unittest.TestCase):
         # create rotated frame
         B = [R*a*~R for a in A]
 
-        # find verser from both frames
+        # find versor from both frames
         R_found, rs = of2v(A, B)
 
         # Rotor is determiend correctly, within a sign
         self.assertTrue(R == R_found or R == -R_found)
 
-        # Determined Verser implements desired transformation
+        # Determined Versor implements desired transformation
         self.assertTrue([R_found*a*~R_found for a in A] == B)
 
-    def testOrthoFrames2VerserEuclidean(self):
+    def testOrthoFrames2VersorEuclidean(self):
         for p, q in [(2, 0), (3, 0), (4, 0)]:
             self.checkit(p=p, q=q)
 
-    @SkipTest  # fails
-    def testOrthoFrames2VerserMinkowski(self):
+    @unittest.skip("reason unknown")  # fails
+    def testOrthoFrames2VersorMinkowski(self):
         for p, q in [(1, 1), (2, 1), (3, 1)]:
             self.checkit(p=p, q=q)
 
-    @SkipTest  # fails
-    def testOrthoFrames2VerserBalanced(self):
+    @unittest.skip("reason unknown")  # fails
+    def testOrthoFrames2VersorBalanced(self):
         for p, q in [(2, 2)]:
             self.checkit(p=p, q=q)
-
 
 
 class G3ToolsTests(unittest.TestCase):
@@ -110,7 +104,7 @@ class G3ToolsTests(unittest.TestCase):
             testing.assert_almost_equal(theta_return, theta)
             testing.assert_almost_equal(euc_vector_n.value, v2.value)
 
-    @SkipTest
+    @unittest.skip("reason unknown")
     def test_find_rotor_aligning_vectors(self):
         """
         Currently fails, needs to be dug into
@@ -136,7 +130,7 @@ class PointProcessingTests(unittest.TestCase):
         point_list = [random_conformal_point() for i in range(100)]
         hull = GAConvexHull(point_list, hull_dims=3)
         conf_vertices = [hull.GApoints[i] for i in hull.vertices]
-        
+
         # from pyganja import GanjaScene, draw
         # gs = GanjaScene()
         # gs.add_objects(point_list, static=True, color=int('00000000', 16))
@@ -195,7 +189,7 @@ class PointProcessingTests(unittest.TestCase):
         point_list_flat = project_points_to_plane(point_list, (up(0)^up(e1)^up(e2)^einf).normal())
         hull = GADelaunay(point_list_flat, hull_dims=2)
         facets = hull.conformal_facets()
-        
+
         # from pyganja import GanjaScene, draw
         # gs = GanjaScene()
         # gs.add_objects(point_list_flat, static=True, color=int('00000000', 16))

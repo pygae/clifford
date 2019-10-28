@@ -4,12 +4,13 @@ dependencies:
     - python=3.7
     - ipython
     - numpy
-    - numba=0.43
+    - numba
     - scipy
+    - sparse
     - matplotlib
-    - nose
-    - future
     - pandoc
     - ipykernel
     - nbsphinx
     - nbconvert=5.4.1
+    - pip:
+        - pyganja

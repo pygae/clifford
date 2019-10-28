@@ -1,29 +1,20 @@
 from __future__ import print_function
 import numpy as np
 
-def generate_mult_function_batch_compile(k_list, l_list, m_list, mult_table_vals, n_dims,
-                                         product_name, product_mask=None, cuda=False):
+
+def generate_mult_function_batch_compile(mt, product_name, cuda=False):
     """
     Takes a given product and generates the code for a function that evaluates it
     """
-    if product_mask is None:
-        k_list_copy = k_list
-        l_list_copy = l_list
-        m_list_copy = m_list
-        mult_table_vals_copy = mult_table_vals
-    else:
-        k_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
-        l_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
-        m_list_copy = np.zeros(product_mask.shape[0], dtype=np.int64)
-        mult_table_vals_copy = np.zeros(product_mask.shape[0])
-        for i in range(product_mask.shape[0]):
-            k_list_copy[i] = k_list[product_mask[i]]
-            l_list_copy[i] = l_list[product_mask[i]]
-            m_list_copy[i] = m_list[product_mask[i]]
-            mult_table_vals_copy[i] = mult_table_vals[product_mask[i]]
+    # Transpose to get the original memory order before sparse.COO changed it.
+    # This doesn't really matter, but doing this prevents cuda_products.py changing.
+    mt_T = mt.transpose((0, 2, 1))
+    k_list, m_list, l_list = mt_T.coords
+    mult_table_vals = mt_T.data
+    n_dims = mt_T.shape[2]
 
     # Sort them by l list
-    arg_list = np.argsort(l_list_copy)
+    arg_list = np.argsort(l_list)
 
     def get_output_func_f_string(l_value):
         if cuda:
@@ -34,11 +25,11 @@ def generate_mult_function_batch_compile(k_list, l_list, m_list, mult_table_vals
         f_string += 'def ' + fname + '(value, other_value):\n'
         f_string += '    return 0'
         for ind in arg_list:
-            l = l_list_copy[ind]
+            l = l_list[ind]
             if l == l_value:
-                k = k_list_copy[ind]
-                m = m_list_copy[ind]
-                mtv = mult_table_vals_copy[ind]
+                k = k_list[ind]
+                m = m_list[ind]
+                mtv = mult_table_vals[ind]
                 f_string += ' + ' + str(mtv) + '*value[' + str(k) + ']*other_value[' + str(m) + ']'
 
         return f_string
@@ -57,13 +48,11 @@ def generate_mult_function_batch_compile(k_list, l_list, m_list, mult_table_vals
     return total_string
 
 
-def write_mult_function_batch_compile(k_list, l_list, m_list, mult_table_vals, n_dims, product_name, file_obj,
-                                             product_mask=None, cuda=False):
+def write_mult_function_batch_compile(mt, product_name, file_obj, cuda=False):
     """
     Takes a given product and generates the code for a function that evaluates it, saves this to file
     """
-    total_string = generate_mult_function_batch_compile(k_list, l_list, m_list, mult_table_vals, n_dims,
-                                                        product_name, product_mask=product_mask, cuda=cuda)
+    total_string = generate_mult_function_batch_compile(mt, product_name, cuda=cuda)
     print(total_string, file=file_obj)
 
 
@@ -75,16 +64,11 @@ def write_algebra(file_name, layout, cuda=False):
         # Write the preamble
         print('import numpy as np\nfrom numba import njit, cuda\n\n', file=file_obj)
         # Write the gmt
-        write_mult_function_batch_compile(layout.k_list, layout.l_list, layout.m_list, layout.mult_table_vals,
-                                          layout.gaDims, 'gmt_func', file_obj, cuda=cuda)
+        write_mult_function_batch_compile(layout.gmt, 'gmt_func', file_obj, cuda=cuda)
         # Write the omt
-        write_mult_function_batch_compile(layout.k_list, layout.l_list, layout.m_list, layout.mult_table_vals,
-                                          layout.gaDims, 'omt_func', file_obj,
-                                          product_mask=layout.omt_prod_mask, cuda=cuda)
+        write_mult_function_batch_compile(layout.omt, 'omt_func', file_obj, cuda=cuda)
         # Write the imt
-        write_mult_function_batch_compile(layout.k_list, layout.l_list, layout.m_list, layout.mult_table_vals,
-                                          layout.gaDims, 'imt_func', file_obj,
-                                          product_mask=layout.imt_prod_mask, cuda=cuda)
+        write_mult_function_batch_compile(layout.imt, 'imt_func', file_obj, cuda=cuda)
 
 if __name__ == '__main__':
     from clifford.g3c import *
