@@ -16,10 +16,12 @@ import sys
 import os
 import sphinx_rtd_theme
 
+from clifford import __version__
+
 # The short X.Y version.
-version = '1.0.5'
+version = __version__
 # The full version, including alpha/beta/rc tags.
-release = version
+release = __version__
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
