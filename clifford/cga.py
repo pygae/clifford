@@ -1,6 +1,6 @@
-
 '''
 .. currentmodule:: clifford.cga
+
 ========================================
 cga (:mod:`clifford.cga`)
 ========================================
@@ -305,13 +305,14 @@ class Translation(CGAThing):
     vector, or nothing.
 
     Parameters
-    -------------
+    ----------
     args : [none, `clifford.Multivector`]
         if none, a random translation will be generated
         several types of Multivectors can be used:
-            * base vector - vector in base space
-            * null vector
-            * existing translation rotor
+
+         * base vector - vector in base space
+         * null vector
+         * existing translation rotor
 
     Examples
     ----------
@@ -352,7 +353,7 @@ class Dilation(CGAThing):
     A global dilation
 
     Parameters
-    -------------
+    ----------
     args : [none, number]
         if none, a random dilation will be generated
         if a number, dilation of given amount
@@ -400,12 +401,13 @@ class Rotation(CGAThing):
     Can be constructed from a generator, rotor, or none
 
     Parameters
-    -------------
+    ----------
     args : [none, `clifford.Multivector`]
         if none, a random translation will be generated
         several types of Multivectors can be used:
-            * bivector   - interpreted as the generator
-            * existing translation rotor
+
+         * bivector   - interpreted as the generator
+         * existing translation rotor
 
     Examples
     ----------
@@ -463,13 +465,14 @@ class Transversion(Translation):
     vector, or nothing.
 
     Parameters
-    -------------
+    ----------
     args : [none, `clifford.Multivector`]
         if none, a random transversion will be generated
         several types of Multivectors can be used:
-            * base vector - vector in base space
-            * null vector
-            * existing transversion rotor
+
+         * base vector - vector in base space
+         * null vector
+         * existing transversion rotor
 
     Examples
     ----------
