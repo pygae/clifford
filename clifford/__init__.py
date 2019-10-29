@@ -81,7 +81,7 @@ from typing import List, Tuple, Set
 
 # Major library imports.
 import numpy as np
-import numba
+import numba as _numba  # to avoid clashing with clifford.numba
 import sparse
 try:
     from numba.np import numpy_support as _numpy_support
@@ -146,7 +146,7 @@ def get_mult_function(mt: sparse.COO, gradeList,
         return _get_mult_function_runtime_sparse(mt)
 
 
-def _get_mult_function_result_type(a: numba.types.Type, b: numba.types.Type, mt: np.dtype):
+def _get_mult_function_result_type(a: _numba.types.Type, b: _numba.types.Type, mt: np.dtype):
     a_dt = _numpy_support.as_dtype(getattr(a, 'dtype', a))
     b_dt = _numpy_support.as_dtype(getattr(b, 'dtype', b))
     return np.result_type(a_dt, mt, b_dt)
@@ -324,6 +324,9 @@ from ._conformal_layout import ConformalLayout  # noqa: E402
 from ._layout_helpers import BasisVectorIds, BasisBladeOrder  # noqa: F401
 from ._mvarray import MVArray, array  # noqa: F401
 from ._frame import Frame  # noqa: F401
+
+# this registers the extension type
+from . import numba  # noqa: F401
 from ._blademap import BladeMap  # noqa: F401
 
 
