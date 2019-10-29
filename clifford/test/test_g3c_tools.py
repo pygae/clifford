@@ -34,56 +34,44 @@ class TestRotorGeneration:
 
 class TestFitObjects:
     def test_fit_circle(self):
-        try:
-            noise = 0.1
-            trueP = random_circle()
-            point_list = project_points_to_circle([random_conformal_point() for i in range(100)], trueP)
-            point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
-            print(trueP)
-            circle = fit_circle(point_list)
-            print(circle)
-            # draw(point_list + [circle], static=False, scale=0.1)
-        except:
-            print('FAILED TO FIND CIRCLE')
+        noise = 0.1
+        trueP = random_circle()
+        point_list = project_points_to_circle([random_conformal_point() for i in range(100)], trueP)
+        point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
+        print(trueP)
+        circle = fit_circle(point_list)
+        print(circle)
+        # draw(point_list + [circle], static=False, scale=0.1)
 
     def test_fit_line(self):
-        try:
-            noise = 0.1
-            trueP = random_line()
-            point_list = project_points_to_line([random_conformal_point() for i in range(100)], trueP)
-            point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
-            print(trueP)
-            line = fit_line(point_list)
-            print(line)
-            # draw(point_list + [line], static=False, scale=0.1)
-        except:
-            print('FAILED TO FIND LINE')
+        noise = 0.1
+        trueP = random_line()
+        point_list = project_points_to_line([random_conformal_point() for i in range(100)], trueP)
+        point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
+        print(trueP)
+        line = fit_line(point_list)
+        print(line)
+        # draw(point_list + [line], static=False, scale=0.1)
 
     def test_fit_sphere(self):
-        try:
-            noise = 0.1
-            trueP = random_sphere()
-            point_list = project_points_to_sphere([random_conformal_point() for i in range(100)], trueP)
-            point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
-            print(trueP)
-            sphere = fit_sphere(point_list)
-            print(sphere)
-            # draw([sphere] + point_list, static=False, scale=0.1)
-        except:
-            print('FAILED TO FIND SPHERE')
+        noise = 0.1
+        trueP = random_sphere()
+        point_list = project_points_to_sphere([random_conformal_point() for i in range(100)], trueP)
+        point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
+        print(trueP)
+        sphere = fit_sphere(point_list)
+        print(sphere)
+        # draw([sphere] + point_list, static=False, scale=0.1)
 
     def test_fit_plane(self):
-        try:
-            noise = 0.1
-            trueP = random_plane()
-            point_list = project_points_to_plane([random_conformal_point() for i in range(100)], trueP)
-            point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
-            print(trueP)
-            plane = fit_plane(point_list)
-            print(plane)
-            # draw(point_list + [plane], static=False, scale=0.1)
-        except:
-            print('FAILED TO FIND PLANE')
+        noise = 0.1
+        trueP = random_plane()
+        point_list = project_points_to_plane([random_conformal_point() for i in range(100)], trueP)
+        point_list = [up(down(P) + noise * random_euc_mv()) for P in point_list]
+        print(trueP)
+        plane = fit_plane(point_list)
+        print(plane)
+        # draw(point_list + [plane], static=False, scale=0.1)
 
 
 class TestGeneralLogarithm:
@@ -286,10 +274,10 @@ class TestG3CTools:
             new_blade = (reduce(lambda a, b: a ^ b, basis) * scale)
             try:
                 npt.assert_almost_equal(new_blade.value, X1.value, 3)
-            except:
+            except AssertionError:
                 print(X1)
                 print(new_blade)
-                npt.assert_almost_equal(new_blade.value, X1.value, 3)
+                raise
 
     def test_is_blade(self):
         a = random_bivector() + random_circle()
@@ -521,11 +509,10 @@ class TestG3CTools:
                 X4 = -X4
             try:
                 npt.assert_almost_equal(X3.value, X4.value, 4)
-            except:
+            except AssertionError:
                 print(X3)
                 print(X4)
-                X4 = average_objects([X1, X2], [0.5, 0.5]).normal()
-                npt.assert_almost_equal(X3.value, X4.value, 4)
+                raise
 
     def test_general_rotor_between_objects(self, obj_gen):
         # Repeats for each fuzz test
@@ -544,10 +531,10 @@ class TestG3CTools:
                 C3 = -C3
             try:
                 npt.assert_almost_equal(C2.value, C3.value, 3)
-            except:
+            except AssertionError:
                 print(R)
                 print(C2*C1 + C1*C2)
-                npt.assert_almost_equal(C2.value, C3.value, 3)
+                raise
 
     @pytest.mark.parametrize(('obj_gen', 'grd'), [
         (random_point_pair, 2),
@@ -575,11 +562,10 @@ class TestG3CTools:
                 C3 = -C3
             try:
                 npt.assert_almost_equal(C2.value, C3.value, 3)
-            except:
+            except AssertionError:
                 print(C2.normal())
                 print(C3.normal())
-                R = motor_between_rounds(C1, C2)
-                npt.assert_almost_equal(C2.value, C3.value, 3)
+                raise
 
     # @pytest.mark.skip(reason="unknown")  # Skip this because we know that it is a breaking case
     def test_general_rotor_between_objects_specific_cases(self):
@@ -648,7 +634,7 @@ class TestRotorEstimation:
         res = de_keninck_twist(Y, X)
         try:
             npt.assert_almost_equal(R.value, res.value, 4)
-        except:
+        except AssertionError:
             npt.assert_almost_equal(R.value, -res.value, 4)
 
     def test_direct_TRS_extraction(self):
@@ -660,7 +646,7 @@ class TestRotorEstimation:
         res = direct_TRS_extraction(Y, X)
         try:
             npt.assert_almost_equal(R.value, res.value, 4)
-        except:
+        except AssertionError:
             npt.assert_almost_equal(R.value, -res.value, 4)
 
     def test_dorst_motor_points(self):
@@ -671,7 +657,7 @@ class TestRotorEstimation:
         res = dorst_motor_estimate(Y, X)
         try:
             npt.assert_almost_equal(R.value, res.value, 4)
-        except:
+        except AssertionError:
             npt.assert_almost_equal(R.value, -res.value, 4)
 
     @pytest.mark.parametrize('obj_gen', [
@@ -875,11 +861,7 @@ class TestObjectClustering:
             object_set_a = [obj_gen() for i in range(20)]
             object_set_b = [l for l in object_set_a]
             label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
-            try:
-                npt.assert_equal(label_a, np.array(range(len(label_a))))
-            except:
-                label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
-                npt.assert_equal(label_a, np.array(range(len(label_a))))
+            npt.assert_equal(label_a, np.array(range(len(label_a))))
 
         n_repeats = 5
         for i in range(n_repeats):
@@ -934,7 +916,7 @@ class TestModelMatching:
             labels, costs, r_est = iterative_model_match(target, cluster_objects, n_iterations, object_type='lines')
             try:
                 assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
-            except:
+            except AssertionError:
                 print(disturbance_rotor)
                 print(r_est)
                 error_count += 1
@@ -960,7 +942,7 @@ class TestModelMatching:
             r_est = r_est.normal()
             try:
                 assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
-            except:
+            except AssertionError:
                 print(disturbance_rotor)
                 print(r_est)
                 error_count += 1
@@ -986,7 +968,7 @@ class TestModelMatching:
                                                          object_type='generic', cuda=True)
             try:
                 assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
-            except:
+            except AssertionError:
                 print(disturbance_rotor)
                 print(r_est)
                 error_count += 1
@@ -1009,7 +991,7 @@ class TestModelMatching:
             labels, costs, r_est = iterative_model_match_sequential(target, cluster_objects, 30, object_type='generic')
             try:
                 assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
-            except:
+            except AssertionError:
                 print(disturbance_rotor)
                 print(r_est)
                 error_count += 1
@@ -1034,7 +1016,7 @@ class TestModelMatching:
                                                                     object_type='generic', cuda=True)
             try:
                 assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
-            except:
+            except AssertionError:
                 print(disturbance_rotor)
                 print(r_est)
                 error_count += 1
@@ -1067,7 +1049,7 @@ class TestModelMatching:
                                           iterations, covergence_threshold=0.00000001, pool_size=pool_size)
             try:
                 assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
-            except:
+            except AssertionError:
                 print(disturbance_rotor)
                 print(r_est)
                 error_count += 1
@@ -1100,7 +1082,7 @@ class TestModelMatching:
                                                      iterations, covergence_threshold=0.00000001, pool_size=pool_size)
             try:
                 assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
-            except:
+            except AssertionError:
                 print(disturbance_rotor)
                 print(r_est)
                 error_count += 1
@@ -1134,7 +1116,7 @@ class TestModelMatching:
                                           object_type='lines')
             try:
                 assert np.sum(labels == range(n_objects_per_cluster)) == n_objects_per_cluster
-            except:
+            except AssertionError:
                 print(disturbance_rotor)
                 print(r_est)
                 error_count += 1
@@ -1166,7 +1148,7 @@ class TestModelMatching:
             labels, costs, r_est = iterative_model_match(target, query_model, 30, object_type='generic')
             try:
                 assert np.sum(labels == sample_indices) == n_keep
-            except:
+            except AssertionError:
                 print(disturbance_rotor)
                 print(r_est)
                 error_count += 1
@@ -1204,7 +1186,7 @@ class TestModelMatching:
                                                      iterations, covergence_threshold=0.00000001, pool_size=pool_size)
             try:
                 assert np.sum(labels == sample_indices) == n_keep
-            except:
+            except AssertionError:
                 print(disturbance_rotor)
                 print(r_est)
                 error_count += 1
