@@ -1,6 +1,9 @@
 #!/bin/bash
 set -ev
 
+# Derived from: https://github.com/moble/auto_version/blob/b9da1638e033b0f6266be56898f6ff4dfa9d8363/travis_install_conda.sh
+# Similar to: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/use-conda-with-travis-ci.html
+
 # Determine which python version we will install
 case "${PYTHON_VERSION:-3}" in
     2*)
