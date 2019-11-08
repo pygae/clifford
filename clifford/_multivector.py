@@ -669,7 +669,7 @@ class MultiVector(object):
         :math:`\frac{M}{|M|}` up to a sign
         """
 
-        return self / np.sqrt(abs(self.mag2()))
+        return self / abs(self)
 
     def leftLaInv(self) -> 'MultiVector':
         """Return left-inverse using a computational linear algebra method
@@ -677,29 +677,47 @@ class MultiVector(object):
         """
         return self._newMV(self.layout.inv_func(self.value))
 
-    def normalInv(self) -> 'MultiVector':
+    def _pick_inv(self, fallback):
+        """Internal helper to choose an appropriate inverse method.
+
+        Parameters
+        ----------
+        fallback : bool, optional
+            If `None`, perform no checks on whether normal inv is appropriate.
+            If `True`, fallback to a linalg approach if necessary.
+            If `False`, raise an error if normal inv is not appropriate.
+        """
+        Madjoint = ~self
+        MadjointM = (Madjoint * self)
+        if fallback is not None and not MadjointM.isScalar():
+            if fallback:
+                return self.leftLaInv()
+            else:
+                raise ValueError("no inverse exists for this multivector")
+
+        MadjointM_scalar = MadjointM[()]
+        if fallback is not None and not abs(MadjointM_scalar) > cf._eps:
+            raise ValueError("no inverse exists for this multivector")
+
+        return Madjoint / MadjointM_scalar
+
+    def normalInv(self, check=True) -> 'MultiVector':
         r"""The inverse of itself if :math:`M \tilde M = |M|^2`.
+
+        Parameters
+        ----------
+        check : bool
+            When true, the default, validate that it is appropriate to use this
+            method of inversion.
 
         ..math::
 
             M^{-1} = \tilde M / (M \tilde M)
         """
-
-        Madjoint = ~self
-        MadjointM = (Madjoint * self)
-
-        if MadjointM.isScalar() and abs(MadjointM[()]) > cf._eps:
-            # inverse exists
-            return Madjoint / MadjointM[()]
-        else:
-            raise ValueError("no inverse exists for this multivector")
+        return self._pick_inv(fallback=False if check else None)
 
     def inv(self) -> 'MultiVector':
-        if (self*~self).isScalar():
-            it = self.normalInv()
-        else:
-            it = self.leftLaInv()
-        return it
+        return self._pick_inv(fallback=True)
 
     leftInv = leftLaInv
     rightInv = leftLaInv
@@ -803,9 +821,9 @@ class MultiVector(object):
         B_c = self/scale
         for ind in B_max_factors[1:]:
             ei = self.layout.blades_list[ind]
-            fi = (ei.lc(B_c)*(~B_c*(1/(B_c*~B_c)[0]))).normal()
+            fi = (ei.lc(B_c)*B_c.normalInv(check=False)).normal()
             factors.append(fi)
-            B_c = B_c * ~fi * (1 / (fi * ~fi)[0])
+            B_c = B_c * fi.normalInv(check=False)
         factors.append(B_c.normal())
         factors.reverse()
         return factors, scale

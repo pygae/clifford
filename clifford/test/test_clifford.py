@@ -293,6 +293,25 @@ class TestClifford:
         # three swaps does
         assert mv[1, 2, 3] == -mv[3, 2, 1]
 
+    def test_normalInv(self):
+        layout, blades = Cl(3)
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        assert (2*e1).normalInv() == (0.5*e1)
+
+        with pytest.raises(ValueError):
+            (0*e1).normalInv()  # divide by 0
+
+        with pytest.raises(ValueError):
+            (1 + e1 + e2).normalInv()  # mixed even and odd grades
+
+        # produces garbage, but doesn't crash
+        (1 + e1 + e2).normalInv(check=False)
+
+        # check that not requiring normalInv works fine
+        assert (1 + e1 + e2).inv() == -1 + e1 + e2
+
 
 class TestBasicConformal41:
     def test_metric(self):
