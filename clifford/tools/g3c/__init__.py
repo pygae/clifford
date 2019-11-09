@@ -10,25 +10,25 @@ Generation Methods
 .. autosummary::
     :toctree: generated/
 
-    random_bivector
-    standard_point_pair_at_origin
-    random_point_pair_at_origin
-    random_point_pair
-    standard_line_at_origin
-    random_line_at_origin
-    random_line
-    random_circle_at_origin
-    random_circle
-    random_sphere_at_origin
-    random_sphere
-    random_plane_at_origin
-    random_plane
+    random.random_bivector
+    random.random_point_pair_at_origin
+    random.random_point_pair
+    random.random_line_at_origin
+    random.random_line
+    random.random_circle_at_origin
+    random.random_circle
+    random.random_sphere_at_origin
+    random.random_sphere
+    random.random_plane_at_origin
+    random.random_plane
+    random.random_translation_rotor
+    random.random_rotation_translation_rotor
+    random.random_conformal_point
 
+    standard_point_pair_at_origin
+    standard_line_at_origin
     generate_n_clusters
     generate_random_object_cluster
-    random_translation_rotor
-    random_rotation_translation_rotor
-    random_conformal_point
     generate_dilation_rotor
     generate_translation_rotor
 
@@ -155,8 +155,7 @@ Root Finding
 import math
 import numba
 import numpy as np
-from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
-    random_rotation_rotor, generate_rotation_rotor, val_random_euc_mv
+from clifford.tools.g3 import quaternion_to_rotor
 from clifford.g3c import *
 import clifford as cf
 from clifford import grades_present, NUMBA_PARALLEL, MVArray
@@ -762,16 +761,6 @@ def generate_random_object_cluster(n_objects, object_generator, max_cluster_tran
     return cluster_objects
 
 
-def random_translation_rotor(maximum_translation=10.0):
-    """ generate a random translation rotor """
-    return generate_translation_rotor(random_euc_mv(maximum_translation))
-
-
-def random_rotation_translation_rotor(maximum_translation=10.0, maximum_angle=np.pi):
-    """ generate a random combined rotation and translation rotor """
-    return (random_translation_rotor(maximum_translation)*random_rotation_rotor(maximum_angle)).normal()
-
-
 @numba.njit
 def project_val(val, grade):
     """ fast grade projection """
@@ -789,13 +778,6 @@ def project_val(val, grade):
     elif grade == 5:
         output[31] = val[31]
     return output
-
-
-def random_conformal_point(l_max=10):
-    """
-    Creates a random conformal point
-    """
-    return up(random_euc_mv(l_max=l_max))
 
 
 def generate_dilation_rotor(scale):
@@ -1529,127 +1511,14 @@ def val_rotor_rotor_between_planes(P1_val, P2_val):
     return val_normalised(P21_val)
 
 
-def random_bivector():
-    r"""
-    Creates a random bivector on the form described by R. Wareham in
-    Mesh Vertex Pose and Position Interpolation using Geometric Algebra.
-    $$ B =  ab + c*n_{\inf}$$ where $a, b, c \in \mathcal(R)^3$
-    """
-    a = random_euc_mv()
-    c = random_euc_mv()
-    return a * I3 + c * ninf
-
-
 def standard_point_pair_at_origin():
     """ Creates a standard point pair at the origin """
     return (up(-0.5*e1)^up(0.5*e1)).normal()
 
 
-def random_point_pair_at_origin():
-    """
-    Creates a random point pair bivector object at the origin
-    """
-    mv_a = random_euc_mv()
-    plane_a = (mv_a*I3).normal()
-
-    mv_b = plane_a*mv_a*plane_a
-    pp = (up(mv_a) ^ up(mv_b)).normal()
-    return pp
-
-
-def random_point_pair():
-    """
-    Creates a random point pair bivector object
-    """
-    mv_a = random_euc_mv()
-    mv_b = random_euc_mv()
-    pp = (up(mv_a) ^ up(mv_b)).normal()
-    return pp
-
-
 def standard_line_at_origin():
     """ Creates a standard line at the origin """
     return (standard_point_pair_at_origin()^einf).normal()
-
-
-def random_line_at_origin():
-    """
-    Creates a random line at the origin
-    """
-    pp = (random_point_pair_at_origin()^einf).normal()
-    return pp
-
-
-def random_line():
-    """
-    Creates a random line
-    """
-    mv_a = random_euc_mv()
-    mv_b = random_euc_mv()
-    line_a = ((up(mv_a) ^ up(mv_b) ^ ninf)).normal()
-    return line_a
-
-
-def random_circle_at_origin():
-    """
-    Creates a random circle at the origin
-    """
-    mv_a = random_euc_mv()
-    mv_r = random_euc_mv()
-    r = generate_rotation_rotor(np.pi/2, mv_a, mv_r)
-    mv_b = r*mv_a*~r
-    mv_c = r * mv_b * ~r
-    pp = (up(mv_a) ^ up(mv_b) ^ up(mv_c)).normal()
-    return pp
-
-
-def random_circle():
-    """
-    Creates a random circle
-    """
-    mv_a = val_random_euc_mv()
-    mv_b = val_random_euc_mv()
-    mv_c = val_random_euc_mv()
-    return layout.MultiVector(value=val_normalised(omt_func(omt_func(val_up(mv_a), val_up(mv_b)), val_up(mv_c))))
-
-
-def random_sphere_at_origin():
-    """
-    Creates a random sphere at the origin
-    """
-    C = random_circle_at_origin()
-    sphere = circle_to_sphere(C)
-    return sphere
-
-
-def random_sphere():
-    """
-    Creates a random sphere
-    """
-    mv_a = random_euc_mv()
-    mv_b = random_euc_mv()
-    mv_c = random_euc_mv()
-    mv_d = random_euc_mv()
-    sphere = ((up(mv_a) ^ up(mv_b) ^ up(mv_c) ^ up(mv_d))).normal()
-    return sphere
-
-
-def random_plane_at_origin():
-    """
-    Creates a random plane at the origin
-    """
-    c = random_circle_at_origin()
-    plane = (c ^ einf).normal()
-    return plane
-
-
-def random_plane():
-    """
-    Creates a random plane
-    """
-    c = random_circle()
-    plane = (c ^ ninf).normal()
-    return plane
 
 
 @numba.njit
@@ -1855,3 +1724,6 @@ v_up = np.vectorize(fast_up, otypes=[ConformalMVArray])
 v_down = np.vectorize(fast_down, otypes=[ConformalMVArray])
 v_apply_rotor_inv = np.vectorize(apply_rotor_inv, otypes=[ConformalMVArray])
 v_meet = np.vectorize(meet, otypes=[ConformalMVArray], signature='(),()->()')
+
+# for compatibility with old code expecting these functions to be here
+from .random import *  # noqa: E402
