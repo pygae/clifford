@@ -39,9 +39,6 @@ class ConformalLayout(Layout):
         E0 = einf ^ eo
         I_base = self.pseudoScalar*E0
 
-        # for compatibility
-        self.isconformal = True
-
         # helper properties
         self.ep = ep
         self.en = en

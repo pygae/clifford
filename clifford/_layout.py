@@ -90,10 +90,6 @@ class Layout(object):
         corresponding list of the grades of each blade
     gaDims :
         2**dims
-    einf :
-        if conformal returns einf
-    eo :
-        if conformal returns eo
     names :
         pretty-printing symbols for the blades
     even :
@@ -125,10 +121,6 @@ class Layout(object):
         self.gradeList = list(map(len, self.bladeTupList))
 
         self._metric = None
-
-        self.isconformal = False
-        self.einf = None
-        self.eo = None
 
         if names is None or isinstance(names, str):
             if isinstance(names, str):
