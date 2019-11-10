@@ -157,6 +157,18 @@ class Layout(object):
         self.dual_func = self.gen_dual_func()
         self.vee_func = self.gen_vee_func()
 
+    @classmethod
+    def _from_sig(cls, sig=None, *, firstIdx=1, **kwargs):
+        """ Factory method that uses sorted blade tuples.  """
+        bladeTupList = cf.elements(len(sig), firstIdx)
+
+        return cls(sig, bladeTupList, firstIdx=firstIdx, **kwargs)
+
+    @classmethod
+    def _from_Cl(cls, p=0, q=0, r=0, **kwargs):
+        """ Factory method from a ${Cl}_{p,q,r}$ notation """
+        return cls._from_sig([0]*r + [+1]*p + [-1]*q, **kwargs)
+
     def __hash__(self):
         """ hashs the signature of the layout """
         return hash(tuple(self.sig))
@@ -197,10 +209,10 @@ class Layout(object):
         return self._newMV(constructed_values)
 
     def __repr__(self):
-        s = ("Layout(%r, %r, firstIdx=%r, names=%r)" % (
-                list(self.sig),
-                self.bladeTupList, self.firstIdx, self.names))
-        return s
+        return "{}({!r}, {!r}, firstIdx={!r}, names={!r})".format(
+            type(self).__name__,
+            list(self.sig), self.bladeTupList, self.firstIdx, self.names
+        )
 
     def __eq__(self, other):
         if other is self:
