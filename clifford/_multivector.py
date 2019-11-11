@@ -273,7 +273,8 @@ class MultiVector(object):
         other = int(round(other))
 
         if other == 0:
-            return 1
+            unit_out = self._newMV(dtype=self.value.dtype) + 1
+            return unit_out
 
         newMV = self._newMV(np.array(self.value))  # copy
 
