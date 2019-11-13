@@ -105,7 +105,7 @@ tests.
 ChangeLog
 =========
 
-Upcoming changes
+Changes in 1.2.x
 ++++++++++++++++
 
  * ``layout.isconformal``, ``layout.einf``, and ``layout.eo``, which were added
@@ -114,7 +114,7 @@ Upcoming changes
    now exist only on :class:`ConformalLayout` objects.
 
 
-Changes in 1.1.0
+Changes in 1.1.x
 ++++++++++++++++
 
  * Restores ``layout.gmt``, ``Layout.omt``, ``Layout.imt``, and ``Layout.lcmt``.
