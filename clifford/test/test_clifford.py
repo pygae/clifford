@@ -258,6 +258,22 @@ class TestClifford:
         mv[(1, 2)] = float('nan')
         assert str(mv) == "1.0 + (nan^e1) + (nan^e12)"
 
+    def test_nonzero(self, algebra):
+        layout, blades = algebra
+        e1 = blades['e1']
+
+        assert bool(e1)
+        assert not bool(0*e1)
+
+        # test nan too
+        nan = float('nan')
+        mv = layout.scalar * 1.0
+        mv[()] = float('nan')
+
+        # allow the nan comparison without warnings
+        with np.errstate(invalid='ignore'):
+            assert bool(mv) == bool(nan)  # be consistent with the builtin
+
     @pytest.mark.parametrize('dtype', [np.int64, np.float32, np.float64])
     @pytest.mark.parametrize('func', [
         operator.add,

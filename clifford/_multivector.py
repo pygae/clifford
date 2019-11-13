@@ -514,16 +514,10 @@ class MultiVector(object):
         return s
 
     def __bool__(self) -> bool:
-        """Instance is nonzero iff at least one of the coefficients
-        is nonzero.
+        """Instance is nonzero iff at least one of the coefficients is nonzero.
         """
-
-        nonzeroes = np.absolute(self.value) > cf._eps
-
-        if nonzeroes.any():
-            return True
-        else:
-            return False
+        zeroes = np.absolute(self.value) < cf._eps
+        return not zeroes.all()
 
     def __eq__(self, other) -> bool:
         other, mv = self._checkOther(other)
