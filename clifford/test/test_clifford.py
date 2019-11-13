@@ -253,6 +253,11 @@ class TestClifford:
         assert str(-e1) == "-(1^e1)"
         assert str(1 - e1) == "1 - (1^e1)"
 
+        mv = layout.scalar * 1.0
+        mv[(1,)] = float('nan')
+        mv[(1, 2)] = float('nan')
+        assert str(mv) == "1.0 + (nan^e1) + (nan^e12)"
+
     @pytest.mark.parametrize('dtype', [np.int64, np.float32, np.float64])
     @pytest.mark.parametrize('func', [
         operator.add,

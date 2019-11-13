@@ -476,13 +476,17 @@ class MultiVector(object):
             else:
                 seps = ('', '-')
 
-            if abs(coeff) >= cf._eps:
-                if coeff > 0:
-                    sep = seps[0]
-                    abs_coeff = round(coeff, p)
-                else:
+            # note: these comparisons need to ensure nan is shown, noting that
+            # `nan {} x` is always false for all comparisons `{}`.`
+            if abs(coeff) < cf._eps:
+                continue  # too small to print
+            else:
+                if coeff < 0:
                     sep = seps[1]
                     abs_coeff = -round(coeff, p)
+                else:
+                    sep = seps[0]
+                    abs_coeff = round(coeff, p)
 
                 if grade == 0:
                     # scalar
