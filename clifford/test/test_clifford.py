@@ -41,6 +41,14 @@ class TestClifford:
         ps2 = layout.pseudoScalar
         assert np.linalg.matrix_rank(np.column_stack((ps.value, ps2.value))) == 1
 
+    def test_pow_0(self, algebra):
+        layout, blades = algebra
+        e1 = blades['e1']
+        ret = e1**0
+        assert type(ret) is type(e1)
+        assert ret == 1
+        assert ret.value.dtype == e1.value.dtype
+
     def test_grade_masks(self, algebra):
         layout, blades = algebra
         A = layout.randomMV()
