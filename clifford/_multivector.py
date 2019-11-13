@@ -704,15 +704,15 @@ class MultiVector(object):
     def normalInv(self, check=True) -> 'MultiVector':
         r"""The inverse of itself if :math:`M \tilde M = |M|^2`.
 
+        .. math::
+
+            M^{-1} = \tilde M / (M \tilde M)
+
         Parameters
         ----------
         check : bool
             When true, the default, validate that it is appropriate to use this
             method of inversion.
-
-        ..math::
-
-            M^{-1} = \tilde M / (M \tilde M)
         """
         return self._pick_inv(fallback=False if check else None)
 
