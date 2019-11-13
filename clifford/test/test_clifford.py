@@ -47,7 +47,7 @@ class TestClifford:
         ret = e1**0
         assert type(ret) is type(e1)
         assert ret == 1
-        assert ret.value.dtype == el.value.dtype
+        assert ret.value.dtype == e1.value.dtype
 
     def test_grade_masks(self, algebra):
         layout, blades = algebra
