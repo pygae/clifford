@@ -10,6 +10,8 @@ class ConformalLayout(Layout):
 
     Typically these should be constructed via :func:`clifford.conformalize`.
 
+    .. versionadded:: 1.2.0
+
     Attributes
     ----------
     ep : MultiVector
