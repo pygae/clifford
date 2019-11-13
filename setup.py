@@ -39,6 +39,10 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
+    project_urls={
+        "Bug Tracker": "https://github.com/pygae/clifford/issues",
+        "Source Code": "https://github.com/pygae/clifford",
+    },
 
     python_requires='>=3.5',
 )
