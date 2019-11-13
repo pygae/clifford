@@ -90,10 +90,6 @@ class Layout(object):
         corresponding list of the grades of each blade
     gaDims :
         2**dims
-    einf :
-        if conformal returns einf
-    eo :
-        if conformal returns eo
     names :
         pretty-printing symbols for the blades
     even :
@@ -126,10 +122,6 @@ class Layout(object):
 
         self._metric = None
 
-        self.isconformal = False
-        self.einf = None
-        self.eo = None
-
         if names is None or isinstance(names, str):
             if isinstance(names, str):
                 e = str(names)
@@ -156,6 +148,18 @@ class Layout(object):
         self.right_complement_func = self.gen_right_complement_func()
         self.dual_func = self.gen_dual_func()
         self.vee_func = self.gen_vee_func()
+
+    @classmethod
+    def _from_sig(cls, sig=None, *, firstIdx=1, **kwargs):
+        """ Factory method that uses sorted blade tuples.  """
+        bladeTupList = cf.elements(len(sig), firstIdx)
+
+        return cls(sig, bladeTupList, firstIdx=firstIdx, **kwargs)
+
+    @classmethod
+    def _from_Cl(cls, p=0, q=0, r=0, **kwargs):
+        """ Factory method from a ${Cl}_{p,q,r}$ notation """
+        return cls._from_sig([0]*r + [+1]*p + [-1]*q, **kwargs)
 
     def __hash__(self):
         """ hashs the signature of the layout """
@@ -197,10 +201,10 @@ class Layout(object):
         return self._newMV(constructed_values)
 
     def __repr__(self):
-        s = ("Layout(%r, %r, firstIdx=%r, names=%r)" % (
-                list(self.sig),
-                self.bladeTupList, self.firstIdx, self.names))
-        return s
+        return "{}({!r}, {!r}, firstIdx={!r}, names={!r})".format(
+            type(self).__name__,
+            list(self.sig), self.bladeTupList, self.firstIdx, self.names
+        )
 
     def __eq__(self, other):
         if other is self:
