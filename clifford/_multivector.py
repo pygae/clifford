@@ -476,13 +476,17 @@ class MultiVector(object):
             else:
                 seps = ('', '-')
 
-            if abs(coeff) >= cf._eps:
-                if coeff > 0:
-                    sep = seps[0]
-                    abs_coeff = round(coeff, p)
-                else:
+            # note: these comparisons need to ensure nan is shown, noting that
+            # `nan {} x` is always false for all comparisons `{}`.`
+            if abs(coeff) < cf._eps:
+                continue  # too small to print
+            else:
+                if coeff < 0:
                     sep = seps[1]
                     abs_coeff = -round(coeff, p)
+                else:
+                    sep = seps[0]
+                    abs_coeff = round(coeff, p)
 
                 if grade == 0:
                     # scalar
@@ -510,16 +514,10 @@ class MultiVector(object):
         return s
 
     def __bool__(self) -> bool:
-        """Instance is nonzero iff at least one of the coefficients
-        is nonzero.
+        """Instance is nonzero iff at least one of the coefficients is nonzero.
         """
-
-        nonzeroes = np.absolute(self.value) > cf._eps
-
-        if nonzeroes.any():
-            return True
-        else:
-            return False
+        zeroes = np.absolute(self.value) < cf._eps
+        return not zeroes.all()
 
     def __eq__(self, other) -> bool:
         other, mv = self._checkOther(other)
