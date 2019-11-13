@@ -310,19 +310,19 @@ class Layout(object):
 
     def imt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(
-            self.gmt, self.gradeList,
+            self.imt, self.gradeList,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
     def omt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(
-            self.gmt, self.gradeList,
+            self.omt, self.gradeList,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
     def lcmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(
-            self.gmt, self.gradeList,
+            self.lcmt, self.gradeList,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
