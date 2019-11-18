@@ -157,6 +157,7 @@ jobs:
 
   - script: |
       call activate myEnvironment
+      pip install -U pytest  # the pytest in conda for python 3.5 is too old
       pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml
     displayName: pytest windows
     condition: eq(variables['imageName'], 'vs2017-win2016')
