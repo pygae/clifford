@@ -273,7 +273,7 @@ class MultiVector(object):
         other = int(round(other))
 
         if other == 0:
-            return 1
+            return self._newMV(dtype=self.value.dtype) + 1
 
         newMV = self._newMV(np.array(self.value))  # copy
 
@@ -476,13 +476,17 @@ class MultiVector(object):
             else:
                 seps = ('', '-')
 
-            if abs(coeff) >= cf._eps:
-                if coeff > 0:
-                    sep = seps[0]
-                    abs_coeff = round(coeff, p)
-                else:
+            # note: these comparisons need to ensure nan is shown, noting that
+            # `nan {} x` is always false for all comparisons `{}`.`
+            if abs(coeff) < cf._eps:
+                continue  # too small to print
+            else:
+                if coeff < 0:
                     sep = seps[1]
                     abs_coeff = -round(coeff, p)
+                else:
+                    sep = seps[0]
+                    abs_coeff = round(coeff, p)
 
                 if grade == 0:
                     # scalar
@@ -510,16 +514,10 @@ class MultiVector(object):
         return s
 
     def __bool__(self) -> bool:
-        """Instance is nonzero iff at least one of the coefficients
-        is nonzero.
+        """Instance is nonzero iff at least one of the coefficients is nonzero.
         """
-
-        nonzeroes = np.absolute(self.value) > cf._eps
-
-        if nonzeroes.any():
-            return True
-        else:
-            return False
+        zeroes = np.absolute(self.value) < cf._eps
+        return not zeroes.all()
 
     def __eq__(self, other) -> bool:
         other, mv = self._checkOther(other)
@@ -669,7 +667,7 @@ class MultiVector(object):
         :math:`\frac{M}{|M|}` up to a sign
         """
 
-        return self / np.sqrt(abs(self.mag2()))
+        return self / abs(self)
 
     def leftLaInv(self) -> 'MultiVector':
         """Return left-inverse using a computational linear algebra method
@@ -677,29 +675,47 @@ class MultiVector(object):
         """
         return self._newMV(self.layout.inv_func(self.value))
 
-    def normalInv(self) -> 'MultiVector':
-        r"""The inverse of itself if :math:`M \tilde M = |M|^2`.
+    def _pick_inv(self, fallback):
+        """Internal helper to choose an appropriate inverse method.
 
-        ..math::
-
-            M^{-1} = \tilde M / (M \tilde M)
+        Parameters
+        ----------
+        fallback : bool, optional
+            If `None`, perform no checks on whether normal inv is appropriate.
+            If `True`, fallback to a linalg approach if necessary.
+            If `False`, raise an error if normal inv is not appropriate.
         """
-
         Madjoint = ~self
         MadjointM = (Madjoint * self)
+        if fallback is not None and not MadjointM.isScalar():
+            if fallback:
+                return self.leftLaInv()
+            else:
+                raise ValueError("no inverse exists for this multivector")
 
-        if MadjointM.isScalar() and abs(MadjointM[()]) > cf._eps:
-            # inverse exists
-            return Madjoint / MadjointM[()]
-        else:
+        MadjointM_scalar = MadjointM[()]
+        if fallback is not None and not abs(MadjointM_scalar) > cf._eps:
             raise ValueError("no inverse exists for this multivector")
 
+        return Madjoint / MadjointM_scalar
+
+    def normalInv(self, check=True) -> 'MultiVector':
+        r"""The inverse of itself if :math:`M \tilde M = |M|^2`.
+
+        .. math::
+
+            M^{-1} = \tilde M / (M \tilde M)
+
+        Parameters
+        ----------
+        check : bool
+            When true, the default, validate that it is appropriate to use this
+            method of inversion.
+        """
+        return self._pick_inv(fallback=False if check else None)
+
     def inv(self) -> 'MultiVector':
-        if (self*~self).isScalar():
-            it = self.normalInv()
-        else:
-            it = self.leftLaInv()
-        return it
+        return self._pick_inv(fallback=True)
 
     leftInv = leftLaInv
     rightInv = leftLaInv
@@ -803,9 +819,9 @@ class MultiVector(object):
         B_c = self/scale
         for ind in B_max_factors[1:]:
             ei = self.layout.blades_list[ind]
-            fi = (ei.lc(B_c)*(~B_c*(1/(B_c*~B_c)[0]))).normal()
+            fi = (ei.lc(B_c)*B_c.normalInv(check=False)).normal()
             factors.append(fi)
-            B_c = B_c * ~fi * (1 / (fi * ~fi)[0])
+            B_c = B_c * fi.normalInv(check=False)
         factors.append(B_c.normal())
         factors.reverse()
         return factors, scale

@@ -209,6 +209,7 @@ mask_2minus4 = mask2 - mask4
 def interpret_multivector_as_object(mv):
     """
     Takes an input multivector and returns what kind of object it is
+
     -1 -> not a blade
     0 -> a 1 vector but not a point
     1 -> a euclidean point
@@ -218,6 +219,9 @@ def interpret_multivector_as_object(mv):
     5 -> a line
     6 -> a sphere
     7 -> a plane
+
+    Similar to :func:`clifford.tools.classify.classify`, although that function
+    does a little more work in order to produce full characterizations.
     """
     g_pres = grades_present(mv, 0.00000001)
     if len(g_pres) != 1:  # Definitely not a blade

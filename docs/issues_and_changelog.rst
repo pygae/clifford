@@ -105,7 +105,16 @@ tests.
 ChangeLog
 =========
 
-Changes in 1.1.0
+Changes in 1.2.x
+++++++++++++++++
+
+ * ``layout.isconformal``, ``layout.einf``, and ``layout.eo``, which were added
+   in 1.0.4, have been removed. The first can now be spelt
+   ``isinstance(layout, clifford.ConformalLayout)``, and the other properties
+   now exist only on :class:`ConformalLayout` objects.
+
+
+Changes in 1.1.x
 ++++++++++++++++
 
  * Restores ``layout.gmt``, ``Layout.omt``, ``Layout.imt``, and ``Layout.lcmt``.

@@ -16,6 +16,7 @@ Classes
 
     MultiVector
     Layout
+    ConformalLayout
     Frame
 
 Functions
@@ -44,7 +45,7 @@ from typing import List, Tuple, Set, Container, Dict, Optional
 
 # Major library imports.
 import numpy as np
-from numpy import linalg, zeros
+from numpy import linalg
 import numba
 import sparse
 
@@ -534,6 +535,7 @@ def val_get_right_gmt_matrix(mt: sparse.COO, x):
 # TODO: Move this to the top once we remove circular imports
 from ._layout import Layout  # noqa: E402
 from ._multivector import MultiVector  # noqa: E402
+from ._conformal_layout import ConformalLayout  # noqa: E402
 from ._mvarray import MVArray  # noqa: E402
 
 
@@ -728,13 +730,10 @@ def Cl(p=0, q=0, r=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
     Cl(p, q=0, names=None, firstIdx=0) --> Layout, {'name': basisElement, ...}
     """
     if sig is None:
-        sig = [0]*r + [+1]*p + [-1]*q
-    bladeTupList = elements(len(sig), firstIdx)
-
-    layout = Layout(sig, bladeTupList, firstIdx=firstIdx, names=names)
-    blades = bases(layout, mvClass)
-
-    return layout, blades
+        layout = Layout._from_Cl(p, q, r, firstIdx=firstIdx, names=names)
+    else:
+        layout = Layout._from_sig(sig, firstIdx=firstIdx, names=names)
+    return layout, layout.bases(mvClass=mvClass)
 
 
 def bases(layout, mvClass=MultiVector, grades: Optional[Container[int]] = None) -> Dict[str, MultiVector]:
@@ -922,7 +921,7 @@ def op(M, N):
     return M ^ N
 
 
-def conformalize(layout, added_sig=[1, -1], **kw):
+def conformalize(layout, added_sig=[1, -1], *, mvClass=MultiVector, **kw):
     '''
     Conformalize a Geometric Algebra
 
@@ -945,21 +944,25 @@ def conformalize(layout, added_sig=[1, -1], **kw):
 
     Returns
     ---------
-    layout_c:  `clifford.Layout`
+    layout_c : :class:`ConformalLayout`
         layout of the base GA
-    blades_c: dict
+    blades_c : dict
         blades for the CGA
     stuff: dict
-        dict containing the following:
-            * ep - first basis vector added (usually positive)
-            * en - second basis vector added (usually negative)
-            * eo - zero vector of null basis (=.5*(en-ep))
-            * einf - infinity vector of null basis (=en+ep)
-            * E0 - minkowski bivector (=einf^eo)
-            * base - pseudoscalar for base ga, in cga layout
-            * up - up-project a vector from GA to CGA
-            * down - down-project a vector from CGA to GA
-            * homo - homogenize a CGA vector
+        dict mapping the following members of :class:`ConformalLayout` by their
+        names, for easy unpacking into the global namespace:
+
+        .. autosummary::
+
+            ~ConformalLayout.ep
+            ~ConformalLayout.en
+            ~ConformalLayout.eo
+            ~ConformalLayout.einf
+            ~ConformalLayout.E0
+            ~ConformalLayout.I_base
+            ~ConformalLayout.up
+            ~ConformalLayout.down
+            ~ConformalLayout.homo
 
 
     Examples
@@ -970,58 +973,15 @@ def conformalize(layout, added_sig=[1, -1], **kw):
     >>> locals().update(bladesc)
     >>> locals().update(stuff)
     '''
-
-    sig_c = list(layout.sig) + added_sig
-    layout_c, blades_c = Cl(sig=sig_c, firstIdx=layout.firstIdx, **kw)
-    basis_vectors = layout_c.basis_vectors
-    added_keys = sorted(layout_c.basis_vectors.keys())[-2:]
-    ep, en = [basis_vectors[k] for k in added_keys]
-
-    # setup  null basis, and minkowski subspace bivector
-    eo = .5 ^ (en - ep)
-    einf = en + ep
-
-    layout_c.isconformal = True
-    layout_c.einf = einf
-    layout_c.eo = eo
-
-    E0 = einf ^ eo
-    I_base = layout_c.pseudoScalar*E0
-
-    # some convenience functions
-    def up(x):
-        try:
-            if x.layout == layout:
-                # vector is in original space, map it into conformal space
-                old_val = x.value
-                new_val = zeros(layout_c.gaDims)
-                new_val[:len(old_val)] = old_val
-                x = layout_c.MultiVector(value=new_val)
-        except(AttributeError):
-            # if x is a scalar it doesnt have layout but following
-            # will still work
-            pass
-
-        # then up-project into a null vector
-        return x + (.5 ^ ((x**2)*einf)) + eo
-
-    def homo(x):
-        return x*(-x | einf)(0).normalInv()  # homogenise conformal vector
-
-    def down(x):
-        x_down = (homo(x) ^ E0)*E0
-        # new_val = x_down.value[:layout.gaDims]
-        # create vector in layout (not cga)
-        # x_down = layout.MultiVector(value=new_val)
-        return x_down
-
-    stuff = {}
-    stuff.update({
-        'ep': ep, 'en': en, 'eo': eo, 'einf': einf, 'E0': E0,
-        'up': up, 'down': down, 'homo': homo, 'I_base': I_base
-    })
-
-    return layout_c, blades_c, stuff
+    layout_c = ConformalLayout._from_base_layout(layout, added_sig, **kw)
+    stuff = {
+        attr: getattr(layout_c, attr)
+        for attr in [
+            "ep", "en", "eo", "einf", "E0",
+            "up", "down", "homo", "I_base",
+        ]
+    }
+    return layout_c, layout_c.bases(mvClass=mvClass), stuff
 
 
 # TODO: fix caching to work

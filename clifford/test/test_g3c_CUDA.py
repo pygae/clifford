@@ -316,7 +316,7 @@ class CUDATESTS(unittest.TestCase):
             for i in range(n_mvs):
                 try:
                     np.testing.assert_almost_equal(output_normal[i, :], output[i, :])
-                except:
+                except AssertionError:
                     print(output_normal[i, :])
                     print(output[i, :])
                     np.testing.assert_almost_equal(output_normal[i, :], output[i, :])
@@ -381,7 +381,7 @@ class CUDATESTS(unittest.TestCase):
         print(time.time() - t)
         try:
             np.testing.assert_almost_equal(mv_c_array, mv_d_array, 3)
-        except:
+        except AssertionError:
             print(mv_c_array[0, :])
             print(mv_d_array[0, :])
             np.testing.assert_almost_equal(mv_c_array, mv_d_array, 3)
@@ -409,7 +409,7 @@ class CUDATESTS(unittest.TestCase):
                 for j in range(n_mvs):
                     try:
                         assert abs(mv_d_array[i, j]-mv_c_array[i, j])/abs(mv_d_array[i, j]) < 10**(-6)
-                    except:
+                    except AssertionError:
                         print(generator.__name__)
                         if generator.__name__ == 'random_line':
                             print(val_object_cost_function(mv_a_array[i].value, mv_b_array[j].value))
@@ -444,7 +444,7 @@ class CUDATESTS(unittest.TestCase):
                                                iterations, mutation_probability=None)
             try:
                 assert np.sum(labels == list(range(n_objects_per_cluster))) == n_objects_per_cluster
-            except:
+            except AssertionError:
                 print(disturbance_rotor)
                 print(r_est)
                 error_count += 1
@@ -460,7 +460,7 @@ class CUDATESTS(unittest.TestCase):
                 label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b, cuda=True)
                 try:
                     np.testing.assert_equal(label_a, np.array(range(len(label_a))))
-                except:
+                except AssertionError:
                     label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b, cuda=True)
                     np.testing.assert_equal(label_a, np.array(range(len(label_a))))
 

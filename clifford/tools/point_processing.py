@@ -1,7 +1,7 @@
 
 import scipy.spatial
 import numpy as np
-from .. import MVArray
+from .. import MVArray, ConformalLayout
 import itertools
 import scipy.special
 import random
@@ -39,7 +39,7 @@ class GADelaunay(scipy.spatial.Delaunay):
         """
         Returns the list of conformal points in each facet
         """
-        if self.layout.isconformal:
+        if isinstance(self.layout, ConformalLayout):
             return [[self.GApoints[i] for i in s] for s in self.simplices]
         else:
             raise ValueError('Input points do not seem to be from a conformal algebra')
@@ -72,7 +72,7 @@ class GAConvexHull(scipy.spatial.ConvexHull):
         """
         Returns the list of conformal points in each facet
         """
-        if self.layout.isconformal:
+        if isinstance(self.layout, ConformalLayout):
             return [[self.GApoints[i] for i in s] for s in self.simplices]
         else:
             raise ValueError('Input points do not seem to be from a conformal algebra')
@@ -82,7 +82,7 @@ class GAConvexHull(scipy.spatial.ConvexHull):
         Returns the conformal rounds made of the wedge
         product of the edge simplices
         """
-        if self.layout.isconformal:
+        if isinstance(self.layout, ConformalLayout):
             return [MVArray([self.GApoints[i] for i in s]).op().normal() for s in self.simplices]
         else:
             raise ValueError('Input points do not seem to be from a conformal algebra')
@@ -92,7 +92,7 @@ class GAConvexHull(scipy.spatial.ConvexHull):
         Returns the conformal flats made of the wedge
         product of the edge simplices with einf
         """
-        if self.layout.isconformal:
+        if isinstance(self.layout, ConformalLayout):
             return [(r^self.layout.einf).normal() for r in self.conformal_rounds()]
         else:
             raise ValueError('Input points do not seem to be from a conformal algebra')

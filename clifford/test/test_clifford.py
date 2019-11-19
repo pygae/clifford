@@ -41,6 +41,14 @@ class TestClifford:
         ps2 = layout.pseudoScalar
         assert np.linalg.matrix_rank(np.column_stack((ps.value, ps2.value))) == 1
 
+    def test_pow_0(self, algebra):
+        layout, blades = algebra
+        e1 = blades['e1']
+        ret = e1**0
+        assert type(ret) is type(e1)
+        assert ret == 1
+        assert ret.value.dtype == e1.value.dtype
+
     def test_grade_masks(self, algebra):
         layout, blades = algebra
         A = layout.randomMV()
@@ -245,6 +253,27 @@ class TestClifford:
         assert str(-e1) == "-(1^e1)"
         assert str(1 - e1) == "1 - (1^e1)"
 
+        mv = layout.scalar * 1.0
+        mv[(1,)] = float('nan')
+        mv[(1, 2)] = float('nan')
+        assert str(mv) == "1.0 + (nan^e1) + (nan^e12)"
+
+    def test_nonzero(self, algebra):
+        layout, blades = algebra
+        e1 = blades['e1']
+
+        assert bool(e1)
+        assert not bool(0*e1)
+
+        # test nan too
+        nan = float('nan')
+        mv = layout.scalar * 1.0
+        mv[()] = float('nan')
+
+        # allow the nan comparison without warnings
+        with np.errstate(invalid='ignore'):
+            assert bool(mv) == bool(nan)  # be consistent with the builtin
+
     @pytest.mark.parametrize('dtype', [np.int64, np.float32, np.float64])
     @pytest.mark.parametrize('func', [
         operator.add,
@@ -292,6 +321,25 @@ class TestClifford:
 
         # three swaps does
         assert mv[1, 2, 3] == -mv[3, 2, 1]
+
+    def test_normalInv(self):
+        layout, blades = Cl(3)
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        assert (2*e1).normalInv() == (0.5*e1)
+
+        with pytest.raises(ValueError):
+            (0*e1).normalInv()  # divide by 0
+
+        with pytest.raises(ValueError):
+            (1 + e1 + e2).normalInv()  # mixed even and odd grades
+
+        # produces garbage, but doesn't crash
+        (1 + e1 + e2).normalInv(check=False)
+
+        # check that not requiring normalInv works fine
+        assert (1 + e1 + e2).inv() == -1 + e1 + e2
 
 
 class TestBasicConformal41:

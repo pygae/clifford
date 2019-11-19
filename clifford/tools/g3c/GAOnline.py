@@ -207,21 +207,17 @@ class GanjaScene:
 
     def add_object(self, mv, color=int('AA000000', 16), label=None):
         if label is not None:
-            try:
-                assert isinstance(label, str)
-                self.internal_list.append(label)
-            except:
+            if not isinstance(label, str):
                 raise ValueError('Labels must be strings')
+            self.internal_list.append(label)
         self.internal_list.append(color)
         self.internal_list.append([i for i in mv.value])
 
     def add_objects(self, mv_list, color=int('AA000000', 16), label=None):
         if label is not None:
-            try:
-                assert isinstance(label, str)
-                self.internal_list.append(label)
-            except:
+            if not isinstance(label, str):
                 raise ValueError('Labels must be strings')
+            self.internal_list.append(label)
         self.internal_list.append(color)
         for mv in mv_list:
             self.internal_list.append([i for i in mv.value])
