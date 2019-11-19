@@ -9,13 +9,22 @@ Algorithms and tools of various kinds.
 
 
 Tools for specific ga's
----------------------------------
+-----------------------
 
 .. autosummary::
     :toctree: generated/
 
     g3
     g3c
+
+
+Classifying conformal GAs
+-------------------------
+
+.. autosummary::
+    :toctree: generated/
+
+    classify
 
 
 Determining Rotors From Frame Pairs or Orthogonal Matrices
