@@ -75,7 +75,7 @@ class ConformalLayout(Layout):
 
     def homo(self, x: MultiVector) -> MultiVector:
         """ homogenize a CGA vector """
-        return x*(-x | self.einf)(0).normalInv()
+        return x/(-x | self.einf)[()]
 
     def down(self, x: MultiVector) -> MultiVector:
         """ down-project a vector from CGA to GA """
