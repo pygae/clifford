@@ -206,6 +206,21 @@ class Layout(object):
             list(self.sig), self.bladeTupList, self.firstIdx, self.names
         )
 
+    def _repr_pretty_(self, p, cycle):
+        if cycle:
+            raise RuntimeError("Should not be cyclic")
+
+        prefix = '{}('.format(type(self).__name__)
+
+        with p.group(len(prefix), prefix, ')'):
+            p.text('{},'.format(list(self.sig)))
+            p.breakable()
+            p.text('{},'.format(list(self.bladeTupList)))
+            p.breakable()
+            p.text('names={},'.format(self.names))
+            p.breakable()
+            p.text('firstIdx={}'.format(self.firstIdx))
+
     def __eq__(self, other):
         if other is self:
             return True
