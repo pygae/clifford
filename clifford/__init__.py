@@ -370,7 +370,7 @@ def grade_obj(objin, threshold=0.0000001):
     '''
     Returns the modal grade of a multivector
     '''
-    return grade_obj_func(objin.value, objin.layout.gradeList, threshold)
+    return grade_obj_func(objin.value, np.asarray(objin.layout.gradeList), threshold)
 
 
 def grades_present(objin: 'MultiVector', threshold=0.0000001) -> Set[int]:
