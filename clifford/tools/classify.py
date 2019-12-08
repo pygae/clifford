@@ -237,6 +237,21 @@ class Blade(metaclass=_GradedTypesMeta):
             "{}={!r}".format(k, v) for k, v in members.items()
         ))
 
+    def _repr_pretty_(self, p, cycle):
+        members = self.__dict__.copy()
+        for name in self._repr_skip_members():
+            members.pop(name)
+
+        prefix = '{}('.format(type(self).__name__)
+        with p.group(len(prefix), prefix, ')'):
+            is_first = True
+            for k, v in members.items():
+                if not is_first:
+                    p.text(',')
+                    p.breakable()
+                p.text("{}={!r}".format(k, v))
+                is_first = False
+
     def _translate(self, t, x):
         """ Internal helper to translate x (conformal) by t (euclidean vector) """
         einf = self.layout.einf
