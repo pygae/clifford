@@ -237,6 +237,9 @@ class MultiVector(object):
     def right_complement(self) -> 'MultiVector':
         return self.layout.MultiVector(value=self.layout.right_complement_func(self.value))
 
+    def left_complement(self) -> 'MultiVector':
+        return self.layout.MultiVector(value=self.layout.left_complement_func(self.value))
+
     def __truediv__(self, other) -> 'MultiVector':
         """Division, :math:`M N^{-1}`"""
 

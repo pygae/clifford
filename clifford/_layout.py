@@ -145,7 +145,8 @@ class Layout(object):
 
         self._genTables()
         self.adjoint_func = get_adjoint_function(self.gradeList)
-        self.right_complement_func = self.gen_right_complement_func()
+        self.right_complement_func = self._gen_complement_func(wedge=lambda a, b: a^b)
+        self.left_complement_func = self._gen_complement_func(wedge=lambda a, b: b^a)
         self.dual_func = self.gen_dual_func()
         self.vee_func = self.gen_vee_func()
 
@@ -353,9 +354,11 @@ class Layout(object):
         diag_mask = 1.0 * (np.array(self.gradeList) == grade)
         return np.diag(diag_mask)
 
-    def gen_right_complement_func(self):
+    def _gen_complement_func(self, wedge):
         """
-        Generates the right complement of a multivector
+        Generates the function which computes the complement of a multivector.
+
+        `wedge` should be either a left or right wedge function.
         """
         dims = self.gaDims
         bl = self.blades_list
@@ -363,16 +366,16 @@ class Layout(object):
         for n in range(len(bl)):
             i = bl[n]
             j = bl[dims-1-n]
-            signval = (-1)**((i^j).value[-1] < 0.001)
+            signval = (-1)**(wedge(i, j).value[-1] < 0.001)
             signlist[n] = signval
 
         @numba.njit
-        def right_comp_func(Xval):
+        def comp_func(Xval):
             Yval = np.zeros(dims)
             for i, s in enumerate(signlist):
                 Yval[i] = Xval[dims-1-i]*s
             return Yval
-        return right_comp_func
+        return comp_func
 
     def get_left_gmt_matrix(self, x):
         """

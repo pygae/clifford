@@ -11,7 +11,12 @@ class TestPGA:
     def test_right_complement(self):
         # TODO[gh-216]: Does this mean we implemented the left complement?
         for b in self.layout.blades_list:
-            assert b.right_complement() * b == self.layout.pseudoScalar
+            assert b.right_complement() ^ b == self.layout.pseudoScalar
+
+    def test_left_complement(self):
+        # TODO[gh-216]: Does this mean we implemented the right complement?
+        for b in self.layout.blades_list:
+            assert b ^ b.left_complement() == self.layout.pseudoScalar
 
     def test_no_crash(self):
         """ TODO: This doesn't actually do any asserts! """
