@@ -436,7 +436,9 @@ class Layout(object):
 
         useful for forcing a MultiVector type
         '''
-        return self.MultiVector() + 1
+        s = self.MultiVector(dtype=int)
+        s[()] = 1
+        return s
 
     @property
     def pseudoScalar(self):
