@@ -97,15 +97,26 @@ class MultiVector(object):
         return general_exp(self)
 
     def vee(self, other) -> 'MultiVector':
-        """
-        The vee product aka. the meet... To be optimised still
+        r"""
+        Vee product :math:`A \vee B`.
+
+        This is often defined as:
+
+        .. math::
+            `(A \vee B)^* &= A^* \wedge B^*`
+            \implies A \vee B &= (A^* \wedge B^*)^{-*}
+
+        This is very similar to the :meth:`~MultiVector.meet` function, but
+        always uses the dual in the full space .
+
+        Internally, this is actually implemented using the complement
+        functions instead, as these work in degenerate metrics like PGA too,
+        and are equivalent but faster in other metrics.
         """
         return self.layout.MultiVector(value=self.layout.vee_func(self.value, other.value))
 
     def __and__(self, other) -> 'MultiVector':
-        """
-        The vee product aka. the meet... To be optimised still
-        """
+        """ Alias for :meth:`~MultiVector.vee` """
         return self.vee(other)
 
     def __mul__(self, other) -> 'MultiVector':
@@ -236,6 +247,9 @@ class MultiVector(object):
 
     def right_complement(self) -> 'MultiVector':
         return self.layout.MultiVector(value=self.layout.right_complement_func(self.value))
+
+    def left_complement(self) -> 'MultiVector':
+        return self.layout.MultiVector(value=self.layout.left_complement_func(self.value))
 
     def __truediv__(self, other) -> 'MultiVector':
         """Division, :math:`M N^{-1}`"""
