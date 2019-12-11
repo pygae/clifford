@@ -9,14 +9,12 @@ class TestPGA:
     layout, _ = Cl(3, 0, 1, firstIdx=0)
 
     def test_right_complement(self):
-        # TODO[gh-216]: Does this mean we implemented the left complement?
         for b in self.layout.blades_list:
-            assert b.right_complement() ^ b == self.layout.pseudoScalar
+            assert b ^ b.right_complement() == self.layout.pseudoScalar
 
     def test_left_complement(self):
-        # TODO[gh-216]: Does this mean we implemented the right complement?
         for b in self.layout.blades_list:
-            assert b ^ b.left_complement() == self.layout.pseudoScalar
+            assert b.left_complement() ^ b == self.layout.pseudoScalar
 
     def test_vee(self):
         blades = self.layout.blades

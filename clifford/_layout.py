@@ -145,8 +145,8 @@ class Layout(object):
 
         self._genTables()
         self.adjoint_func = get_adjoint_function(self.gradeList)
-        self.right_complement_func = self._gen_complement_func(wedge=lambda a, b: a^b)
-        self.left_complement_func = self._gen_complement_func(wedge=lambda a, b: b^a)
+        self.left_complement_func = self._gen_complement_func(wedge=lambda a, b: a^b)
+        self.right_complement_func = self._gen_complement_func(wedge=lambda a, b: b^a)
         self.dual_func = self.gen_dual_func()
         self.vee_func = self.gen_vee_func()
 

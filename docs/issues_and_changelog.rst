@@ -113,9 +113,9 @@ Changes in 1.2.x
    ``isinstance(layout, clifford.ConformalLayout)``, and the other properties
    now exist only on :class:`ConformalLayout` objects.
  * :meth:`MultiVector.vee` has been corrected to have the same sign as
-   :meth:`MultiVector.meet`.
- * :meth:`MultiVector.left_complement` has been added to match
-   :meth:`MultiVector.right_complement`.
+   :meth:`MultiVector.meet`
+ * :meth:`MultiVector.right_complement` no longer performs the left complement.
+ * :meth:`MultiVector.left_complement` has been added for when this was intended.
 
 
 Changes in 1.1.x
