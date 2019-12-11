@@ -5,14 +5,18 @@ import math
 import numpy as np
 
 
-class PGATests(unittest.TestCase):
+class TestPGA:
+    layout, _ = Cl(3, 0, 1, firstIdx=0)
 
-    def setUp(self):
-        self.algebras = [Cl(3, 0, 1, firstIdx=0), Cl(4, 0, 1, firstIdx=0)]
+    def test_right_complement(self):
+        # TODO[gh-216]: Does this mean we implemented the left complement?
+        for b in self.layout.blades_list:
+            assert b.right_complement() * b == self.layout.pseudoScalar
 
-    def test_integration(self):
-        layout = self.algebras[0][0]
-        blades = self.algebras[0][1]
+    def test_no_crash(self):
+        """ TODO: This doesn't actually do any asserts! """
+        layout = self.layout
+        blades = layout.blades
         print(blades)
 
         # A rotor (Euclidean line) and translator (Ideal line)
@@ -91,7 +95,3 @@ class PGATests(unittest.TestCase):
         print("rotated plane :", str(ROTATED_PLANE))
         print("point on plane:", str(POINT_ON_PLANE.normal()))
         print("point on torus:", str(POINT_ON_TORUS(0.0, 0.0)))
-
-
-if __name__ == '__main__':
-    unittest.main()
