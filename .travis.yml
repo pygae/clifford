@@ -15,14 +15,12 @@ x-clifford-templates:
             scipy \
             numba \
             pip \
-            h5py \
-            pytest \
-            pytest-cov;
+            h5py;
           conda install -c conda-forge sparse;
           conda install -c numba numba==0.45.1;
-        else
-          pip install pytest-cov
         fi
+      # always install with pip, conda has too old a version
+      - pip install pytest pytest-cov
       - python setup.py install
       - pip install codecov
     script:
