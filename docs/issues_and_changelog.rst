@@ -112,10 +112,25 @@ Changes in 1.2.x
    in 1.0.4, have been removed. The first can now be spelt
    ``isinstance(layout, clifford.ConformalLayout)``, and the other properties
    now exist only on :class:`ConformalLayout` objects.
+ * :meth:`MultiVector.left_complement` has been added for consistency with
+   :meth:`MultiVector.right_complement`.
+ * A new :mod:`clifford.tools.classify` module has been added for classifying
+   blades.
+ * :class:`Layout` objects print slightly more cleanly in Jupyter notebooks.
+ * :attr:`Layout.scalar` is now integral rather than floating point
+
+Bugs fixed
+----------
+ * ``pow(mv, 0)`` gives the right result
+ * ``nan`` is now printed correctly when it appears in multivectors. Previously it was hidden
+ * :meth:`MultiVector.right_complement` no longer performs the left complement.
  * :meth:`MultiVector.vee` has been corrected to have the same sign as
    :meth:`MultiVector.meet`
- * :meth:`MultiVector.right_complement` no longer performs the left complement.
- * :meth:`MultiVector.left_complement` has been added for when this was intended.
+
+Compatibility notes
+-------------------
+ * :attr:`Layout.scalar` is now integral rather than floating point, to match
+   :attr:`Layout.pseudoScalar`.
 
 
 Changes in 1.1.x
