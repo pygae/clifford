@@ -103,7 +103,7 @@ class MultiVector(object):
         This is often defined as:
 
         .. math::
-            `(A \vee B)^* &= A^* \wedge B^*`
+            (A \vee B)^* &= A^* \wedge B^* \\
             \implies A \vee B &= (A^* \wedge B^*)^{-*}
 
         This is very similar to the :meth:`~MultiVector.meet` function, but
