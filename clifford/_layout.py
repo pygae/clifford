@@ -183,11 +183,15 @@ class Layout(object):
         """
         Generates the vee product function
         """
-        dual_func = self.dual_func
+        # Often, the dual and undual are used here. However, this unecessarily
+        # invokes the metric for a product that is itself non-metric. The
+        # complement functions are faster anyway.
+        rc_func = self.right_complement_func
+        lc_func = self.left_complement_func
         omt_func = self.omt_func
         @numba.njit
         def vee(aval, bval):
-            return dual_func(omt_func(dual_func(aval), dual_func(bval)))
+            return lc_func(omt_func(rc_func(aval), rc_func(bval)))
         return vee
 
     @property
