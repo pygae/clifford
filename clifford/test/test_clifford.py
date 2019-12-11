@@ -357,6 +357,25 @@ class TestBasicConformal41:
         assert (e4 * e4)[0] == 1
         assert (e5 * e5)[0] == -1
 
+    def test_vee(self):
+        layout_a = Cl(3)[0]
+        layout, blades, stuff = conformalize(layout_a)
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e3 = layout.blades['e3']
+        up = layout.up
+
+        A = up(e1)
+        B = up(e2)
+        C = up(-e1)
+        D = up(e3)
+
+        sph = A^B^C^D
+        pl = A^B^C^layout.einf
+
+        assert sph & pl == 2*(A^B^C)
+        assert pl & sph == -2*(A^B^C)
+
     def test_factorise(self):
         layout_a = Cl(3)[0]
         layout, blades, stuff = conformalize(layout_a)
