@@ -19,7 +19,9 @@ setup(
     author='Robert Kern',
     author_email='alexarsenovic@gmail.com',
     url='http://clifford.readthedocs.io',
-    packages=find_packages(),
+    packages=['clifford'],
+    py_modules=['mpl_toolkits.clifford'],
+    namespace_packages=['mpl_toolkits'],
     install_requires=[
         'numpy',
         'scipy',
@@ -27,7 +29,7 @@ setup(
         'h5py',
         'sparse',
     ],
-    package_dir={'clifford':'clifford'},
+    package_dir={'clifford':'clifford', 'mpl_toolkits': 'mpl_toolkits'},
 
     classifiers=[
         'Intended Audience :: Science/Research',
