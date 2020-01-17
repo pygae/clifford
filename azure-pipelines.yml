@@ -53,11 +53,15 @@ jobs:
         python.version: '3.7'
         numbacommand: '-c numba numba'
         installPackageCommand: 'sudo python setup.py develop --no-deps'
-      # TODO[gh-226]: Add a 3.8 run for macos
-
-      macPython37NumbaDev:
+      macPython38:
         imageName: 'macos-10.13'
-        python.version: '3.7'
+        python.version: '3.8'
+        numbacommand: '-c numba numba'
+        installPackageCommand: 'sudo python setup.py develop --no-deps'
+
+      macPython38NumbaDev:
+        imageName: 'macos-10.13'
+        python.version: '3.8'
         numbacommand: '-c numba/label/dev numba'
         installPackageCommand: 'sudo python setup.py develop --no-deps'
 
