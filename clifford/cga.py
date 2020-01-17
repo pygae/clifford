@@ -81,11 +81,11 @@ class CGAThing(object):
         self.cga = cga
         self.layout = cga.layout
 
-    @overload  # noqa: F811
-    def __call__(self, other: MultiVector) -> MultiVector: pass
+    @overload
+    def __call__(self, other: MultiVector) -> MultiVector: pass  # noqa: F811
 
-    @overload  # noqa: F811
-    def __call__(self, other: 'CGAThing') -> 'CGAThing': pass
+    @overload
+    def __call__(self, other: 'CGAThing') -> 'CGAThing': pass  # noqa: F811
 
     def __call__(self, other):  # noqa: F811
         if isinstance(other, MultiVector):

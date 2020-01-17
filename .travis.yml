@@ -4,7 +4,7 @@ x-clifford-templates:
     install:
       - pip install flake8
       - python setup.py install
-    script: flake8 clifford
+    script: python -m flake8 clifford
 
   test_job: &test_job
     install:
@@ -17,7 +17,7 @@ x-clifford-templates:
             pip \
             h5py;
           conda install -c conda-forge sparse;
-          conda install -c numba numba==0.45.1;
+          conda install -c numba numba>=0.45.1;
         fi
       # always install with pip, conda has too old a version
       - pip install pytest pytest-cov
@@ -51,8 +51,7 @@ language: python
 matrix:
   include:
     - os: linux
-      python: '3.6'
-      script: flake8 clifford
+      python: '3.8'
       stage: Lint
       <<: *lint_job
 
@@ -62,7 +61,7 @@ matrix:
       stage: Test
       <<: *test_job
     - os: linux
-      python: '3.6'
+      python: '3.8'
       env: CONDA=false
       stage: Test
       <<: *test_job
@@ -72,12 +71,12 @@ matrix:
       stage: Test
       <<: *test_job
     - os: linux
-      python: '3.6'
+      python: '3.8'
       env: CONDA=true
       stage: Test
       <<: *test_job
 
     - os: linux
-      python: '3.6'
+      python: '3.8'
       stage: Deploy
       <<: *deploy_job

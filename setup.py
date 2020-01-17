@@ -23,7 +23,7 @@ setup(
     install_requires=[
         'numpy',
         'scipy',
-        'numba==0.45.1',
+        'numba>=0.45.1',
         'h5py',
         'sparse',
     ],
@@ -38,6 +38,7 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
     project_urls={
         "Bug Tracker": "https://github.com/pygae/clifford/issues",
