@@ -921,7 +921,7 @@ def op(M, N):
     return M ^ N
 
 
-def conformalize(layout, added_sig=[1, -1], *, mvClass=MultiVector, **kw):
+def conformalize(layout, added_sig=[1, -1], *, mvClass=MultiVector, **kwargs):
     '''
     Conformalize a Geometric Algebra
 
@@ -939,7 +939,7 @@ def conformalize(layout, added_sig=[1, -1], *, mvClass=MultiVector, **kw):
         layout of the GA to conformalize (the base)
     added_sig: list-like
         list of +1, -1  denoted the added signatures
-    **kw: kwargs
+    **kwargs :
         passed to Cl() used to generate conformal layout
 
     Returns
@@ -973,7 +973,7 @@ def conformalize(layout, added_sig=[1, -1], *, mvClass=MultiVector, **kw):
     >>> locals().update(bladesc)
     >>> locals().update(stuff)
     '''
-    layout_c = ConformalLayout._from_base_layout(layout, added_sig, **kw)
+    layout_c = ConformalLayout._from_base_layout(layout, added_sig, **kwargs)
     stuff = {
         attr: getattr(layout_c, attr)
         for attr in [

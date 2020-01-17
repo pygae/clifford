@@ -395,13 +395,13 @@ class Layout(object):
         """
         return val_get_right_gmt_matrix(self.gmt, x.value)
 
-    def MultiVector(self, *args, **kw):
+    def MultiVector(self, *args, **kwargs):
         '''
         create a multivector in this layout
 
         convenience func to Multivector(layout)
         '''
-        return cf.MultiVector(layout=self, *args, **kw)
+        return cf.MultiVector(layout=self, *args, **kwargs)
 
     def load_ga_file(self, filename):
         """
@@ -456,22 +456,19 @@ class Layout(object):
 
     I = pseudoScalar
 
-    def randomMV(self, n=1, **kw):
+    def randomMV(self, n=1, **kwargs):
         '''
         Convenience method to create a random multivector.
 
         see `clifford.randomMV` for details
         '''
-        kw.update(dict(n=n))
-        return cf.randomMV(layout=self, **kw)
+        return cf.randomMV(layout=self, n=n, **kwargs)
 
-    def randomV(self, n=1, **kw):
+    def randomV(self, n=1, **kwargs):
         '''
         generate n random 1-vector s
-
         '''
-        kw.update(dict(n=n, grades=[1]))
-        return cf.randomMV(layout=self, **kw)
+        return cf.randomMV(layout=self, n=n, grades=[1], **kwargs)
 
     def randomRotor(self):
         '''
@@ -521,7 +518,7 @@ class Layout(object):
     def blades(self):
         return self.bases()
 
-    def bases(self, *args, **kw):
+    def bases(self, *args, **kwargs):
         '''
         Returns a dictionary mapping basis element names to their MultiVector
         instances, optionally for specific grades
@@ -537,4 +534,4 @@ class Layout(object):
         ---------
         bases
         '''
-        return cf.bases(layout=self, *args, **kw)
+        return cf.bases(layout=self, *args, **kwargs)
