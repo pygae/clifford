@@ -462,16 +462,13 @@ class Layout(object):
 
         see `clifford.randomMV` for details
         '''
-        kw.update(dict(n=n))
-        return cf.randomMV(layout=self, **kw)
+        return cf.randomMV(layout=self, n=n, **kw)
 
     def randomV(self, n=1, **kw):
         '''
         generate n random 1-vector s
-
         '''
-        kw.update(dict(n=n, grades=[1]))
-        return cf.randomMV(layout=self, **kw)
+        return cf.randomMV(layout=self, n=n, grades=[1], **kw)
 
     def randomRotor(self):
         '''
@@ -538,3 +535,4 @@ class Layout(object):
         bases
         '''
         return cf.bases(layout=self, *args, **kw)
+
