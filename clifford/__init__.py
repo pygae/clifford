@@ -385,28 +385,6 @@ def grades_present(objin: 'MultiVector', threshold=0.0000001) -> Set[int]:
     }
 
 
-def generate_blade_tup_map(bladeTupList):
-    """
-    Generates a mapping from blade tuple to linear index into
-    multivector
-    """
-    blade_map = {}
-    for ind, blade in enumerate(bladeTupList):
-        blade_map[blade] = ind
-    return blade_map
-
-
-def generate_bitmap_to_linear_index_map(bladeTupList, firstIdx):
-    """
-    Generates a mapping from the bitmap representation to
-    the linear index
-    """
-    bitmap_map = np.zeros(len(bladeTupList), dtype=int)
-    for ind, blade in enumerate(bladeTupList):
-        bitmap_map[compute_bitmap_representation(blade, firstIdx)] = ind
-    return bitmap_map
-
-
 @numba.njit
 def count_set_bits(bitmap):
     """

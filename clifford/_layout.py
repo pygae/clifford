@@ -12,10 +12,9 @@ import clifford as cf
 from . import (
     get_adjoint_function,
     construct_tables,
+    compute_bitmap_representation,
     get_mult_function,
     get_leftLaInv,
-    generate_blade_tup_map,
-    generate_bitmap_to_linear_index_map,
     val_get_left_gmt_matrix,
     val_get_right_gmt_matrix,
 )
@@ -28,6 +27,28 @@ _blade_pattern = re.compile(r"""
     ((^|\s)-?\s?\d+(\.\d+)?)\s|
     ((^|\+|-)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))
 """, re.VERBOSE)
+
+
+def generate_blade_tup_map(bladeTupList):
+    """
+    Generates a mapping from blade tuple to linear index into
+    multivector
+    """
+    blade_map = {}
+    for ind, blade in enumerate(bladeTupList):
+        blade_map[blade] = ind
+    return blade_map
+
+
+def generate_bitmap_to_linear_index_map(bladeTupList, firstIdx):
+    """
+    Generates a mapping from the bitmap representation to
+    the linear index
+    """
+    bitmap_map = np.zeros(len(bladeTupList), dtype=int)
+    for ind, blade in enumerate(bladeTupList):
+        bitmap_map[compute_bitmap_representation(blade, firstIdx)] = ind
+    return bitmap_map
 
 
 class Layout(object):
