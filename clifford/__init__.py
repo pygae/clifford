@@ -196,20 +196,16 @@ def _get_mult_function(mt: sparse.COO):
     func : function (array_like (n_dims,), array_like (n_dims,)) -> array_like (n_dims,)
         A function that computes the appropriate multiplication
     """
-    # unpack for numba
-    dims = mt.shape[1]
-    k_list, l_list, m_list = mt.coords
-    mult_table_vals = mt.data
-
     @numba.generated_jit(nopython=True)
     def mv_mult(value, other_value):
         # this casting will be done at jit-time
-        ret_dtype = _get_mult_function_result_type(value, other_value, mult_table_vals.dtype)
-        mult_table_vals_t = mult_table_vals.astype(ret_dtype)
+        ret_dtype = _get_mult_function_result_type(value, other_value, mt.dtype)
+        mt_t = mt.astype(ret_dtype)
 
         def mult_inner(value, other_value):
-            output = np.zeros(dims, dtype=ret_dtype)
-            for k, l, m, val in zip(k_list, l_list, m_list, mult_table_vals_t):
+            output = np.zeros(mt_t.shape[1], dtype=ret_dtype)
+            k_list, l_list, m_list = mt_t.coords[0], mt_t.coords[1], mt_t.coords[2]
+            for k, l, m, val in zip(k_list, l_list, m_list, mt_t.data):
                 output[l] += value[k] * val * other_value[m]
             return output
 
@@ -227,19 +223,16 @@ def _get_mult_function_runtime_sparse(mt: sparse.COO):
 
     TODO: determine if this actually helps.
     """
-    # unpack for numba
-    dims = mt.shape[1]
-    k_list, l_list, m_list = mt.coords
-    mult_table_vals = mt.data
 
     @numba.generated_jit(nopython=True)
     def mv_mult(value, other_value):
         # this casting will be done at jit-time
-        ret_dtype = _get_mult_function_result_type(value, other_value, mult_table_vals.dtype)
-        mult_table_vals_t = mult_table_vals.astype(ret_dtype)
+        ret_dtype = _get_mult_function_result_type(value, other_value, mt.dtype)
+        mt_t = mt.astype(ret_dtype)
 
         def mult_inner(value, other_value):
-            output = np.zeros(dims, dtype=ret_dtype)
+            output = np.zeros(mt_t.shape[1], dtype=ret_dtype)
+            k_list, l_list, m_list = mt_t.coords[0], mt_t.coords[1], mt_t.coords[2]
             for ind, k in enumerate(k_list):
                 v_val = value[k]
                 if v_val != 0.0:
@@ -247,7 +240,7 @@ def _get_mult_function_runtime_sparse(mt: sparse.COO):
                     ov_val = other_value[m]
                     if ov_val != 0.0:
                         l = l_list[ind]
-                        output[l] += v_val * mult_table_vals_t[ind] * ov_val
+                        output[l] += v_val * mt_t.data[ind] * ov_val
             return output
         return mult_inner
 
@@ -311,8 +304,6 @@ def get_leftLaInv(mult_table, gradeList):
     M    where M  * M  == 1
     """
 
-    k_list, l_list, m_list = mult_table.coords
-    mult_table_vals = mult_table.data
     n_dims = mult_table.shape[1]
 
     identity = np.zeros((n_dims,))
@@ -320,7 +311,7 @@ def get_leftLaInv(mult_table, gradeList):
 
     @numba.njit
     def leftLaInvJIT(value):
-        intermed = _numba_val_get_left_gmt_matrix(value, k_list, l_list, m_list, mult_table_vals, n_dims)
+        intermed = _numba_val_get_left_gmt_matrix(value, mult_table)
         if abs(linalg.det(intermed)) < _eps:
             raise ValueError("multivector has no left-inverse")
         sol = linalg.solve(intermed, identity)
@@ -479,13 +470,15 @@ def compute_blade_representation(bitmap: int, firstIdx: int) -> Tuple[int, ...]:
 
 # todo: work out how to let numba use the COO objects directly
 @numba.njit
-def _numba_val_get_left_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
+def _numba_val_get_left_gmt_matrix(x, mt):
+    ndims = mt.shape[1]
+    k_list, l_list, m_list = mt.coords[0], mt.coords[1], mt.coords[2]
     intermed = np.zeros((ndims, ndims))
     test_ind = 0
     for k in k_list:
         j = l_list[test_ind]
         i = m_list[test_ind]
-        intermed[j, i] += mult_table_vals[test_ind] * x[k]
+        intermed[j, i] += mt.data[test_ind] * x[k]
         test_ind = test_ind + 1
     return intermed
 
@@ -495,11 +488,7 @@ def val_get_left_gmt_matrix(mt: sparse.COO, x):
     This produces the matrix X that performs left multiplication with x
     eg. X@b == (x*b).value
     """
-    dims = mt.shape[1]
-    k_list, l_list, m_list = mt.coords
-    return _numba_val_get_left_gmt_matrix(
-        x, k_list, l_list, m_list, mt.data, dims
-    )
+    return _numba_val_get_left_gmt_matrix(x, mt)
 
 
 def val_get_right_gmt_matrix(mt: sparse.COO, x):
