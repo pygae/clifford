@@ -25,7 +25,7 @@ setup(
         'scipy',
         'numba>=0.45.1',
         'h5py',
-        'sparse',
+        'sparse>=0.9.1',
     ],
     package_dir={'clifford':'clifford'},
 
