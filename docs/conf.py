@@ -53,15 +53,14 @@ extensions = [
     'IPython.sphinxext.ipython_console_highlighting',
     #'numpydoc',
     'sphinx.ext.viewcode',
-    
+
     #'sphinx.ext.mathjax',
 ]
 
 import clifford
-import nbsphinx
 nbsphinx_execute = 'always'
-nbsphinx_allow_errors=True
-nbsphinx_kernel_name='python'
+nbsphinx_allow_errors = True
+nbsphinx_kernel_name = 'python'
 
 napoleon_include_init_with_doc= False
 nbsphinx_timeout = 60
@@ -143,7 +142,9 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+html_theme_options = dict(
+    # collapse_navigation=False,
+)
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
