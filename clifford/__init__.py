@@ -78,6 +78,9 @@ from clifford.io import write_ga_file, read_ga_file  # noqa: F401
 
 from ._version import __version__  # noqa: F401
 
+# For backwards-compatibility. New code should import directly from `clifford.operator`
+from .operator import gp, op, ip  # noqa: F401
+
 _eps = 1e-12            # float epsilon for float comparisons
 _pretty = True          # pretty-print global
 _print_precision = 5    # pretty printing precision on floats
@@ -866,57 +869,6 @@ def print_precision(newVal):
 
     global _print_precision
     _print_precision = newVal
-
-
-def gp(M, N):
-    """
-    Geometric product
-
-    gp(M, N) =  M * N
-
-    M and N must be from the same layout
-
-    This is useful in calculating series of products, with `reduce()`
-    for example
-
-    >>>Ms = [M1, M2, M3] # list of multivectors
-    >>>reduce(gp, Ms) #  == M1*M2*M3
-
-    """
-
-    return M*N
-
-
-def ip(M, N):
-    """
-    Inner product function
-
-    ip(M, N) =  M | N
-
-    M and N must be from the same layout
-
-    """
-
-    return M ^ N
-
-
-def op(M, N):
-    """
-    Outer product function
-
-    op(M, N) =  M ^ N
-
-    M and N must be from the same layout
-
-    This is useful in calculating series of products, with `reduce()`
-    for example
-
-    >>>Ms = [M1, M2, M3] # list of multivectors
-    >>>reduce(op, Ms) #  == M1^M2^M3
-
-    """
-
-    return M ^ N
 
 
 def conformalize(layout, added_sig=[1, -1], *, mvClass=MultiVector, **kwargs):
