@@ -1,6 +1,7 @@
 # numpydoc==0.4
 ipython
 matplotlib
+mpl_toolkits.clifford
 sphinx>=1.4
 ipykernel
 nbsphinx
