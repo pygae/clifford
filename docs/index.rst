@@ -35,6 +35,7 @@ Scalars, vectors, and higher-grade entities can be mixed freely and consistently
 
     Installation
     api
+    predefined-algebras
     issues_and_changelog
 
 .. toctree::
@@ -47,7 +48,6 @@ Scalars, vectors, and higher-grade entities can be mixed freely and consistently
     tutorials/euler-angles
     tutorials/space-time-algebra
     tutorials/InterfacingOtherMathSystems
-    tutorials/PredefinedGAs
     tutorials/PerformanceCliffordTutorial
     tutorials/cga/index
 
