@@ -8,6 +8,5 @@ API
     clifford
     cga
     tools
-    issues_and_changelog
 
 

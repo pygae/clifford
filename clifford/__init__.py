@@ -5,7 +5,8 @@
 clifford (:mod:`clifford`)
 ========================================
 
-The Main Module. Provides two classes, Layout and MultiVector, and several helper functions  to implement the algebras.
+The top-level module.
+Provides two core classes, :class:`Layout` and :class:`MultiVector`, along with several helper functions to implement the algebras.
 
 
 Classes
@@ -18,6 +19,7 @@ Classes
     Layout
     ConformalLayout
     Frame
+    BladeMap
 
 Functions
 ================
