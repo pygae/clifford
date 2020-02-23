@@ -36,7 +36,8 @@ Scalars, vectors, and higher-grade entities can be mixed freely and consistently
     Installation
     api
     predefined-algebras
-    issues_and_changelog
+    changelog
+    issues
 
 .. toctree::
     :maxdepth: 1
