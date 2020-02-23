@@ -1,0 +1,10 @@
+# extra requiremenets needed by the docs themselves
+# numpydoc==0.4
+ipython
+matplotlib
+mpl_toolkits.clifford>=0.0.3
+sphinx>=2.4
+ipykernel
+nbsphinx
+pyganja
+sphinx_rtd_theme

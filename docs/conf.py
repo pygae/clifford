@@ -57,10 +57,13 @@ extensions = [
     #'sphinx.ext.mathjax',
 ]
 
-import clifford
 nbsphinx_execute = 'always'
 nbsphinx_allow_errors = True
 nbsphinx_kernel_name = 'python'
+nbsphinx_execute_arguments = [
+    "--InlineBackend.figure_formats={'svg', 'pdf'}",
+    "--InlineBackend.rc={'figure.dpi': 96, 'savefig.transparent': True}",
+]
 
 napoleon_include_init_with_doc= False
 nbsphinx_timeout = 60
@@ -143,6 +146,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = dict(
+    navigation_depth=6,  # tutorials are quite deeply nested
     # collapse_navigation=False,
 )
 
