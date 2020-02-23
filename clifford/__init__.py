@@ -8,9 +8,18 @@ clifford (:mod:`clifford`)
 The top-level module.
 Provides two core classes, :class:`Layout` and :class:`MultiVector`, along with several helper functions to implement the algebras.
 
+Constructing algebras
+=====================
 
-Classes
-===============
+Note that typically the :doc:`predefined-algebras` are sufficient, and there is no need to build an algebra from scratch.
+
+.. autosummary::
+    :toctree: generated/
+
+    Cl
+    conformalize
+
+Whether you construct your algebras from scratch, or use the predefined ones, you'll end up working with the following types:
 
 .. autosummary::
     :toctree: generated/
@@ -18,24 +27,37 @@ Classes
     MultiVector
     Layout
     ConformalLayout
-    Frame
-    BladeMap
 
-Functions
-================
-
+Global configuration functions
+==============================
+These functions are used to change the global behavior of ``clifford``.
 
 .. autosummary::
     :toctree: generated/
 
-    Cl
-    conformalize
+    eps
+    pretty
+    ugly
+    print_precision
+
+Miscellaneous classes
+=======================
+
+.. autosummary::
+    :toctree: generated/
+
+    Frame
+    BladeMap
+
+Miscellaneous functions
+=======================
+
+.. autosummary::
+    :toctree: generated/
+
     grade_obj
     bases
     randomMV
-    pretty
-    ugly
-    eps
 
 """
 
@@ -701,13 +723,16 @@ def elements(dims: int, firstIdx=0) -> List[Tuple[int, ...]]:
 
 
 def Cl(p=0, q=0, r=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
-    """Returns a Layout and basis blades for the geometric algebra Cl_p,q.
+    r"""Returns a :class:`Layout` and basis blade :class:`MultiVector`\ s for the geometric algebra :math:`Cl_{p,q,r}`.
 
-    The notation Cl_p,q means that the algebra is p+q dimensional, with
-    the first p vectors with positive signature and the final q vectors
-    negative.
+    The notation :math:`Cl_{p,q,r}` means that the algebra is :math:`p+q+r`-dimensional, with the first :math:`p` vectors with positive signature, the next :math:`q` vectors negative, and the final :math:`r` vectors with null signature.
 
-    Cl(p, q=0, names=None, firstIdx=0) --> Layout, {'name': basisElement, ...}
+    Returns
+    =======
+    layout : Layout
+        The resulting layout
+    blades : Dict[str, MultiVector]
+        The blades of the returned layout, equivalent to ``layout.blades``.
     """
     if sig is None:
         layout = Layout._from_Cl(p, q, r, firstIdx=firstIdx, names=names)
@@ -758,7 +783,7 @@ def randomMV(
 
     Examples
     --------
-    >>>randomMV(layout, min=-2.0, max=2.0, grades=None, uniform=None, n=2)
+    >>> randomMV(layout, min=-2.0, max=2.0, grades=None, uniform=None, n=2)
 
     """
 
@@ -789,7 +814,7 @@ def randomMV(
 
 
 def pretty(precision=None):
-    """Makes repr(M) default to pretty-print.
+    """Makes ``repr(MultiVector)`` default to pretty-print.
 
     `precision` arg can be used to set the printed precision.
 
@@ -812,20 +837,13 @@ def pretty(precision=None):
 
 
 def ugly():
-    """Makes repr(M) default to eval-able representation.
-
-    ugly()
-    """
-
+    """ Makes ``repr(MultiVector)`` default to eval-able representation. """
     global _pretty
     _pretty = False
 
 
 def eps(newEps=None):
-    """Get/Set the epsilon for float comparisons.
-
-    eps(newEps)
-    """
+    """ Get/Set the epsilon for float comparisons. """
 
     global _eps
     if newEps is not None:
