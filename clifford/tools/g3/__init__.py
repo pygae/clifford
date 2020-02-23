@@ -22,10 +22,10 @@ Generation Methods
 .. autosummary::
     :toctree: generated/
 
-    random_unit_vector
-    random_euc_mv
     generate_rotation_rotor
-    random_rotation_rotor
+    random.random_unit_vector
+    random.random_euc_mv
+    random.random_rotation_rotor
 
 
 Misc
@@ -50,7 +50,6 @@ from clifford.g3c import *
 import clifford as cf
 import math
 import numpy as np
-import numba
 
 I3 = e123
 
@@ -139,27 +138,6 @@ def rotation_matrix_to_rotor(M):
     return quaternion_to_rotor(Q)
 
 
-def random_unit_vector():
-    """ Creates a random unit vector """
-    return (np_to_euc_mv(np.random.randn(3))).normal()
-
-
-@numba.njit
-def val_random_euc_mv(l_max=10):
-    """ Creates a random vector normally distributed with length l_max """
-    output = np.zeros(32)
-    np_in = l_max*np.random.randn(3)
-    output[1] = np_in[0]
-    output[2] = np_in[1]
-    output[3] = np_in[2]
-    return output
-
-
-def random_euc_mv(l_max=10):
-    """ Creates a random vector normally distributed with length l_max """
-    return np_to_euc_mv(l_max*np.random.randn(3))
-
-
 def generate_rotation_rotor(theta, euc_vector_m, euc_vector_n):
     """
     Generates a rotation of angle theta in the m, n plane
@@ -170,11 +148,6 @@ def generate_rotation_rotor(theta, euc_vector_m, euc_vector_n):
     bivector_B = bivector_B / (math.sqrt((-bivector_B * bivector_B)[0]))
     rotor = math.cos(theta / 2) - bivector_B * math.sin(theta / 2)
     return rotor
-
-
-def random_rotation_rotor(max_angle=np.pi):
-    """ Creates a random rotation rotor """
-    return generate_rotation_rotor(max_angle * np.random.rand(), random_unit_vector(), random_unit_vector())
 
 
 def angle_between_vectors(v1, v2):
@@ -244,3 +217,7 @@ def rotor_align_vecs(u_list, v_list):
     """ Returns the rotation rotor that aligns the set of vectors u and v """
     M = rotation_matrix_align_vecs(u_list, v_list)
     return rotation_matrix_to_rotor(M)
+
+
+# for compatibility with old code expecting these functions to be here
+from .random import *  # noqa: E402
