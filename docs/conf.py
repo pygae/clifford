@@ -57,10 +57,13 @@ extensions = [
     #'sphinx.ext.mathjax',
 ]
 
-import clifford
 nbsphinx_execute = 'always'
 nbsphinx_allow_errors = True
 nbsphinx_kernel_name = 'python'
+nbsphinx_execute_arguments = [
+    "--InlineBackend.figure_formats={'svg', 'pdf'}",
+    "--InlineBackend.rc={'figure.dpi': 96}",
+]
 
 napoleon_include_init_with_doc= False
 nbsphinx_timeout = 60
