@@ -3,7 +3,7 @@ x-clifford-templates:
   lint_job: &lint_job
     install:
       - pip install flake8
-      - python setup.py install
+      - pip install .
     script: python -m flake8 clifford
 
   test_job: &test_job
@@ -19,9 +19,15 @@ x-clifford-templates:
           conda install -c conda-forge sparse;
           conda install -c numba numba>=0.45.1;
         fi
+      # make sure in conda we do not overwrite dependencies with pip
+      - |
+        if [[ "${CONDA}" == "true" ]]; then
+          python setup.py develop --no-deps;
+        else
+          pip install .;
+        fi
       # always install with pip, conda has too old a version
       - pip install pytest pytest-cov
-      - python setup.py install
       - pip install codecov
     script:
       - |
