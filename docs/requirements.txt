@@ -8,3 +8,4 @@ ipykernel
 nbsphinx
 pyganja
 sphinx_rtd_theme
+ipywidgets
