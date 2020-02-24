@@ -1,5 +1,6 @@
 BSD 3-Clause License
 
+Copyright (c) 2006, Robert Kern
 Copyright (c) 2016, clifford Developers
 All rights reserved.
 
