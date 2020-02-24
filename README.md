@@ -46,4 +46,4 @@ Syntax Summary
 
 ---
 
-For isntallation instructions, api documention, and tutorials, [head over to our documentation](https://clifford.readthedocs.io/)!
+For installation instructions, api documention, and tutorials, [head over to our documentation](https://clifford.readthedocs.io/)!
