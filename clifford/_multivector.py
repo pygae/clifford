@@ -523,9 +523,41 @@ class MultiVector(object):
         if cf._pretty:
             return self.__str__()
 
-        s = "MultiVector(%s, value=%s)" % (
-            repr(self.layout), list(self.value))
-        return s
+        if self.value.dtype != np.float64:
+            dtype_str = ", dtype={}".format(self.value.dtype)
+        else:
+            dtype_str = None
+
+        if hasattr(self.layout, '__name__') and '__module__' in self.layout.__dict__:
+            fmt = "{l.__module__}.{l.__name__}.MultiVector({v!r}{d})"
+        else:
+            fmt = "{l!r}.MultiVector({v!r}{d})"
+        return fmt.format(l=self.layout, v=list(self.value), d=dtype_str)
+
+    def _repr_pretty_(self, p, cycle):
+        if cycle:
+            raise RuntimeError("Should not be cyclic")
+
+        if cf._pretty:
+            p.text(str(self))
+            return
+
+        if hasattr(self.layout, '__name__') and '__module__' in self.layout.__dict__:
+            prefix = "{l.__module__}.{l.__name__}.MultiVector(".format(l=self.layout)
+            include_layout = False
+        else:
+            include_layout = True
+            prefix = "MultiVector("
+        with p.group(len(prefix), prefix, ")"):
+            if include_layout:
+                p.pretty(self.layout)
+                p.text(",")
+                p.breakable()
+            p.text(repr(list(self.value)))
+            if self.value.dtype != np.float64:
+                p.text(",")
+                p.breakable()
+                p.pretty(self.value.dtype)
 
     def __bool__(self) -> bool:
         """Instance is nonzero iff at least one of the coefficients is nonzero.
