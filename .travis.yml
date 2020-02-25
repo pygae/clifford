@@ -32,6 +32,7 @@ x-clifford-templates:
     script:
       - |
         pytest clifford/test \
+          ${PYTEST_ARGS} \
           --doctest-modules \
           --junitxml=junit/test-results.xml \
           --durations=25 \
@@ -79,6 +80,13 @@ matrix:
     - os: linux
       python: '3.8'
       env: CONDA=true
+      stage: Test
+      <<: *test_job
+    - os: linux
+      python: '3.8'
+      env:
+        - NUMBA_DISABLE_JIT=1
+        - PYTEST_ARGS="-k test_clifford.py"
       stage: Test
       <<: *test_job
 

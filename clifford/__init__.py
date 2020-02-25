@@ -228,21 +228,33 @@ def _get_mult_function(mt: sparse.COO):
     k_list, l_list, m_list = mt.coords
     mult_table_vals = mt.data
 
-    @numba.generated_jit(nopython=True)
-    def mv_mult(value, other_value):
-        # this casting will be done at jit-time
-        ret_dtype = _get_mult_function_result_type(value, other_value, mult_table_vals.dtype)
-        mult_table_vals_t = mult_table_vals.astype(ret_dtype)
-
+    def get_mult_func(ret_dtype, mult_table_vals_t):
         def mult_inner(value, other_value):
             output = np.zeros(dims, dtype=ret_dtype)
             for k, l, m, val in zip(k_list, l_list, m_list, mult_table_vals_t):
                 output[l] += value[k] * val * other_value[m]
             return output
-
         return mult_inner
 
-    return mv_mult
+    def mv_mult(value, other_value):
+        ret_dtype = np.result_type(value.dtype, mt.dtype, other_value.dtype)
+        mult_table_vals_t = mult_table_vals.astype(ret_dtype)
+        return get_mult_func(ret_dtype, mult_table_vals_t)(value, other_value)
+
+    @numba.generated_jit
+    def jit_mv_mult(value, other_value):
+        # TODO: this is a workaround for a numba issue when jitting is disabled,
+        # we probably need to adjust this when fixed upstream.
+        if not isinstance(value, numba.types.Type):
+            return mv_mult(value, other_value)
+
+        # this casting will be done at jit-time
+        ret_dtype = _get_mult_function_result_type(value, other_value, mult_table_vals.dtype)
+        mult_table_vals_t = mult_table_vals.astype(ret_dtype)
+
+        return get_mult_func(ret_dtype, mult_table_vals_t)
+
+    return jit_mv_mult
 
 
 def _get_mult_function_runtime_sparse(mt: sparse.COO):
@@ -259,12 +271,7 @@ def _get_mult_function_runtime_sparse(mt: sparse.COO):
     k_list, l_list, m_list = mt.coords
     mult_table_vals = mt.data
 
-    @numba.generated_jit(nopython=True)
-    def mv_mult(value, other_value):
-        # this casting will be done at jit-time
-        ret_dtype = _get_mult_function_result_type(value, other_value, mult_table_vals.dtype)
-        mult_table_vals_t = mult_table_vals.astype(ret_dtype)
-
+    def get_mult_func(ret_dtype, mult_table_vals_t):
         def mult_inner(value, other_value):
             output = np.zeros(dims, dtype=ret_dtype)
             for ind, k in enumerate(k_list):
@@ -278,7 +285,24 @@ def _get_mult_function_runtime_sparse(mt: sparse.COO):
             return output
         return mult_inner
 
-    return mv_mult
+    def mv_mult(value, other_value):
+        ret_dtype = np.result_type(value.dtype, mt.dtype, other_value.dtype)
+        mult_table_vals_t = mult_table_vals.astype(ret_dtype)
+        return get_mult_func(ret_dtype, mult_table_vals_t)(value, other_value)
+
+    @numba.generated_jit
+    def jit_mv_mult(value, other_value):
+        # TODO: this is a workaround for a numba issue when jitting is disabled,
+        # we probably need to adjust this when fixed upstream.
+        if not isinstance(value, numba.types.Type):
+            return mv_mult(value, other_value)
+
+        # this casting will be done at jit-time
+        ret_dtype = _get_mult_function_result_type(value, other_value, mult_table_vals.dtype)
+        mult_table_vals_t = mult_table_vals.astype(ret_dtype)
+        return get_mult_func(ret_dtype, mult_table_vals_t)
+
+    return jit_mv_mult
 
 
 @numba.njit
