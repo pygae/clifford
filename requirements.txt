@@ -1,4 +1,7 @@
-numpy
-scipy
-numba==0.45.1
-h5py
+# These dependencies are directly imported by the notebooks themselves.
+# This is at the root so that binder can find it.
+# The doc build references this file.
+ipython
+matplotlib
+mpl_toolkits.clifford>=0.0.3
+pyganja
