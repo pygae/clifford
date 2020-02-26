@@ -68,21 +68,17 @@ nbsphinx_execute_arguments = [
 napoleon_include_init_with_doc= False
 nbsphinx_timeout = 60
 
-if '.' in version:
-    git_version = "v" + version
-else:
-    git_version = "master"
-
 # This is processed by Jinja2 and inserted before each notebook
 nbsphinx_prolog = r"""
 {% set docname = 'doc/' + env.doc2path(env.docname, base=None) %}
+{% set git_ref = 'master' if '.' not in env.config.current_version else 'v' + env.config.release %}
 .. raw:: html
 
     <div class="admonition note">
       <p>This page was generated from
-        <a class="reference external" href="https://github.com/pygae/clifford/blob/""" + git_version + r"""/{{ docname|e }}">{{ docname|e }}</a>.
+        <a class="reference external" href="https://github.com/pygae/clifford/blob/{{ git_ref|e }}/{{ docname|e }}">{{ docname|e }}</a>.
         Interactive online version:
-        <a href="https://mybinder.org/v2/gh/pygae/clifford/""" + git_version + r"""?filepath={{ docname|e }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>.
+        <a href="https://mybinder.org/v2/gh/pygae/clifford/{{ git_ref|e }}?filepath={{ docname|e }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>.
       </p>
       <script>
         if (document.location.host) {
