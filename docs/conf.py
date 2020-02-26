@@ -68,6 +68,56 @@ nbsphinx_execute_arguments = [
 napoleon_include_init_with_doc= False
 nbsphinx_timeout = 60
 
+if '.' in version:
+    git_version = "v" + version
+else:
+    git_version = "master"
+
+# This is processed by Jinja2 and inserted before each notebook
+nbsphinx_prolog = r"""
+{% set docname = 'doc/' + env.doc2path(env.docname, base=None) %}
+.. raw:: html
+
+    <div class="admonition note">
+      <p>This page was generated from
+        <a class="reference external" href="https://github.com/pygae/clifford/blob/""" + git_version + r"""/{{ docname|e }}">{{ docname|e }}</a>.
+        Interactive online version:
+        <a href="https://mybinder.org/v2/gh/pygae/clifford/""" + git_version + r"""?filepath={{ docname|e }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>.
+      </p>
+      <script>
+        if (document.location.host) {
+          var p = document.currentScript.previousSibling.previousSibling;
+          var a = document.createElement('a');
+          a.innerHTML = 'View in <em>nbviewer</em>';
+          a.href = `https://nbviewer.jupyter.org/url${
+            (window.location.protocol == 'https:' ? 's/' : '/') +
+            window.location.host +
+            window.location.pathname.slice(0, -4) }ipynb`;
+          a.classList.add('reference');
+          a.classList.add('external');
+          p.appendChild(a);
+          p.appendChild(document.createTextNode('.'));
+        }
+      </script>
+    </div>
+
+.. raw:: latex
+
+    \nbsphinxstartnotebook{\scriptsize\noindent\strut
+    \textcolor{gray}{The following section was generated from
+    \sphinxcode{\sphinxupquote{\strut {{ docname | escape_latex }}}} \dotfill}}
+"""
+
+# This is processed by Jinja2 and inserted after each notebook
+nbsphinx_epilog = r"""
+{% set docname = 'doc/' + env.doc2path(env.docname, base=None) %}
+.. raw:: latex
+
+    \nbsphinxstopnotebook{\scriptsize\noindent\strut
+    \textcolor{gray}{\dotfill\ \sphinxcode{\sphinxupquote{\strut
+    {{ docname | escape_latex }}}} ends here.}}
+"""
+
 #autodoc_default_flags='members'
 # you have to list all files with automodule here due to bug in sphinx and nbsphinx
 # https://github.com/spatialaudio/nbsphinx/issues/14
