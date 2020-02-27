@@ -142,21 +142,21 @@ jobs:
       conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy
       conda install --yes -c conda-forge sparse
       conda install --yes $(numbacommand)
-      python -m pip install -U pytest
+      python -m pip install -U pytest pytest-benchmark
       $(installPackageCommand)
     displayName: Install dependencies not windows
     condition: ne(variables['imageName'], 'vs2017-win2016')
 
   - bash: |
       source activate myEnvironment
-      pip install -U pytest
+      pip install -U pytest pytest-benchmark
       pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml
     displayName: pytest not windows
     condition: ne(variables['imageName'], 'vs2017-win2016')
 
   - script: |
       call activate myEnvironment
-      pip install -U pytest
+      pip install -U pytest pytest-benchmark
       pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml
     displayName: pytest windows
     condition: eq(variables['imageName'], 'vs2017-win2016')

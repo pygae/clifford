@@ -27,11 +27,12 @@ x-clifford-templates:
           pip install .;
         fi
       # always install with pip, conda has too old a version
-      - pip install pytest pytest-cov
+      - pip install pytest pytest-cov pytest-benchmark
       - pip install codecov
     script:
       - |
         pytest clifford/test \
+          ${PYTEST_ARGS} \
           --doctest-modules \
           --junitxml=junit/test-results.xml \
           --durations=25 \
@@ -63,22 +64,41 @@ matrix:
 
     - os: linux
       python: '3.5'
-      env: CONDA=false
+      env:
+        - CONDA=false
+        - PYTEST_ARGS=--benchmark-skip
       stage: Test
       <<: *test_job
+
     - os: linux
       python: '3.8'
-      env: CONDA=false
+      env:
+        - CONDA=false
+        - PYTEST_ARGS=--benchmark-skip
       stage: Test
       <<: *test_job
+
+    - os: linux
+      python: '3.8'
+      env:
+        - CONDA=false
+        - PYTEST_ARGS=--benchmark-only
+      stage: Test
+      <<: *test_job
+
     - os: linux
       python: '3.5'
-      env: CONDA=true
+      env:
+        - CONDA=true
+        - PYTEST_ARGS=--benchmark-skip
       stage: Test
       <<: *test_job
+
     - os: linux
       python: '3.8'
-      env: CONDA=true
+      env:
+        - CONDA=true
+        - PYTEST_ARGS=--benchmark-skip
       stage: Test
       <<: *test_job
 
