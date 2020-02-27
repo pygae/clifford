@@ -124,8 +124,8 @@ class TestClifford:
              0.                  , -0.14740840378445502    # noqa
         ])
 
-        B = MultiVector(layout=layout, value=valB)
-        expB = MultiVector(layout=layout, value=valexpB)
+        B = layout.MultiVector(valB)
+        expB = layout.MultiVector(valexpB)
         np.testing.assert_almost_equal(np.exp(B)[0].value, expB.value)
 
     def test_inv_g4(self, g4):
