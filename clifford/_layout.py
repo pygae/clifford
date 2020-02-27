@@ -418,11 +418,11 @@ class Layout(object):
 
     def MultiVector(self, *args, **kwargs):
         '''
-        create a multivector in this layout
+        Create a multivector in this layout
 
         convenience func to Multivector(layout)
         '''
-        return cf.MultiVector(layout=self, *args, **kwargs)
+        return cf.MultiVector(self, *args, **kwargs)
 
     def load_ga_file(self, filename):
         """
