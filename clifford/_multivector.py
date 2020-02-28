@@ -8,7 +8,6 @@ import clifford as cf
 from . import (
     general_exp,
     grades_present,
-    compute_reordering_sign_and_canonical_form,
 )
 
 
@@ -399,8 +398,7 @@ class MultiVector(object):
         elif key in self.layout.bladeTupMap.keys():
             return self.value[self.layout.bladeTupMap[key]]
         elif isinstance(key, tuple):
-            sign, blade = compute_reordering_sign_and_canonical_form(key, self.layout.sig,
-                                                                     self.layout.firstIdx)
+            sign, blade = self.layout._compute_reordering_sign_and_canonical_form(key)
             return sign*self.value[self.layout.bladeTupMap[blade]]
         return self.value[key]
 
@@ -415,8 +413,7 @@ class MultiVector(object):
         if key in self.layout.bladeTupMap.keys():
             self.value[self.layout.bladeTupMap[key]] = value
         elif isinstance(key, tuple):
-            sign, blade = compute_reordering_sign_and_canonical_form(key, self.layout.sig,
-                                                                     self.layout.firstIdx)
+            sign, blade = self.layout._compute_reordering_sign_and_canonical_form(key)
             self.value[self.layout.bladeTupMap[blade]] = sign*value
         else:
             self.value[key] = value
@@ -431,8 +428,7 @@ class MultiVector(object):
         if key in self.layout.bladeTupMap.keys():
             self.value[self.layout.bladeTupMap[key]] = 0
         elif isinstance(key, tuple):
-            sign, blade = compute_reordering_sign_and_canonical_form(key, self.layout.sig,
-                                                                     self.layout.firstIdx)
+            sign, blade = self.layout._compute_reordering_sign_and_canonical_form(key)
             self.value[self.layout.bladeTupMap[blade]] = 0
         else:
             self.value[key] = 0

@@ -1,6 +1,6 @@
 import re
 from functools import reduce
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import numba
@@ -11,8 +11,8 @@ import sparse
 import clifford as cf
 from . import (
     get_adjoint_function,
+    canonical_reordering_sign,
     construct_tables,
-    compute_bitmap_representation,
     get_mult_function,
     get_leftLaInv,
     val_get_left_gmt_matrix,
@@ -29,26 +29,31 @@ _blade_pattern = re.compile(r"""
 """, re.VERBOSE)
 
 
-def generate_blade_tup_map(bladeTupList):
+def _compute_bitmap_representation(blade: Tuple[int, ...], firstIdx: int) -> int:
     """
-    Generates a mapping from blade tuple to linear index into
-    multivector
+    Takes a tuple blade representation and converts it to the
+    bitmap representation
     """
-    blade_map = {}
-    for ind, blade in enumerate(bladeTupList):
-        blade_map[blade] = ind
-    return blade_map
+    bitmap = 0
+    for b in blade:
+        bitmap = bitmap ^ (1 << (b-firstIdx))
+    return bitmap
 
 
-def generate_bitmap_to_linear_index_map(bladeTupList, firstIdx):
+def _compute_blade_representation(bitmap: int, firstIdx: int) -> Tuple[int, ...]:
     """
-    Generates a mapping from the bitmap representation to
-    the linear index
+    Takes a bitmap representation and converts it to the tuple
+    blade representation
     """
-    bitmap_map = np.zeros(len(bladeTupList), dtype=int)
-    for ind, blade in enumerate(bladeTupList):
-        bitmap_map[compute_bitmap_representation(blade, firstIdx)] = ind
-    return bitmap_map
+    bmp = bitmap
+    blade = []
+    n = firstIdx
+    while bmp > 0:
+        if bmp & 1:
+            blade.append(n)
+        bmp = bmp >> 1
+        n = n + 1
+    return tuple(blade)
 
 
 class Layout(object):
@@ -319,11 +324,17 @@ class Layout(object):
     def _genTables(self):
         "Generate the multiplication tables."
 
-        self.bladeTupMap = generate_blade_tup_map(self.bladeTupList)
-        self.bitmap_to_linear_map = generate_bitmap_to_linear_index_map(self.bladeTupList, self.firstIdx)
+        self.bladeTupMap = {
+            blade: ind for ind, blade in enumerate(self.bladeTupList)
+        }
+
+        # map bidirectionally between integer tuples and bitmasks
+        self.bitmap_to_linear_map = np.zeros(len(self.bladeTupList), dtype=int)
         self.linear_map_to_bitmap = np.zeros(len(self.bladeTupMap), dtype=int)
-        for bitmap, linear in enumerate(self.bitmap_to_linear_map):
-            self.linear_map_to_bitmap[linear] = int(bitmap)
+        for ind, blade in enumerate(self.bladeTupList):
+            bitmap = _compute_bitmap_representation(blade, self.firstIdx)
+            self.bitmap_to_linear_map[bitmap] = ind
+            self.linear_map_to_bitmap[ind] = bitmap
 
         self.gmt, imt_prod_mask, omt_prod_mask, lcmt_prod_mask = construct_tables(
             np.array(self.gradeList),
@@ -556,3 +567,17 @@ class Layout(object):
         bases
         '''
         return cf.bases(layout=self, *args, **kwargs)
+
+    def _compute_reordering_sign_and_canonical_form(self, blade):
+        """
+        Takes a tuple blade representation and converts it to a canonical
+        tuple blade representation
+        """
+        bitmap_out = 0
+        s = 1
+        for b in blade:
+            # split into basis blades, which are always canonical
+            bitmap_b = _compute_bitmap_representation((b,), self.firstIdx)
+            s *= canonical_reordering_sign(bitmap_out, bitmap_b, self.sig)
+            bitmap_out ^= bitmap_b
+        return s, _compute_blade_representation(bitmap_out, self.firstIdx)
