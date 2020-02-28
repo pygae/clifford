@@ -29,28 +29,6 @@ _blade_pattern = re.compile(r"""
 """, re.VERBOSE)
 
 
-def generate_blade_tup_map(bladeTupList):
-    """
-    Generates a mapping from blade tuple to linear index into
-    multivector
-    """
-    blade_map = {}
-    for ind, blade in enumerate(bladeTupList):
-        blade_map[blade] = ind
-    return blade_map
-
-
-def generate_bitmap_to_linear_index_map(bladeTupList, firstIdx):
-    """
-    Generates a mapping from the bitmap representation to
-    the linear index
-    """
-    bitmap_map = np.zeros(len(bladeTupList), dtype=int)
-    for ind, blade in enumerate(bladeTupList):
-        bitmap_map[compute_bitmap_representation(blade, firstIdx)] = ind
-    return bitmap_map
-
-
 class Layout(object):
     """ Layout stores information regarding the geometric algebra itself and the
     internal representation of multivectors.
@@ -319,11 +297,17 @@ class Layout(object):
     def _genTables(self):
         "Generate the multiplication tables."
 
-        self.bladeTupMap = generate_blade_tup_map(self.bladeTupList)
-        self.bitmap_to_linear_map = generate_bitmap_to_linear_index_map(self.bladeTupList, self.firstIdx)
+        self.bladeTupMap = {
+            blade: ind for ind, blade in enumerate(self.bladeTupList)
+        }
+
+        # map bidirectionally between integer tuples and bitmasks
+        self.bitmap_to_linear_map = np.zeros(len(self.bladeTupList), dtype=int)
         self.linear_map_to_bitmap = np.zeros(len(self.bladeTupMap), dtype=int)
-        for bitmap, linear in enumerate(self.bitmap_to_linear_map):
-            self.linear_map_to_bitmap[linear] = int(bitmap)
+        for ind, blade in enumerate(self.bladeTupList):
+            bitmap = _compute_bitmap_representation(blade, self.firstIdx)
+            self.bitmap_to_linear_map[bitmap] = ind
+            self.linear_map_to_bitmap[ind] = bitmap
 
         self.gmt, imt_prod_mask, omt_prod_mask, lcmt_prod_mask = construct_tables(
             np.array(self.gradeList),
