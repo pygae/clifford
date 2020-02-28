@@ -462,48 +462,6 @@ def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
     return output_sign
 
 
-def compute_reordering_sign_and_canonical_form(blade, metric, firstIdx):
-    """
-    Takes a tuple blade representation and converts it to a canonical
-    tuple blade representation
-    """
-    bitmap_out = 0
-    s = 1
-    for b in blade:
-        # split into basis blades, which are always canonical
-        bitmap_b = compute_bitmap_representation((b,), firstIdx)
-        s *= canonical_reordering_sign(bitmap_out, bitmap_b, metric)
-        bitmap_out ^= bitmap_b
-    return s, compute_blade_representation(bitmap_out, firstIdx)
-
-
-def compute_bitmap_representation(blade: Tuple[int, ...], firstIdx: int) -> int:
-    """
-    Takes a tuple blade representation and converts it to the
-    bitmap representation
-    """
-    bitmap = 0
-    for b in blade:
-        bitmap = bitmap ^ (1 << (b-firstIdx))
-    return bitmap
-
-
-def compute_blade_representation(bitmap: int, firstIdx: int) -> Tuple[int, ...]:
-    """
-    Takes a bitmap representation and converts it to the tuple
-    blade representation
-    """
-    bmp = bitmap
-    blade = []
-    n = firstIdx
-    while bmp > 0:
-        if bmp & 1:
-            blade.append(n)
-        bmp = bmp >> 1
-        n = n + 1
-    return tuple(blade)
-
-
 # todo: work out how to let numba use the COO objects directly
 @numba.njit
 def _numba_val_get_left_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):

@@ -1,6 +1,6 @@
 import re
 from functools import reduce
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import numba
@@ -11,8 +11,8 @@ import sparse
 import clifford as cf
 from . import (
     get_adjoint_function,
+    canonical_reordering_sign,
     construct_tables,
-    compute_bitmap_representation,
     get_mult_function,
     get_leftLaInv,
     val_get_left_gmt_matrix,
@@ -27,6 +27,33 @@ _blade_pattern = re.compile(r"""
     ((^|\s)-?\s?\d+(\.\d+)?)\s|
     ((^|\+|-)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))
 """, re.VERBOSE)
+
+
+def _compute_bitmap_representation(blade: Tuple[int, ...], firstIdx: int) -> int:
+    """
+    Takes a tuple blade representation and converts it to the
+    bitmap representation
+    """
+    bitmap = 0
+    for b in blade:
+        bitmap = bitmap ^ (1 << (b-firstIdx))
+    return bitmap
+
+
+def _compute_blade_representation(bitmap: int, firstIdx: int) -> Tuple[int, ...]:
+    """
+    Takes a bitmap representation and converts it to the tuple
+    blade representation
+    """
+    bmp = bitmap
+    blade = []
+    n = firstIdx
+    while bmp > 0:
+        if bmp & 1:
+            blade.append(n)
+        bmp = bmp >> 1
+        n = n + 1
+    return tuple(blade)
 
 
 class Layout(object):
@@ -540,3 +567,17 @@ class Layout(object):
         bases
         '''
         return cf.bases(layout=self, *args, **kwargs)
+
+    def _compute_reordering_sign_and_canonical_form(self, blade):
+        """
+        Takes a tuple blade representation and converts it to a canonical
+        tuple blade representation
+        """
+        bitmap_out = 0
+        s = 1
+        for b in blade:
+            # split into basis blades, which are always canonical
+            bitmap_b = _compute_bitmap_representation((b,), self.firstIdx)
+            s *= canonical_reordering_sign(bitmap_out, bitmap_b, self.sig)
+            bitmap_out ^= bitmap_b
+        return s, _compute_blade_representation(bitmap_out, self.firstIdx)
