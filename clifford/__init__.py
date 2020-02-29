@@ -69,7 +69,6 @@ from typing import List, Tuple, Set, Container, Dict, Optional
 
 # Major library imports.
 import numpy as np
-from numpy import linalg
 import numba
 import sparse
 
@@ -105,18 +104,6 @@ def linear_operator_as_matrix(func, input_blades, output_blades):
     for i, b in enumerate(input_blades):
         mat[:, i] = np.array([func(b)[j] for j in output_blades])
     return mat
-
-
-def get_adjoint_function(gradeList):
-    '''
-    This function returns a fast jitted adjoint function
-    '''
-    grades = np.array(gradeList)
-    signs = np.power(-1, grades*(grades-1)//2)
-    @numba.njit
-    def adjoint_func(value):
-        return signs * value  # elementwise multiplication
-    return adjoint_func
 
 
 def get_mult_function(mt: sparse.COO, gradeList,
@@ -227,32 +214,6 @@ def grade_obj_func(objin_val, gradeList, threshold):
             modal_value_count[g] += 1
         n += 1
     return np.argmax(modal_value_count)
-
-
-def get_leftLaInv(mult_table, gradeList):
-    """
-    Get a function that returns left-inverse using a computational linear algebra method
-    proposed by Christian Perwass.
-     -1         -1
-    M    where M  * M  == 1
-    """
-
-    k_list, l_list, m_list = mult_table.coords
-    mult_table_vals = mult_table.data
-    n_dims = mult_table.shape[1]
-
-    identity = np.zeros((n_dims,))
-    identity[gradeList.index(0)] = 1
-
-    @numba.njit
-    def leftLaInvJIT(value):
-        intermed = _numba_val_get_left_gmt_matrix(value, k_list, l_list, m_list, mult_table_vals, n_dims)
-        if abs(linalg.det(intermed)) < _eps:
-            raise ValueError("multivector has no left-inverse")
-        sol = linalg.solve(intermed, identity)
-        return sol
-
-    return leftLaInvJIT
 
 
 def general_exp(x, max_order=15):
