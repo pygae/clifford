@@ -394,7 +394,10 @@ class MultiVector(object):
         value = M[index]
         """
         if isinstance(key, MultiVector):
-            return self.value[int(np.where(key.value)[0][0])]
+            inds, = np.nonzero(key.value)
+            if len(inds) > 1:
+                raise ValueError("Must be a single basis element")
+            return self.value[inds[0]]
         elif key in self.layout.bladeTupMap.keys():
             return self.value[self.layout.bladeTupMap[key]]
         elif isinstance(key, tuple):
