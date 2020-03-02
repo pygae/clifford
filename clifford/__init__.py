@@ -69,7 +69,6 @@ from typing import List, Tuple, Set, Container, Dict, Optional
 
 # Major library imports.
 import numpy as np
-from numpy import linalg
 import numba
 import sparse
 
@@ -105,82 +104,6 @@ def linear_operator_as_matrix(func, input_blades, output_blades):
     for i, b in enumerate(input_blades):
         mat[:, i] = np.array([func(b)[j] for j in output_blades])
     return mat
-
-
-def get_adjoint_function(gradeList):
-    '''
-    This function returns a fast jitted adjoint function
-    '''
-    grades = np.array(gradeList)
-    signs = np.power(-1, grades*(grades-1)//2)
-    @numba.njit
-    def adjoint_func(value):
-        return signs * value  # elementwise multiplication
-    return adjoint_func
-
-
-@numba.njit(parallel=NUMBA_PARALLEL, nogil=True)
-def _numba_construct_tables(
-    gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
-):
-    array_length = int(len(gradeList) * len(gradeList))
-    indices = np.zeros((3, array_length), dtype=np.uint64)
-    k_list = indices[0, :]
-    l_list = indices[1, :]
-    m_list = indices[2, :]
-
-    imt_prod_mask = np.zeros(array_length, dtype=np.bool_)
-
-    omt_prod_mask = np.zeros(array_length, dtype=np.bool_)
-
-    lcmt_prod_mask = np.zeros(array_length, dtype=np.bool_)
-
-    # use as small a type as possible to minimize type promotion
-    mult_table_vals = np.zeros(array_length, dtype=np.int8)
-
-    for i, grade_list_i in enumerate(gradeList):
-        blade_bitmap_i = linear_map_to_bitmap[i]
-
-        for j, grade_list_j in enumerate(gradeList):
-            blade_bitmap_j = linear_map_to_bitmap[j]
-            v, mul = gmt_element(blade_bitmap_i, blade_bitmap_j, signature, bitmap_to_linear_map)
-
-            list_ind = i * len(gradeList) + j
-            k_list[list_ind] = i
-            l_list[list_ind] = v
-            m_list[list_ind] = j
-
-            mult_table_vals[list_ind] = mul
-            grade_list_idx = gradeList[v]
-
-            # A_r . B_s = <A_r B_s>_|r-s|
-            # if r, s != 0
-            imt_prod_mask[list_ind] = imt_check(grade_list_idx, grade_list_i, grade_list_j)
-
-            # A_r ^ B_s = <A_r B_s>_|r+s|
-            omt_prod_mask[list_ind] = omt_check(grade_list_idx, grade_list_i, grade_list_j)
-
-            # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
-            lcmt_prod_mask[list_ind] = lcmt_check(grade_list_idx, grade_list_i, grade_list_j)
-
-    return indices, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask
-
-
-def construct_tables(
-    gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
-) -> Tuple[sparse.COO, sparse.COO, sparse.COO, sparse.COO]:
-    # wrap the numba one
-    indices, *arrs = _numba_construct_tables(
-        gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
-    )
-    dims = len(gradeList)
-    return tuple(
-        sparse.COO(
-            coords=indices, data=arr, shape=(dims, dims, dims),
-            prune=True
-        )
-        for arr in arrs
-    )
 
 
 def get_mult_function(mt: sparse.COO, gradeList,
@@ -282,43 +205,6 @@ def _get_mult_function_runtime_sparse(mt: sparse.COO):
 
 
 @numba.njit
-def gmt_element(bitmap_a, bitmap_b, sig_array, bitmap_to_linear_mapping):
-    """
-    Element of the geometric multiplication table given blades a, b.
-    The implementation used here is described in chapter 19 of
-    Leo Dorst's book, Geometric Algebra For Computer Science
-    """
-    output_sign = canonical_reordering_sign(bitmap_a, bitmap_b, sig_array)
-    output_bitmap = bitmap_a^bitmap_b
-    idx = bitmap_to_linear_mapping[output_bitmap]
-    return idx, output_sign
-
-
-@numba.njit
-def imt_check(grade_list_idx, grade_list_i, grade_list_j):
-    """
-    A check used in imt table generation
-    """
-    return ((grade_list_idx == abs(grade_list_i - grade_list_j)) and (grade_list_i != 0) and (grade_list_j != 0))
-
-
-@numba.njit
-def omt_check(grade_list_idx, grade_list_i, grade_list_j):
-    """
-    A check used in omt table generation
-    """
-    return grade_list_idx == (grade_list_i + grade_list_j)
-
-
-@numba.njit
-def lcmt_check(grade_list_idx, grade_list_i, grade_list_j):
-    """
-    A check used in lcmt table generation
-    """
-    return grade_list_idx == (grade_list_j - grade_list_i)
-
-
-@numba.njit
 def grade_obj_func(objin_val, gradeList, threshold):
     """ returns the modal grade of a multivector """
     modal_value_count = np.zeros(objin_val.shape)
@@ -328,32 +214,6 @@ def grade_obj_func(objin_val, gradeList, threshold):
             modal_value_count[g] += 1
         n += 1
     return np.argmax(modal_value_count)
-
-
-def get_leftLaInv(mult_table, gradeList):
-    """
-    Get a function that returns left-inverse using a computational linear algebra method
-    proposed by Christian Perwass.
-     -1         -1
-    M    where M  * M  == 1
-    """
-
-    k_list, l_list, m_list = mult_table.coords
-    mult_table_vals = mult_table.data
-    n_dims = mult_table.shape[1]
-
-    identity = np.zeros((n_dims,))
-    identity[gradeList.index(0)] = 1
-
-    @numba.njit
-    def leftLaInvJIT(value):
-        intermed = _numba_val_get_left_gmt_matrix(value, k_list, l_list, m_list, mult_table_vals, n_dims)
-        if abs(linalg.det(intermed)) < _eps:
-            raise ValueError("multivector has no left-inverse")
-        sol = linalg.solve(intermed, identity)
-        return sol
-
-    return leftLaInvJIT
 
 
 def general_exp(x, max_order=15):
@@ -410,56 +270,6 @@ def grades_present(objin: 'MultiVector', threshold=0.0000001) -> Set[int]:
         for grade_i, nonzero_i in zip(objin.layout.gradeList, nonzero)
         if nonzero_i
     }
-
-
-@numba.njit
-def count_set_bits(bitmap):
-    """
-    Counts the number of bits set to 1 in bitmap
-    """
-    bmp = bitmap
-    count = 0
-    n = 1
-    while bmp > 0:
-        if bmp & 1:
-            count += 1
-        bmp = bmp >> 1
-        n = n + 1
-    return count
-
-
-@numba.njit
-def canonical_reordering_sign_euclidean(bitmap_a, bitmap_b):
-    """
-    Computes the sign for the product of bitmap_a and bitmap_b
-    assuming a euclidean metric
-    """
-    a = bitmap_a >> 1
-    sum_value = 0
-    while a != 0:
-        sum_value = sum_value + count_set_bits(a & bitmap_b)
-        a = a >> 1
-    if (sum_value & 1) == 0:
-        return 1
-    else:
-        return -1
-
-
-@numba.njit
-def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
-    """
-    Computes the sign for the product of bitmap_a and bitmap_b
-    given the supplied metric
-    """
-    bitmap = bitmap_a & bitmap_b
-    output_sign = canonical_reordering_sign_euclidean(bitmap_a, bitmap_b)
-    i = 0
-    while bitmap != 0:
-        if (bitmap & 1) != 0:
-            output_sign *= metric[i]
-        i = i + 1
-        bitmap = bitmap >> 1
-    return output_sign
 
 
 # todo: work out how to let numba use the COO objects directly

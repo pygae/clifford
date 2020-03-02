@@ -10,16 +10,28 @@ import sparse
 # else
 import clifford as cf
 from . import (
-    get_adjoint_function,
-    canonical_reordering_sign,
-    construct_tables,
     get_mult_function,
-    get_leftLaInv,
     val_get_left_gmt_matrix,
     val_get_right_gmt_matrix,
+    _numba_val_get_left_gmt_matrix,
+    NUMBA_PARALLEL
 )
 
 from .io import read_ga_file
+
+
+class _cached_property:
+    def __init__(self, getter):
+        self.fget = getter
+        self.__name__ = getter.__name__
+
+    def __get__(self, obj, cls):
+        if obj is None:
+            return self
+        val = self.fget(obj)
+        # this entry hides the _cached_property
+        setattr(obj, self.__name__, val)
+        return val
 
 
 # The blade finding regex for parsing strings of mvs
@@ -54,6 +66,157 @@ def _compute_blade_representation(bitmap: int, firstIdx: int) -> Tuple[int, ...]
         bmp = bmp >> 1
         n = n + 1
     return tuple(blade)
+
+
+@numba.njit
+def count_set_bits(bitmap):
+    """
+    Counts the number of bits set to 1 in bitmap
+    """
+    bmp = bitmap
+    count = 0
+    n = 1
+    while bmp > 0:
+        if bmp & 1:
+            count += 1
+        bmp = bmp >> 1
+        n = n + 1
+    return count
+
+
+@numba.njit
+def canonical_reordering_sign_euclidean(bitmap_a, bitmap_b):
+    """
+    Computes the sign for the product of bitmap_a and bitmap_b
+    assuming a euclidean metric
+    """
+    a = bitmap_a >> 1
+    sum_value = 0
+    while a != 0:
+        sum_value = sum_value + count_set_bits(a & bitmap_b)
+        a = a >> 1
+    if (sum_value & 1) == 0:
+        return 1
+    else:
+        return -1
+
+
+@numba.njit
+def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
+    """
+    Computes the sign for the product of bitmap_a and bitmap_b
+    given the supplied metric
+    """
+    bitmap = bitmap_a & bitmap_b
+    output_sign = canonical_reordering_sign_euclidean(bitmap_a, bitmap_b)
+    i = 0
+    while bitmap != 0:
+        if (bitmap & 1) != 0:
+            output_sign *= metric[i]
+        i = i + 1
+        bitmap = bitmap >> 1
+    return output_sign
+
+
+@numba.njit
+def gmt_element(bitmap_a, bitmap_b, sig_array, bitmap_to_linear_mapping):
+    """
+    Element of the geometric multiplication table given blades a, b.
+    The implementation used here is described in chapter 19 of
+    Leo Dorst's book, Geometric Algebra For Computer Science
+    """
+    output_sign = canonical_reordering_sign(bitmap_a, bitmap_b, sig_array)
+    output_bitmap = bitmap_a^bitmap_b
+    idx = bitmap_to_linear_mapping[output_bitmap]
+    return idx, output_sign
+
+
+@numba.njit
+def imt_check(grade_list_idx, grade_list_i, grade_list_j):
+    """
+    A check used in imt table generation
+    """
+    return ((grade_list_idx == abs(grade_list_i - grade_list_j)) and (grade_list_i != 0) and (grade_list_j != 0))
+
+
+@numba.njit
+def omt_check(grade_list_idx, grade_list_i, grade_list_j):
+    """
+    A check used in omt table generation
+    """
+    return grade_list_idx == (grade_list_i + grade_list_j)
+
+
+@numba.njit
+def lcmt_check(grade_list_idx, grade_list_i, grade_list_j):
+    """
+    A check used in lcmt table generation
+    """
+    return grade_list_idx == (grade_list_j - grade_list_i)
+
+
+@numba.njit(parallel=NUMBA_PARALLEL, nogil=True)
+def _numba_construct_tables(
+    gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
+):
+    array_length = int(len(gradeList) * len(gradeList))
+    indices = np.zeros((3, array_length), dtype=np.uint64)
+    k_list = indices[0, :]
+    l_list = indices[1, :]
+    m_list = indices[2, :]
+
+    imt_prod_mask = np.zeros(array_length, dtype=np.bool_)
+
+    omt_prod_mask = np.zeros(array_length, dtype=np.bool_)
+
+    lcmt_prod_mask = np.zeros(array_length, dtype=np.bool_)
+
+    # use as small a type as possible to minimize type promotion
+    mult_table_vals = np.zeros(array_length, dtype=np.int8)
+
+    for i, grade_list_i in enumerate(gradeList):
+        blade_bitmap_i = linear_map_to_bitmap[i]
+
+        for j, grade_list_j in enumerate(gradeList):
+            blade_bitmap_j = linear_map_to_bitmap[j]
+            v, mul = gmt_element(blade_bitmap_i, blade_bitmap_j, signature, bitmap_to_linear_map)
+
+            list_ind = i * len(gradeList) + j
+            k_list[list_ind] = i
+            l_list[list_ind] = v
+            m_list[list_ind] = j
+
+            mult_table_vals[list_ind] = mul
+            grade_list_idx = gradeList[v]
+
+            # A_r . B_s = <A_r B_s>_|r-s|
+            # if r, s != 0
+            imt_prod_mask[list_ind] = imt_check(grade_list_idx, grade_list_i, grade_list_j)
+
+            # A_r ^ B_s = <A_r B_s>_|r+s|
+            omt_prod_mask[list_ind] = omt_check(grade_list_idx, grade_list_i, grade_list_j)
+
+            # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
+            lcmt_prod_mask[list_ind] = lcmt_check(grade_list_idx, grade_list_i, grade_list_j)
+
+    return indices, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask
+
+
+def construct_tables(
+    gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
+) -> Tuple[sparse.COO, sparse.COO, sparse.COO, sparse.COO]:
+    # wrap the numba one
+    indices, *arrs = _numba_construct_tables(
+        gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
+    )
+    dims = len(gradeList)
+    return tuple(
+        sparse.COO(
+            coords=indices, data=arr, shape=(dims, dims, dims),
+            prune=True
+        )
+        for arr in arrs
+    )
 
 
 class Layout(object):
@@ -170,11 +333,13 @@ class Layout(object):
                 (len(names), self.gaDims))
 
         self._genTables()
-        self.adjoint_func = get_adjoint_function(self.gradeList)
-        self.left_complement_func = self._gen_complement_func(wedge=lambda a, b: a^b)
-        self.right_complement_func = self._gen_complement_func(wedge=lambda a, b: b^a)
-        self.dual_func = self.gen_dual_func()
-        self.vee_func = self.gen_vee_func()
+        # preload these lazy properties. Not doing this would likely be faster.
+        self.adjoint_func
+        self.left_complement_func
+        self.right_complement_func
+        self.dual_func
+        self.vee_func
+        self.inv_func
 
     @classmethod
     def _from_sig(cls, sig=None, *, firstIdx=1, **kwargs):
@@ -192,7 +357,8 @@ class Layout(object):
         """ hashs the signature of the layout """
         return hash(tuple(self.sig))
 
-    def gen_dual_func(self):
+    @_cached_property
+    def dual_func(self):
         """ Generates the dual function for the pseudoscalar """
         if 0 in self.sig:
             # We are degenerate, use the right complement
@@ -205,7 +371,8 @@ class Layout(object):
                 return gmt_func(Xval, Iinv)
             return dual_func
 
-    def gen_vee_func(self):
+    @_cached_property
+    def vee_func(self):
         """
         Generates the vee product function
         """
@@ -351,7 +518,6 @@ class Layout(object):
         self.imt_func = get_mult_function(self.imt, self.gradeList)
         self.omt_func = get_mult_function(self.omt, self.gradeList)
         self.lcmt_func = get_mult_function(self.lcmt, self.gradeList)
-        self.inv_func = get_leftLaInv(self.gmt, self.gradeList)
 
         # these are probably not useful, but someone might want them
         self.imt_prod_mask = imt_prod_mask
@@ -412,6 +578,52 @@ class Layout(object):
                 Yval[i] = Xval[dims-1-i]*s
             return Yval
         return comp_func
+
+    @_cached_property
+    def left_complement_func(self):
+        return self._gen_complement_func(wedge=lambda a, b: a^b)
+
+    @_cached_property
+    def right_complement_func(self):
+        return self._gen_complement_func(wedge=lambda a, b: b^a)
+
+    @_cached_property
+    def adjoint_func(self):
+        '''
+        This function returns a fast jitted adjoint function
+        '''
+        grades = np.array(self.gradeList)
+        signs = np.power(-1, grades*(grades-1)//2)
+        @numba.njit
+        def adjoint_func(value):
+            return signs * value  # elementwise multiplication
+        return adjoint_func
+
+    @_cached_property
+    def inv_func(self):
+        """
+        Get a function that returns left-inverse using a computational linear algebra method
+        proposed by Christian Perwass.
+         -1         -1
+        M    where M  * M  == 1
+        """
+        mult_table = self.gmt
+        k_list, l_list, m_list = mult_table.coords
+        mult_table_vals = mult_table.data
+        n_dims = mult_table.shape[1]
+
+        identity = np.zeros((n_dims,))
+        identity[self.gradeList.index(0)] = 1
+
+        @numba.njit
+        def leftLaInvJIT(value):
+            intermed = _numba_val_get_left_gmt_matrix(value, k_list, l_list, m_list, mult_table_vals, n_dims)
+            if abs(np.linalg.det(intermed)) < cf._eps:
+                raise ValueError("multivector has no left-inverse")
+            sol = np.linalg.solve(intermed, identity)
+            return sol
+
+        return leftLaInvJIT
 
     def get_left_gmt_matrix(self, x):
         """
