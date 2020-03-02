@@ -418,21 +418,6 @@ class MultiVector(object):
         else:
             self.value[key] = value
 
-    def __delitem__(self, key) -> None:
-        """Set the selected coefficient to 0.
-
-        del M[blade]
-        del M[index]
-        """
-
-        if key in self.layout.bladeTupMap.keys():
-            self.value[self.layout.bladeTupMap[key]] = 0
-        elif isinstance(key, tuple):
-            sign, blade = self.layout._compute_reordering_sign_and_canonical_form(key)
-            self.value[self.layout.bladeTupMap[blade]] = 0
-        else:
-            self.value[key] = 0
-
     # grade projection
     def __call__(self, other, *others) -> 'MultiVector':
         """Return a new multi-vector projected onto a grade OR a MV
