@@ -169,6 +169,8 @@ class TestClifford:
         e3 = blades['e3']
         assert e12[e12] == 1
         assert e12[e3] == 0
+        with pytest.raises(ValueError):
+            e12[1 + e12]
         assert e12[(2, 1)] == -1
 
     def test_add_float64(self, g3):
