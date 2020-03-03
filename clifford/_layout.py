@@ -556,20 +556,20 @@ class Layout(object):
         diag_mask = 1.0 * (np.array(self.gradeList) == grade)
         return np.diag(diag_mask)
 
-    def _gen_complement_func(self, wedge):
+    def _gen_complement_func(self, omt):
         """
         Generates the function which computes the complement of a multivector.
 
-        `wedge` should be either a left or right wedge function.
+        `omt` should be an outer product table.
         """
         dims = self.gaDims
-        bl = self.blades_list
-        signlist = np.zeros(self.gaDims)
-        for n in range(len(bl)):
-            i = bl[n]
-            j = bl[dims-1-n]
-            signval = (-1)**(wedge(i, j).value[-1] < 0.001)
-            signlist[n] = signval
+        signlist = np.zeros(dims)
+
+        # Since we're working with basis blades, we can use the table directly.
+        # We only care about the pseudo-scalar part of the wedge.
+        omt_ps_part = omt[:, -1, :]
+        for n in range(dims):
+            signlist[n] = (-1)**(omt_ps_part[n, dims-1-n] < 0.001)
 
         @numba.njit
         def comp_func(Xval):
@@ -581,11 +581,11 @@ class Layout(object):
 
     @_cached_property
     def left_complement_func(self):
-        return self._gen_complement_func(wedge=lambda a, b: a^b)
+        return self._gen_complement_func(omt=self.omt)
 
     @_cached_property
     def right_complement_func(self):
-        return self._gen_complement_func(wedge=lambda a, b: b^a)
+        return self._gen_complement_func(omt=self.omt.T)
 
     @_cached_property
     def adjoint_func(self):
