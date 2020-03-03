@@ -3,7 +3,6 @@ from functools import reduce
 from typing import List, Tuple
 
 import numpy as np
-import numba
 import sparse
 
 # TODO: move some of these functions to this file if they're not useful anywhere
@@ -16,7 +15,7 @@ from . import (
     _numba_val_get_left_gmt_matrix,
     NUMBA_PARALLEL
 )
-
+from . import _numba_utils
 from .io import read_ga_file
 
 
@@ -68,7 +67,7 @@ def _compute_blade_representation(bitmap: int, firstIdx: int) -> Tuple[int, ...]
     return tuple(blade)
 
 
-@numba.njit
+@_numba_utils.njit
 def count_set_bits(bitmap):
     """
     Counts the number of bits set to 1 in bitmap
@@ -84,7 +83,7 @@ def count_set_bits(bitmap):
     return count
 
 
-@numba.njit
+@_numba_utils.njit
 def canonical_reordering_sign_euclidean(bitmap_a, bitmap_b):
     """
     Computes the sign for the product of bitmap_a and bitmap_b
@@ -101,7 +100,7 @@ def canonical_reordering_sign_euclidean(bitmap_a, bitmap_b):
         return -1
 
 
-@numba.njit
+@_numba_utils.njit
 def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
     """
     Computes the sign for the product of bitmap_a and bitmap_b
@@ -118,7 +117,7 @@ def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
     return output_sign
 
 
-@numba.njit
+@_numba_utils.njit
 def gmt_element(bitmap_a, bitmap_b, sig_array, bitmap_to_linear_mapping):
     """
     Element of the geometric multiplication table given blades a, b.
@@ -131,7 +130,7 @@ def gmt_element(bitmap_a, bitmap_b, sig_array, bitmap_to_linear_mapping):
     return idx, output_sign
 
 
-@numba.njit
+@_numba_utils.njit
 def imt_check(grade_list_idx, grade_list_i, grade_list_j):
     """
     A check used in imt table generation
@@ -139,7 +138,7 @@ def imt_check(grade_list_idx, grade_list_i, grade_list_j):
     return ((grade_list_idx == abs(grade_list_i - grade_list_j)) and (grade_list_i != 0) and (grade_list_j != 0))
 
 
-@numba.njit
+@_numba_utils.njit
 def omt_check(grade_list_idx, grade_list_i, grade_list_j):
     """
     A check used in omt table generation
@@ -147,7 +146,7 @@ def omt_check(grade_list_idx, grade_list_i, grade_list_j):
     return grade_list_idx == (grade_list_i + grade_list_j)
 
 
-@numba.njit
+@_numba_utils.njit
 def lcmt_check(grade_list_idx, grade_list_i, grade_list_j):
     """
     A check used in lcmt table generation
@@ -155,7 +154,7 @@ def lcmt_check(grade_list_idx, grade_list_i, grade_list_j):
     return grade_list_idx == (grade_list_j - grade_list_i)
 
 
-@numba.njit(parallel=NUMBA_PARALLEL, nogil=True)
+@_numba_utils.njit(parallel=NUMBA_PARALLEL, nogil=True)
 def _numba_construct_tables(
     gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
 ):
@@ -366,7 +365,7 @@ class Layout(object):
         else:
             Iinv = self.pseudoScalar.inv().value
             gmt_func = self.gmt_func
-            @numba.njit
+            @_numba_utils.njit
             def dual_func(Xval):
                 return gmt_func(Xval, Iinv)
             return dual_func
@@ -382,7 +381,7 @@ class Layout(object):
         rc_func = self.right_complement_func
         lc_func = self.left_complement_func
         omt_func = self.omt_func
-        @numba.njit
+        @_numba_utils.njit
         def vee(aval, bval):
             return lc_func(omt_func(rc_func(aval), rc_func(bval)))
         return vee
@@ -571,7 +570,7 @@ class Layout(object):
             signval = (-1)**(wedge(i, j).value[-1] < 0.001)
             signlist[n] = signval
 
-        @numba.njit
+        @_numba_utils.njit
         def comp_func(Xval):
             Yval = np.zeros(dims)
             for i, s in enumerate(signlist):
@@ -594,7 +593,7 @@ class Layout(object):
         '''
         grades = np.array(self.gradeList)
         signs = np.power(-1, grades*(grades-1)//2)
-        @numba.njit
+        @_numba_utils.njit
         def adjoint_func(value):
             return signs * value  # elementwise multiplication
         return adjoint_func
@@ -615,7 +614,7 @@ class Layout(object):
         identity = np.zeros((n_dims,))
         identity[self.gradeList.index(0)] = 1
 
-        @numba.njit
+        @_numba_utils.njit
         def leftLaInvJIT(value):
             intermed = _numba_val_get_left_gmt_matrix(value, k_list, l_list, m_list, mult_table_vals, n_dims)
             if abs(np.linalg.det(intermed)) < cf._eps:
