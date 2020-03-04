@@ -76,6 +76,7 @@ import sparse
 from clifford.io import write_ga_file, read_ga_file  # noqa: F401
 
 from ._version import __version__  # noqa: F401
+from . import _numba_utils
 
 # For backwards-compatibility. New code should import directly from `clifford.operator`
 from .operator import gp, op, ip  # noqa: F401
@@ -151,7 +152,7 @@ def _get_mult_function(mt: sparse.COO):
     k_list, l_list, m_list = mt.coords
     mult_table_vals = mt.data
 
-    @numba.generated_jit(nopython=True)
+    @_numba_utils.generated_jit(nopython=True)
     def mv_mult(value, other_value):
         # this casting will be done at jit-time
         ret_dtype = _get_mult_function_result_type(value, other_value, mult_table_vals.dtype)
@@ -182,7 +183,7 @@ def _get_mult_function_runtime_sparse(mt: sparse.COO):
     k_list, l_list, m_list = mt.coords
     mult_table_vals = mt.data
 
-    @numba.generated_jit(nopython=True)
+    @_numba_utils.generated_jit(nopython=True)
     def mv_mult(value, other_value):
         # this casting will be done at jit-time
         ret_dtype = _get_mult_function_result_type(value, other_value, mult_table_vals.dtype)
@@ -204,7 +205,7 @@ def _get_mult_function_runtime_sparse(mt: sparse.COO):
     return mv_mult
 
 
-@numba.njit
+@_numba_utils.njit
 def grade_obj_func(objin_val, gradeList, threshold):
     """ returns the modal grade of a multivector """
     modal_value_count = np.zeros(objin_val.shape)
@@ -273,7 +274,7 @@ def grades_present(objin: 'MultiVector', threshold=0.0000001) -> Set[int]:
 
 
 # todo: work out how to let numba use the COO objects directly
-@numba.njit
+@_numba_utils.njit
 def _numba_val_get_left_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
     intermed = np.zeros((ndims, ndims))
     test_ind = 0

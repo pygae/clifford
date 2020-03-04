@@ -1,15 +1,27 @@
 import numpy as np
 import pytest
+import numba
 
 from clifford import Cl, conformalize, _powerset
+
+too_slow_without_jit = pytest.mark.skipif(
+    numba.config.DISABLE_JIT, reason="test is too slow without JIT"
+)
 
 
 class TestInitialisation:
 
-    @pytest.mark.parametrize("n", range(2, 9))
+    @pytest.mark.parametrize("n", [
+        x
+        for x in range(2, 7)
+    ] + [
+        pytest.param(x, marks=too_slow_without_jit)
+        for x in range(7, 9)
+    ])
     def test_speed(self, n, benchmark):
         benchmark(Cl, n)
 
+    @too_slow_without_jit
     @pytest.mark.parametrize(
         'algebra',
         [Cl(i) for i in [4]] + [conformalize(Cl(3)[0])],
