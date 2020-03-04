@@ -368,6 +368,56 @@ class TestClifford:
         # check that not requiring normalInv works fine
         assert (1 + e1 + e2).inv() == -1 + e1 + e2
 
+    def test_blades_list(self, g3c):
+        e1 = g3c.blades['e1']
+        e2 = g3c.blades['e2']
+        e3 = g3c.blades['e3']
+        einf = g3c.einf
+        # Include a null vector just to check.
+        # Note that einf is not a basis blade, so does not appear in the list.
+        mv = e1 + einf + e2^einf
+        assert sum(mv.blades_list) == mv
+
+    def test_even_odd(self, g3):
+        mv = g3.MultiVector(string='1 + e1 + e3 + e12 + e13 + e123')
+        assert mv.even == g3.MultiVector(string='1 + e12 + e13')
+        assert mv.odd == g3.MultiVector(string='e1 + e3 + e123')
+
+    def test_commutator(self, g3):
+        e1 = g3.blades['e1']
+        e2 = g3.blades['e2']
+        e3 = g3.blades['e3']
+        e12 = g3.blades['e12']
+        e13 = g3.blades['e13']
+        e23 = g3.blades['e23']
+        e123 = g3.blades['e123']
+        assert e12.anticommutator(e23) == 0
+        assert e12.commutator(e23) == e13
+        assert e23.commutator(e12) == -e13
+
+        assert e1.commutator(e123) == 0
+        assert e1.anticommutator(e123) == e23
+        assert e123.anticommutator(e1) == e23
+
+    def test_basis(self, g4):
+        e1 = g4.blades['e1']
+        e2 = g4.blades['e2']
+        e3 = g4.blades['e3']
+        e4 = g4.blades['e4']
+        vectors = [
+            e1 + e2,
+            e1 + 2*e3,
+            e2 + 2*e4
+        ]
+        for i in range(len(vectors)):
+            blade = reduce(clifford.operator.op, vectors[i:])
+            basis = blade.basis()
+            roundtrip = reduce(clifford.operator.op, basis)
+
+            # Should be linear multiples of each other, seems we make
+            # no guarantees about sign, magnitude, or orthogonality
+            assert (roundtrip / blade).grades() == {0}
+
 
 class TestBasicConformal41:
     def test_metric(self, g4_1):
