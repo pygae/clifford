@@ -94,3 +94,26 @@ class MVArray(np.ndarray):
         Performs grade projection on all elements
         """
         return call_array(self, A)
+
+
+def array(obj):
+    '''
+    an array method like numpy.array(), but returns a MVArray
+
+    Parameters
+    -------------
+    obj : MultiVector, list
+        a MV or a list of MV's
+
+    Examples
+    ----------
+    >>>import clifford as cf
+    >>>from clifford import g3
+    >>>import numpy as np
+    >>>np.random.rand(10)*cf.array(g3.e12)
+    '''
+    if isinstance(obj, MultiVector):
+        # they passed a single MV so make a list of it.
+        return MVArray([obj])
+    else:
+        return MVArray(obj)
