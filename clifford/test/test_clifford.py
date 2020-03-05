@@ -1,9 +1,11 @@
 from functools import reduce
 import operator
+import textwrap
 
 import pytest
 import numpy as np
 import numpy.testing
+from IPython.lib import pretty
 
 from clifford import Cl, randomMV, Frame, \
     conformalize, grade_obj, MultiVector, MVArray
@@ -12,6 +14,11 @@ import clifford
 
 
 # using fixtures here results in them only being created if needed
+@pytest.fixture(scope='module')
+def g2():
+    return Cl(2)[0]
+
+
 @pytest.fixture(scope='module')
 def g3():
     return Cl(3)[0]
@@ -609,6 +616,56 @@ class TestBasicAlgebra:
             res = a*b
             res2 = layout.MultiVector(value=b_right@a.value)
             np.testing.assert_almost_equal(res.value, res2.value)
+
+
+class TestPrettyRepr:
+    """ Test ipython pretty printing, with tidy line wrapping """
+    def test_layout(self, g3):
+        expected = textwrap.dedent("""\
+        Layout([1, 1, 1],
+               [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)],
+               names=['', 'e1', 'e2', 'e3', 'e12', 'e13', 'e23', 'e123'],
+               firstIdx=1)""")
+        assert pretty.pretty(g3) == expected
+
+    def test_multivector(self, g2):
+        p = g2.MultiVector(np.arange(4, dtype=np.int32))
+        assert pretty.pretty(p) == repr(p)
+
+        expected = textwrap.dedent("""\
+        MultiVector(Layout([1, 1],
+                           [(), (1,), (2,), (1, 2)],
+                           names=['', 'e1', 'e2', 'e12'],
+                           firstIdx=1),
+                    [0, 1, 2, 3],
+                    dtype=int32)""")
+
+        # ipython printing only kicks in in ugly mode
+        try:
+            clifford.ugly()
+            assert pretty.pretty(p) == expected
+        finally:
+            clifford.pretty()
+
+    def test_multivector_predefined(self):
+        """ test the short printing of predefined layouts """
+        from clifford.g2 import layout as g2
+        p_i = g2.MultiVector(np.arange(4, dtype=np.int32))
+        p_f = g2.MultiVector(np.arange(4, dtype=np.float64))
+        assert pretty.pretty(p_i) == repr(p_i)
+        assert pretty.pretty(p_f) == repr(p_f)
+
+        # float is implied
+        expected_i = "clifford.g2.layout.MultiVector([0, 1, 2, 3], dtype=int32)"
+        expected_f = "clifford.g2.layout.MultiVector([0.0, 1.0, 2.0, 3.0])"
+
+        # ipython printing only kicks in in ugly mode
+        try:
+            clifford.ugly()
+            assert pretty.pretty(p_i) == expected_i
+            assert pretty.pretty(p_f) == expected_f
+        finally:
+            clifford.pretty()
 
 
 class TestFrame:

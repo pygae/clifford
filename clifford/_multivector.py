@@ -541,7 +541,7 @@ class MultiVector(object):
             if self.value.dtype != np.float64:
                 p.text(",")
                 p.breakable()
-                p.pretty(self.value.dtype)
+                p.text("dtype={}".format(self.value.dtype))
 
     def __bool__(self) -> bool:
         """Instance is nonzero iff at least one of the coefficients is nonzero.

@@ -123,7 +123,7 @@ jobs:
 
   - script: |
       call activate myEnvironment
-      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy
+      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy IPython
       conda install --yes -c conda-forge sparse
       conda install --yes $(numbacommand)
     displayName: Install dependencies windows
@@ -139,7 +139,7 @@ jobs:
       source activate myEnvironment
       conda update -n base -y -c defaults conda
       conda update -y conda
-      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy
+      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy IPython
       conda install --yes -c conda-forge sparse
       conda install --yes $(numbacommand)
       python -m pip install -U pytest pytest-benchmark
