@@ -917,13 +917,11 @@ class MultiVector(object):
 
         # try the outer product first
         J = self ^ other
-
         if J != 0:
             return J.normal()
 
-        # try something else
-        M = (other * self.invPS()).lc(self)
-
+        # try getting the meet via the vee product
+        M = self & other
         if M != 0:
             C = M.normal()
             J = (self * C.rightInv()) ^ other
