@@ -5,10 +5,7 @@ from typing import List, Set, Tuple
 import numpy as np
 
 import clifford as cf
-from . import (
-    general_exp,
-    grades_present,
-)
+from . import general_exp
 
 
 class MultiVector(object):
@@ -652,7 +649,7 @@ class MultiVector(object):
 
         # Test if the versor inverse (~V)/(V * ~V) is truly the inverse of the
         # multivector V
-        if grades_present(Vhat*Vinv, 0.000001) != {0}:
+        if (Vhat*Vinv).grades(eps=0.000001) != {0}:
             return False
         if not np.sum(np.abs((Vhat*Vinv).value - (Vinv*Vhat).value)) < 0.0001:
             return False
@@ -660,20 +657,29 @@ class MultiVector(object):
         # applying a versor (and hence an invertible blade) to a vector should
         # not change the grade
         if not all(
-            grades_present(Vhat*e*Vrev, 0.000001) == {1}
+            (Vhat*e*Vrev).grades(eps=0.000001) == {1}
             for e in cf.basis_vectors(self.layout).values()
         ):
             return False
 
         return True
 
-    def grades(self) -> Set[int]:
+    def grades(self, eps=None) -> Set[int]:
         """Return the grades contained in the multivector.
 
         .. versionchanged:: 1.1.0
             Now returns a set instead of a list
+        .. versionchanged:: 1.3.0
+            Accepts an `eps` argument
         """
-        return grades_present(self, cf._eps)
+        if eps is None:
+            eps = cf._eps
+        nonzero = abs(self.value) > eps
+        return {
+            grade_i
+            for grade_i, nonzero_i in zip(self.layout.gradeList, nonzero)
+            if nonzero_i
+        }
 
     @property
     def blades_list(self) -> List['MultiVector']:
