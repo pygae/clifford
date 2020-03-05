@@ -363,7 +363,13 @@ class Layout(object):
             # We are degenerate, use the right complement
             return self.right_complement_func
         else:
-            Iinv = self.pseudoScalar.inv().value
+            # Equivalent to but faster than
+            #   Iinv = self.pseudoScalar.inv().value
+            Iinv = np.zeros(self.gaDims)
+            II_scalar = self.gmt[-1, 0, -1]
+            # set the pseudo-scalar part
+            Iinv[-1] = 1 / II_scalar
+
             gmt_func = self.gmt_func
             @_numba_utils.njit
             def dual_func(Xval):
