@@ -64,6 +64,7 @@ Miscellaneous functions
 # Standard library imports.
 import os
 import itertools
+import warnings
 from typing import List, Tuple, Set, Container, Dict, Optional
 
 # Major library imports.
@@ -261,15 +262,12 @@ def grade_obj(objin, threshold=0.0000001):
 
 
 def grades_present(objin: 'MultiVector', threshold=0.0000001) -> Set[int]:
-    '''
-    Returns all the grades of a multivector with coefficient magnitude bigger than threshold
-    '''
-    nonzero = abs(objin.value) > threshold
-    return {
-        grade_i
-        for grade_i, nonzero_i in zip(objin.layout.gradeList, nonzero)
-        if nonzero_i
-    }
+    # for backwards compatibility
+    warnings.warn(
+        "`clifford.grades_present(x)` is deprecated, use `x.grades()` instead. "
+        "Note that the method uses `clifford.eps()` as the default tolerance.",
+        DeprecationWarning, stacklevel=2)
+    return objin.grades(eps=threshold)
 
 
 # todo: work out how to let numba use the COO objects directly

@@ -9,7 +9,7 @@ from numpy import exp
 import pytest
 import numba
 
-from clifford import Cl, grades_present
+from clifford import Cl
 from clifford.g3c import *
 from clifford import general_exp
 from clifford.tools.g3c import *
@@ -280,7 +280,7 @@ class TestG3CTools:
             X1 = obj_gen()
             basis, scale = X1.factorise()
             for b in basis:
-                gpres = grades_present(b, 0.0001)
+                gpres = b.grades(eps=0.0001)
                 assert gpres == {1}
             new_blade = (reduce(lambda a, b: a ^ b, basis) * scale)
             try:

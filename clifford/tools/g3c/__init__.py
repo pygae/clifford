@@ -159,7 +159,7 @@ from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
     random_rotation_rotor, generate_rotation_rotor, val_random_euc_mv
 from clifford.g3c import *
 import clifford as cf
-from clifford import grades_present, NUMBA_PARALLEL, MVArray
+from clifford import NUMBA_PARALLEL, MVArray
 from scipy.interpolate import interp1d
 
 try:
@@ -223,7 +223,7 @@ def interpret_multivector_as_object(mv):
     Similar to :func:`clifford.tools.classify.classify`, although that function
     does a little more work in order to produce full characterizations.
     """
-    g_pres = grades_present(mv, 0.00000001)
+    g_pres = mv.grades(eps=0.00000001)
     if len(g_pres) != 1:  # Definitely not a blade
         return -1
     grade, = g_pres
