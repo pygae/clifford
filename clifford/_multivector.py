@@ -898,9 +898,10 @@ class MultiVector(object):
         return thisBasis
 
     def join(self, other) -> 'MultiVector':
-        r"""The join of two blades.
+        r"""The join of two blades, :math:`J = A \cup B`
 
-        :math:`J = A \wedge B`
+        Similar to the wedge, :math:`W = A \wedge B`, but without decaying to 0
+        for blades which share a vector.
         """
 
         other, mv = self._checkOther(other)
@@ -967,12 +968,13 @@ class MultiVector(object):
             raise ValueError("not blades")
 
     def meet(self, other, subspace=None) -> 'MultiVector':
-        r"""The meet of two blades.
+        r"""The meet of two blades, :math:`A \cap B`.
 
         Computation is done with respect to a subspace that defaults to
-        the join if none is given.
+        the :meth:`join` if none is given.
 
-        :math:`M \vee_i N = M_i^{-1}N`
+        Similar to the :meth:`vee`, :math:`V = A \vee B`, but without decaying
+        to 0 for blades lying in the same subspace.
         """
 
         other, mv = self._checkOther(other)
@@ -986,7 +988,7 @@ class MultiVector(object):
         if subspace is None:
             subspace = self.join(other)
 
-        return (self * subspace.inv()) | other
+        return (self << subspace.inv()) << other
 
     def astype(self, *args, **kwargs):
         """

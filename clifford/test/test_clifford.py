@@ -703,12 +703,12 @@ class TestPrettyRepr:
         # need this test to avoid a fast-path
         assert equivalent_up_to_scale((a^b^c).join(a^d^e), a^b^c^d^e)
 
-    @pytest.mark.xfail(reason='gh-259')
     def test_meet(self, g3):
         e1 = g3.blades['e1']
         e2 = g3.blades['e2']
         e3 = g3.blades['e3']
 
+        assert equivalent_up_to_scale((g3.scalar).meet(g3.scalar), g3.scalar)
         assert equivalent_up_to_scale((e1^e2).meet(e2^e3), e2)
 
         a, b, c = (e1 + e2), (e1 + e3), (e2 + e3)
