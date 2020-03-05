@@ -15,9 +15,12 @@ x-clifford-templates:
             scipy \
             numba \
             pip \
+            IPython \
             h5py;
           conda install -c conda-forge sparse;
           conda install -c numba numba>=0.45.1;
+        else
+          pip install IPython;
         fi
       # make sure in conda we do not overwrite dependencies with pip
       - |
