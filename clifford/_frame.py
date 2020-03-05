@@ -3,9 +3,9 @@ from functools import reduce
 
 import numpy as np
 
-import clifford as cf
 from ._mvarray import MVArray
 from .operator import op
+from . import _settings
 
 
 class Frame(MVArray):
@@ -72,7 +72,7 @@ class Frame(MVArray):
         pairs = list(itertools.combinations(range(len(self)), 2))
         a, b = self, other
         if eps is None:
-            eps = cf._eps
+            eps = _settings._eps
 
         return np.array([
             float((b[m]|b[n]) - (a[m]|a[n])) < eps
