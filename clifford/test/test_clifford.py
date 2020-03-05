@@ -13,6 +13,10 @@ from clifford import Cl, randomMV, Frame, \
 import clifford
 
 
+def equivalent_up_to_scale(a, b):
+    return (a / b).grades() == {0}
+
+
 # using fixtures here results in them only being created if needed
 @pytest.fixture(scope='module')
 def g2():
@@ -423,7 +427,7 @@ class TestClifford:
 
             # Should be linear multiples of each other, seems we make
             # no guarantees about sign, magnitude, or orthogonality
-            assert (roundtrip / blade).grades() == {0}
+            assert equivalent_up_to_scale(roundtrip, blade)
 
 
 class TestBasicConformal41:
@@ -666,6 +670,54 @@ class TestPrettyRepr:
             assert pretty.pretty(p_f) == expected_f
         finally:
             clifford.pretty()
+
+    def test_join(self, g5):
+        e1 = g5.blades['e1']
+        e2 = g5.blades['e2']
+        e3 = g5.blades['e3']
+        e4 = g5.blades['e4']
+        e5 = g5.blades['e5']
+
+        a = e5
+        b = e1 + e4
+        c = e1 + e3
+        d = e2 + e1
+        e = e4 + e2
+        # chosen specifically to satisfy...
+        assert len(((a^b^c)*(a^d^e)).grades()) > 2
+
+        assert equivalent_up_to_scale(g5.scalar.join(1), 1)
+        assert equivalent_up_to_scale((a).join(1), a)
+        assert equivalent_up_to_scale((a).join(a), a)
+
+        assert equivalent_up_to_scale((a).join(a), a)
+        assert equivalent_up_to_scale((a).join(b), a^b)
+        assert equivalent_up_to_scale((a^b).join(b^c), a^b^c)
+        assert equivalent_up_to_scale((a).join(b^c), a^b^c)
+        assert equivalent_up_to_scale((a^b).join(c), a^b^c)
+
+        # should be commutative up to scale
+        assert equivalent_up_to_scale((a).join(a^b), a^b)
+        assert equivalent_up_to_scale((a^b).join(a), a^b)
+
+        # need this test to avoid a fast-path
+        assert equivalent_up_to_scale((a^b^c).join(a^d^e), a^b^c^d^e)
+
+    @pytest.mark.xfail(reason='gh-259')
+    def test_meet(self, g3):
+        e1 = g3.blades['e1']
+        e2 = g3.blades['e2']
+        e3 = g3.blades['e3']
+
+        assert equivalent_up_to_scale((e1^e2).meet(e2^e3), e2)
+
+        a, b, c = (e1 + e2), (e1 + e3), (e2 + e3)
+        assert equivalent_up_to_scale((a^b).meet(b^c), b)
+        assert equivalent_up_to_scale((a^b^c).meet(b^c), b^c)
+
+        assert equivalent_up_to_scale((a).meet(b^c), 1)
+        assert equivalent_up_to_scale((b^c).meet(a), 1)
+        assert equivalent_up_to_scale((a).meet(a), a)
 
 
 class TestFrame:
