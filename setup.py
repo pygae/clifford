@@ -18,7 +18,8 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     author='Robert Kern',
-    author_email='alexarsenovic@gmail.com',
+    maintainer='Alex Arsenovic',
+    maintainer_email='alexarsenovic@gmail.com',
     url='http://clifford.readthedocs.io',
     packages=find_packages(),
     install_requires=[
