@@ -609,8 +609,8 @@ def val_midpoint_between_lines(L1_val, L2_val):
     """
     L3 = val_normalised(L1_val + L2_val)
     Ldd = val_normalised(L1_val - L2_val)
-    S = val_normalised(gmt_func(I5_val, val_get_line_intersection(L3, Ldd)))
-    return val_normalise_n_minus_1(gmt_func(S, gmt_func(ninf_val, S)))
+    S = val_get_line_intersection(L3, Ldd)
+    return val_normalise_n_minus_1(project_val(gmt_func(S, gmt_func(ninf_val, S)), 1))
 
 
 def midpoint_between_lines(L1, L2):
