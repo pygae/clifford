@@ -22,7 +22,7 @@ Geometric Algebra (GA) is a universal algebra which among several other independ
 
 Scalars, vectors, and higher-grade entities can be mixed freely and consistently in the form of mixed-grade multivectors. Like this, 
 
-![blades](https://github.com/pygae/clifford/blob/master/docs/_static/blades.png)
+![Visual explanation of blades](https://raw.githubusercontent.com/pygae/clifford/master/docs/_static/blades.png)
 
 
 Quickstart
