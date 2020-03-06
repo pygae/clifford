@@ -3,6 +3,37 @@
 Changelog
 =========
 
+Changes in 1.3.x
+++++++++++++++++
+
+ * A new :mod:`clifford.operator` module to contain the previously undocumented
+   :func:`~clifford.operator.gp`, :func:`~clifford.operator.op`, and
+   :func:`~clifford.operator.ip` helpers.
+ * Python 3.8 is officially supported. 1.2.0 was pinned to a bad numba version
+   that was incompatible with 3.8.
+ * :func:`clifford.ugly` now results in less ugly output for
+   :doc:`predefined-algebras`.
+ * Improvements throughout the documentation, and some tutorials for
+   :doc:`tutorials/cga/index`.
+ * Faster algebra construction. ``Cl(3)`` is now 100\ |times| faster, and
+   ``Cl(6)`` is 20\ |times| faster. This is achieved by deferring product JIT
+   compilation until the product is used for the first time.
+
+Bugs fixed
+----------
+ * :meth:`MultiVector.meet` no longer produces zero erroneously.
+ * ``mv[e1 + e12]`` now raises :exc:`ValueError`, rather than being interpreted
+   as ``mv[e1]``.
+ * :func:`~clifford.operator.ip` (the inner product) no longer performs the
+   outer product.
+
+Compatibility notes
+-------------------
+ * ``clifford.grades_present`` is deprecated in favor of
+   :meth:`MultiVector.grades`, the latter of which now takes an ``eps`` argument.
+ * ``del mv[i]`` is no longer legal, the equivalent ``mv[i] = 0`` should be used instead.
+
+
 Changes in 1.2.x
 ++++++++++++++++
 
@@ -107,3 +138,5 @@ Acknowledgements
 +++++++++++++++++
 Konrad Hinsen fixed a few bugs in the conversion to numpy and adding some unit
 tests.
+
+.. include:: <isonum.txt>
