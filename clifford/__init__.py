@@ -77,14 +77,12 @@ from clifford.io import write_ga_file, read_ga_file  # noqa: F401
 
 from ._version import __version__  # noqa: F401
 from . import _numba_utils
+from . import _settings
+
+from ._settings import pretty, ugly, eps, print_precision  # noqa: F401
 
 # For backwards-compatibility. New code should import directly from `clifford.operator`
 from .operator import gp, op, ip  # noqa: F401
-
-_eps = 1e-12            # float epsilon for float comparisons
-_pretty = True          # pretty-print global
-_print_precision = 5    # pretty printing precision on floats
-
 
 try:
     NUMBA_DISABLE_PARALLEL = os.environ['NUMBA_DISABLE_PARALLEL']
@@ -241,7 +239,7 @@ def general_exp(x, max_order=15):
     # taylor approximation
     tmp = 1.0 + 0.0*x
     for i in range(1, max_order):
-        if np.any(np.abs(tmp.value) > _eps):
+        if np.any(np.abs(tmp.value) > _settings._eps):
             tmp = tmp*scaled * (1.0 / i)
             result += tmp
         else:
@@ -419,61 +417,6 @@ def randomMV(
         mv = mv.normal()
 
     return mv
-
-
-def pretty(precision=None):
-    """Makes ``repr(MultiVector)`` default to pretty-print.
-
-    `precision` arg can be used to set the printed precision.
-
-    Parameters
-    -----------
-    precision : int
-        number of sig figs to print past decimal
-
-    Examples
-    ----------
-    >>> pretty(5)
-
-    """
-
-    global _pretty
-    _pretty = True
-
-    if precision is not None:
-        print_precision(precision)
-
-
-def ugly():
-    """ Makes ``repr(MultiVector)`` default to eval-able representation. """
-    global _pretty
-    _pretty = False
-
-
-def eps(newEps=None):
-    """ Get/Set the epsilon for float comparisons. """
-
-    global _eps
-    if newEps is not None:
-        _eps = newEps
-    return _eps
-
-
-def print_precision(newVal):
-    """Set the epsilon for float comparisons.
-
-    Parameters
-    -----------
-    newVal : int
-        number of sig figs to print (see builtin `round`)
-
-    Examples
-    ----------
-    >>> print_precision(5)
-    """
-
-    global _print_precision
-    _print_precision = newVal
 
 
 def conformalize(layout, added_sig=[1, -1], *, mvClass=MultiVector, **kwargs):

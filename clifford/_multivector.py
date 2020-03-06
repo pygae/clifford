@@ -6,6 +6,7 @@ import numpy as np
 
 import clifford as cf
 from . import general_exp
+from . import _settings
 
 
 class MultiVector(object):
@@ -277,7 +278,7 @@ class MultiVector(object):
         if not isinstance(other, (int, float)):
             raise ValueError("exponent must be a Python int or float")
 
-        if abs(round(other) - other) > cf._eps:
+        if abs(round(other) - other) > _settings._eps:
             raise ValueError("exponent must have no fractional part")
 
         other = int(round(other))
@@ -461,7 +462,7 @@ class MultiVector(object):
         """
 
         s = ''
-        p = cf._print_precision
+        p = _settings._print_precision
 
         for grade, name, coeff in zip(self.layout.gradeList, self.layout.names, self.value):
             # if we have nothing yet, don't use + and - as operators but
@@ -473,7 +474,7 @@ class MultiVector(object):
 
             # note: these comparisons need to ensure nan is shown, noting that
             # `nan {} x` is always false for all comparisons `{}`.`
-            if abs(coeff) < cf._eps:
+            if abs(coeff) < _settings._eps:
                 continue  # too small to print
             else:
                 if coeff < 0:
@@ -501,7 +502,7 @@ class MultiVector(object):
         Otherwise, return str(self).
         """
 
-        if cf._pretty:
+        if _settings._pretty:
             return self.__str__()
 
         if self.value.dtype != np.float64:
@@ -519,7 +520,7 @@ class MultiVector(object):
         if cycle:
             raise RuntimeError("Should not be cyclic")
 
-        if cf._pretty:
+        if _settings._pretty:
             p.text(str(self))
             return
 
@@ -543,7 +544,7 @@ class MultiVector(object):
     def __bool__(self) -> bool:
         """Instance is nonzero iff at least one of the coefficients is nonzero.
         """
-        zeroes = np.absolute(self.value) < cf._eps
+        zeroes = np.absolute(self.value) < _settings._eps
         return not zeroes.all()
 
     def __eq__(self, other) -> bool:
@@ -551,7 +552,7 @@ class MultiVector(object):
         if not mv:
             return NotImplemented
 
-        if (np.absolute(self.value - other.value) < cf._eps).all():
+        if (np.absolute(self.value - other.value) < _settings._eps).all():
             # equal within epsilon
             return True
         else:
@@ -566,11 +567,11 @@ class MultiVector(object):
     def clean(self, eps=None) -> 'MultiVector':
         """Sets coefficients whose absolute value is < eps to exactly 0.
 
-        eps defaults to the current value of the global cf._eps.
+        eps defaults to the current value of the global _settings._eps.
         """
 
         if eps is None:
-            eps = cf._eps
+            eps = _settings._eps
 
         mask = np.absolute(self.value) > eps
 
@@ -582,11 +583,11 @@ class MultiVector(object):
     def round(self, eps=None) -> 'MultiVector':
         """Rounds all coefficients according to Python's rounding rules.
 
-        eps defaults to the current value of the global cf._eps.
+        eps defaults to the current value of the global _settings._eps.
         """
 
         if eps is None:
-            eps = cf._eps
+            eps = _settings._eps
 
         self.value = np.around(self.value, eps)
 
@@ -624,7 +625,7 @@ class MultiVector(object):
         indices.remove(self.layout.gradeList.index(0))
 
         for i in indices:
-            if abs(self.value[i]) < cf._eps:
+            if abs(self.value[i]) < _settings._eps:
                 continue
             else:
                 return False
@@ -673,7 +674,7 @@ class MultiVector(object):
             Accepts an `eps` argument
         """
         if eps is None:
-            eps = cf._eps
+            eps = _settings._eps
         nonzero = abs(self.value) > eps
         return {
             grade_i
@@ -730,7 +731,7 @@ class MultiVector(object):
                 raise ValueError("no inverse exists for this multivector")
 
         MadjointM_scalar = MadjointM[()]
-        if fallback is not None and not abs(MadjointM_scalar) > cf._eps:
+        if fallback is not None and not abs(MadjointM_scalar) > _settings._eps:
             raise ValueError("no inverse exists for this multivector")
 
         return Madjoint / MadjointM_scalar
