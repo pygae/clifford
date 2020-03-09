@@ -916,63 +916,60 @@ class MultiVector(object):
         grSelf = self.grades()
         grOther = other.grades()
 
-        if len(grSelf) == len(grOther) == 1:
-            # both blades
-            grSelf, = grSelf
-            grOther, = grOther
-
-            # try the outer product first
-            J = self ^ other
-
-            if J != 0:
-                return J.normal()
-
-            # try something else
-            M = (other * self.invPS()).lc(self)
-
-            if M != 0:
-                C = M.normal()
-                J = (self * C.rightInv()) ^ other
-                return J.normal()
-
-            if grSelf >= grOther:
-                A = self
-                B = other
-            else:
-                A = other
-                B = self
-
-            if (A * B) == (A | B):
-                # B is a subspace of A or the same if grades are equal
-                return A.normal()
-
-            # ugly, but general way
-            # watch out for residues
-
-            # A is still the larger-dimensional subspace
-
-            Bbasis = B.basis()
-
-            # add the basis vectors of B one by one to the larger
-            # subspace except for the ones that make the outer
-            # product vanish
-
-            J = A
-
-            for ei in Bbasis:
-                J.clean()
-                J2 = J ^ ei
-
-                if J2 != 0:
-                    J = J2
-
-            # for consistency's sake, we'll normalize the join
-            J = J.normal()
-
-            return J
-
-        else:
+        if not (len(grSelf) == len(grOther) == 1):
             raise ValueError("not blades")
+
+        # both blades
+        grSelf, = grSelf
+        grOther, = grOther
+
+        # try the outer product first
+        J = self ^ other
+        if J != 0:
+            return J.normal()
+
+        # try getting the meet via the vee product
+        M = self & other
+        if M != 0:
+            C = M.normal()
+            J = (self * C.rightInv()) ^ other
+            return J.normal()
+
+        if grSelf >= grOther:
+            A = self
+            B = other
+        else:
+            A = other
+            B = self
+
+        if (A * B) == (A | B):
+            # B is a subspace of A or the same if grades are equal
+            return A.normal()
+
+        # ugly, but general way
+        # watch out for residues
+
+        # A is still the larger-dimensional subspace
+
+        Bbasis = B.basis()
+
+        # add the basis vectors of B one by one to the larger
+        # subspace except for the ones that make the outer
+        # product vanish
+
+        J = A
+
+        for ei in Bbasis:
+            J.clean()
+            J2 = J ^ ei
+
+            if J2 != 0:
+                J = J2
+
+        # for consistency's sake, we'll normalize the join
+        J = J.normal()
+
+        return J
 
     def meet(self, other, subspace=None) -> 'MultiVector':
         r"""The meet of two blades, :math:`A \cap B`.
