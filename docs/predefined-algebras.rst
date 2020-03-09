@@ -53,9 +53,9 @@ Additionally, they define the following attributes, which contain the return val
         @doctest
         In [138]: g2.layout
         Out[138]: Layout([1, 1],
-               [(), (1,), (2,), (1, 2)],
-               names=['', 'e1', 'e2', 'e12'],
-               firstIdx=1)
+               ids=BasisVectorIds.ordered_integers(2),
+               order=BasisBladeOrder.shortlex(2),
+               names=['', 'e1', 'e2', 'e12'])
 
 .. data:: blades
 

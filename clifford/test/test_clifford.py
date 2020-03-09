@@ -627,9 +627,9 @@ class TestPrettyRepr:
     def test_layout(self, g3):
         expected = textwrap.dedent("""\
         Layout([1, 1, 1],
-               [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)],
-               names=['', 'e1', 'e2', 'e3', 'e12', 'e13', 'e23', 'e123'],
-               firstIdx=1)""")
+               ids=BasisVectorIds.ordered_integers(3),
+               order=BasisBladeOrder.shortlex(3),
+               names=['', 'e1', 'e2', 'e3', 'e12', 'e13', 'e23', 'e123'])""")
         assert pretty.pretty(g3) == expected
 
     def test_multivector(self, g2):
@@ -638,9 +638,9 @@ class TestPrettyRepr:
 
         expected = textwrap.dedent("""\
         MultiVector(Layout([1, 1],
-                           [(), (1,), (2,), (1, 2)],
-                           names=['', 'e1', 'e2', 'e12'],
-                           firstIdx=1),
+                           ids=BasisVectorIds.ordered_integers(2),
+                           order=BasisBladeOrder.shortlex(2),
+                           names=['', 'e1', 'e2', 'e12']),
                     [0, 1, 2, 3],
                     dtype=int32)""")
 

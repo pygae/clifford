@@ -1,6 +1,7 @@
 import re
-from functools import reduce
+import functools
 from typing import List, Tuple, Optional, Dict, Container
+import warnings
 
 import numpy as np
 import sparse
@@ -19,6 +20,9 @@ from . import _numba_utils
 from .io import read_ga_file
 from . import _settings
 from ._multivector import MultiVector
+from ._layout_helpers import (
+    BasisBladeOrder, BasisVectorIds, canonical_reordering_sign_euclidean
+)
 
 
 class _cached_property:
@@ -40,66 +44,6 @@ _blade_pattern = re.compile(r"""
     ((^|\s)-?\s?\d+(\.\d+)?)\s|
     ((^|\+|-)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))
 """, re.VERBOSE)
-
-
-def _compute_bitmap_representation(blade: Tuple[int, ...], firstIdx: int) -> int:
-    """
-    Takes a tuple blade representation and converts it to the
-    bitmap representation
-    """
-    bitmap = 0
-    for b in blade:
-        bitmap = bitmap ^ (1 << (b-firstIdx))
-    return bitmap
-
-
-def _compute_blade_representation(bitmap: int, firstIdx: int) -> Tuple[int, ...]:
-    """
-    Takes a bitmap representation and converts it to the tuple
-    blade representation
-    """
-    bmp = bitmap
-    blade = []
-    n = firstIdx
-    while bmp > 0:
-        if bmp & 1:
-            blade.append(n)
-        bmp = bmp >> 1
-        n = n + 1
-    return tuple(blade)
-
-
-@_numba_utils.njit
-def count_set_bits(bitmap):
-    """
-    Counts the number of bits set to 1 in bitmap
-    """
-    bmp = bitmap
-    count = 0
-    n = 1
-    while bmp > 0:
-        if bmp & 1:
-            count += 1
-        bmp = bmp >> 1
-        n = n + 1
-    return count
-
-
-@_numba_utils.njit
-def canonical_reordering_sign_euclidean(bitmap_a, bitmap_b):
-    """
-    Computes the sign for the product of bitmap_a and bitmap_b
-    assuming a euclidean metric
-    """
-    a = bitmap_a >> 1
-    sum_value = 0
-    while a != 0:
-        sum_value = sum_value + count_set_bits(a & bitmap_b)
-        a = a >> 1
-    if (sum_value & 1) == 0:
-        return 1
-    else:
-        return -1
 
 
 @_numba_utils.njit
@@ -204,13 +148,15 @@ def _numba_construct_tables(
 
 
 def construct_tables(
-    gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
+    blade_order: BasisBladeOrder, signature
 ) -> Tuple[sparse.COO, sparse.COO, sparse.COO, sparse.COO]:
     # wrap the numba one
     indices, *arrs = _numba_construct_tables(
-        gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
+        blade_order.grades,
+        blade_order.index_to_bitmap, blade_order.bitmap_to_index,
+        signature
     )
-    dims = len(gradeList)
+    dims = len(blade_order.grades)
     return tuple(
         sparse.COO(
             coords=indices, data=arr, shape=(dims, dims, dims),
@@ -235,9 +181,36 @@ class Layout(object):
         the dimensionality of the vectors.  Signatures with zeroes are not
         permitted at this time.
 
-        Examples:
-          signature = [+1, -1, -1, -1] # Hestenes', et al. Space-Time Algebra
-          signature = [+1, +1, +1]     # 3-D Euclidean signature
+        Examples::
+
+            signature=[+1, -1, -1, -1] # Hestenes', et al. Space-Time Algebra
+            signature=[+1, +1, +1]     # 3-D Euclidean signature
+
+    ids : Optional[BasisVectorIds[Any]]
+        A list of ids to associate with each basis vector. These ids are used
+        to generate names (if not passed explicitly), and also used when using
+        tuple-notation to access elements, such as `mv[(1, 3)] = 1`.
+        Defaults to ``BasisVectorIds.ordered_integers(len(sig))``; that is,
+        integers starting at 1.
+        This supersedes the old `firstIdx` argument.
+
+        Examples::
+
+            ids=BasisVectorIds.ordered_integers(2, first_index=1)
+            ids=BasisVectorIds([10, 20, 30])
+
+        .. versionadded:: 1.3.0
+
+    order : Optional[BasisBladeOrder]
+        A specification of the memory order to use when storing the basis blades.
+        Defaults to ``BasisBladeOrder.shortlex(len(sig))``.
+        This supersedes the old `bladeTupList` argument.
+
+        .. warning::
+            Various tools within clifford assume this default, so do not change
+            this unless you know what you're doing!
+
+        .. versionadded:: 1.3.0
 
     bladeTupList : List[Tuple[int, ...]]
         List of tuples corresponding to the blades in the whole
@@ -246,13 +219,28 @@ class Layout(object):
         must be an empty tuple, and the entries for grade-1 vectors must be
         singleton tuples.  Remember, the length of the list will be 2**dims.
 
-        Example:
-          bladeTupList = [(), (0,), (1,), (0, 1)]  # 2-D
+        Example::
+
+            bladeTupList = [(), (0,), (1,), (0, 1)]  # 2-D
+
+        .. deprecated:: 1.3.0
+
+            Use the new `order` and `ids` arguments instead. The above example
+            can be spelt with the slightly longer::
+
+                ids = BasisVectorIds([.ordered_integers(2, first_index=0)])
+                order = ids.order_from_tuples([(), (0,), (1,), (0, 1)])
+                Layout(sig, ids=ids, order=order)
 
     firstIdx : int
         The index of the first vector.  That is, some systems number
         the base vectors starting with 0, some with 1.  Choose by passing
         the correct number as firstIdx.  0 is the default.
+
+        .. deprecated:: 1.3.0
+
+            Use the new `ids` argument instead, for which the docs show an
+            equivalent replacement
 
     names : List[str]
         List of names of each blade.  When pretty-printing multivectors,
@@ -261,8 +249,9 @@ class Layout(object):
         default, the name for each non-scalar blade is 'e' plus the indices
         of the blade as given in bladeTupList.
 
-        Example:
-          names = ['', 's0', 's1', 'i']  # 2-D
+        Example::
+
+            names=['', 's0', 's1', 'i']  # 2-D
 
 
     Attributes
@@ -272,8 +261,6 @@ class Layout(object):
         dimensionality of vectors (== len(signature))
     sig :
         normalized signature (i.e. all values are +1 or -1)
-    firstIdx :
-        starting point for vector indices
     bladeTupList :
         list of blades
     gradeList :
@@ -294,17 +281,67 @@ class Layout(object):
     [1] The multiplication tables are NumPy arrays of rank 3 with indices like
         the tensor g_ijk discussed above.
     """
+    # old signature
+    def __init__(self, sig, bladeTupList, firstIdx=1, names=None):
+        return sig, bladeTupList, firstIdx, names  # lgtm [py/explicit-return-in-init]
+    _legacy_init_parser = __init__
 
-    def __init__(self, sig, bladeTupList, firstIdx=0, names=None):
+    # new signature
+    def __init__(self, sig, *, ids=None, order=None, names=None):
+        if ids is not None and not isinstance(ids, BasisVectorIds):
+            raise TypeError("ids must be a BasisVectorIds")
+        if order is not None and not isinstance(order, BasisBladeOrder):
+            raise TypeError("order must be a BasisBladeOrder")
+        return sig, ids, order, names  # lgtm [py/explicit-return-in-init]
+    _new_init_parser = __init__
+
+    @functools.wraps(_new_init_parser)
+    def __init__(self, *args, **kw):
+        # handle old vs new arguments. Once we drop support for the old we can
+        # eliminate the entire `except` clause here.
+        try:
+            sig, ids, order, names = self._new_init_parser(*args, **kw)
+        except TypeError as e_new:
+            # try the old arguments
+            try:
+                sig, bladeTupList, firstIdx, names = self._legacy_init_parser(*args, **kw)
+            except TypeError:
+                # if both fail, give the error message about the new one
+                raise e_new from None
+
+            import inspect
+            warnings.warn(
+                "The Layout{} constructor is deprecated, use Layout{} "
+                "instead.".format(
+                    inspect.signature(self._legacy_init_parser),
+                    inspect.signature(self._new_init_parser)
+                ), DeprecationWarning, stacklevel=2)
+
+            ids = BasisVectorIds.ordered_integers(len(sig), first_index=firstIdx)
+            del firstIdx
+
+            # shortcut the lazy property, no need to recompute this
+            order = ids.order_from_tuples(bladeTupList)
+            self.bladeTupList = bladeTupList
+        else:
+            # typically there's no need to override this
+            if ids is None:
+                ids = BasisVectorIds.ordered_integers(len(sig))
+            if order is None:
+                order = BasisBladeOrder.shortlex(len(sig))
+
+            if len(ids.values) != len(sig):
+                raise ValueError(
+                    "Length of basis vector ids must match length of signature")
+
         self.dims = len(sig)
         self.sig = np.array(sig).astype(int)
-        self.firstIdx = firstIdx
 
-        self.bladeTupList = list(map(tuple, bladeTupList))
-        self._checkList()
+        self._basis_vector_ids = ids
+        self._basis_blade_order = order
 
-        self.gaDims = len(self.bladeTupList)
-        self.gradeList = list(map(len, self.bladeTupList))
+        self.gradeList = list(self._basis_blade_order.grades)
+        self.gaDims = len(self.gradeList)
 
         self._metric = None
 
@@ -338,12 +375,41 @@ class Layout(object):
         self.vee_func
         self.inv_func
 
+    @_cached_property
+    def bladeTupList(self):
+        return self._basis_vector_ids.order_as_tuples(self._basis_blade_order)
+
+    @property
+    def firstIdx(self):
+        """ Starting point for vector indices
+
+        .. deprecated:: 1.3.0
+            This attribute has been deprecated, to match the deprecation of the
+            matching argument in the constructor. Internal code should be using
+            ``self._basis_vector_ids.values[x]`` instead of
+            ``x + self.firstIdx``. This replacement API is not yet finalized,
+            so if you need it please file an issue on github!
+        """
+        try:
+            i = self._basis_vector_ids._first_index
+        except AttributeError:
+            raise AttributeError("'Layout' objects no longer always have a 'firstIdx' attribute") from None
+        else:
+            warnings.warn(
+                "Layout.firstIdx is deprecated, and will be removed. If you "
+                "needed access to this, please contact us!",
+                DeprecationWarning, stacklevel=2)
+            return i
+
     @classmethod
     def _from_sig(cls, sig=None, *, firstIdx=1, **kwargs):
         """ Factory method that uses sorted blade tuples.  """
-        bladeTupList = cf.elements(len(sig), firstIdx)
-
-        return cls(sig, bladeTupList, firstIdx=firstIdx, **kwargs)
+        return cls(
+            sig,
+            ids=BasisVectorIds.ordered_integers(len(sig), first_index=firstIdx),
+            order=None,  # use the default
+            **kwargs
+        )
 
     @classmethod
     def _from_Cl(cls, p=0, q=0, r=0, **kwargs):
@@ -391,9 +457,9 @@ class Layout(object):
         return vee
 
     def __repr__(self):
-        return "{}({!r}, {!r}, firstIdx={!r}, names={!r})".format(
+        return "{}({!r}, ids={!r}, order={!r}, names={!r})".format(
             type(self).__name__,
-            list(self.sig), self.bladeTupList, self.firstIdx, self.names
+            list(self.sig), self._basis_vector_ids, self._basis_blade_order, self.names
         )
 
     def _repr_pretty_(self, p, cycle):
@@ -405,11 +471,15 @@ class Layout(object):
         with p.group(len(prefix), prefix, ')'):
             p.text('{},'.format(list(self.sig)))
             p.breakable()
-            p.text('{},'.format(list(self.bladeTupList)))
+            p.text('ids=')
+            p.pretty(self._basis_vector_ids)
+            p.text(',')
             p.breakable()
-            p.text('names={},'.format(self.names))
+            p.text('order=')
+            p.pretty(self._basis_blade_order)
+            p.text(',')
             p.breakable()
-            p.text('firstIdx={}'.format(self.firstIdx))
+            p.text('names={}'.format(self.names))
 
     def __eq__(self, other):
         if other is self:
@@ -450,47 +520,10 @@ class Layout(object):
                 mv_out[blade_index] = blade_val
         return mv_out
 
-    def _checkList(self):
-        "Ensure validity of arguments."
-
-        # check for uniqueness
-        for blade in self.bladeTupList:
-            if self.bladeTupList.count(blade) != 1:
-                raise ValueError("blades not unique")
-
-        # check for right dimensionality
-        if len(self.bladeTupList) != 2**self.dims:
-            raise ValueError("incorrect number of blades")
-
-        # check for valid ranges of indices
-        valid = list(range(self.firstIdx, self.firstIdx + self.dims))
-        try:
-            for blade in self.bladeTupList:
-                for idx in blade:
-                    if (idx not in valid) or (list(blade).count(idx) != 1):
-                        raise ValueError()
-        except (ValueError, TypeError):
-            raise ValueError("invalid bladeTupList; must be a list of tuples")
-
     def _genTables(self):
         "Generate the multiplication tables."
-
-        self.bladeTupMap = {
-            blade: ind for ind, blade in enumerate(self.bladeTupList)
-        }
-
-        # map bidirectionally between integer tuples and bitmasks
-        self.bitmap_to_linear_map = np.zeros(len(self.bladeTupList), dtype=int)
-        self.linear_map_to_bitmap = np.zeros(len(self.bladeTupMap), dtype=int)
-        for ind, blade in enumerate(self.bladeTupList):
-            bitmap = _compute_bitmap_representation(blade, self.firstIdx)
-            self.bitmap_to_linear_map[bitmap] = ind
-            self.linear_map_to_bitmap[ind] = bitmap
-
         self.gmt, imt_prod_mask, omt_prod_mask, lcmt_prod_mask = construct_tables(
-            np.array(self.gradeList),
-            self.linear_map_to_bitmap,
-            self.bitmap_to_linear_map,
+            self._basis_blade_order,
             self.sig
         )
         self.omt = sparse.where(omt_prod_mask, self.gmt, self.gmt.dtype.type(0))
@@ -708,7 +741,7 @@ class Layout(object):
 
         '''
         n = self.dims if self.dims % 2 == 0 else self.dims - 1
-        R = reduce(cf.gp, self.randomV(n, normed=True))
+        R = functools.reduce(cf.gp, self.randomV(n, normed=True))
         return R
 
     # Helpers to get hold of basis blades of various specifications.
@@ -719,6 +752,12 @@ class Layout(object):
         v = np.zeros((self.gaDims,), dtype=int)
         v[i] = 1
         return mvClass(self, v)
+
+    def _basis_vector_indices(self):
+        for v_id in self._basis_vector_ids.values:
+            v_bitmap = self._basis_vector_ids.id_as_bitmap(v_id)
+            v_index = self._basis_blade_order.bitmap_to_index[v_bitmap]
+            yield v_index
 
     @property
     def basis_vectors(self):
@@ -733,15 +772,15 @@ class Layout(object):
         .. versionchanged:: 1.3.0
             Returns a list instead of a numpy array
         """
-        return [
-            name
-            for name, grade in zip(self.names, self.gradeList)
-            if grade == 1
-        ]
+        return [self.names[i] for i in self._basis_vector_indices()]
 
     @property
     def basis_vectors_lst(self):
-        return self.blades_of_grade(1)
+        """
+        Like ``blades_of_grade(1)``, but ordered based on the ``ids`` parameter
+        passed at construction.
+        """
+        return [self._basis_blade(i) for i in self._basis_vector_indices()]
 
     def blades_of_grade(self, grade: int) -> List[MultiVector]:
         '''
@@ -791,16 +830,17 @@ class Layout(object):
             if grades is None or grade in grades
         }
 
-    def _compute_reordering_sign_and_canonical_form(self, blade):
+    def _sign_and_index_from_tuple(self, blade: Tuple) -> Tuple[int, int]:
         """
         Takes a tuple blade representation and converts it to a canonical
         tuple blade representation
         """
-        bitmap_out = 0
-        s = 1
-        for b in blade:
-            # split into basis blades, which are always canonical
-            bitmap_b = _compute_bitmap_representation((b,), self.firstIdx)
-            s *= canonical_reordering_sign(bitmap_out, bitmap_b, self.sig)
-            bitmap_out ^= bitmap_b
-        return s, _compute_blade_representation(bitmap_out, self.firstIdx)
+        s, bitmap = self._basis_vector_ids.tuple_as_sign_and_bitmap(blade)
+        index = self._basis_blade_order.bitmap_to_index[bitmap]
+        return s, index
+
+    def _index_as_tuple(self, idx: int) -> Tuple:
+        """ Convert an index into a blade tuple """
+        return self._basis_vector_ids.bitmap_as_tuple(
+            self._basis_blade_order.index_to_bitmap[idx]
+        )
