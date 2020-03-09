@@ -558,12 +558,6 @@ class MultiVector(object):
         else:
             return False
 
-    def __ne__(self, other) -> bool:
-        ret = self.__eq__(other)
-        if ret is NotImplemented:
-            return ret
-        return not ret
-
     def clean(self, eps=None) -> 'MultiVector':
         """Sets coefficients whose absolute value is < eps to exactly 0.
 

@@ -433,14 +433,6 @@ class Layout(object):
         else:
             return NotImplemented
 
-    def __ne__(self, other):
-        if other is self:
-            return False
-        elif isinstance(other, Layout):
-            return not np.array_equal(self.sig, other.sig)
-        else:
-            return NotImplemented
-
     def parse_multivector(self, mv_string: str) -> 'cf.MultiVector':
         """ Parses a multivector string into a MultiVector object """
         # Get the names of the canonical blades
