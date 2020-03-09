@@ -350,11 +350,11 @@ class Layout(object):
 
     @classmethod
     def _from_Cl(cls, p=0, q=0, r=0, **kwargs):
-        """ Factory method from a ${Cl}_{p,q,r}$ notation """
+        """ Factory method from a :math:`{Cl}_{p,q,r}` notation """
         return cls._from_sig([0]*r + [+1]*p + [-1]*q, **kwargs)
 
     def __hash__(self):
-        """ hashs the signature of the layout """
+        """ hashes the signature of the layout """
         return hash(tuple(self.sig))
 
     @_cached_property
