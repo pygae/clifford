@@ -36,10 +36,9 @@ def val_fit_circle(point_list):
                 min_eval = this_e_val
                 min_eval_index2 = min_eval_index
                 min_eval_index = i
-            else:
-                if this_e_val < min_eval2:
-                    min_eval2 = this_e_val
-                    min_eval_index2 = i
+            elif this_e_val < min_eval2:
+                min_eval2 = this_e_val
+                min_eval_index2 = i
     best_sphere = val_normalised(mask1@np.real(e_vecs[:, min_eval_index]))
     second_best_sphere = val_normalised(mask1@np.real(e_vecs[:, min_eval_index2]))
     best_circle = val_normalised(mask3@dual_func(omt_func(best_sphere, second_best_sphere)))
