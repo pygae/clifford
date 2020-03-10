@@ -281,10 +281,6 @@ class Layout(object):
         2**dims
     names :
         pretty-printing symbols for the blades
-    even :
-        dictionary of even permutations of blades to the canonical blades
-    odd :
-        dictionary of odd permutations of blades to the canonical blades
     gmt :
         multiplication table for geometric product [1]
     imt :
