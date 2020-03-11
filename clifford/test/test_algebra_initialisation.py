@@ -22,6 +22,7 @@ class TestInitialisation:
         benchmark(Cl, n)
 
     @too_slow_without_jit
+    @pytest.mark.veryslow
     @pytest.mark.parametrize(
         'algebra',
         [Cl(i) for i in [4]] + [conformalize(Cl(3)[0])],
