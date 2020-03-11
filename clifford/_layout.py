@@ -389,10 +389,6 @@ class Layout(object):
             return lc_func(omt_func(rc_func(aval), rc_func(bval)))
         return vee
 
-    @property
-    def basis_names(self):
-        return np.array(list(sorted(self.basis_vectors.keys())), dtype=bytes)
-
     def __repr__(self):
         return "{}({!r}, {!r}, firstIdx={!r}, names={!r})".format(
             type(self).__name__,
@@ -716,6 +712,10 @@ class Layout(object):
     @property
     def basis_vectors(self):
         return cf.basis_vectors(self)
+
+    @property
+    def basis_names(self):
+        return np.array(list(sorted(self.basis_vectors.keys())), dtype=bytes)
 
     @property
     def basis_vectors_lst(self):
