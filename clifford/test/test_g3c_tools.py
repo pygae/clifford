@@ -178,7 +178,7 @@ class TestGeneralLogarithm:
         random_point_pair, random_line, random_circle, random_plane
     ])
     def test_general_logarithm_conformal(self, obj_gen):
-        for i in range(10000):
+        for i in range(1000):
             X = obj_gen()
             Y = obj_gen()
             R = rotor_between_objects(X, Y)
