@@ -111,7 +111,11 @@ def write_ga_file(file_name, mv_array, metric, basis_names, compression=True,
         dset_metric = f.create_dataset("metric", data=metric)
 
         # Now the basis names
-        dset_basis_names = f.create_dataset("basis_names", data=basis_names)
+        try:
+            dt = h5py.string_dtype()  # new in 2.10
+        except AttributeError:
+            dt = h5py.special_dtype(vlen=str)
+        dset_basis_names = f.create_dataset("basis_names", data=np.asarray(basis_names, dtype=dt))
 
 
 def read_ga_file(file_name):

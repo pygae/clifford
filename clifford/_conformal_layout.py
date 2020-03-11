@@ -31,9 +31,7 @@ class ConformalLayout(Layout):
         super().__init__(*args, **kwargs)
         self._base_layout = layout
 
-        basis_vectors = self.basis_vectors
-        added_keys = sorted(basis_vectors.keys())[-2:]
-        ep, en = [basis_vectors[k] for k in added_keys]
+        ep, en = self.basis_vectors_lst[-2:]
 
         # setup  null basis, and minkowski subspace bivector
         eo = .5 ^ (en - ep)
