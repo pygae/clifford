@@ -890,6 +890,7 @@ class TestObjectClustering:
 @too_slow_without_jit
 class TestModelMatching:
 
+    @pytest.mark.veryslow
     def test_fingerprint_match(self):
 
         object_generator = random_line

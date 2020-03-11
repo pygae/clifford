@@ -33,13 +33,25 @@ x-clifford-templates:
       - pip install codecov
     script:
       - |
+        PYTEST_ARGS=();
+        if [[ "${MODE}" == "bench" ]]; then
+          PYTEST_ARGS+=(--benchmark-only);
+        else
+          PYTEST_ARGS+=(--benchmark-skip);
+        fi;
+        if [[ "${MODE}" == "very_slow" ]]; then
+          PYTEST_ARGS+=(-m "veryslow");
+        else
+          PYTEST_ARGS+=(-m "not veryslow");
+        fi;
+
         pytest clifford/test \
-          ${PYTEST_ARGS} \
+          "${PYTEST_ARGS[@]}" \
           --doctest-modules \
           --junitxml=junit/test-results.xml \
           --durations=25 \
           --cov=clifford \
-          --cov-branch
+          --cov-branch;
     after_success:
       - codecov
 
@@ -64,45 +76,7 @@ matrix:
       stage: Lint
       <<: *lint_job
 
-    - os: linux
-      python: '3.5'
-      env:
-        - CONDA=false
-        - PYTEST_ARGS=--benchmark-skip
-      stage: Test
-      <<: *test_job
-
-    - os: linux
-      python: '3.8'
-      env:
-        - CONDA=false
-        - PYTEST_ARGS=--benchmark-skip
-      stage: Test
-      <<: *test_job
-
-    - os: linux
-      python: '3.8'
-      env:
-        - CONDA=false
-        - PYTEST_ARGS=--benchmark-only
-      stage: Test
-      <<: *test_job
-
-    - os: linux
-      python: '3.5'
-      env:
-        - CONDA=true
-        - PYTEST_ARGS=--benchmark-skip
-      stage: Test
-      <<: *test_job
-
-    - os: linux
-      python: '3.8'
-      env:
-        - CONDA=true
-        - PYTEST_ARGS=--benchmark-skip
-      stage: Test
-      <<: *test_job
+    # fastest job first
     - os: linux
       python: '3.8'
       env:
@@ -110,6 +84,49 @@ matrix:
       stage: Test
       <<: *test_job
 
+    # really slow job second, so it runs in parallel with the others
+    - os: linux
+      python: '3.8'
+      env:
+        - MODE=very_slow
+      stage: Test
+      <<: *test_job
+
+    # non-conda jobs
+    - os: linux
+      python: '3.8'
+      stage: Test
+      <<: *test_job
+
+    - os: linux
+      python: '3.5'
+      stage: Test
+      <<: *test_job
+
+    # conda jobs
+    - os: linux
+      python: '3.8'
+      env:
+        - CONDA=true
+      stage: Test
+      <<: *test_job
+
+    - os: linux
+      python: '3.5'
+      env:
+        - CONDA=true
+      stage: Test
+      <<: *test_job
+
+    # benchmark
+    - os: linux
+      python: '3.8'
+      env:
+        - MODE=bench
+      stage: Test
+      <<: *test_job
+
+    # deployment
     - os: linux
       python: '3.8'
       stage: Deploy
