@@ -34,6 +34,10 @@ Compatibility notes
  * ``del mv[i]`` is no longer legal, the equivalent ``mv[i] = 0`` should be used instead.
  * ``Layout.dict_to_multivector`` has been removed. It was accidentally broken
    in 1.0.5, so there is little point deprecating it.
+ * :meth:`Layout.basis_names` now returns a ``list`` of ``str``, rather than a
+   numpy array of ``bytes``. The result now matches the construction order, rather
+   than being sorted alphabetically. The order of :meth:`Layout.metric` has
+   been adjusted for consistency.
 
 
 Changes in 1.2.x

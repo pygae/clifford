@@ -710,19 +710,37 @@ class Layout(object):
         R = reduce(cf.gp, self.randomV(n, normed=True))
         return R
 
+    # Helpers to get hold of basis blades of various specifications.
+    # For historic reasons, we have a lot of different ways to spell similar ideas.
+
+    def _basis_blade(self, i, mvClass=MultiVector) -> MultiVector:
+        ''' get a basis blade with only the element at the given storage index set '''
+        v = np.zeros((self.gaDims,), dtype=int)
+        v[i] = 1
+        return mvClass(self, v)
+
     @property
     def basis_vectors(self):
         '''dictionary of basis vectors'''
-        return self.bases(grades=[1])
+        return dict(zip(self.basis_names, self.basis_vectors_lst))
 
     @property
     def basis_names(self):
-        return np.array(list(sorted(self.basis_vectors.keys())), dtype=bytes)
+        """
+        Get the names of the basis vectors, in the order they are stored.
+
+        .. versionchanged:: 1.3.0
+            Returns a list instead of a numpy array
+        """
+        return [
+            name
+            for name, grade in zip(self.names, self.gradeList)
+            if grade == 1
+        ]
 
     @property
     def basis_vectors_lst(self):
-        d = self.basis_vectors
-        return [d[k] for k in sorted(d.keys())]
+        return self.blades_of_grade(1)
 
     def blades_of_grade(self, grade: int) -> List[MultiVector]:
         '''
@@ -737,15 +755,18 @@ class Layout(object):
         --------
         blades : list of MultiVectors
         '''
-        return [k for k in self.blades_list if k.grades() == {grade}]
+        return [
+            self._basis_blade(i)
+            for i, i_grade in enumerate(self.gradeList)
+            if i_grade == grade
+        ]
 
     @property
     def blades_list(self) -> List[MultiVector]:
         '''
         List of blades in this layout matching the order of `self.bladeTupList`
         '''
-        blades = self.blades
-        return [blades[n] for n in self.names]
+        return [self._basis_blade(i) for i in range(self.gaDims)]
 
     @property
     def blades(self):
@@ -763,15 +784,11 @@ class Layout(object):
         .. versionchanged:: 1.1.0
             This dictionary includes the scalar
         """
-        dict = {}
-        for i in range(self.gaDims):
-            grade = self.gradeList[i]
-            if grades is not None and grade not in grades:
-                continue
-            v = np.zeros((self.gaDims,), dtype=int)
-            v[i] = 1
-            dict[self.names[i]] = mvClass(self, v)
-        return dict
+        return {
+            name: self._basis_blade(i, mvClass)
+            for i, (name, grade) in enumerate(zip(self.names, self.gradeList))
+            if grades is None or grade in grades
+        }
 
     def _compute_reordering_sign_and_canonical_form(self, blade):
         """
