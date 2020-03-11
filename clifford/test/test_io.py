@@ -22,7 +22,7 @@ class TestHDF5BasicIO:
     def test_write_and_read(self, tmp_path):
         file_name = str(tmp_path / "test.ga")
 
-        basis_names = np.array(list(sorted(layout.basis_vectors.keys())), dtype=bytes)
+        basis_names = np.array(layout.basis_names, dtype=bytes)
 
         mv_array = ConformalMVArray([random_point_pair() for i in range(1000)]).value
         write_ga_file(file_name, mv_array, layout.metric, basis_names, compression=True,
@@ -50,7 +50,7 @@ class TestJSONBasicIO:
     def test_write_and_read(self, tmp_path):
         file_name = str(tmp_path / "test.ga.json")
 
-        basis_names = np.array(list(sorted(layout.basis_vectors.keys())))
+        basis_names = np.array(layout.basis_names, dtype=bytes)
 
         mv_array = ConformalMVArray([random_point_pair() for i in range(1000)]).value
         write_json_file(file_name, mv_array, layout.metric, basis_names, compression=True,

@@ -655,10 +655,11 @@ class Layout(object):
 
     @property
     def metric(self):
+        basis_vectors = self.basis_vectors_lst
         if self._metric is None:
-            self._metric = np.zeros((len(self.basis_vectors), len(self.basis_vectors)))
-            for i, v in enumerate(self.basis_vectors_lst):
-                for j, v2 in enumerate(self.basis_vectors_lst):
+            self._metric = np.zeros((len(basis_vectors), len(basis_vectors)))
+            for i, v in enumerate(basis_vectors):
+                for j, v2 in enumerate(basis_vectors):
                     self._metric[i, j] = (v | v2)[0]
             return self._metric.copy()
         else:
