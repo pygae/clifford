@@ -32,6 +32,8 @@ Compatibility notes
  * ``clifford.grades_present`` is deprecated in favor of
    :meth:`MultiVector.grades`, the latter of which now takes an ``eps`` argument.
  * ``del mv[i]`` is no longer legal, the equivalent ``mv[i] = 0`` should be used instead.
+ * ``Layout.dict_to_multivector`` has been removed. It was accidentally broken
+   in 1.0.5, so there is little point deprecating it.
 
 
 Changes in 1.2.x

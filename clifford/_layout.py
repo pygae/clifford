@@ -397,13 +397,6 @@ class Layout(object):
     def basis_names(self):
         return np.array(list(sorted(self.basis_vectors.keys())), dtype=bytes)
 
-    def dict_to_multivector(self, dict_in):
-        """ Takes a dictionary of coefficient values and converts it into a MultiVector object """
-        constructed_values = np.zeros(self.gaDims)
-        for k in list(dict_in.keys()):
-            constructed_values[int(k)] = dict_in[k]
-        return self._newMV(constructed_values)
-
     def __repr__(self):
         return "{}({!r}, {!r}, firstIdx={!r}, names={!r})".format(
             type(self).__name__,
