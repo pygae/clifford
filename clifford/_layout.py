@@ -1,6 +1,6 @@
 import re
 from functools import reduce
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Dict, Container
 
 import numpy as np
 import sparse
@@ -18,6 +18,7 @@ from . import (
 from . import _numba_utils
 from .io import read_ga_file
 from . import _settings
+from ._multivector import MultiVector
 
 
 class _cached_property:
@@ -418,7 +419,7 @@ class Layout(object):
         else:
             return NotImplemented
 
-    def parse_multivector(self, mv_string: str) -> 'cf.MultiVector':
+    def parse_multivector(self, mv_string: str) -> MultiVector:
         """ Parses a multivector string into a MultiVector object """
         # Get the names of the canonical blades
         blade_name_index_map = {name: index for index, name in enumerate(self.names)}
@@ -427,7 +428,7 @@ class Layout(object):
         cleaned_string = re.sub('[()]', '', mv_string)
 
         # Create a multivector
-        mv_out = cf.MultiVector(self)
+        mv_out = MultiVector(self)
 
         # Apply the regex
         for m in _blade_pattern.finditer(cleaned_string):
@@ -622,13 +623,13 @@ class Layout(object):
         """
         return val_get_right_gmt_matrix(self.gmt, x.value)
 
-    def MultiVector(self, *args, **kwargs):
+    def MultiVector(self, *args, **kwargs) -> MultiVector:
         '''
         Create a multivector in this layout
 
-        convenience func to Multivector(layout)
+        convenience func to MultiVector(layout)
         '''
-        return cf.MultiVector(self, *args, **kwargs)
+        return MultiVector(self, *args, **kwargs)
 
     def load_ga_file(self, filename):
         """
@@ -711,7 +712,8 @@ class Layout(object):
 
     @property
     def basis_vectors(self):
-        return cf.basis_vectors(self)
+        '''dictionary of basis vectors'''
+        return self.bases(grades=[1])
 
     @property
     def basis_names(self):
@@ -722,7 +724,7 @@ class Layout(object):
         d = self.basis_vectors
         return [d[k] for k in sorted(d.keys())]
 
-    def blades_of_grade(self, grade: int) -> List['MultiVector']:
+    def blades_of_grade(self, grade: int) -> List[MultiVector]:
         '''
         return all blades of a given grade,
 
@@ -738,7 +740,7 @@ class Layout(object):
         return [k for k in self.blades_list if k.grades() == {grade}]
 
     @property
-    def blades_list(self) -> List['MultiVector']:
+    def blades_list(self) -> List[MultiVector]:
         '''
         List of blades in this layout matching the order of `self.bladeTupList`
         '''
@@ -749,23 +751,27 @@ class Layout(object):
     def blades(self):
         return self.bases()
 
-    def bases(self, *args, **kwargs):
-        '''
-        Returns a dictionary mapping basis element names to their MultiVector
+    def bases(self, mvClass=MultiVector, grades: Optional[Container[int]] = None) -> Dict[str, MultiVector]:
+        """Returns a dictionary mapping basis element names to their MultiVector
         instances, optionally for specific grades
 
         if you are lazy,  you might do this to populate your namespace
         with the variables of a given layout.
 
-        >>> locals().update(layout.bases())
+        >>> locals().update(layout.blades())
 
-
-
-        See Also
-        ---------
-        bases
-        '''
-        return cf.bases(layout=self, *args, **kwargs)
+        .. versionchanged:: 1.1.0
+            This dictionary includes the scalar
+        """
+        dict = {}
+        for i in range(self.gaDims):
+            grade = self.gradeList[i]
+            if grades is not None and grade not in grades:
+                continue
+            v = np.zeros((self.gaDims,), dtype=int)
+            v[i] = 1
+            dict[self.names[i]] = mvClass(self, v)
+        return dict
 
     def _compute_reordering_sign_and_canonical_form(self, blade):
         """

@@ -56,7 +56,6 @@ Miscellaneous functions
     :toctree: generated/
 
     grade_obj
-    bases
     randomMV
 
 """
@@ -65,7 +64,7 @@ Miscellaneous functions
 import os
 import itertools
 import warnings
-from typing import List, Tuple, Set, Container, Dict, Optional
+from typing import List, Tuple, Set
 
 # Major library imports.
 import numpy as np
@@ -347,35 +346,12 @@ def Cl(p=0, q=0, r=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
     return layout, layout.bases(mvClass=mvClass)
 
 
-def bases(layout, mvClass=MultiVector, grades: Optional[Container[int]] = None) -> Dict[str, MultiVector]:
-    """Returns a dictionary mapping basis element names to their MultiVector
-    instances, optionally for specific grades
-
-    if you are lazy,  you might do this to populate your namespace
-    with the variables of a given layout.
-
-    >>> locals().update(layout.blades())
-
-    .. versionchanged:: 1.1.0
-        This dictionary includes the scalar
-    """
-
-    dict = {}
-    for i in range(layout.gaDims):
-        grade = layout.gradeList[i]
-        if grades is not None and grade not in grades:
-            continue
-        v = np.zeros((layout.gaDims,), dtype=int)
-        v[i] = 1
-        dict[layout.names[i]] = mvClass(layout, v)
-    return dict
+def bases(layout, *args, **kwargs):
+    return layout.bases(*args, **kwargs)
 
 
 def basis_vectors(layout):
-    '''
-    dictionary of basis vectors
-    '''
-    return bases(layout=layout, grades=[1])
+    return layout.basis_vectors
 
 
 def randomMV(
