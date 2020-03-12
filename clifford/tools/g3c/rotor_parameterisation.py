@@ -1,7 +1,6 @@
 
 import numpy as np
 from scipy.optimize import minimize
-import clifford as cf
 import numba
 from clifford.g3c import *
 from . import mult_with_ninf, val_normalised
@@ -196,8 +195,8 @@ def ga_exp(B):
     Fast implementation of the translation and rotation specific exp function
     """
     if np.sum(np.abs(B.value)) < np.finfo(float).eps:
-        return cf.MultiVector(layout, unit_scalar_mv.value)
-    return cf.MultiVector(layout, val_exp(B.value))
+        return layout.MultiVector(unit_scalar_mv.value)
+    return layout.MultiVector(val_exp(B.value))
 
 
 def interpolate_TR_rotors(R_n_plus_1, R_n, interpolation_fraction):
@@ -296,7 +295,7 @@ def TR_biv_params_to_rotor(x):
     """
     Converts between the parameters of a TR bivector and the rotor that it is generating
     """
-    return cf.MultiVector(layout, val_TR_biv_params_to_rotor(x))
+    return layout.MultiVector(val_TR_biv_params_to_rotor(x))
 
 
 rotorconversion = TR_biv_params_to_rotor
@@ -319,4 +318,4 @@ def R_biv_params_to_rotor(x):
     """
     Converts between the parameters of a R bivector and the rotor that it is generating
     """
-    return cf.MultiVector(layout, val_R_biv_params_to_rotor(x))
+    return layout.MultiVector(val_R_biv_params_to_rotor(x))
