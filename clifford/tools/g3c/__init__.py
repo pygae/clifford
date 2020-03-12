@@ -809,7 +809,7 @@ def generate_dilation_rotor(scale):
     if abs(scale - 1.0) < 0.00001:
         u = np.zeros(32)
         u[0] = 1.0
-        return cf.MultiVector(layout, u)
+        return layout.MultiVector(u)
     gamma = math.log(scale)
     return math.cosh(gamma/2) + math.sinh(gamma/2)*(ninf^no)
 
@@ -845,7 +845,7 @@ def meet(A, B):
     The meet algorithm as described in "A Covariant Approach to Geometry"
     I5*((I5*A) ^ (I5*B))
     """
-    return cf.MultiVector(layout, meet_val(A.value, B.value))
+    return layout.MultiVector(meet_val(A.value, B.value))
 
 
 @numba.njit
@@ -1037,13 +1037,13 @@ def positive_root(sigma):
     Square Root of Rotors - Evaluates the positive root
     """
     res_val = positive_root_val(sigma.value)
-    return cf.MultiVector(layout, res_val)
+    return layout.MultiVector(res_val)
 
 
 def negative_root(sigma):
     """ Square Root of Rotors - Evaluates the negative root """
     res_val = negative_root_val(sigma.value)
-    return cf.MultiVector(layout, res_val)
+    return layout.MultiVector(res_val)
 
 
 @numba.njit
@@ -1077,7 +1077,7 @@ def general_root_val(sigma_value):
 def general_root(sigma):
     """ The general case of the root of a grade 0, 4 multivector """
     output = general_root_val(sigma.value)
-    return [cf.MultiVector(layout, output[0, :].copy()), cf.MultiVector(layout, output[1, :].copy())]
+    return [layout.MultiVector(output[0, :].copy()), layout.MultiVector(output[1, :].copy())]
 
 
 @numba.njit
@@ -1090,7 +1090,7 @@ def val_annihilate_k(K_val, C_val):
 
 def annihilate_k(K, C):
     """ Removes K from C = KX via (K[0] - K[4])*C """
-    return cf.MultiVector(layout, val_annihilate_k(K.value, C.value))
+    return layout.MultiVector(val_annihilate_k(K.value, C.value))
 
 
 @numba.njit
@@ -1133,7 +1133,7 @@ def pos_twiddle_root(C):
     Leo Dorst and Robert Valkenburg
     """
     output = pos_twiddle_root_val(C.value)
-    return [cf.MultiVector(layout, output[0, :]), cf.MultiVector(layout, output[1, :])]
+    return [layout.MultiVector(output[0, :]), layout.MultiVector(output[1, :])]
 
 
 def neg_twiddle_root(C):
@@ -1144,7 +1144,7 @@ def neg_twiddle_root(C):
     Leo Dorst and Robert Valkenburg
     """
     output = neg_twiddle_root_val(C.value)
-    return [cf.MultiVector(layout, output[0, :]), cf.MultiVector(layout, output[1, :])]
+    return [layout.MultiVector(output[0, :]), layout.MultiVector(output[1, :])]
 
 
 def square_roots_of_rotor(R):
@@ -1492,7 +1492,7 @@ def val_normalised(mv_val):
 
 def normalised(mv):
     """ fast version of the normal() function """
-    return cf.MultiVector(layout, val_normalised(mv.value))
+    return layout.MultiVector(val_normalised(mv.value))
 
 
 @numba.njit
@@ -1517,12 +1517,12 @@ def val_rotor_between_lines(L1_val, L2_val):
 
 def rotor_between_lines(L1, L2):
     """ return the rotor between two lines """
-    return cf.MultiVector(layout, val_rotor_between_lines(L1.value, L2.value))
+    return layout.MultiVector(val_rotor_between_lines(L1.value, L2.value))
 
 
 def rotor_between_planes(P1, P2):
     """ return the rotor between two planes """
-    return cf.MultiVector(layout, val_rotor_rotor_between_planes(P1.value, P2.value))
+    return layout.MultiVector(val_rotor_rotor_between_planes(P1.value, P2.value))
 
 
 @numba.njit
@@ -1664,7 +1664,7 @@ def val_apply_rotor(mv_val, rotor_val):
 
 def apply_rotor(mv_in, rotor):
     """ Applies rotor to multivector in a fast way """
-    return cf.MultiVector(layout, val_apply_rotor(mv_in.value, rotor.value))
+    return layout.MultiVector(val_apply_rotor(mv_in.value, rotor.value))
 
 
 @numba.njit
@@ -1675,7 +1675,7 @@ def val_apply_rotor_inv(mv_val, rotor_val, rotor_val_inv):
 
 def apply_rotor_inv(mv_in, rotor, rotor_inv):
     """ Applies rotor to multivector in a fast way takes pre computed adjoint"""
-    return cf.MultiVector(layout, val_apply_rotor_inv(mv_in.value, rotor.value, rotor_inv.value))
+    return layout.MultiVector(val_apply_rotor_inv(mv_in.value, rotor.value, rotor_inv.value))
 
 
 @numba.njit
@@ -1698,14 +1698,14 @@ def val_convert_2D_polar_line_to_conformal_line(rho, theta):
     p1_val = val_convert_2D_point_to_conformal(x1, y1)
     p2_val = val_convert_2D_point_to_conformal(x2, y2)
     line_val = omt_func(omt_func(p1_val, p2_val), ninf_val)
-    line_val = line_val/abs(cf.MultiVector(layout, line_val))
+    line_val = line_val/abs(layout.MultiVector(line_val))
     return line_val
 
 
 def convert_2D_polar_line_to_conformal_line(rho, theta):
     """ Converts a 2D polar line to a conformal line """
     line_val = val_convert_2D_polar_line_to_conformal_line(rho, theta)
-    return cf.MultiVector(layout, line_val)
+    return layout.MultiVector(line_val)
 
 
 @numba.njit
@@ -1718,7 +1718,7 @@ def val_up(mv_val):
 
 def fast_up(mv):
     """ Fast up mapping """
-    return cf.MultiVector(layout, val_up(mv.value))
+    return layout.MultiVector(val_up(mv.value))
 
 
 @numba.njit
@@ -1743,14 +1743,14 @@ def val_down(mv_val):
 
 def fast_down(mv):
     """ A fast version of down() """
-    return cf.MultiVector(layout, val_down(mv.value))
+    return layout.MultiVector(val_down(mv.value))
 
 
 def val_distance_point_to_line(point, line):
     """
     Returns the euclidean distance between a point and a line
     """
-    return float(abs(cf.MultiVector(layout, omt_func(point, line))))
+    return float(abs(layout.MultiVector(omt_func(point, line))))
 
 
 @numba.njit
@@ -1764,7 +1764,7 @@ def val_convert_2D_point_to_conformal(x, y):
 
 def convert_2D_point_to_conformal(x, y):
     """ Convert a 2D point to conformal """
-    return cf.MultiVector(layout, val_convert_2D_point_to_conformal(x, y))
+    return layout.MultiVector(val_convert_2D_point_to_conformal(x, y))
 
 
 def distance_polar_line_to_euc_point_2d(rho, theta, x, y):
@@ -1789,7 +1789,7 @@ def fast_dual(a):
     """
     Fast dual
     """
-    return cf.MultiVector(layout, dual_func(a.value))
+    return layout.MultiVector(dual_func(a.value))
 
 
 class ConformalMVArray(cf.MVArray):
@@ -1854,7 +1854,7 @@ class ConformalMVArray(cf.MVArray):
 
 
 v_dual = np.vectorize(fast_dual, otypes=[ConformalMVArray])
-v_new_mv = np.vectorize(lambda v: cf.MultiVector(layout, v), otypes=[ConformalMVArray], signature='(n)->()')
+v_new_mv = np.vectorize(lambda v: layout.MultiVector(v), otypes=[ConformalMVArray], signature='(n)->()')
 v_up = np.vectorize(fast_up, otypes=[ConformalMVArray])
 v_down = np.vectorize(fast_down, otypes=[ConformalMVArray])
 v_apply_rotor_inv = np.vectorize(apply_rotor_inv, otypes=[ConformalMVArray])
