@@ -63,7 +63,7 @@ def two_line_rotor_estimate(LA, LB):
     R2 = rotor_between_objects(normalised(R1*Lm*~R1), Lm2)
     return normalised(R2*R1)
     """
-    return layout.MultiVector(value=val_two_line_rotor_estimate(
+    return layout.MultiVector(val_two_line_rotor_estimate(
         np.array([l.value for l in LA]),
         np.array([l.value for l in LB])
     ))
@@ -84,13 +84,13 @@ def extract_rotor_from_TRS_mat_est(mat_est):
     Given a matrix of the form [TRS_left@~TRS_right] returns TRS
     """
     sph = (up(e1)^up(-e1)^up(e2)^up(e3)).normal()*I5
-    sph2 = layout.MultiVector(value=mat_est@sph.value).normal()
+    sph2 = layout.MultiVector(mat_est@sph.value).normal()
     t = down((sph2*einf*sph2)(1))
     T = generate_translation_rotor(t)
     S = generate_dilation_rotor(get_radius_from_sphere(sph2*I5)/get_radius_from_sphere(sph*I5))
     TS = T*S
     Rest = 1 + sum(
-        (1 / layout.MultiVector(value=val_apply_rotor(mat_est@ebase.value, (~TS).value)))*ebase
+        (1 / layout.MultiVector(val_apply_rotor(mat_est@ebase.value, (~TS).value)))*ebase
         for ebase in [e1, e2, e3]
     )
     return (TS*Rest).normal()
@@ -192,7 +192,7 @@ def de_keninck_twist(Y, X, guess=None):
     """
     if guess is None:
         guess = (1.0 + 0*e1)
-    return layout.MultiVector(value=val_de_keninck_twist(Y.value, X.value, guess.value))
+    return layout.MultiVector(val_de_keninck_twist(Y.value, X.value, guess.value))
 
 
 def average_estimator(reference_model, query_model):

@@ -598,7 +598,7 @@ def get_line_intersection(L3, Ldd):
     Pd = 0.5*(Xdd+Xddd)
     P = -(Pd*ninf*Pd)(1)/(2*(Pd|einf)**2)[0]
     """
-    return layout.MultiVector(value=val_get_line_intersection(L3.value, Ldd.value))
+    return layout.MultiVector(val_get_line_intersection(L3.value, Ldd.value))
 
 
 @numba.njit
@@ -618,7 +618,7 @@ def midpoint_between_lines(L1, L2):
     Gets the point that is maximally close to both lines
     Hadfield and Lasenby AGACSE2018
     """
-    return layout.MultiVector(value=val_midpoint_between_lines(L1.value, L2.value))
+    return layout.MultiVector(val_midpoint_between_lines(L1.value, L2.value))
 
 
 def midpoint_of_line_cluster(line_cluster):
@@ -626,7 +626,7 @@ def midpoint_of_line_cluster(line_cluster):
     Gets a center point of a line cluster
     Hadfield and Lasenby AGACSE2018
     """
-    return layout.MultiVector(value=val_midpoint_of_line_cluster(MVArray(line_cluster).value))
+    return layout.MultiVector(val_midpoint_of_line_cluster(MVArray(line_cluster).value))
 
 
 @numba.njit
@@ -818,7 +818,7 @@ def generate_translation_rotor(euc_vector_a):
     """
     Generates a rotor that translates objects along the euclidean vector euc_vector_a
     """
-    return layout.MultiVector(value=val_generate_translation_rotor(euc_vector_a.value))
+    return layout.MultiVector(val_generate_translation_rotor(euc_vector_a.value))
 
 
 @numba.njit
@@ -878,7 +878,7 @@ def intersect_line_and_plane_to_point(line, plane):
     ans = val_intersect_line_and_plane_to_point(line.value, plane.value)
     if ans[0] == -1.:
         return None
-    return layout.MultiVector(value=ans)
+    return layout.MultiVector(ans)
 
 
 @numba.njit
@@ -897,7 +897,7 @@ def normalise_n_minus_1(mv):
     """
     Normalises a conformal point so that it has an inner product of -1 with einf
     """
-    return layout.MultiVector(value=val_normalise_n_minus_1(mv.value))
+    return layout.MultiVector(val_normalise_n_minus_1(mv.value))
 
 
 def quaternion_and_vector_to_rotor(quaternion, vector):
@@ -952,8 +952,8 @@ def point_pair_to_end_points(T):
     Extracts the end points of a point pair bivector
     """
     output = val_point_pair_to_end_points(T.value)
-    A = layout.MultiVector(value=output[0, :])
-    B = layout.MultiVector(value=output[1, :])
+    A = layout.MultiVector(output[0, :])
+    B = layout.MultiVector(output[1, :])
     return A, B
 
 
@@ -1275,7 +1275,7 @@ def motor_between_rounds(X1, X2):
     Calculate the motor between any pair of rounds of the same grade
     Line up the carriers, then line up the centers
     """
-    return layout.MultiVector(value=val_motor_between_rounds(X1.value, X2.value))
+    return layout.MultiVector(val_motor_between_rounds(X1.value, X2.value))
 
 
 @numba.njit
@@ -1333,7 +1333,7 @@ def motor_between_objects(X1, X2):
     """
     Calculates a motor that takes X1 to X2
     """
-    return layout.MultiVector(value=val_motor_between_objects(X1.value, X2.value))
+    return layout.MultiVector(val_motor_between_objects(X1.value, X2.value))
 
 
 def calculate_S_over_mu(X1, X2):
@@ -1614,7 +1614,7 @@ def random_circle():
     mv_a = val_random_euc_mv()
     mv_b = val_random_euc_mv()
     mv_c = val_random_euc_mv()
-    return layout.MultiVector(value=val_normalised(omt_func(omt_func(val_up(mv_a), val_up(mv_b)), val_up(mv_c))))
+    return layout.MultiVector(val_normalised(omt_func(omt_func(val_up(mv_a), val_up(mv_b)), val_up(mv_c))))
 
 
 def random_sphere_at_origin():
