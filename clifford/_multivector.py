@@ -61,7 +61,13 @@ class MultiVector(object):
 
         _checkOther(other, coerce=True) --> newOther, isMultiVector
         """
-        if isinstance(other, numbers.Number):
+        if isinstance(other, MultiVector):
+            if other.layout != self.layout:
+                raise ValueError(
+                    "cannot operate on MultiVectors with different Layouts")
+            else:
+                return other, True
+        elif isinstance(other, numbers.Number):
             if coerce:
                 # numeric scalar
                 newOther = self._newMV(dtype=np.result_type(other))
@@ -70,12 +76,6 @@ class MultiVector(object):
             else:
                 return other, False
 
-        elif isinstance(other, MultiVector):
-            if other.layout != self.layout:
-                raise ValueError(
-                    "cannot operate on MultiVectors with different Layouts")
-            else:
-                return other, True
         else:
             return other, False
 
