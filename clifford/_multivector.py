@@ -122,7 +122,7 @@ class MultiVector(object):
         functions instead, as these work in degenerate metrics like PGA too,
         and are equivalent but faster in other metrics.
         """
-        return self.layout.MultiVector(value=self.layout.vee_func(self.value, other.value))
+        return self.layout.MultiVector(value=self.layout.vee_func(self.value, other.value), copy=False)
 
     def __and__(self, other) -> 'MultiVector':
         """ Alias for :meth:`~MultiVector.vee` """
@@ -255,10 +255,10 @@ class MultiVector(object):
         return self._newMV(newValue)
 
     def right_complement(self) -> 'MultiVector':
-        return self.layout.MultiVector(value=self.layout.right_complement_func(self.value))
+        return self.layout.MultiVector(value=self.layout.right_complement_func(self.value), copy=False)
 
     def left_complement(self) -> 'MultiVector':
-        return self.layout.MultiVector(value=self.layout.left_complement_func(self.value))
+        return self.layout.MultiVector(value=self.layout.left_complement_func(self.value), copy=False)
 
     def __truediv__(self, other) -> 'MultiVector':
         """Division, :math:`M N^{-1}`"""
@@ -769,7 +769,7 @@ class MultiVector(object):
         I defaults to the pseudoscalar.
         """
         if I is None:
-            return self.layout.MultiVector(value=self.layout.dual_func(self.value))
+            return self.layout.MultiVector(value=self.layout.dual_func(self.value), copy=False)
         else:
             Iinv = I.inv()
 
