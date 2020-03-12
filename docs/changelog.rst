@@ -18,6 +18,8 @@ Changes in 1.3.x
  * Faster algebra construction. ``Cl(3)`` is now 100\ |times| faster, and
    ``Cl(6)`` is 20\ |times| faster. This is achieved by deferring product JIT
    compilation until the product is used for the first time.
+ * The :class:`MultiVector` constructor gained a ``copy`` argument, which can be
+   set to ``False`` to allow construction without copying.
 
 Bugs fixed
 ----------
