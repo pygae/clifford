@@ -54,7 +54,28 @@ def _is_unique(x) -> bool:
 
 
 class BasisBladeOrder:
-    """ Represents the storage order in memory of basis blade coefficients. """
+    """ Represents the storage order in memory of basis blade coefficients.
+
+    Bitmaps represent which basis vectors are present in a basis blade. For
+    instance, in an algebra with basis vectors :math:`e_w, e_x, e_y, e_z`, the
+    basis blade :math:`e_xz` is represented with ``0b1010``. Note that this
+    appears reversed because binary numbers are written with the nth bit first.
+
+    Attributes
+    ----------
+    index_to_bitmap : numpy.ndarray
+        An array mapping storage indices to bitmaps.
+    bitmap_to_indices : numpy.ndarray
+        A reverse mapping of :attr:`index_to_bitmap`. If bitmaps are missing,
+        this array contains ``-1``.
+    grades : numpy.ndarray
+        An array mapping indices to the grade of the basis vector, that is the
+        number of bits in the bitmap.
+
+    See also
+    --------
+    BasisVectorIds.order_from_tuples
+    """
     def __init__(self, bitmaps):
         if not _is_unique(bitmaps):
             raise ValueError("blade bitmaps are not unique")
@@ -139,11 +160,11 @@ class BasisVectorIds(Generic[IdT]):
 
     For example::
 
-    >>> ids = BasisVectorIds([11, 22, 33])
-    >>> ids.bitmap_as_tuple(0b110)
-    (22, 33)
-    >>> ids.tuple_as_sign_and_bitmap((33, 22))
-    (-1, 0b110)
+        >>> ids = BasisVectorIds([11, 22, 33])
+        >>> ids.bitmap_as_tuple(0b110)
+        (22, 33)
+        >>> ids.tuple_as_sign_and_bitmap((33, 22))
+        (-1, 0b110)
     """
     def __init__(self, blade_ids: Sequence[IdT]):
         if not _is_unique(blade_ids):
