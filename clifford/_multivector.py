@@ -15,10 +15,22 @@ class MultiVector(object):
     Parameters
     -------------
     layout: instance of :class:`clifford.Layout`
-        the layout of the algebra
+        The layout of the algebra
 
     value : sequence of length ``layout.gaDims``
-        the coefficients of the base blades
+        The coefficients of the base blades
+
+    dtype : numpy.dtype
+        The datatype to use for the multivector, if no
+        value was passed.
+
+        .. versionadded:: 1.1.0
+
+    copy : bool
+        If True, the default, create a copy of `value` to store in this
+        multivector.
+
+        .. versionadded:: 1.3.0
 
     Notes
     ------
@@ -33,7 +45,7 @@ class MultiVector(object):
     * ``M[N]`` : blade projection
     """
 
-    def __init__(self, layout, value=None, string=None, *, dtype: np.dtype = np.float64) -> None:
+    def __init__(self, layout, value=None, string=None, *, dtype: np.dtype = np.float64, copy: bool = True) -> None:
         """Constructor."""
 
         self.layout = layout
@@ -45,7 +57,7 @@ class MultiVector(object):
             else:
                 self.value = layout.parse_multivector(string).value
         else:
-            self.value = np.array(value)
+            self.value = np.array(value, copy=copy)
             if self.value.shape != (self.layout.gaDims,):
                 raise ValueError(
                     "value must be a sequence of length %s" %
@@ -85,7 +97,7 @@ class MultiVector(object):
         if newValue is None and dtype is None:
             raise TypeError("Must specify either a type or value")
 
-        return self.__class__(self.layout, newValue, dtype=dtype)
+        return self.__class__(self.layout, newValue, dtype=dtype, copy=False)
 
     # numeric special methods
     # binary
@@ -110,7 +122,7 @@ class MultiVector(object):
         functions instead, as these work in degenerate metrics like PGA too,
         and are equivalent but faster in other metrics.
         """
-        return self.layout.MultiVector(value=self.layout.vee_func(self.value, other.value))
+        return self.layout.MultiVector(value=self.layout.vee_func(self.value, other.value), copy=False)
 
     def __and__(self, other) -> 'MultiVector':
         """ Alias for :meth:`~MultiVector.vee` """
@@ -243,10 +255,10 @@ class MultiVector(object):
         return self._newMV(newValue)
 
     def right_complement(self) -> 'MultiVector':
-        return self.layout.MultiVector(value=self.layout.right_complement_func(self.value))
+        return self.layout.MultiVector(value=self.layout.right_complement_func(self.value), copy=False)
 
     def left_complement(self) -> 'MultiVector':
-        return self.layout.MultiVector(value=self.layout.left_complement_func(self.value))
+        return self.layout.MultiVector(value=self.layout.left_complement_func(self.value), copy=False)
 
     def __truediv__(self, other) -> 'MultiVector':
         """Division, :math:`M N^{-1}`"""
@@ -757,7 +769,7 @@ class MultiVector(object):
         I defaults to the pseudoscalar.
         """
         if I is None:
-            return self.layout.MultiVector(value=self.layout.dual_func(self.value))
+            return self.layout.MultiVector(value=self.layout.dual_func(self.value), copy=False)
         else:
             Iinv = I.inv()
 

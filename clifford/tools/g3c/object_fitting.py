@@ -49,7 +49,7 @@ def fit_circle(point_list):
     """
     Performs Leo Dorsts circle fitting technique
     """
-    return layout.MultiVector(val_fit_circle(np.array([p.value for p in point_list])))
+    return layout.MultiVector(val_fit_circle(np.array([p.value for p in point_list])), copy=False)
 
 
 @numba.njit
@@ -85,7 +85,7 @@ def fit_line(point_list):
     """
     Does line fitting with combo J.Lasenbys method and L. Dorsts
     """
-    return layout.MultiVector(val_fit_line(np.array([p.value for p in point_list])))
+    return layout.MultiVector(val_fit_line(np.array([p.value for p in point_list])), copy=False)
 
 
 @numba.njit
@@ -124,7 +124,7 @@ def fit_sphere(point_list):
     """
     Performs Leo Dorsts sphere fitting technique
     """
-    return layout.MultiVector(val_fit_sphere(np.array([p.value for p in point_list])))
+    return layout.MultiVector(val_fit_sphere(np.array([p.value for p in point_list])), copy=False)
 
 
 @numba.njit
@@ -158,4 +158,4 @@ def fit_plane(point_list):
     """
     Does plane fitting with combo J.Lasenbys method and L. Dorsts
     """
-    return layout.MultiVector(val_fit_plane(np.array([p.value for p in point_list])))
+    return layout.MultiVector(val_fit_plane(np.array([p.value for p in point_list])), copy=False)

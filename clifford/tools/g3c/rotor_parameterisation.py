@@ -195,8 +195,8 @@ def ga_exp(B):
     Fast implementation of the translation and rotation specific exp function
     """
     if np.sum(np.abs(B.value)) < np.finfo(float).eps:
-        return layout.MultiVector(unit_scalar_mv.value)
-    return layout.MultiVector(val_exp(B.value))
+        return layout.MultiVector(unit_scalar_mv.value, copy=False)
+    return layout.MultiVector(val_exp(B.value), copy=False)
 
 
 def interpolate_TR_rotors(R_n_plus_1, R_n, interpolation_fraction):
@@ -295,7 +295,7 @@ def TR_biv_params_to_rotor(x):
     """
     Converts between the parameters of a TR bivector and the rotor that it is generating
     """
-    return layout.MultiVector(val_TR_biv_params_to_rotor(x))
+    return layout.MultiVector(val_TR_biv_params_to_rotor(x), copy=False)
 
 
 rotorconversion = TR_biv_params_to_rotor
@@ -318,4 +318,4 @@ def R_biv_params_to_rotor(x):
     """
     Converts between the parameters of a R bivector and the rotor that it is generating
     """
-    return layout.MultiVector(val_R_biv_params_to_rotor(x))
+    return layout.MultiVector(val_R_biv_params_to_rotor(x), copy=False)

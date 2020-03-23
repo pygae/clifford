@@ -191,7 +191,7 @@ def np_to_euc_mv(np_in):
     output[1] = np_in[0]
     output[2] = np_in[1]
     output[3] = np_in[2]
-    return layout.MultiVector(output)
+    return layout.MultiVector(output, copy=False)
 
 
 def euc_mv_to_np(euc_point):
