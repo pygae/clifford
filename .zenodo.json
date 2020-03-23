@@ -5,25 +5,25 @@
   "creators": [
     {
       "affiliation": "810 Labs",
-      "name": "Arsenovic, Alex",
+      "name": "Alex Arsenovic",
       "orcid": "0000-0002-8599-5873"
     },
     {
       "affiliation": "University of Cambridge",
-      "name": "Hadfield, Hugo",
+      "name": "Hugo Hadfield",
       "orcid": "0000-0003-4318-050X"
     },
     {
       "affiliation": "University of Cambridge",
-      "name": "Wieser, Eric",
+      "name": "Eric Wieser",
       "orcid": "0000-0003-0412-4978"
     },
     {
       "affiliation": "Enthought, Inc.",
-      "name": "Kern, Robert"
+      "name": "Robert Kern"
     },
     {
-      "name": "The Pygae Team, "
+      "name": "{The Pygae Team}"
     }
   ],
   "keywords": [
