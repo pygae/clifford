@@ -62,7 +62,7 @@ def midpoint_and_error_of_line_cluster_eig(line_cluster):
 
     point_val = np.zeros(32)
     point_val[1:6] = np.matmul(mat2solve, start)
-    new_mv = layout.MultiVector(value=point_val)
+    new_mv = layout.MultiVector(point_val)
     new_mv = normalise_n_minus_1((new_mv * einf * new_mv)(1))
     return new_mv, val_point_to_line_cluster_distance(new_mv.value, line_cluster_array)
 
@@ -84,7 +84,7 @@ def midpoint_and_error_of_line_cluster_svd(line_cluster):
 
     point_val = np.zeros(32)
     point_val[np.array(layout.gradeList) == grade_val] = v[:, 1]
-    new_mv = layout.MultiVector(value=point_val)
+    new_mv = layout.MultiVector(point_val)
     # new_mv = normalise_n_minus_1(new_mv * einf * new_mv)
     new_point = normalise_n_minus_1(new_mv)  # up(down(new_mv) / 2)
     return new_point, val_point_to_line_cluster_distance(new_point.value, line_cluster_array)
@@ -98,7 +98,7 @@ def midpoint_and_error_of_line_cluster(line_cluster):
     """
     line_cluster_array = np.array([l.value for l in line_cluster])
     cp_val = val_midpoint_of_line_cluster(line_cluster_array)
-    return layout.MultiVector(value=cp_val), val_point_to_line_cluster_distance(cp_val, line_cluster_array)
+    return layout.MultiVector(cp_val), val_point_to_line_cluster_distance(cp_val, line_cluster_array)
 
 
 def midpoint_and_error_of_line_cluster_grad(line_cluster):
@@ -109,7 +109,7 @@ def midpoint_and_error_of_line_cluster_grad(line_cluster):
     """
     line_cluster_array = np.array([l.value for l in line_cluster])
     cp_val = val_midpoint_of_line_cluster_grad(line_cluster_array)
-    return layout.MultiVector(value=cp_val), val_point_to_line_cluster_distance(cp_val, line_cluster_array)
+    return layout.MultiVector(cp_val), val_point_to_line_cluster_distance(cp_val, line_cluster_array)
 
 
 def line_plane_cost(line, plane):

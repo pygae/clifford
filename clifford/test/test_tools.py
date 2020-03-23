@@ -1,11 +1,17 @@
 from clifford import Cl
 
 import unittest
+import pytest
 
 from clifford.tools import orthoFrames2Versor as of2v
 import numpy as np
+import numba
 
 from numpy import exp, float64, testing
+
+too_slow_without_jit = pytest.mark.skipif(
+    numba.config.DISABLE_JIT, reason="test is too slow without JIT"
+)
 
 
 @unittest.skip("reason unknown")
@@ -63,6 +69,7 @@ class G3ToolsTests(unittest.TestCase):
             rotor_return = quaternion_to_rotor(quaternion)
             testing.assert_almost_equal(rotor.value, rotor_return.value)
 
+    @too_slow_without_jit
     def test_rotation_matrix_conversions(self):
         """
         Bidirectional rotor - rotation matrix test. This needs work but is a reasonable start

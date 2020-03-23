@@ -7,8 +7,9 @@ import numpy as np
 import numpy.testing as npt
 from numpy import exp
 import pytest
+import numba
 
-from clifford import Cl, grades_present
+from clifford import Cl
 from clifford.g3c import *
 from clifford import general_exp
 from clifford.tools.g3c import *
@@ -23,6 +24,12 @@ from clifford.tools.g3 import random_euc_mv
 from clifford.tools.g3c.GAOnline import draw_objects, GAScene, GanjaScene
 
 
+too_slow_without_jit = pytest.mark.skipif(
+    numba.config.DISABLE_JIT, reason="test is too slow without JIT"
+)
+
+
+@too_slow_without_jit
 class TestRotorGeneration:
     def test_generate_translation_rotor(self):
         for i in range(10000):
@@ -32,6 +39,7 @@ class TestRotorGeneration:
             npt.assert_almost_equal(res.value, res2.value)
 
 
+@too_slow_without_jit
 class TestFitObjects:
     def test_fit_circle(self):
         noise = 0.1
@@ -74,6 +82,7 @@ class TestFitObjects:
         # draw(point_list + [plane], static=False, scale=0.1)
 
 
+@too_slow_without_jit
 class TestGeneralLogarithm:
 
     def test_general_logarithm_rotation(self):
@@ -169,7 +178,7 @@ class TestGeneralLogarithm:
         random_point_pair, random_line, random_circle, random_plane
     ])
     def test_general_logarithm_conformal(self, obj_gen):
-        for i in range(10000):
+        for i in range(1000):
             X = obj_gen()
             Y = obj_gen()
             R = rotor_between_objects(X, Y)
@@ -213,6 +222,7 @@ class TestConformalArray:
         for a, b in zip(down_array, mv):
             npt.assert_almost_equal(a.value, b.value)
 
+    @too_slow_without_jit
     def test_apply_rotor(self):
         mv = []
         for i in range(100):
@@ -251,6 +261,7 @@ class TestConformalArray:
         npt.assert_almost_equal(new_mv_array.value, up_array.value)
 
 
+@too_slow_without_jit
 class TestG3CTools:
 
     @pytest.fixture(params=[
@@ -269,7 +280,7 @@ class TestG3CTools:
             X1 = obj_gen()
             basis, scale = X1.factorise()
             for b in basis:
-                gpres = grades_present(b, 0.0001)
+                gpres = b.grades(eps=0.0001)
                 assert gpres == {1}
             new_blade = (reduce(lambda a, b: a ^ b, basis) * scale)
             try:
@@ -594,6 +605,7 @@ class TestG3CTools:
         npt.assert_almost_equal(C2.value, C3.value, 5)
 
 
+@too_slow_without_jit
 class TestRotorEstimation:
 
     def run_rotor_estimation(self, object_generator, estimation_function,
@@ -740,6 +752,7 @@ class TestRotorEstimation:
         self.run_rotor_estimation(random_circle, estimation_func)
 
 
+@too_slow_without_jit
 class TestSceneSimplification:
 
     def test_simplify_recursive(self):
@@ -776,6 +789,7 @@ class TestSceneSimplification:
         draw_objects(all_object_copy2, color='rgb(255,0,0)')
 
 
+@too_slow_without_jit
 class TestObjectClustering:
 
     def run_n_clusters(self, object_generator, n_clusters, n_objects_per_cluster, n_shotgunning):
@@ -873,8 +887,10 @@ class TestObjectClustering:
             npt.assert_equal(label_a, np.array(range(len(label_a))))
 
 
+@too_slow_without_jit
 class TestModelMatching:
 
+    @pytest.mark.veryslow
     def test_fingerprint_match(self):
 
         object_generator = random_line

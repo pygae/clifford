@@ -1,29 +1,31 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
-from distutils.core import Extension
-import os
+from os import path
 
-version_path = os.path.join('clifford', '_version.py')
-exec(open(version_path).read())
+this_directory = path.abspath(path.dirname(__file__))
 
-LONG_DESCRIPTION = """
-A numerical geometric algebra module for python. BSD License.
-"""
+with open(path.join(this_directory, 'clifford', '_version.py'), encoding='utf-8') as f:
+    exec(f.read())
+
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
 
 setup(
     name='clifford',
     version=__version__,
     license='bsd',
     description='Numerical Geometric Algebra Module',
-    long_description=LONG_DESCRIPTION,
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author='Robert Kern',
-    author_email='alexarsenovic@gmail.com',
+    maintainer='Alex Arsenovic',
+    maintainer_email='alexarsenovic@gmail.com',
     url='http://clifford.readthedocs.io',
     packages=find_packages(),
     install_requires=[
         'numpy',
         'scipy',
-        'numba==0.45.1',
+        'numba > 0.46',
         'h5py',
         'sparse',
     ],
@@ -38,6 +40,7 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
     project_urls={
         "Bug Tracker": "https://github.com/pygae/clifford/issues",

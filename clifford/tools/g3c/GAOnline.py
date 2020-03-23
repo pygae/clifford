@@ -237,7 +237,7 @@ def draw_objects_ganja(objects, color=int('AA000000', 16), print_scene=True):
     """
     if isinstance(objects, str):
         data_array, metric, basis_names, support = read_ga_file(objects)
-        mv_list = [layout.MultiVector(value=data_array[i, :]) for i in range(data_array.shape[0])]
+        mv_list = [layout.MultiVector(data_array[i, :]) for i in range(data_array.shape[0])]
         sc = GanjaScene()
         sc.add_objects(mv_list, color=color)
         if print_scene:
@@ -260,7 +260,7 @@ def draw_objects(objects, mv_type='interp', color='rgb(0,0,0)', print_scene=True
     """
     if isinstance(objects, str):
         data_array, metric, basis_names, support = read_ga_file(objects)
-        mv_list = [layout.MultiVector(value=data_array[i, :]) for i in range(data_array.shape[0])]
+        mv_list = [layout.MultiVector(data_array[i, :]) for i in range(data_array.shape[0])]
         sc = GAScene()
         sc.add_object_array(mv_list, mv_type, color=color)
         if print_scene:

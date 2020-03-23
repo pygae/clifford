@@ -3,8 +3,8 @@ x-clifford-templates:
   lint_job: &lint_job
     install:
       - pip install flake8
-      - python setup.py install
-    script: flake8 clifford
+      - pip install .
+    script: python -m flake8 clifford
 
   test_job: &test_job
     install:
@@ -13,26 +13,45 @@ x-clifford-templates:
           PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-linux}" source travis_install_conda.sh \
             numpy \
             scipy \
-            numba \
             pip \
-            h5py \
-            pytest \
-            pytest-cov;
+            IPython \
+            h5py;
           conda install -c conda-forge sparse;
-          conda install -c numba numba==0.45.1;
+          conda install -c numba "numba>=0.45.1";
         else
-          pip install pytest-cov
+          pip install IPython;
         fi
-      - python setup.py install
+      # make sure in conda we do not overwrite dependencies with pip
+      - |
+        if [[ "${CONDA}" == "true" ]]; then
+          python setup.py develop --no-deps;
+        else
+          pip install .;
+        fi
+      # always install with pip, conda has too old a version
+      - pip install pytest pytest-cov pytest-benchmark
       - pip install codecov
     script:
       - |
+        PYTEST_ARGS=();
+        if [[ "${MODE}" == "bench" ]]; then
+          PYTEST_ARGS+=(--benchmark-only);
+        else
+          PYTEST_ARGS+=(--benchmark-skip);
+        fi;
+        if [[ "${MODE}" == "very_slow" ]]; then
+          PYTEST_ARGS+=(-m "veryslow");
+        else
+          PYTEST_ARGS+=(-m "not veryslow");
+        fi;
+
         pytest clifford/test \
+          "${PYTEST_ARGS[@]}" \
           --doctest-modules \
           --junitxml=junit/test-results.xml \
           --durations=25 \
           --cov=clifford \
-          --cov-branch
+          --cov-branch;
     after_success:
       - codecov
 
@@ -53,33 +72,62 @@ language: python
 matrix:
   include:
     - os: linux
-      python: '3.6'
-      script: flake8 clifford
+      python: '3.8'
       stage: Lint
       <<: *lint_job
 
+    # fastest job first
     - os: linux
-      python: '3.5'
-      env: CONDA=false
+      python: '3.8'
+      env:
+        - NUMBA_DISABLE_JIT=1
       stage: Test
       <<: *test_job
+
+    # really slow job second, so it runs in parallel with the others
     - os: linux
-      python: '3.6'
-      env: CONDA=false
+      python: '3.8'
+      env:
+        - MODE=very_slow
       stage: Test
       <<: *test_job
+
+    # non-conda jobs
     - os: linux
-      python: '3.5'
-      env: CONDA=true
-      stage: Test
-      <<: *test_job
-    - os: linux
-      python: '3.6'
-      env: CONDA=true
+      python: '3.8'
       stage: Test
       <<: *test_job
 
     - os: linux
-      python: '3.6'
+      python: '3.5'
+      stage: Test
+      <<: *test_job
+
+    # conda jobs
+    - os: linux
+      python: '3.8'
+      env:
+        - CONDA=true
+      stage: Test
+      <<: *test_job
+
+    - os: linux
+      python: '3.5'
+      env:
+        - CONDA=true
+      stage: Test
+      <<: *test_job
+
+    # benchmark
+    - os: linux
+      python: '3.8'
+      env:
+        - MODE=bench
+      stage: Test
+      <<: *test_job
+
+    # deployment
+    - os: linux
+      python: '3.8'
       stage: Deploy
       <<: *deploy_job

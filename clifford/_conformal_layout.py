@@ -31,9 +31,7 @@ class ConformalLayout(Layout):
         super().__init__(*args, **kwargs)
         self._base_layout = layout
 
-        basis_vectors = self.basis_vectors
-        added_keys = sorted(basis_vectors.keys())[-2:]
-        ep, en = [basis_vectors[k] for k in added_keys]
+        ep, en = self.basis_vectors_lst[-2:]
 
         # setup  null basis, and minkowski subspace bivector
         eo = .5 ^ (en - ep)
@@ -50,10 +48,13 @@ class ConformalLayout(Layout):
         self.I_base = I_base
 
     @classmethod
-    def _from_base_layout(cls, layout, added_sig=[1, -1], **kw) -> 'ConformalLayout':
+    def _from_base_layout(cls, layout, added_sig=[1, -1], **kwargs) -> 'ConformalLayout':
         """ helper to implement :func:`clifford.conformalize` """
         sig_c = list(layout.sig) + added_sig
-        return cls._from_sig(sig=sig_c, firstIdx=layout.firstIdx, layout=layout, **kw)
+        return cls(
+            sig_c,
+            ids=layout._basis_vector_ids.augmented_with(len(added_sig)),
+            layout=layout, **kwargs)
 
     # some convenience functions
     def up(self, x: MultiVector) -> MultiVector:

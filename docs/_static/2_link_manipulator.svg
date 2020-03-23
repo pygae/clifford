@@ -1,0 +1,89 @@
+<!-- extracted from Hugo's slides -->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="650 310 250 325" >
+    <style>
+        .math-input {
+            paint-order: stroke;
+            stroke: white;
+            stroke-width: 2px;
+            font-size: 40px;
+            font-family: serif;
+            font-style: italic;
+            padding-top: 20;
+        }
+    </style>
+    <g transform="translate(718.053 340.946)">
+        <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="0" y1="210" x2="0" y2="0"></line>
+        <line class="line-element" stroke="#000000" stroke-width="2" x1="0" y1="210" x2="0" y2="0"></line>
+    </g>
+    <g transform="translate(719.053 340.946)">
+        <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="0" y1="0" x2="137" y2="53"></line>
+        <line class="line-element" stroke="#000000" stroke-width="2" x1="0" y1="0" x2="137" y2="53"></line>
+    </g>
+    <g transform="translate(676.053 532.946)">
+        <ellipse rx="43" ry="18" cx="43" cy="18" class="shape-element" fill="rgb(136, 136, 136)"></ellipse>
+    </g>
+    <g transform="translate(719.053, 550.946)">
+        <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="0" y1="0" x2="28" y2="11"></line>
+        <line class="line-element" stroke="#000000" stroke-width="2" x1="0" y1="0" x2="28" y2="11"></line>
+    </g>
+    <g transform="translate(685.553 409.446)">
+        <g style="z-index: 24;">
+            <text y="45" class="math-input">ρ</text>
+        </g>
+    </g>
+    <g transform="translate(787.553 313.946)">
+        <g style="z-index: 25;">
+            <text y="45" class="math-input">l</text>
+        </g>
+    </g>
+    <g transform="translate(849.053 386.946)">
+        <ellipse rx="7" ry="7" cx="7" cy="7" class="shape-element" fill="rgb(255, 0, 0)"></ellipse>
+    </g>
+    <g transform="translate(866.053, 357.446)">
+        <g style="z-index: 27;">
+            <text y="45" class="math-input">y</text>
+        </g>
+    </g>
+    <g transform="translate(716.683 336.043)">
+        <g transform="rotate(53 8 13)">
+            <polygon points="0,13.403 16.8063,0 16.8063,26.806" class="shape-element" fill="rgb(0, 0, 255)"></polygon>
+        </g>
+    </g>
+    <g transform="translate(718.245 527.669)">
+        <g transform="rotate(322 7 21)">
+            <polygon points="0,20.72995 13.6818,0 13.6818,41.4599" class="shape-element" fill="rgb(0, 0, 255)"></polygon>
+        </g>
+    </g>
+    <g transform="translate(685.553 550.946)">
+        <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="0" y1="11" x2="33.5" y2="0"></line>
+        <line class="line-element" stroke="#000000" stroke-width="2" x1="0" y1="11" x2="33.5" y2="0"></line>
+    </g>
+    <g transform="translate(711.264 532.363)">
+        <g transform="rotate(90 5 25)">
+            <polygon points="0,24.6169 9.9331,0 9.9331,49.2338" class="shape-element" fill="rgb(106, 168, 79)"></polygon>
+        </g>
+    </g>
+    <g transform="translate(694.731 561.946)">
+        <g style="z-index: 32; color: rgb(106, 168, 79);">
+            <text y="45" class="math-input">θ<tspan baseline-shift="sub">0</tspan></text>
+        </g>
+    </g>
+    <g transform="translate(732.053 475.399)">
+        <g style="z-index: 33; color: rgb(0, 0, 255);">
+            <text y="45" class="math-input">θ<tspan baseline-shift="sub">1</tspan></text>
+        </g>
+    </g>
+    <g transform="translate(725.553 340.946)">
+        <g style="z-index: 34; color: rgb(0, 0, 255);">
+            <text y="45" class="math-input">θ<tspan baseline-shift="sub">2</tspan></text>
+        </g>
+    </g>
+    <g transform="translate(682.553 291.223)">
+        <g style="z-index: 35;">
+            <text y="45" class="math-input">x</text>
+        </g>
+    </g>
+    <g transform="translate(711.553 335.723)">
+        <ellipse rx="7" ry="7" cx="7" cy="7" class="shape-element" fill="rgb(0, 0, 0)"></ellipse>
+    </g>
+</svg>

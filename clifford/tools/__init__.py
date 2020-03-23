@@ -148,9 +148,7 @@ def mat2Frame(A, layout=None, is_complex=None):
     if layout is None:
         layout, blades = Cl(M)
 
-    e_ = layout.basis_vectors
-
-    e_ = [e_['e%i' % k] for k in range(layout.firstIdx, layout.firstIdx + M)]
+    e_ = layout.basis_vectors_lst[:M]
 
     a = [0 ^ e_[0]] * N
 
@@ -259,7 +257,7 @@ def orthoFrames2Versor(B, A=None, delta=1e-3, eps=None, det=None,
 
     A : list of vectors, or clifford.Frame
         the set of  vectors before the transform. If `None` we assume A is
-        the basis given B.layout.basis_vectors
+        the basis given B.layout.basis_vectors_lst
 
     delta : float
         Tolerance for reflection/rotation determination. If the normalized
@@ -300,8 +298,7 @@ def orthoFrames2Versor(B, A=None, delta=1e-3, eps=None, det=None,
     # Checking and Setup
     if A is None:
         # assume we have orthonormal initial frame
-        bv = B[0].layout.basis_vectors
-        A = [bv[k] for k in sorted(bv.keys())]
+        A = B[0].layout.basis_vectors_lst
 
     # make copy of original frames, so we can rotate A
     A = A[:]

@@ -5,11 +5,8 @@ from typing import List, Set, Tuple
 import numpy as np
 
 import clifford as cf
-from . import (
-    general_exp,
-    grades_present,
-    compute_reordering_sign_and_canonical_form,
-)
+from . import general_exp
+from . import _settings
 
 
 class MultiVector(object):
@@ -64,7 +61,13 @@ class MultiVector(object):
 
         _checkOther(other, coerce=True) --> newOther, isMultiVector
         """
-        if isinstance(other, numbers.Number):
+        if isinstance(other, MultiVector):
+            if other.layout != self.layout:
+                raise ValueError(
+                    "cannot operate on MultiVectors with different Layouts")
+            else:
+                return other, True
+        elif isinstance(other, numbers.Number):
             if coerce:
                 # numeric scalar
                 newOther = self._newMV(dtype=np.result_type(other))
@@ -73,12 +76,6 @@ class MultiVector(object):
             else:
                 return other, False
 
-        elif isinstance(other, MultiVector):
-            if other.layout != self.layout:
-                raise ValueError(
-                    "cannot operate on MultiVectors with different Layouts")
-            else:
-                return other, True
         else:
             return other, False
 
@@ -97,15 +94,26 @@ class MultiVector(object):
         return general_exp(self)
 
     def vee(self, other) -> 'MultiVector':
-        """
-        The vee product aka. the meet... To be optimised still
+        r"""
+        Vee product :math:`A \vee B`.
+
+        This is often defined as:
+
+        .. math::
+            (A \vee B)^* &= A^* \wedge B^* \\
+            \implies A \vee B &= (A^* \wedge B^*)^{-*}
+
+        This is very similar to the :meth:`~MultiVector.meet` function, but
+        always uses the dual in the full space .
+
+        Internally, this is actually implemented using the complement
+        functions instead, as these work in degenerate metrics like PGA too,
+        and are equivalent but faster in other metrics.
         """
         return self.layout.MultiVector(value=self.layout.vee_func(self.value, other.value))
 
     def __and__(self, other) -> 'MultiVector':
-        """
-        The vee product aka. the meet... To be optimised still
-        """
+        """ Alias for :meth:`~MultiVector.vee` """
         return self.vee(other)
 
     def __mul__(self, other) -> 'MultiVector':
@@ -237,6 +245,9 @@ class MultiVector(object):
     def right_complement(self) -> 'MultiVector':
         return self.layout.MultiVector(value=self.layout.right_complement_func(self.value))
 
+    def left_complement(self) -> 'MultiVector':
+        return self.layout.MultiVector(value=self.layout.left_complement_func(self.value))
+
     def __truediv__(self, other) -> 'MultiVector':
         """Division, :math:`M N^{-1}`"""
 
@@ -267,7 +278,7 @@ class MultiVector(object):
         if not isinstance(other, (int, float)):
             raise ValueError("exponent must be a Python int or float")
 
-        if abs(round(other) - other) > cf._eps:
+        if abs(round(other) - other) > _settings._eps:
             raise ValueError("exponent must have no fractional part")
 
         other = int(round(other))
@@ -381,13 +392,13 @@ class MultiVector(object):
         value = M[index]
         """
         if isinstance(key, MultiVector):
-            return self.value[int(np.where(key.value)[0][0])]
-        elif key in self.layout.bladeTupMap.keys():
-            return self.value[self.layout.bladeTupMap[key]]
+            inds, = np.nonzero(key.value)
+            if len(inds) > 1:
+                raise ValueError("Must be a single basis element")
+            return self.value[inds[0]]
         elif isinstance(key, tuple):
-            sign, blade = compute_reordering_sign_and_canonical_form(key, self.layout.sig,
-                                                                     self.layout.firstIdx)
-            return sign*self.value[self.layout.bladeTupMap[blade]]
+            sign, idx = self.layout._sign_and_index_from_tuple(key)
+            return sign*self.value[idx]
         return self.value[key]
 
     def __setitem__(self, key, value: numbers.Number) -> None:
@@ -398,30 +409,11 @@ class MultiVector(object):
         M[blade] = value
         M[index] = value
         """
-        if key in self.layout.bladeTupMap.keys():
-            self.value[self.layout.bladeTupMap[key]] = value
-        elif isinstance(key, tuple):
-            sign, blade = compute_reordering_sign_and_canonical_form(key, self.layout.sig,
-                                                                     self.layout.firstIdx)
-            self.value[self.layout.bladeTupMap[blade]] = sign*value
+        if isinstance(key, tuple):
+            sign, idx = self.layout._sign_and_index_from_tuple(key)
+            self.value[idx] = sign*value
         else:
             self.value[key] = value
-
-    def __delitem__(self, key) -> None:
-        """Set the selected coefficient to 0.
-
-        del M[blade]
-        del M[index]
-        """
-
-        if key in self.layout.bladeTupMap.keys():
-            self.value[self.layout.bladeTupMap[key]] = 0
-        elif isinstance(key, tuple):
-            sign, blade = compute_reordering_sign_and_canonical_form(key, self.layout.sig,
-                                                                     self.layout.firstIdx)
-            self.value[self.layout.bladeTupMap[blade]] = 0
-        else:
-            self.value[key] = 0
 
     # grade projection
     def __call__(self, other, *others) -> 'MultiVector':
@@ -466,7 +458,7 @@ class MultiVector(object):
         """
 
         s = ''
-        p = cf._print_precision
+        p = _settings._print_precision
 
         for grade, name, coeff in zip(self.layout.gradeList, self.layout.names, self.value):
             # if we have nothing yet, don't use + and - as operators but
@@ -478,7 +470,7 @@ class MultiVector(object):
 
             # note: these comparisons need to ensure nan is shown, noting that
             # `nan {} x` is always false for all comparisons `{}`.`
-            if abs(coeff) < cf._eps:
+            if abs(coeff) < _settings._eps:
                 continue  # too small to print
             else:
                 if coeff < 0:
@@ -506,17 +498,49 @@ class MultiVector(object):
         Otherwise, return str(self).
         """
 
-        if cf._pretty:
+        if _settings._pretty:
             return self.__str__()
 
-        s = "MultiVector(%s, value=%s)" % (
-            repr(self.layout), list(self.value))
-        return s
+        if self.value.dtype != np.float64:
+            dtype_str = ", dtype={}".format(self.value.dtype)
+        else:
+            dtype_str = None
+
+        if hasattr(self.layout, '__name__') and '__module__' in self.layout.__dict__:
+            fmt = "{l.__module__}.{l.__name__}.MultiVector({v!r}{d})"
+        else:
+            fmt = "{l!r}.MultiVector({v!r}{d})"
+        return fmt.format(l=self.layout, v=list(self.value), d=dtype_str)
+
+    def _repr_pretty_(self, p, cycle):
+        if cycle:
+            raise RuntimeError("Should not be cyclic")
+
+        if _settings._pretty:
+            p.text(str(self))
+            return
+
+        if hasattr(self.layout, '__name__') and '__module__' in self.layout.__dict__:
+            prefix = "{l.__module__}.{l.__name__}.MultiVector(".format(l=self.layout)
+            include_layout = False
+        else:
+            include_layout = True
+            prefix = "MultiVector("
+        with p.group(len(prefix), prefix, ")"):
+            if include_layout:
+                p.pretty(self.layout)
+                p.text(",")
+                p.breakable()
+            p.text(repr(list(self.value)))
+            if self.value.dtype != np.float64:
+                p.text(",")
+                p.breakable()
+                p.text("dtype={}".format(self.value.dtype))
 
     def __bool__(self) -> bool:
         """Instance is nonzero iff at least one of the coefficients is nonzero.
         """
-        zeroes = np.absolute(self.value) < cf._eps
+        zeroes = np.absolute(self.value) < _settings._eps
         return not zeroes.all()
 
     def __eq__(self, other) -> bool:
@@ -524,26 +548,20 @@ class MultiVector(object):
         if not mv:
             return NotImplemented
 
-        if (np.absolute(self.value - other.value) < cf._eps).all():
+        if (np.absolute(self.value - other.value) < _settings._eps).all():
             # equal within epsilon
             return True
         else:
             return False
 
-    def __ne__(self, other) -> bool:
-        ret = self.__eq__(other)
-        if ret is NotImplemented:
-            return ret
-        return not ret
-
     def clean(self, eps=None) -> 'MultiVector':
         """Sets coefficients whose absolute value is < eps to exactly 0.
 
-        eps defaults to the current value of the global cf._eps.
+        eps defaults to the current value of the global _settings._eps.
         """
 
         if eps is None:
-            eps = cf._eps
+            eps = _settings._eps
 
         mask = np.absolute(self.value) > eps
 
@@ -555,11 +573,11 @@ class MultiVector(object):
     def round(self, eps=None) -> 'MultiVector':
         """Rounds all coefficients according to Python's rounding rules.
 
-        eps defaults to the current value of the global cf._eps.
+        eps defaults to the current value of the global _settings._eps.
         """
 
         if eps is None:
-            eps = cf._eps
+            eps = _settings._eps
 
         self.value = np.around(self.value, eps)
 
@@ -597,7 +615,7 @@ class MultiVector(object):
         indices.remove(self.layout.gradeList.index(0))
 
         for i in indices:
-            if abs(self.value[i]) < cf._eps:
+            if abs(self.value[i]) < _settings._eps:
                 continue
             else:
                 return False
@@ -622,7 +640,7 @@ class MultiVector(object):
 
         # Test if the versor inverse (~V)/(V * ~V) is truly the inverse of the
         # multivector V
-        if grades_present(Vhat*Vinv, 0.000001) != {0}:
+        if (Vhat*Vinv).grades(eps=0.000001) != {0}:
             return False
         if not np.sum(np.abs((Vhat*Vinv).value - (Vinv*Vhat).value)) < 0.0001:
             return False
@@ -630,20 +648,29 @@ class MultiVector(object):
         # applying a versor (and hence an invertible blade) to a vector should
         # not change the grade
         if not all(
-            grades_present(Vhat*e*Vrev, 0.000001) == {1}
+            (Vhat*e*Vrev).grades(eps=0.000001) == {1}
             for e in cf.basis_vectors(self.layout).values()
         ):
             return False
 
         return True
 
-    def grades(self) -> Set[int]:
+    def grades(self, eps=None) -> Set[int]:
         """Return the grades contained in the multivector.
 
         .. versionchanged:: 1.1.0
             Now returns a set instead of a list
+        .. versionchanged:: 1.3.0
+            Accepts an `eps` argument
         """
-        return grades_present(self, cf._eps)
+        if eps is None:
+            eps = _settings._eps
+        nonzero = abs(self.value) > eps
+        return {
+            grade_i
+            for grade_i, nonzero_i in zip(self.layout.gradeList, nonzero)
+            if nonzero_i
+        }
 
     @property
     def blades_list(self) -> List['MultiVector']:
@@ -694,7 +721,7 @@ class MultiVector(object):
                 raise ValueError("no inverse exists for this multivector")
 
         MadjointM_scalar = MadjointM[()]
-        if fallback is not None and not abs(MadjointM_scalar) > cf._eps:
+        if fallback is not None and not abs(MadjointM_scalar) > _settings._eps:
             raise ValueError("no inverse exists for this multivector")
 
         return Madjoint / MadjointM_scalar
@@ -812,13 +839,16 @@ class MultiVector(object):
             raise ValueError("self is not a blade")
         scale = abs(self)
         max_index = np.argmax(np.abs(self.value))
-        B_max_factors = self.layout.bladeTupList[max_index]
+        B_max_factors = self.layout._index_as_tuple(max_index)
 
         factors = []
 
         B_c = self/scale
         for ind in B_max_factors[1:]:
-            ei = self.layout.blades_list[ind]
+            # get the basis vector
+            ei = self._newMV(dtype=B_c.value.dtype)
+            ei[(ind,)] = 1
+
             fi = (ei.lc(B_c)*B_c.normalInv(check=False)).normal()
             factors.append(fi)
             B_c = B_c * fi.normalInv(check=False)
@@ -868,9 +898,10 @@ class MultiVector(object):
         return thisBasis
 
     def join(self, other) -> 'MultiVector':
-        r"""The join of two blades.
+        r"""The join of two blades, :math:`J = A \cup B`
 
-        :math:`J = A \wedge B`
+        Similar to the wedge, :math:`W = A \wedge B`, but without decaying to 0
+        for blades which share a vector.
         """
 
         other, mv = self._checkOther(other)
@@ -878,71 +909,69 @@ class MultiVector(object):
         grSelf = self.grades()
         grOther = other.grades()
 
-        if len(grSelf) == len(grOther) == 1:
-            # both blades
-            grSelf, = grSelf
-            grOther, = grOther
-
-            # try the outer product first
-            J = self ^ other
-
-            if J != 0:
-                return J.normal()
-
-            # try something else
-            M = (other * self.invPS()).lc(self)
-
-            if M != 0:
-                C = M.normal()
-                J = (self * C.rightInv()) ^ other
-                return J.normal()
-
-            if grSelf >= grOther:
-                A = self
-                B = other
-            else:
-                A = other
-                B = self
-
-            if (A * B) == (A | B):
-                # B is a subspace of A or the same if grades are equal
-                return A.normal()
-
-            # ugly, but general way
-            # watch out for residues
-
-            # A is still the larger-dimensional subspace
-
-            Bbasis = B.basis()
-
-            # add the basis vectors of B one by one to the larger
-            # subspace except for the ones that make the outer
-            # product vanish
-
-            J = A
-
-            for ei in Bbasis:
-                J.clean()
-                J2 = J ^ ei
-
-                if J2 != 0:
-                    J = J2
-
-            # for consistency's sake, we'll normalize the join
-            J = J.normal()
-
-            return J
-
-        else:
+        if not (len(grSelf) == len(grOther) == 1):
             raise ValueError("not blades")
 
+        # both blades
+        grSelf, = grSelf
+        grOther, = grOther
+
+        # try the outer product first
+        J = self ^ other
+        if J != 0:
+            return J.normal()
+
+        # try getting the meet via the vee product
+        M = self & other
+        if M != 0:
+            C = M.normal()
+            J = (self * C.rightInv()) ^ other
+            return J.normal()
+
+        if grSelf >= grOther:
+            A = self
+            B = other
+        else:
+            A = other
+            B = self
+
+        if (A * B) == (A | B):
+            # B is a subspace of A or the same if grades are equal
+            return A.normal()
+
+        # ugly, but general way
+        # watch out for residues
+
+        # A is still the larger-dimensional subspace
+
+        Bbasis = B.basis()
+
+        # add the basis vectors of B one by one to the larger
+        # subspace except for the ones that make the outer
+        # product vanish
+
+        J = A
+
+        for ei in Bbasis:
+            J.clean()
+            J2 = J ^ ei
+
+            if J2 != 0:
+                J = J2
+
+        # for consistency's sake, we'll normalize the join
+        J = J.normal()
+
+        return J
+
     def meet(self, other, subspace=None) -> 'MultiVector':
-        r"""The meet of two blades.
+        r"""The meet of two blades, :math:`A \cap B`.
 
         Computation is done with respect to a subspace that defaults to
-        the join if none is given.
+        the :meth:`join` if none is given.
 
-        :math:`M \vee_i N = M_i^{-1}N`
+        Similar to the :meth:`vee`, :math:`V = A \vee B`, but without decaying
+        to 0 for blades lying in the same subspace.
         """
 
         other, mv = self._checkOther(other)
@@ -956,7 +985,7 @@ class MultiVector(object):
         if subspace is None:
             subspace = self.join(other)
 
-        return (self * subspace.inv()) | other
+        return (self << subspace.inv()) << other
 
     def astype(self, *args, **kwargs):
         """

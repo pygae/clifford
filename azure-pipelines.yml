@@ -10,53 +10,51 @@ jobs:
 - job: 'Test'
   strategy:
     matrix:
-      linuxPython35Numba0.45.1:
+      linuxPython35:
         imageName: 'ubuntu-16.04'
         python.version: '3.5'
-        numbacommand: '-c numba numba=0.45.1'
+        numbacommand: '-c numba numba'
         installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
-      linuxPython36Numba0.45.1:
+      linuxPython36:
         imageName: 'ubuntu-16.04'
         python.version: '3.6'
-        numbacommand: '-c numba numba=0.45.1'
+        numbacommand: '-c numba numba'
         installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
-      linuxPython37Numba0.45.1:
+      linuxPython37:
         imageName: 'ubuntu-16.04'
         python.version: '3.7'
-        numbacommand: '-c numba numba=0.45.1'
+        numbacommand: '-c numba numba'
         installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
-      linuxPython36NumbaDev:
+      linuxPython38:
         imageName: 'ubuntu-16.04'
-        python.version: '3.6'
-        numbacommand: '-c numba/label/dev numba'
+        python.version: '3.8'
+        numbacommand: '-c numba numba'
         installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
-      linuxPython37NumbaDev:
+
+      linuxPython38NumbaDev:
         imageName: 'ubuntu-16.04'
-        python.version: '3.7'
+        python.version: '3.8'
         numbacommand: '-c numba/label/dev numba'
         installPackageCommand: 'sudo apt-get install python3-setuptools && sudo python3 setup.py develop --no-deps'
 
 
-      macPython35Numba0.45.1:
+      macPython35:
         imageName: 'macos-10.13'
         python.version: '3.5'
-        numbacommand: '-c numba numba=0.45.1'
+        numbacommand: '-c numba numba'
         installPackageCommand: 'sudo python setup.py develop --no-deps'
-      macPython36Numba0.45.1:
+      macPython36:
         imageName: 'macos-10.13'
         python.version: '3.6'
-        numbacommand: '-c numba numba=0.45.1'
+        numbacommand: '-c numba numba'
         installPackageCommand: 'sudo python setup.py develop --no-deps'
-      macPython37Numba0.45.1:
+      macPython37:
         imageName: 'macos-10.13'
         python.version: '3.7'
-        numbacommand: '-c numba numba=0.45.1'
+        numbacommand: '-c numba numba'
         installPackageCommand: 'sudo python setup.py develop --no-deps'
-      macPython36NumbaDev:
-        imageName: 'macos-10.13'
-        python.version: '3.6'
-        numbacommand: '-c numba/label/dev numba'
-        installPackageCommand: 'sudo python setup.py develop --no-deps'
+      # TODO[gh-226]: Add a 3.8 run for macos
+
       macPython37NumbaDev:
         imageName: 'macos-10.13'
         python.version: '3.7'
@@ -64,32 +62,33 @@ jobs:
         installPackageCommand: 'sudo python setup.py develop --no-deps'
 
 
-      windowsPython35Numba0.45.1:
+      windowsPython35:
         imageName: 'vs2017-win2016'
         python.version: '3.5'
-        numbacommand: '-c numba numba=0.45.1'
+        numbacommand: '-c numba numba'
         installPackageCommand: 'python setup.py install'
-      windowsPython36Numba0.45.1:
+      windowsPython36:
         imageName: 'vs2017-win2016'
         python.version: '3.6'
-        numbacommand: '-c numba numba=0.45.1'
+        numbacommand: '-c numba numba'
         installPackageCommand: 'python setup.py develop'
-      windowsPython37Numba0.45.1:
+      windowsPython37:
         imageName: 'vs2017-win2016'
         python.version: '3.7'
-        numbacommand: '-c numba numba=0.45.1'
+        numbacommand: '-c numba numba'
         installPackageCommand: 'python setup.py develop'
-      windowsPython36NumbaDev:
+      windowsPython38:
         imageName: 'vs2017-win2016'
-        python.version: '3.6'
+        python.version: '3.8'
+        numbacommand: '-c numba numba'
+        installPackageCommand: 'python setup.py develop'
+
+      windowsPython38NumbaDev:
+        imageName: 'vs2017-win2016'
+        python.version: '3.8'
         numbacommand: '-c numba/label/dev numba'
         installPackageCommand: 'python setup.py develop'
-      windowsPython37NumbaDev:
-        imageName: 'vs2017-win2016'
-        python.version: '3.7'
-        numbacommand: '-c numba/label/dev numba'
-        installPackageCommand: 'python setup.py develop'
-  
+
   pool:
     vmImage: $(imageName)
 
@@ -124,7 +123,7 @@ jobs:
 
   - script: |
       call activate myEnvironment
-      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy
+      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy IPython
       conda install --yes -c conda-forge sparse
       conda install --yes $(numbacommand)
     displayName: Install dependencies windows
@@ -140,24 +139,24 @@ jobs:
       source activate myEnvironment
       conda update -n base -y -c defaults conda
       conda update -y conda
-      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy
+      conda install --yes python=$(python.version) h5py pytest setuptools scipy numpy IPython
       conda install --yes -c conda-forge sparse
       conda install --yes $(numbacommand)
-      python -m pip install -U pytest
+      python -m pip install -U pytest pytest-benchmark
       $(installPackageCommand)
     displayName: Install dependencies not windows
     condition: ne(variables['imageName'], 'vs2017-win2016')
 
   - bash: |
       source activate myEnvironment
-      pip install -U pytest
+      pip install -U pytest pytest-benchmark
       pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml
     displayName: pytest not windows
     condition: ne(variables['imageName'], 'vs2017-win2016')
 
   - script: |
       call activate myEnvironment
-      pip install -U pytest
+      pip install -U pytest pytest-benchmark
       pytest clifford/test --doctest-modules --junitxml=junit/test-results.xml
     displayName: pytest windows
     condition: eq(variables['imageName'], 'vs2017-win2016')

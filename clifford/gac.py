@@ -2,6 +2,10 @@ from . import Cl
 layout, blades = Cl(5, 3)
 locals().update(blades)
 
+# for shorter reprs
+layout.__name__ = 'layout'
+layout.__module__ = __name__
+
 n1 = e3 + e6
 n2 = e4 + e7
 n3 = e5 + e8

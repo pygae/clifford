@@ -5,14 +5,51 @@ import math
 import numpy as np
 
 
-class PGATests(unittest.TestCase):
+class TestPGA:
+    layout, _ = Cl(3, 0, 1, firstIdx=0)
 
-    def setUp(self):
-        self.algebras = [Cl(3, 0, 1, firstIdx=0), Cl(4, 0, 1, firstIdx=0)]
+    def test_right_complement(self):
+        for b in self.layout.blades_list:
+            assert b ^ b.right_complement() == self.layout.pseudoScalar
 
-    def test_integration(self):
-        layout = self.algebras[0][0]
-        blades = self.algebras[0][1]
+    def test_left_complement(self):
+        for b in self.layout.blades_list:
+            assert b.left_complement() ^ b == self.layout.pseudoScalar
+
+    def test_vee(self):
+        blades = self.layout.blades
+
+        e0 = blades['e0']
+        e1 = blades['e1']
+        e2 = blades['e2']
+        e3 = blades['e3']
+
+        e01 = blades['e01']
+        e02 = blades['e02']
+        e03 = blades['e03']
+        e12 = blades['e12']
+        e13 = blades['e13']
+        e23 = blades['e23']
+
+        e123 = e1^e2^e3
+        e032 = e0^e3^e2
+        e013 = e0^e1^e3
+        e021 = e0^e2^e1
+
+        # PGA points are trivectors.
+        # A point is just a homogeneous point, euclidean coordinates plus the origin
+        def POINT(x, y, z):
+            return e123 + x*e032 + y*e013 + z*e021
+
+        P1 = POINT(0, 0, 1)
+        P2 = POINT(3, 4, 0)
+        L = P1 & P2
+        assert L == -(4^e01) + (3^e02) - (1^e12) - (4^e13) + (3^e23)
+
+    def test_no_crash(self):
+        """ TODO: This doesn't actually do any asserts! """
+        layout = self.layout
+        blades = layout.blades
         print(blades)
 
         # A rotor (Euclidean line) and translator (Ideal line)
@@ -91,7 +128,3 @@ class PGATests(unittest.TestCase):
         print("rotated plane :", str(ROTATED_PLANE))
         print("point on plane:", str(POINT_ON_PLANE.normal()))
         print("point on torus:", str(POINT_ON_TORUS(0.0, 0.0)))
-
-
-if __name__ == '__main__':
-    unittest.main()
