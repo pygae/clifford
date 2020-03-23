@@ -396,11 +396,9 @@ class MultiVector(object):
             if len(inds) > 1:
                 raise ValueError("Must be a single basis element")
             return self.value[inds[0]]
-        elif key in self.layout.bladeTupMap.keys():
-            return self.value[self.layout.bladeTupMap[key]]
         elif isinstance(key, tuple):
-            sign, blade = self.layout._compute_reordering_sign_and_canonical_form(key)
-            return sign*self.value[self.layout.bladeTupMap[blade]]
+            sign, idx = self.layout._sign_and_index_from_tuple(key)
+            return sign*self.value[idx]
         return self.value[key]
 
     def __setitem__(self, key, value: numbers.Number) -> None:
@@ -411,11 +409,9 @@ class MultiVector(object):
         M[blade] = value
         M[index] = value
         """
-        if key in self.layout.bladeTupMap.keys():
-            self.value[self.layout.bladeTupMap[key]] = value
-        elif isinstance(key, tuple):
-            sign, blade = self.layout._compute_reordering_sign_and_canonical_form(key)
-            self.value[self.layout.bladeTupMap[blade]] = sign*value
+        if isinstance(key, tuple):
+            sign, idx = self.layout._sign_and_index_from_tuple(key)
+            self.value[idx] = sign*value
         else:
             self.value[key] = value
 
@@ -843,13 +839,16 @@ class MultiVector(object):
             raise ValueError("self is not a blade")
         scale = abs(self)
         max_index = np.argmax(np.abs(self.value))
-        B_max_factors = self.layout.bladeTupList[max_index]
+        B_max_factors = self.layout._index_as_tuple(max_index)
 
         factors = []
 
         B_c = self/scale
         for ind in B_max_factors[1:]:
-            ei = self.layout.blades_list[ind]
+            # get the basis vector
+            ei = self._newMV(dtype=B_c.value.dtype)
+            ei[(ind,)] = 1
+
             fi = (ei.lc(B_c)*B_c.normalInv(check=False)).normal()
             factors.append(fi)
             B_c = B_c * fi.normalInv(check=False)

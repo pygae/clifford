@@ -28,6 +28,17 @@ Whether you construct your algebras from scratch, or use the predefined ones, yo
     Layout
     ConformalLayout
 
+Advanced algebra configuration
+------------------------------
+It is unlikely you will need these features, but they remain as a better
+spelling for features which have always been in ``clifford``.
+
+.. autosummary::
+    :toctree: generated/
+
+    BasisBladeOrder
+    BasisVectorIds
+
 Global configuration functions
 ==============================
 These functions are used to change the global behavior of ``clifford``.
@@ -304,6 +315,7 @@ def val_get_right_gmt_matrix(mt: sparse.COO, x):
 from ._layout import Layout  # noqa: E402
 from ._multivector import MultiVector  # noqa: E402
 from ._conformal_layout import ConformalLayout  # noqa: E402
+from ._layout_helpers import BasisVectorIds, BasisBladeOrder  # noqa: F401
 from ._mvarray import MVArray, array  # noqa: F401
 from ._frame import Frame  # noqa: F401
 from ._blademap import BladeMap  # noqa: F401

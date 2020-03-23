@@ -51,7 +51,10 @@ class ConformalLayout(Layout):
     def _from_base_layout(cls, layout, added_sig=[1, -1], **kwargs) -> 'ConformalLayout':
         """ helper to implement :func:`clifford.conformalize` """
         sig_c = list(layout.sig) + added_sig
-        return cls._from_sig(sig=sig_c, firstIdx=layout.firstIdx, layout=layout, **kwargs)
+        return cls(
+            sig_c,
+            ids=layout._basis_vector_ids.augmented_with(len(added_sig)),
+            layout=layout, **kwargs)
 
     # some convenience functions
     def up(self, x: MultiVector) -> MultiVector:
