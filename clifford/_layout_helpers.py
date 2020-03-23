@@ -14,22 +14,41 @@ import functools
 import operator
 
 from . import _numba_utils
+import numba
+import numba.extending
+import numba.types
+import numba.config
 
 
-@_numba_utils.njit
-def count_set_bits(bitmap):
-    """
-    Counts the number of bits set to 1 in bitmap
-    """
-    bmp = bitmap
-    count = 0
-    n = 1
-    while bmp > 0:
-        if bmp & 1:
-            count += 1
-        bmp = bmp >> 1
-        n = n + 1
-    return count
+@numba.extending.intrinsic
+def __builtin_popcnt(tyctx, x):
+    """ Emulate clang and GCC's `__builtin_popcnt` """
+    if isinstance(x, numba.types.Integer):
+        def impl(cgctx, builder, sig, args):
+            x, = args
+            return builder.ctpop(x)
+        sig = x(x)
+        return sig, impl
+
+
+if numba.config.DISABLE_JIT:
+    def count_set_bits(bitmap):
+        """ Counts the number of bits set to 1 in bitmap """
+        bmp = bitmap
+        count = 0
+        n = 1
+        while bmp > 0:
+            if bmp & 1:
+                count += 1
+            bmp = bmp >> 1
+            n = n + 1
+        return count
+
+else:
+    @numba.njit
+    def count_set_bits(x):
+        """ Counts the number of bits set to 1 in bitmap """
+        return __builtin_popcnt(x)
 
 
 @_numba_utils.njit
