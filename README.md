@@ -56,3 +56,22 @@ Syntax Summary
 ---
 
 For installation instructions, api documention, and tutorials, [head over to our documentation](https://clifford.readthedocs.io/)!
+
+Citing This Library
+----------
+```
+@software{python_clifford,
+  author       = {Alex Arsenovic and
+                  Hugo Hadfield and
+                  Eric Wieser and
+                  Robert Kern and
+                  {The Pygae Team}},
+  title        = {pygae/clifford v1.3.0dev2},
+  month        = mar,
+  year         = 2020,
+  publisher    = {Zenodo},
+  version      = {v1.3.0dev2},
+  doi          = {10.5281/zenodo.3724677},
+  url          = {https://doi.org/10.5281/zenodo.3724677}
+}
+```
