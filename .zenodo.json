@@ -1,4 +1,7 @@
 {
+  "license": {
+    "id": "BSD-3-Clause"
+  }, 
   "creators": [
     {
       "affiliation": "810 Labs",
@@ -24,11 +27,10 @@
     }
   ],
   "keywords": [
-  	"python",
+    "python",
     "clifford algebra",
     "geometric algebra",
     "geometry"
   ],
-  "license": "BSD 3-Clause License",
   "upload_type": "software"
 }
