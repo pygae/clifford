@@ -64,7 +64,7 @@ def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
 
 
 @_numba_utils.njit
-def gmt_element(bitmap_a, bitmap_b, sig_array, bitmap_to_linear_mapping):
+def gmt_element(bitmap_a, bitmap_b, sig_array):
     """
     Element of the geometric multiplication table given blades a, b.
     The implementation used here is described in chapter 19 of
@@ -72,39 +72,38 @@ def gmt_element(bitmap_a, bitmap_b, sig_array, bitmap_to_linear_mapping):
     """
     output_sign = canonical_reordering_sign(bitmap_a, bitmap_b, sig_array)
     output_bitmap = bitmap_a^bitmap_b
-    idx = bitmap_to_linear_mapping[output_bitmap]
-    return idx, output_sign
+    return output_bitmap, output_sign
 
 
 @_numba_utils.njit
-def imt_check(grade_list_idx, grade_list_i, grade_list_j):
+def imt_check(grade_v, grade_i, grade_j):
     """
     A check used in imt table generation
     """
-    return ((grade_list_idx == abs(grade_list_i - grade_list_j)) and (grade_list_i != 0) and (grade_list_j != 0))
+    return (grade_v == abs(grade_i - grade_j)) and (grade_i != 0) and (grade_j != 0)
 
 
 @_numba_utils.njit
-def omt_check(grade_list_idx, grade_list_i, grade_list_j):
+def omt_check(grade_v, grade_i, grade_j):
     """
     A check used in omt table generation
     """
-    return grade_list_idx == (grade_list_i + grade_list_j)
+    return grade_v == (grade_i + grade_j)
 
 
 @_numba_utils.njit
-def lcmt_check(grade_list_idx, grade_list_i, grade_list_j):
+def lcmt_check(grade_v, grade_i, grade_j):
     """
     A check used in lcmt table generation
     """
-    return grade_list_idx == (grade_list_j - grade_list_i)
+    return grade_v == (grade_j - grade_i)
 
 
 @_numba_utils.njit(parallel=NUMBA_PARALLEL, nogil=True)
 def _numba_construct_tables(
-    gradeList, linear_map_to_bitmap, bitmap_to_linear_map, signature
+    index_to_grade, index_to_bitmap, bitmap_to_index, signature
 ):
-    array_length = int(len(gradeList) * len(gradeList))
+    array_length = int(len(index_to_grade) * len(index_to_grade))
     indices = np.zeros((3, array_length), dtype=np.uint64)
     k_list = indices[0, :]
     l_list = indices[1, :]
@@ -119,30 +118,31 @@ def _numba_construct_tables(
     # use as small a type as possible to minimize type promotion
     mult_table_vals = np.zeros(array_length, dtype=np.int8)
 
-    for i, grade_list_i in enumerate(gradeList):
-        blade_bitmap_i = linear_map_to_bitmap[i]
+    for i, grade_i in enumerate(index_to_grade):
+        bitmap_i = index_to_bitmap[i]
 
-        for j, grade_list_j in enumerate(gradeList):
-            blade_bitmap_j = linear_map_to_bitmap[j]
-            v, mul = gmt_element(blade_bitmap_i, blade_bitmap_j, signature, bitmap_to_linear_map)
+        for j, grade_j in enumerate(index_to_grade):
+            bitmap_j = index_to_bitmap[j]
+            bitmap_v, mul = gmt_element(bitmap_i, bitmap_j, signature)
+            v = bitmap_to_index[bitmap_v]
 
-            list_ind = i * len(gradeList) + j
+            list_ind = i * len(index_to_grade) + j
             k_list[list_ind] = i
             l_list[list_ind] = v
             m_list[list_ind] = j
 
             mult_table_vals[list_ind] = mul
-            grade_list_idx = gradeList[v]
+            grade_v = index_to_grade[v]
 
             # A_r . B_s = <A_r B_s>_|r-s|
             # if r, s != 0
-            imt_prod_mask[list_ind] = imt_check(grade_list_idx, grade_list_i, grade_list_j)
+            imt_prod_mask[list_ind] = imt_check(grade_v, grade_i, grade_j)
 
             # A_r ^ B_s = <A_r B_s>_|r+s|
-            omt_prod_mask[list_ind] = omt_check(grade_list_idx, grade_list_i, grade_list_j)
+            omt_prod_mask[list_ind] = omt_check(grade_v, grade_i, grade_j)
 
             # A_r _| B_s = <A_r B_s>_(s-r) if s-r >= 0
-            lcmt_prod_mask[list_ind] = lcmt_check(grade_list_idx, grade_list_i, grade_list_j)
+            lcmt_prod_mask[list_ind] = lcmt_check(grade_v, grade_i, grade_j)
 
     return indices, mult_table_vals, imt_prod_mask, omt_prod_mask, lcmt_prod_mask
 
@@ -153,7 +153,8 @@ def construct_tables(
     # wrap the numba one
     indices, *arrs = _numba_construct_tables(
         blade_order.grades,
-        blade_order.index_to_bitmap, blade_order.bitmap_to_index,
+        blade_order.index_to_bitmap,
+        blade_order.bitmap_to_index,
         signature
     )
     dims = len(blade_order.grades)
