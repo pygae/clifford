@@ -1,0 +1,36 @@
+{
+  "license": {
+    "id": "BSD-3-Clause"
+  }, 
+  "creators": [
+    {
+      "affiliation": "810 Labs",
+      "name": "Alex Arsenovic",
+      "orcid": "0000-0002-8599-5873"
+    },
+    {
+      "affiliation": "University of Cambridge",
+      "name": "Hugo Hadfield",
+      "orcid": "0000-0003-4318-050X"
+    },
+    {
+      "affiliation": "University of Cambridge",
+      "name": "Eric Wieser",
+      "orcid": "0000-0003-0412-4978"
+    },
+    {
+      "affiliation": "Enthought, Inc.",
+      "name": "Robert Kern"
+    },
+    {
+      "name": "{The Pygae Team}"
+    }
+  ],
+  "keywords": [
+    "python",
+    "clifford algebra",
+    "geometric algebra",
+    "geometry"
+  ],
+  "upload_type": "software"
+}
