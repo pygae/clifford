@@ -15,10 +15,16 @@ class MultiVector(object):
     Parameters
     -------------
     layout: instance of :class:`clifford.Layout`
-        the layout of the algebra
+        The layout of the algebra
 
     value : sequence of length ``layout.gaDims``
-        the coefficients of the base blades
+        The coefficients of the base blades
+
+    dtype : numpy.dtype
+        The datatype to use for the multivector, if no
+        value was passed.
+
+        .. versionadded:: 1.1.0
 
     Notes
     ------
@@ -32,12 +38,12 @@ class MultiVector(object):
     * ``M(N)`` : grade or subspace projection
     * ``M[N]`` : blade projection
     """
+    __array_priority__ = 100
 
     def __init__(self, layout, value=None, string=None, *, dtype: np.dtype = np.float64) -> None:
         """Constructor."""
 
         self.layout = layout
-        self.__array_priority__ = 100
 
         if value is None:
             if string is None:
