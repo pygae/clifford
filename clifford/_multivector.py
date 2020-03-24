@@ -32,12 +32,12 @@ class MultiVector(object):
     * ``M(N)`` : grade or subspace projection
     * ``M[N]`` : blade projection
     """
+    __array_priority__ = 100
 
     def __init__(self, layout, value=None, string=None, *, dtype: np.dtype = np.float64) -> None:
         """Constructor."""
 
         self.layout = layout
-        self.__array_priority__ = 100
 
         if value is None:
             if string is None:
