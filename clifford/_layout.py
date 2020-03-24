@@ -1,4 +1,3 @@
-import re
 import functools
 from typing import List, Tuple, Optional, Dict, Container
 import warnings
@@ -37,13 +36,6 @@ class _cached_property:
         # this entry hides the _cached_property
         setattr(obj, self.__name__, val)
         return val
-
-
-# The blade finding regex for parsing strings of mvs
-_blade_pattern = re.compile(r"""
-    ((^|\s)-?\s?\d+(\.\d+)?)\s|
-    ((^|\+|-)\s?(\d+((e(\+|-))|\.)?(\d+)?)\^e\d+(\s|$))
-""", re.VERBOSE)
 
 
 @_numba_utils.njit
@@ -492,34 +484,9 @@ class Layout(object):
 
     def parse_multivector(self, mv_string: str) -> MultiVector:
         """ Parses a multivector string into a MultiVector object """
-        # Get the names of the canonical blades
-        blade_name_index_map = {name: index for index, name in enumerate(self.names)}
-
-        # Clean up the input string a bit
-        cleaned_string = re.sub('[()]', '', mv_string)
-
-        # Create a multivector
-        mv_out = MultiVector(self)
-
-        # Apply the regex
-        for m in _blade_pattern.finditer(cleaned_string):
-            # Clean up the search result
-            cleaned_match = m.group(0)
-
-            # Split on the '^'
-            stuff = cleaned_match.split('^')
-
-            if len(stuff) == 2:
-                # Extract the value of the blade and the index of the blade
-                blade_val = float("".join(stuff[0].split()))
-                blade_index = blade_name_index_map[stuff[1].strip()]
-                mv_out[blade_index] = blade_val
-            elif len(stuff) == 1:
-                # Extract the value of the scalar
-                blade_val = float("".join(stuff[0].split()))
-                blade_index = 0
-                mv_out[blade_index] = blade_val
-        return mv_out
+        # guarded import in case the parse become heavier weight
+        from ._parser import parse_multivector
+        return parse_multivector(self, mv_string)
 
     def _genTables(self):
         "Generate the multiplication tables."

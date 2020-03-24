@@ -26,6 +26,10 @@ Bugs fixed
    as ``mv[e1]``.
  * :func:`~clifford.operator.ip` (the inner product) no longer performs the
    outer product.
+ * :func:`Layout.parse_multivector` now throws :exc:`SyntaxError` on invalid
+   input, rather than silenltly producing nonsense.
+ * :func:`Layout.parse_multivector` supports basis vector names which do not
+   start with e.
 
 Compatibility notes
 -------------------
