@@ -45,11 +45,14 @@ class MultiVector(object):
 
         self.layout = layout
 
-        if value is None:
-            if string is None:
-                self.value = np.zeros((self.layout.gaDims,), dtype=dtype)
-            else:
-                self.value = layout.parse_multivector(string).value
+        if string is not None:
+            if value is not None:
+                raise TypeError("Cannot pass both string and value")
+            self.value = layout.parse_multivector(string).value
+
+        elif value is None:
+            self.value = np.zeros((self.layout.gaDims,), dtype=dtype)
+
         else:
             self.value = np.array(value)
             if self.value.shape != (self.layout.gaDims,):
