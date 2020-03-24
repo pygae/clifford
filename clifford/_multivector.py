@@ -15,10 +15,16 @@ class MultiVector(object):
     Parameters
     -------------
     layout: instance of :class:`clifford.Layout`
-        the layout of the algebra
+        The layout of the algebra
 
     value : sequence of length ``layout.gaDims``
-        the coefficients of the base blades
+        The coefficients of the base blades
+
+    dtype : numpy.dtype
+        The datatype to use for the multivector, if no
+        value was passed.
+
+        .. versionadded:: 1.1.0
 
     Notes
     ------
