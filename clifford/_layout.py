@@ -484,9 +484,7 @@ class Layout(object):
 
     def parse_multivector(self, mv_string: str) -> MultiVector:
         """ Parses a multivector string into a MultiVector object """
-        # guarded import in case the parse become heavier weight
-        from ._parser import parse_multivector
-        return parse_multivector(self, mv_string)
+        return MultiVector.from_string(self, mv_string)
 
     def _genTables(self):
         "Generate the multiplication tables."

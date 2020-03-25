@@ -1,5 +1,6 @@
 import numbers
 import math
+import types
 from typing import List, Set, Tuple
 
 import numpy as np
@@ -9,25 +10,23 @@ from . import general_exp
 from . import _settings
 
 
+class _layout_binding_classmethod(classmethod):
+    """
+    Helper to pass the `layout` argument automatically to class methods when
+    called on instances.
+    """
+    def __get__(self, instance, owner):
+        base = classmethod.__get__(self, instance, owner)
+        if instance is not None:
+            # methodtype binds the next unbound argument,
+            return types.MethodType(base, instance.layout)
+        else:
+            return base
+
+
 class MultiVector(object):
     """An element of the algebra
 
-    Parameters
-    -------------
-    layout: instance of :class:`clifford.Layout`
-        The layout of the algebra
-
-    value : sequence of length ``layout.gaDims``
-        The coefficients of the base blades
-
-    dtype : numpy.dtype
-        The datatype to use for the multivector, if no
-        value was passed.
-
-        .. versionadded:: 1.1.0
-
-    Notes
-    ------
     The following operators are overloaded:
 
     * ``A * B`` : geometric product
@@ -40,25 +39,86 @@ class MultiVector(object):
     """
     __array_priority__ = 100
 
-    def __init__(self, layout, value=None, string=None, *, dtype: np.dtype = np.float64) -> None:
-        """Constructor."""
+    @_layout_binding_classmethod
+    def of_zero(cls, layout, *, dtype=np.float64):
+        """ Construct a multivector initialized to zero with the specified dtype.
 
+        Can be called either as ``MultiVector.of_zero(layout, ...)``, or
+        reusing the layout of an existing multivector as ``some_mv.of_zero(...)``.
+
+        .. versionadded:: 1.3.0
+
+        Parameters
+        ----------
+        layout: instance of :class:`clifford.Layout`
+            The layout of the algebra
+        dtype : numpy.dtype
+            The datatype to use for the multivector, if no
+            value was passed.
+        """
+        self = super().__new__(cls)
         self.layout = layout
+        self.value = np.zeros((self.layout.gaDims,), dtype=dtype)
+        return self
 
-        if string is not None:
-            if value is not None:
-                raise TypeError("Cannot pass both string and value")
-            self.value = layout.parse_multivector(string).value
+    @_layout_binding_classmethod
+    def from_string(cls, layout, string):
+        """ Create a multivector from a string representation.
 
-        elif value is None:
-            self.value = np.zeros((self.layout.gaDims,), dtype=dtype)
+        Can be called either as ``MultiVector.from_string(layout, ...)``, or
+        reusing the layout of an existing multivector as ``some_mv.from_string(...)``.
 
+        .. versionadded:: 1.3.0
+
+        Parameters
+        ----------
+        layout: instance of :class:`clifford.Layout`
+            The layout of the algebra
+        string : str
+            The datatype to use for the multivector, if no
+            value was passed.
+        """
+        # guarded import in case the parse become heavier weight
+        from ._parser import parse_multivector
+        return parse_multivector(layout, string, cls)
+
+    @_layout_binding_classmethod
+    def from_value(cls, layout, value):
+        """ Construct a multivector from an existing array, optionally copying.
+
+        Can be called either as ``MultiVector.from_value(layout, ...)``, or
+        reusing the layout of an existing multivector as ``some_mv.from_value(...)``.
+
+        .. versionadded:: 1.3.0
+
+        Parameters
+        ----------
+        layout: instance of :class:`clifford.Layout`
+            The layout of the algebra.
+        value : sequence of length ``layout.gaDims``
+            The coefficients of the base blades.
+        """
+        if value.shape != (layout.gaDims,):
+            raise ValueError(
+                "value must be a sequence of length %s" %
+                layout.gaDims)
+        self = super().__new__(cls)
+        self.layout = layout
+        self.value = np.array(value)
+        return self
+
+
+    def __new__(cls, layout, *args, **kwargs) -> 'MultiVector':
+        """
+        Shorthand for :meth:`from_value`, :meth:`from_string`, or :meth:`of_zero`.
+
+        The appropriate function is chosen for the arguments given.  """
+        if args or 'value' in kwargs:
+            return cls.from_value(layout, *args, **kwargs)
+        elif 'string' in kwargs:
+            return cls.from_string(layout, *args, **kwargs)
         else:
-            self.value = np.array(value)
-            if self.value.shape != (self.layout.gaDims,):
-                raise ValueError(
-                    "value must be a sequence of length %s" %
-                    self.layout.gaDims)
+            return cls.of_zero(layout, *args, **kwargs)
 
     def __array__(self) -> 'cf.MVArray':
         # we are a scalar, and the only appropriate dtype is an object array
@@ -79,7 +139,7 @@ class MultiVector(object):
         elif isinstance(other, numbers.Number):
             if coerce:
                 # numeric scalar
-                newOther = self._newMV(dtype=np.result_type(other))
+                newOther = self.of_zero(dtype=np.result_type(other))
                 newOther[()] = other
                 return newOther, True
             else:
@@ -87,14 +147,6 @@ class MultiVector(object):
 
         else:
             return other, False
-
-    def _newMV(self, newValue=None, *, dtype: np.dtype = None) -> 'MultiVector':
-        """Returns a new MultiVector (or derived class instance).
-        """
-        if newValue is None and dtype is None:
-            raise TypeError("Must specify either a type or value")
-
-        return self.__class__(self.layout, newValue, dtype=dtype)
 
     # numeric special methods
     # binary
@@ -139,7 +191,7 @@ class MultiVector(object):
 
             newValue = other * self.value
 
-        return self._newMV(newValue)
+        return self.from_value(newValue)
 
     def __rmul__(self, other) -> 'MultiVector':
         """Right-hand geometric product, :math:`NM`"""
@@ -154,7 +206,7 @@ class MultiVector(object):
                 return other*obj
             newValue = other*self.value
 
-        return self._newMV(newValue)
+        return self.from_value(newValue)
 
     def __xor__(self, other) -> 'MultiVector':
         r""" Outer product, :math:`M \wedge N` """
@@ -169,7 +221,7 @@ class MultiVector(object):
                 return obj^other
             newValue = other*self.value
 
-        return self._newMV(newValue)
+        return self.from_value(newValue)
 
     def __rxor__(self, other) -> 'MultiVector':
         r"""Right-hand outer product, :math:`N \wedge M` """
@@ -184,7 +236,7 @@ class MultiVector(object):
                 return other^obj
             newValue = other * self.value
 
-        return self._newMV(newValue)
+        return self.from_value(newValue)
 
     def __or__(self, other) -> 'MultiVector':
         r""" Inner product, :math:`M \cdot N` """
@@ -198,9 +250,9 @@ class MultiVector(object):
                 obj = self.__array__()
                 return obj|other
             # l * M = M * l = 0 for scalar l
-            return self._newMV(dtype=np.result_type(self.value.dtype, other))
+            return self.of_zero(dtype=np.result_type(self.value.dtype, other))
 
-        return self._newMV(newValue)
+        return self.from_value(newValue)
 
     __ror__ = __or__
 
@@ -217,7 +269,7 @@ class MultiVector(object):
                 return obj + other
         newValue = self.value + other.value
 
-        return self._newMV(newValue)
+        return self.from_value(newValue)
 
     __radd__ = __add__
 
@@ -234,7 +286,7 @@ class MultiVector(object):
                 return obj - other
         newValue = self.value - other.value
 
-        return self._newMV(newValue)
+        return self.from_value(newValue)
 
     def __rsub__(self, other) -> 'MultiVector':
         """Right-hand subtraction
@@ -249,7 +301,7 @@ class MultiVector(object):
                 return other - obj
         newValue = other.value - self.value
 
-        return self._newMV(newValue)
+        return self.from_value(newValue)
 
     def right_complement(self) -> 'MultiVector':
         return self.layout.MultiVector(value=self.layout.right_complement_func(self.value))
@@ -269,7 +321,7 @@ class MultiVector(object):
                 obj = self.__array__()
                 return obj/other
             newValue = self.value / other
-            return self._newMV(newValue)
+            return self.from_value(newValue)
 
     def __rtruediv__(self, other) -> 'MultiVector':
         """Right-hand division, :math:`N M^{-1}`"""
@@ -293,9 +345,9 @@ class MultiVector(object):
         other = int(round(other))
 
         if other == 0:
-            return self._newMV(dtype=self.value.dtype) + 1
+            return self.of_zero(dtype=self.value.dtype) + 1
 
-        newMV = self._newMV(np.array(self.value))  # copy
+        newMV = self.from_value(np.array(self.value))  # copy
 
         for i in range(1, other):
             newMV = newMV * self
@@ -326,7 +378,7 @@ class MultiVector(object):
 
         newValue = -self.value
 
-        return self._newMV(newValue)
+        return self.from_value(newValue)
 
     def as_array(self) -> np.ndarray:
         return self.value
@@ -336,7 +388,7 @@ class MultiVector(object):
 
         newValue = self.value + 0  # copy
 
-        return self._newMV(newValue)
+        return self.from_value(newValue)
 
     def mag2(self) -> numbers.Number:
         """Magnitude (modulus) squared, :math:`{|M|}^2`
@@ -365,7 +417,7 @@ class MultiVector(object):
         Note that ``~(N * M) == ~M * ~N``.
         """
         # The multivector created by reversing all multiplications
-        return self._newMV(self.layout.adjoint_func(self.value))
+        return self.from_value(self.layout.adjoint_func(self.value))
 
     __invert__ = adjoint
 
@@ -459,7 +511,7 @@ class MultiVector(object):
 
         newValue = np.multiply(mask, self.value)
 
-        return self._newMV(newValue)
+        return self.from_value(newValue)
 
     # fundamental special methods
     def __str__(self) -> str:
@@ -600,7 +652,7 @@ class MultiVector(object):
 
         newValue = self.layout.lcmt_func(self.value, other.value)
 
-        return self._newMV(newValue)
+        return self.from_value(newValue)
 
     @property
     def pseudoScalar(self) -> 'MultiVector':
@@ -709,7 +761,7 @@ class MultiVector(object):
         """Return left-inverse using a computational linear algebra method
         proposed by Christian Perwass.
         """
-        return self._newMV(self.layout.inv_func(self.value))
+        return self.from_value(self.layout.inv_func(self.value))
 
     def _pick_inv(self, fallback):
         """Internal helper to choose an appropriate inverse method.
@@ -795,7 +847,7 @@ class MultiVector(object):
 
         newValue = signs * self.value
 
-        return self._newMV(newValue)
+        return self.from_value(newValue)
 
     @property
     def even(self) -> 'MultiVector':
@@ -855,7 +907,7 @@ class MultiVector(object):
         B_c = self/scale
         for ind in B_max_factors[1:]:
             # get the basis vector
-            ei = self._newMV(dtype=B_c.value.dtype)
+            ei = self.of_zero(dtype=B_c.value.dtype)
             ei[(ind,)] = 1
 
             fi = (ei.lc(B_c)*B_c.normalInv(check=False)).normal()
@@ -884,7 +936,7 @@ class MultiVector(object):
             if self.layout.gradeList[i] == 1:
                 v = np.zeros((self.layout.gaDims,), dtype=float)
                 v[i] = 1.
-                wholeBasis.append(self._newMV(v))
+                wholeBasis.append(self.from_value(v))
 
         thisBasis = []  # vector basis of this subspace
 
@@ -1004,4 +1056,4 @@ class MultiVector(object):
 
         See `np.ndarray.astype` for argument descriptions.
         """
-        return self._newMV(self.value.astype(*args, **kwargs))
+        return self.from_value(self.value.astype(*args, **kwargs))
