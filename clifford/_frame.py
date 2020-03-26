@@ -4,6 +4,7 @@ from functools import reduce
 import numpy as np
 
 from ._mvarray import MVArray
+from ._multivector import MultiVector
 from .operator import op
 from . import _settings
 

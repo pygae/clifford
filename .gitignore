@@ -60,3 +60,5 @@ target/
 
 .mypy_cache
 .ipynb_checkpoints
+
+/docs/api/generated/*
