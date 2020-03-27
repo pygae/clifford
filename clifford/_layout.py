@@ -162,29 +162,28 @@ def construct_tables(
 
 @_utils.set_module('clifford')
 class Layout(object):
-    """ Layout stores information regarding the geometric algebra itself and the
+    r""" Layout stores information regarding the geometric algebra itself and the
     internal representation of multivectors.
 
     Parameters
     ----------
 
-    signature : List[int]
+    sig : List[int]
         The signature of the vector space.  This should be
         a list of positive and negative numbers where the sign determines the
         sign of the inner product of the corresponding vector with itself.
         The values are irrelevant except for sign.  This list also determines
-        the dimensionality of the vectors.  Signatures with zeroes are not
-        permitted at this time.
+        the dimensionality of the vectors.
 
         Examples::
 
-            signature=[+1, -1, -1, -1] # Hestenes', et al. Space-Time Algebra
-            signature=[+1, +1, +1]     # 3-D Euclidean signature
+            sig=[+1, -1, -1, -1] # Hestenes', et al. Space-Time Algebra
+            sig=[+1, +1, +1]     # 3-D Euclidean signature
 
     ids : Optional[BasisVectorIds[Any]]
         A list of ids to associate with each basis vector. These ids are used
         to generate names (if not passed explicitly), and also used when using
-        tuple-notation to access elements, such as `mv[(1, 3)] = 1`.
+        tuple-notation to access elements, such as ``mv[(1, 3)] = 1``.
         Defaults to ``BasisVectorIds.ordered_integers(len(sig))``; that is,
         integers starting at 1.
         This supersedes the old `firstIdx` argument.
@@ -212,7 +211,7 @@ class Layout(object):
         algebra.  This list determines the order of coefficients in the
         internal representation of multivectors.  The entry for the scalar
         must be an empty tuple, and the entries for grade-1 vectors must be
-        singleton tuples.  Remember, the length of the list will be 2**dims.
+        singleton tuples.  Remember, the length of the list will be ``2**dims`.
 
         Example::
 
@@ -229,8 +228,7 @@ class Layout(object):
 
     firstIdx : int
         The index of the first vector.  That is, some systems number
-        the base vectors starting with 0, some with 1.  Choose by passing
-        the correct number as firstIdx.  0 is the default.
+        the base vectors starting with 0, some with 1.
 
         .. deprecated:: 1.3.0
 
@@ -240,22 +238,21 @@ class Layout(object):
     names : List[str]
         List of names of each blade.  When pretty-printing multivectors,
         use these symbols for the blades.  names should be in the same order
-        as bladeTupList.  You may use an empty string for scalars.  By
-        default, the name for each non-scalar blade is 'e' plus the indices
-        of the blade as given in bladeTupList.
+        as `order`.  You may use an empty string for scalars.  By
+        default, the name for each non-scalar blade is 'e' plus the ids
+        of the blade as given in `ids`.
 
         Example::
 
             names=['', 's0', 's1', 'i']  # 2-D
 
-
     Attributes
     ----------
 
     dims :
-        dimensionality of vectors (== len(signature))
+        dimensionality of vectors (``len(self.sig)``)
     sig :
-        normalized signature (i.e. all values are +1 or -1)
+        normalized signature, with all values ``+1`` or ``-1``
     bladeTupList :
         list of blades
     gradeList :
@@ -265,16 +262,19 @@ class Layout(object):
     names :
         pretty-printing symbols for the blades
     gmt :
-        multiplication table for geometric product [1]
+        multiplication table for geometric product
     imt :
-        multiplication table for inner product [1]
+        multiplication table for inner product
     omt :
-        multiplication table for outer product [1]
+        multiplication table for outer product
     lcmt :
-        multiplication table for the left-contraction [1]
+        multiplication table for the left-contraction
 
-    [1] The multiplication tables are NumPy arrays of rank 3 with indices like
-        the tensor g_ijk discussed above.
+    Notes
+    -----
+    The multiplication tables :math:`M` are tensors of rank 3 such that
+    :math:`a = b \operatorname{op} c` can be computed as
+    :math:`a_j = \sum_{i,k} b_i \mathit{M}_{ijk} c_k`.
     """
     # old signature
     def __init__(self, sig, bladeTupList, firstIdx=1, names=None):
@@ -538,7 +538,7 @@ class Layout(object):
     def get_grade_projection_matrix(self, grade):
         """
         Returns the matrix M_g that performs grade projection via left multiplication
-        eg. M_g@A.value = A(g).value
+        eg. ``M_g@A.value = A(g).value``
         """
         diag_mask = 1.0 * (np.array(self.gradeList) == grade)
         return np.diag(diag_mask)
@@ -615,41 +615,31 @@ class Layout(object):
     def get_left_gmt_matrix(self, x):
         """
         This produces the matrix X that performs left multiplication with x
-        eg. X@b == (x*b).value
+        eg. ``X@b == (x*b).value``
         """
         return val_get_left_gmt_matrix(self.gmt, x.value)
 
     def get_right_gmt_matrix(self, x):
         """
         This produces the matrix X that performs right multiplication with x
-        eg. X@b == (b*x).value
+        eg. ``X@b == (b*x).value``
         """
         return val_get_right_gmt_matrix(self.gmt, x.value)
 
-    def MultiVector(self, *args, **kwargs) -> MultiVector:
-        '''
-        Create a multivector in this layout
-
-        convenience func to MultiVector(layout)
-        '''
-        return MultiVector(self, *args, **kwargs)
-
-    def load_ga_file(self, filename):
+    def load_ga_file(self, filename: str) -> 'cf.MVArray':
         """
-        Takes a ga file
-        Checks it is the same signature as this layout
-        Loads the data into an MVArray
+        Loads the data from a ga file, checking it matches this layout.
         """
         data_array, metric, basis_names, support = read_ga_file(filename)
         if not np.allclose(np.diagonal(metric), self.sig):
             raise ValueError('The signature of the ga file does not match this layout')
         return cf.MVArray.from_value_array(self, data_array)
 
-    def grade_mask(self, grade):
+    def grade_mask(self, grade: int) -> np.ndarray:
         return np.equal(grade, self.gradeList)
 
     @property
-    def rotor_mask(self):
+    def rotor_mask(self) -> np.ndarray:
         return sum(
             self.grade_mask(i)
             for i in range(self.dims + 1)
@@ -657,7 +647,7 @@ class Layout(object):
         )
 
     @property
-    def metric(self):
+    def metric(self) -> np.ndarray:
         basis_vectors = self.basis_vectors_lst
         if self._metric is None:
             self._metric = np.zeros((len(basis_vectors), len(basis_vectors)))
@@ -669,7 +659,7 @@ class Layout(object):
             return self._metric.copy()
 
     @property
-    def scalar(self):
+    def scalar(self) -> MultiVector:
         '''
         the scalar of value 1, for this GA (a MultiVector object)
 
@@ -680,7 +670,7 @@ class Layout(object):
         return s
 
     @property
-    def pseudoScalar(self):
+    def pseudoScalar(self) -> MultiVector:
         '''
         the psuedoScalar
         '''
@@ -688,7 +678,7 @@ class Layout(object):
 
     I = pseudoScalar
 
-    def randomMV(self, n=1, **kwargs):
+    def randomMV(self, n=1, **kwargs) -> MultiVector:
         '''
         Convenience method to create a random multivector.
 
@@ -696,13 +686,13 @@ class Layout(object):
         '''
         return cf.randomMV(layout=self, n=n, **kwargs)
 
-    def randomV(self, n=1, **kwargs):
+    def randomV(self, n=1, **kwargs) -> MultiVector:
         '''
         generate n random 1-vector s
         '''
         return cf.randomMV(layout=self, n=n, grades=[1], **kwargs)
 
-    def randomRotor(self):
+    def randomRotor(self) -> MultiVector:
         '''
         generate a random Rotor.
 
@@ -730,12 +720,12 @@ class Layout(object):
             yield v_index
 
     @property
-    def basis_vectors(self):
+    def basis_vectors(self) -> Dict[str, MultiVector]:
         '''dictionary of basis vectors'''
         return dict(zip(self.basis_names, self.basis_vectors_lst))
 
     @property
-    def basis_names(self):
+    def basis_names(self) -> List[str]:
         """
         Get the names of the basis vectors, in the order they are stored.
 
@@ -745,7 +735,7 @@ class Layout(object):
         return [self.names[i] for i in self._basis_vector_indices()]
 
     @property
-    def basis_vectors_lst(self):
+    def basis_vectors_lst(self) -> List[MultiVector]:
         """
         Like ``blades_of_grade(1)``, but ordered based on the ``ids`` parameter
         passed at construction.
@@ -755,15 +745,6 @@ class Layout(object):
     def blades_of_grade(self, grade: int) -> List[MultiVector]:
         '''
         return all blades of a given grade,
-
-        Parameters
-        ------------
-        grade: int
-            the desired grade
-
-        Returns
-        --------
-        blades : list of MultiVectors
         '''
         return [
             self._basis_blade(i)
@@ -774,7 +755,8 @@ class Layout(object):
     @property
     def blades_list(self) -> List[MultiVector]:
         '''
-        List of blades in this layout matching the order of `self.bladeTupList`
+        List of blades in this layout matching the `order` argument this layout
+        was constructed from.
         '''
         return [self._basis_blade(i) for i in range(self.gaDims)]
 
@@ -814,3 +796,12 @@ class Layout(object):
         return self._basis_vector_ids.bitmap_as_tuple(
             self._basis_blade_order.index_to_bitmap[idx]
         )
+
+    # this needs to be last else it replaces the type for our annotations!
+    def MultiVector(self, *args, **kwargs) -> MultiVector:
+        '''
+        Create a multivector in this layout
+
+        convenience func to ``MultiVector(layout)``
+        '''
+        return MultiVector(self, *args, **kwargs)

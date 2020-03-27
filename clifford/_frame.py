@@ -27,23 +27,15 @@ class Frame(MVArray):
             return
 
     @property
-    def En(self):
-        '''
-        Volume element for this frame
-
-        En = e1^e2^...^en
+    def En(self) -> MultiVector:
+        r'''
+        Volume element for this frame, :math:`E_n = e_1 \wedge e_2 \wedge \cdots \wedge e_n`
         '''
         return reduce(op, self)
 
     @property
-    def inv(self):
-        '''
-        The inverse frame of self
-
-        Returns
-        ---------
-        inv : `clifford.Frame`
-        '''
+    def inv(self) -> 'Frame':
+        ''' The inverse frame of self '''
 
         En = self.En
         # see D&L sec 4.3
@@ -53,23 +45,13 @@ class Frame(MVArray):
 
         return Frame(vectors)
 
-    def is_innermorphic_to(self, other, eps=None):
+    def is_innermorphic_to(self, other: 'Frame', eps: float = None) -> bool:
         '''
-        Is this frame `innermorhpic` to  other?
+        Is this frame *innermorphic* to  other?
 
         *innermorphic* means both frames share the same inner-product
         between corresponding vectors. This implies that the two frames
-        are related by an orthogonal transform
-
-        Parameters
-        ------------
-        other : `clifford.Frame`
-            the other frame
-
-        Returns
-        ----------
-        value : bool
-
+        are related by an orthogonal transform.
         '''
         # make iterable `pairs` of all index combos, without repeat
         pairs = list(itertools.combinations(range(len(self)), 2))
