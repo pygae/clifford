@@ -1,14 +1,16 @@
 import numbers
 import math
-from typing import List, Set, Tuple
+from typing import List, Set, Tuple, Union
 
 import numpy as np
 
 import clifford as cf
 from . import general_exp
 from . import _settings
+from . import _utils
 
 
+@_utils.set_module('clifford')
 class MultiVector(object):
     """An element of the algebra
 
@@ -119,11 +121,11 @@ class MultiVector(object):
         return self.layout.MultiVector(value=self.layout.vee_func(self.value, other.value))
 
     def __and__(self, other) -> 'MultiVector':
-        """ Alias for :meth:`~MultiVector.vee` """
+        """ ``self & other``, an alias for :meth:`~MultiVector.vee` """
         return self.vee(other)
 
     def __mul__(self, other) -> 'MultiVector':
-        """Geometric product :math:`MN` """
+        """ ``self * other``, the geometric product :math:`MN` """
 
         other, mv = self._checkOther(other, coerce=False)
 
@@ -154,7 +156,7 @@ class MultiVector(object):
         return self._newMV(newValue)
 
     def __xor__(self, other) -> 'MultiVector':
-        r""" Outer product, :math:`M \wedge N` """
+        r""" ``self ^ other``, the Outer product :math:`M \wedge N` """
 
         other, mv = self._checkOther(other, coerce=False)
 
@@ -184,7 +186,7 @@ class MultiVector(object):
         return self._newMV(newValue)
 
     def __or__(self, other) -> 'MultiVector':
-        r""" Inner product, :math:`M \cdot N` """
+        r""" ``self | other``, the inner product :math:`M \cdot N` """
 
         other, mv = self._checkOther(other)
 
@@ -202,10 +204,7 @@ class MultiVector(object):
     __ror__ = __or__
 
     def __add__(self, other) -> 'MultiVector':
-        """Addition
-
-        M + N
-        """
+        """ ``self + other``, addition """
 
         other, mv = self._checkOther(other)
         if not mv:
@@ -219,10 +218,7 @@ class MultiVector(object):
     __radd__ = __add__
 
     def __sub__(self, other) -> 'MultiVector':
-        """Subtraction
-
-        M - N
-        """
+        """ ``self - other``, Subtraction """
 
         other, mv = self._checkOther(other)
         if not mv:
@@ -389,13 +385,13 @@ class MultiVector(object):
 
         return self.layout.gaDims
 
-    def __getitem__(self, key) -> numbers.Number:
-        """If key is a blade tuple (e.g. (0, 1) or (1, 3)), or a blade,
-        (e.g. e12),  then return the (real) value of that blade's coefficient.
-        Otherwise, treat key as an index into the list of coefficients.
+    def __getitem__(self, key: Union['MultiVector', tuple, int]) -> numbers.Number:
+        """
+        ``value = self[key]``.
 
-        value = M[blade]
-        value = M[index]
+        If key is a blade tuple (e.g. ``(0, 1)`` or ``(1, 3)``), or a blade,
+        (e.g. ``e12``),  then return the (real) value of that blade's coefficient.
+        Otherwise, treat key as an index into the list of coefficients.
         """
         if isinstance(key, MultiVector):
             inds, = np.nonzero(key.value)
@@ -407,13 +403,13 @@ class MultiVector(object):
             return sign*self.value[idx]
         return self.value[key]
 
-    def __setitem__(self, key, value: numbers.Number) -> None:
-        """If key is a blade tuple (e.g. (0, 1) or (1, 3)), then set
+    def __setitem__(self, key:  Union[tuple, int], value: numbers.Number) -> None:
+        """
+        Implements ``self[key] = value``.
+
+        If key is a blade tuple (e.g. (0, 1) or (1, 3)), then set
         the (real) value of that blade's coeficient.
         Otherwise treat key as an index into the list of coefficients.
-
-        M[blade] = value
-        M[index] = value
         """
         if isinstance(key, tuple):
             sign, idx = self.layout._sign_and_index_from_tuple(key)
@@ -423,19 +419,16 @@ class MultiVector(object):
 
     # grade projection
     def __call__(self, other, *others) -> 'MultiVector':
-        """Return a new multi-vector projected onto a grade OR a MV
+        r"""Return a new multi-vector projected onto a grade or another MultiVector
 
+        ``M(g1, ... gn)`` gives :math:`\left<M\right>_{g1} + \cdots + \left<M\right>_{gn}`
 
-        M(grade[s]) --> <M>
-                        grade
-        OR
-
-        M(other) --> other.project(M)
+        ``M(N)`` calls :meth:`project` as ``N.project(M)``.
 
         Examples
         --------
-        >>>M(0)
-        >>>M(0, 2)
+        >>> M(0)
+        >>> M(0, 2)
         """
         if isinstance(other, MultiVector):
             return other.project(self)
@@ -768,7 +761,7 @@ class MultiVector(object):
     def commutator(self, other) -> 'MultiVector':
         r"""The commutator product of two multivectors.
 
-        :math:`[M, N] = M \cross N = (MN + NM)/2`
+        :math:`[M, N] = M \times N = (MN + NM)/2`
         """
 
         return ((self * other) - (other * self)) / 2

@@ -3,12 +3,14 @@ import numpy as np
 
 from clifford.io import write_ga_file, read_ga_file  # noqa: F401
 from ._multivector import MultiVector
+from . import _utils
 
 dual_array = np.vectorize(MultiVector.dual)
 normal_array = np.vectorize(MultiVector.normal)
 call_array = np.vectorize(MultiVector.__call__)
 
 
+@_utils.set_module('clifford')
 class MVArray(np.ndarray):
     '''
     MultiVector Array

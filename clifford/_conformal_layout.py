@@ -2,8 +2,10 @@ import numpy as np
 
 from ._layout import Layout
 from ._multivector import MultiVector
+from . import _utils
 
 
+@_utils.set_module('clifford')
 class ConformalLayout(Layout):
     r"""
     A layout for a conformal algebra, which adds extra constants and helpers.

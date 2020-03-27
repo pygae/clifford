@@ -14,6 +14,7 @@ import functools
 import operator
 
 from . import _numba_utils
+from . import _utils
 import numba
 import numba.extending
 import numba.types
@@ -72,6 +73,7 @@ def _is_unique(x) -> bool:
     return len(x) == len(set(x))
 
 
+@_utils.set_module('clifford')
 class BasisBladeOrder:
     """ Represents the storage order in memory of basis blade coefficients.
 
@@ -170,6 +172,7 @@ class _ShortLexBasisBladeOrder(BasisBladeOrder):  # lgtm [py/missing-call-to-ini
 IdT = TypeVar('IdT')
 
 
+@_utils.set_module('clifford')
 class BasisVectorIds(Generic[IdT]):
     """
     Stores ids for the ordered set of basis vectors, typically integers.
