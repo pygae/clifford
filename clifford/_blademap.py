@@ -25,8 +25,8 @@ class BladeMap(object):
 
         if map_scalars:
             # make scalars in each algebra map
-            s1 = self.b1[0]._newMV(dtype=int)+1
-            s2 = self.b2[0]._newMV(dtype=int)+1
+            s1 = self.b1[0].of_zero(dtype=int)+1
+            s2 = self.b2[0].of_zero(dtype=int)+1
             self.blades_map = [(s1, s2)] + self.blades_map
 
     @property
@@ -60,7 +60,7 @@ class BladeMap(object):
             raise ValueError('A doesnt belong to either Algebra in this Map')
 
         # create empty MV, and map values
-        B = to_b[0]._newMV(dtype=int)
+        B = to_b[0].of_zero(dtype=int)
         for from_obj, to_obj in zip(from_b, to_b):
             B += (sum(A.value*from_obj.value)*to_obj)
         return B

@@ -477,6 +477,14 @@ class TestClifford:
         assert equivalent_up_to_scale((b^c).meet(a), 1)
         assert equivalent_up_to_scale((a).meet(a), a)
 
+    def test_multivector_constructor(self, g3):
+        # either is ok
+        g3.MultiVector(string='e1')
+        g3.MultiVector(value=np.zeros(8))
+        # both together is illegal
+        with pytest.raises(TypeError):
+            g3.MultiVector(string='e1', value=np.zeros(8))
+
 
 class TestBasicConformal41:
     def test_metric(self, g4_1):

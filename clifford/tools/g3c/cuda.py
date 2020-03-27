@@ -45,7 +45,7 @@ def sequential_rotor_estimation_chunks_mvs(reference_model_list, query_model_lis
     query_model_array = np.array([l.value for l in query_model_list])
     reference_model_array = np.array([l.value for l in reference_model_list])
     output, cost_array = sequential_rotor_estimation_chunks(reference_model_array, query_model_array, n_samples, n_objects_per_sample, mutation_probability=mutation_probability)
-    output_mvs = [query_model_list[0]._newMV(output[i, :]) for i in range(output.shape[0])]
+    output_mvs = [query_model_list[0].from_value(output[i, :]) for i in range(output.shape[0])]
     return output_mvs, cost_array
 
 
@@ -203,7 +203,7 @@ def sequential_rotor_estimation_cuda_mvs(reference_model_list, query_model_list,
     query_model_array = np.array([l.value for l in query_model_list])
     reference_model_array = np.array([l.value for l in reference_model_list])
     output, cost_array = sequential_rotor_estimation_cuda(reference_model_array, query_model_array, n_samples, n_objects_per_sample, mutation_probability=mutation_probability)
-    output_mvs = [query_model_list[0]._newMV(output[i, :]) for i in range(output.shape[0])]
+    output_mvs = [query_model_list[0].from_value(output[i, :]) for i in range(output.shape[0])]
     return output_mvs, cost_array
 
 

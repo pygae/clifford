@@ -69,9 +69,9 @@ def _tokenize(layout: Layout, mv_string: str):
     ]
 
 
-def parse_multivector(layout: Layout, mv_string: str) -> MultiVector:
+def parse_multivector(layout: Layout, mv_string: str, mv_class=MultiVector) -> MultiVector:
     # Create a multivector
-    mv_out = MultiVector(layout)
+    mv_out = mv_class.of_zero(layout)
 
     # parser state
     sign = None
