@@ -6,8 +6,11 @@ import numpy as np
 from ._mvarray import MVArray
 from .operator import op
 from . import _settings
+from . import _utils
+from ._multivector import MultiVector
 
 
+@_utils.set_module('clifford')
 class Frame(MVArray):
     '''
     A frame of vectors

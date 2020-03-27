@@ -7,8 +7,10 @@ import numpy as np
 import clifford as cf
 from . import general_exp
 from . import _settings
+from . import _utils
 
 
+@_utils.set_module('clifford')
 class MultiVector(object):
     """An element of the algebra
 
