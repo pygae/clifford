@@ -62,7 +62,7 @@ class MVArray(np.ndarray):
     def gp(self):
         '''
         geometric product of all elements of this MVArray  (like reduce)
-        like `self[0]*self[1]*....self[n]`
+        like ``self[0]*self[1]*....self[n]``
         '''
         out = self[0]
         for k in self[1:]:
@@ -72,7 +72,7 @@ class MVArray(np.ndarray):
     def op(self):
         '''
         outer product of all elements of this MVArray  (like reduce)
-        like `self[0]^self[1]^....self[n]`
+        like ``self[0]^self[1]^....self[n]``
         '''
         out = self[0]
         for k in self[1:]:
@@ -100,7 +100,7 @@ class MVArray(np.ndarray):
 
 def array(obj):
     '''
-    an array method like numpy.array(), but returns a MVArray
+    an array method like :func:`numpy.array`, but returns a :class:`.MVArray`.
 
     Parameters
     -------------
@@ -109,10 +109,10 @@ def array(obj):
 
     Examples
     ----------
-    >>>import clifford as cf
-    >>>from clifford import g3
-    >>>import numpy as np
-    >>>np.random.rand(10)*cf.array(g3.e12)
+    >>> import clifford as cf
+    >>> from clifford import g3
+    >>> import numpy as np
+    >>> np.random.rand(10)*cf.array(g3.e12)
     '''
     if isinstance(obj, MultiVector):
         # they passed a single MV so make a list of it.
