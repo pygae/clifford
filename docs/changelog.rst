@@ -42,6 +42,9 @@ Compatibility notes
    numpy array of ``bytes``. The result now matches the construction order, rather
    than being sorted alphabetically. The order of :meth:`Layout.metric` has
    been adjusted for consistency.
+ * The ``imt_prod_mask``, ``omt_prod_mask``, and ``lcmt_prod_mask`` attributes
+   of :class:`Layout` objects have been removed, as these were an unnecessary
+   intermediate computation that had no need to be public.
 
 
 Changes in 1.2.x
