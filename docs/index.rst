@@ -51,6 +51,7 @@ Scalars, vectors, and higher-grade entities can be mixed freely and consistently
     tutorials/InterfacingOtherMathSystems
     tutorials/PerformanceCliffordTutorial
     tutorials/cga/index
+    tutorials/apollonius-cga-augmented
 
 .. toctree::
     :maxdepth: 1

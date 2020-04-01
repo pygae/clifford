@@ -1,5 +1,6 @@
 # extra requiremenets needed by the docs themselves
 # numpydoc==0.4
+pandas
 ipykernel
 nbsphinx
 ipywidgets
