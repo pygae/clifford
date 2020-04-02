@@ -14,7 +14,7 @@ Constructing algebras
 Note that typically the :doc:`predefined-algebras` are sufficient, and there is no need to build an algebra from scratch.
 
 .. autosummary::
-    :toctree: generated/
+    :toctree:
 
     Cl
     conformalize
@@ -22,7 +22,7 @@ Note that typically the :doc:`predefined-algebras` are sufficient, and there is 
 Whether you construct your algebras from scratch, or use the predefined ones, you'll end up working with the following types:
 
 .. autosummary::
-    :toctree: generated/
+    :toctree:
 
     MultiVector
     Layout
@@ -43,20 +43,22 @@ Global configuration functions
 ==============================
 These functions are used to change the global behavior of ``clifford``.
 
-.. autosummary::
-    :toctree: generated/
+.. autofunction:: eps
 
-    eps
-    pretty
-    ugly
-    print_precision
+.. autofunction:: pretty
+
+.. autofunction:: ugly
+
+.. autofunction:: print_precision
+
 
 Miscellaneous classes
 =======================
 
 .. autosummary::
-    :toctree: generated/
+    :toctree:
 
+    MVArray
     Frame
     BladeMap
 
@@ -64,7 +66,7 @@ Miscellaneous functions
 =======================
 
 .. autosummary::
-    :toctree: generated/
+    :toctree:
 
     grade_obj
     randomMV

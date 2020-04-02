@@ -117,7 +117,8 @@ nbsphinx_epilog = r"""
 #autodoc_default_flags='members'
 # you have to list all files with automodule here due to bug in sphinx and nbsphinx
 # https://github.com/spatialaudio/nbsphinx/issues/14
-autosummary_generate=['clifford','tools','cga']
+autosummary_generate=['api/tools', 'api/cga']
+autodoc_member_order = 'bysource'
 numpydoc_show_class_members = True
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

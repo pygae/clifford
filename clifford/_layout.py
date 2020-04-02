@@ -18,7 +18,6 @@ from . import (
 from . import _numba_utils
 from .io import read_ga_file
 from . import _settings
-from . import _utils
 from ._multivector import MultiVector
 from ._layout_helpers import (
     BasisBladeOrder, BasisVectorIds, canonical_reordering_sign_euclidean
@@ -176,7 +175,6 @@ def construct_graded_mt(
     return sparse.COO(coords=coords, data=mult_table_vals, shape=(dims, dims, dims))
 
 
-@_utils.set_module('clifford')
 class Layout(object):
     r""" Layout stores information regarding the geometric algebra itself and the
     internal representation of multivectors.

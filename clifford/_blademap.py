@@ -1,7 +1,3 @@
-from . import _utils
-
-
-@_utils.set_module('clifford')
 class BladeMap(object):
     '''
     A Map Relating Blades in two different algebras

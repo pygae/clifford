@@ -34,7 +34,7 @@ Scalars, vectors, and higher-grade entities can be mixed freely and consistently
     :hidden:
 
     Installation
-    api
+    api/index
     predefined-algebras
     changelog
     issues
