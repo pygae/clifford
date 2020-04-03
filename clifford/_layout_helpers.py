@@ -14,41 +14,7 @@ import functools
 import operator
 
 from . import _numba_utils
-import numba
-import numba.extending
-import numba.types
-import numba.config
-
-
-@numba.extending.intrinsic
-def __builtin_popcnt(tyctx, x):
-    """ Emulate clang and GCC's `__builtin_popcnt` """
-    if isinstance(x, numba.types.Integer):
-        def impl(cgctx, builder, sig, args):
-            x, = args
-            return builder.ctpop(x)
-        sig = x(x)
-        return sig, impl
-
-
-if numba.config.DISABLE_JIT:
-    def count_set_bits(bitmap):
-        """ Counts the number of bits set to 1 in bitmap """
-        bmp = bitmap
-        count = 0
-        n = 1
-        while bmp > 0:
-            if bmp & 1:
-                count += 1
-            bmp = bmp >> 1
-            n = n + 1
-        return count
-
-else:
-    @numba.njit
-    def count_set_bits(x):
-        """ Counts the number of bits set to 1 in bitmap """
-        return __builtin_popcnt(x)
+from ._bit_helpers import count_set_bits, set_bit_indices
 
 
 @_numba_utils.njit
@@ -192,15 +158,7 @@ class BasisVectorIds(Generic[IdT]):
 
     def bitmap_as_tuple(self, bitmap: int) -> Tuple[IdT]:
         """ Convert a bitmap representation into a tuple of ids. """
-        bmp = bitmap
-        blade = []
-        n = 0
-        while bmp > 0:
-            if bmp & 1:
-                blade.append(self.values[n])
-            bmp = bmp >> 1
-            n = n + 1
-        return tuple(blade)
+        return tuple(self.values[n] for n in set_bit_indices(bitmap))
 
     def id_as_bitmap(self, id: IdT) -> int:
         """ Convert the id of a single vector into a bitmap representation. """
