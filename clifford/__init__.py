@@ -61,6 +61,7 @@ Miscellaneous classes
     MVArray
     Frame
     BladeMap
+    BasisVectorMap
 
 Miscellaneous functions
 =======================
@@ -320,7 +321,7 @@ from ._conformal_layout import ConformalLayout  # noqa: E402
 from ._layout_helpers import BasisVectorIds, BasisBladeOrder  # noqa: F401
 from ._mvarray import MVArray, array  # noqa: F401
 from ._frame import Frame  # noqa: F401
-from ._blademap import BladeMap  # noqa: F401
+from ._blademap import BladeMap, BasisVectorMap  # noqa: F401
 
 
 # copied from the itertools docs
