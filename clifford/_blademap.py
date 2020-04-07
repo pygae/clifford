@@ -13,11 +13,11 @@ class BladeMap(object):
     >>> P, P_blades = Cl(3, names='p')
     >>> locals().update(P_blades)
     >>> sta_split = BladeMap([(d01, p1),
-                              (d02, p2),
-                              (d03, p3),
-                              (d12, p12),
-                              (d23, p23),
-                              (d13, p13)])
+    ...                       (d02, p2),
+    ...                       (d03, p3),
+    ...                       (d12, p12),
+    ...                       (d23, p23),
+    ...                       (d13, p13)])
 
     '''
     def __init__(self, blades_map, map_scalars=True):

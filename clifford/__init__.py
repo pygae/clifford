@@ -379,7 +379,7 @@ def randomMV(
 
     Examples
     --------
-    >>> randomMV(layout, min=-2.0, max=2.0, grades=None, uniform=None, n=2)
+    >>> randomMV(layout, min=-2.0, max=2.0, grades=None, uniform=None, n=2)  # doctest: +SKIP
 
     """
 

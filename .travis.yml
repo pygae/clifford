@@ -44,10 +44,12 @@ x-clifford-templates:
         else
           PYTEST_ARGS+=(-m "not veryslow");
         fi;
+        if [[ "${MODE}" == "doctests" ]]; then
+          PYTEST_ARGS+=(--doctest-modules --ignore clifford/test);
+        fi;
 
-        pytest clifford/test \
+        pytest \
           "${PYTEST_ARGS[@]}" \
-          --doctest-modules \
           --junitxml=junit/test-results.xml \
           --durations=25 \
           --cov=clifford \
@@ -76,7 +78,7 @@ matrix:
       stage: Lint
       <<: *lint_job
 
-    # fastest job first
+    # fastest jobs first
     - os: linux
       python: '3.8'
       env:
@@ -84,7 +86,14 @@ matrix:
       stage: Test
       <<: *test_job
 
-    # really slow job second, so it runs in parallel with the others
+    - os: linux
+      python: '3.8'
+      env:
+        - MODE=doctests
+      stage: Test
+      <<: *test_job
+
+    # really slow job next, so it runs in parallel with the others
     - os: linux
       python: '3.8'
       env:

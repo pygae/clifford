@@ -425,8 +425,12 @@ class MultiVector(object):
 
         Examples
         --------
+        >>> from clifford.g2 import *
+        >>> M = 1 + 2*e1 + 3*e12
         >>> M(0)
+        1
         >>> M(0, 2)
+        1 + (3^e12)
         """
         if isinstance(other, MultiVector):
             return other.project(self)
