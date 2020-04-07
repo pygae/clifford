@@ -11,12 +11,14 @@ Examples
 -----------
 >>> from clifford import Cl
 >>> from clifford.cga import CGA
->>> g3, blades  = Cl(3)
+>>> g3, blades = Cl(3)
+>>> locals().update(blades)
 >>> g3c = CGA(g3)
 >>> C = g3c.round(3)             # create random sphere
 >>> T = g3c.translation(e1+e2)   # create translation
 >>> C_ = T(C)                    # translate the sphere
 >>> C_.center                    # compute center of sphere
+-(1.0^e4) - (1.0^e5)
 
 The CGA
 ========
@@ -142,10 +144,12 @@ class Flat(CGAThing):
         Examples
         ----------
 
-        >>> cga.flat()               # from None
-        >>> cga.flat(2)              # from dim of space
-        >>> cga.flat(e1, e2)         # from points
-        >>> cga.flat(cga.flat().mv)  # from existing multivector
+        >>> cga = CGA(3)
+        >>> locals().update(cga.blades)
+        >>> F = cga.flat()               # from None
+        >>> F = cga.flat(2)              # from dim of space
+        >>> F = cga.flat(e1, e2)         # from points
+        >>> F = cga.flat(cga.flat().mv)  # from existing multivector
         '''
     # could inherent some generic CGAObject class
     def __init__(self, cga, *args) -> None:
@@ -206,10 +210,16 @@ class Round(CGAThing):
     Examples
     ----------
 
+    >>> cga = CGA(3)
+    >>> locals().update(cga.blades)
     >>> cga.round()               # from None
+    Sphere
     >>> cga.round(2)              # from dim of space
+    Sphere
     >>> cga.round(e1, e2, -e1)    # from points
+    Circle
     >>> cga.round(cga.flat().mv)  # from existing multivector
+    Sphere
     '''
     # could inherent some generic CGAObject class
     def __init__(self, cga, *args) -> None:
@@ -323,6 +333,8 @@ class Translation(CGAThing):
 
     Examples
     ----------
+    >>> cga = CGA(3)
+    >>> locals().update(cga.blades)
     >>> T = cga.translation()       # from None
     >>> T = cga.translation(e1+e2)  # from base vector
     >>> T = cga.translation(cga.up(e1+e2)) # from null vector
@@ -366,6 +378,7 @@ class Dilation(CGAThing):
 
     Examples
     ----------
+    >>> cga = CGA(3)
     >>> D = cga.dilation()          # from  none
     >>> D = cga.dilation(.4)        # from number
     '''
@@ -416,6 +429,8 @@ class Rotation(CGAThing):
 
     Examples
     ----------
+    >>> cga = CGA(3)
+    >>> locals().update(cga.blades)
     >>> R = cga.rotation()          # from None
     >>> R = cga.rotation(e12+e23)   # from bivector
     >>> R = cga.rotation(R.mv)   # from bivector
@@ -480,9 +495,12 @@ class Transversion(Translation):
 
     Examples
     ----------
+    >>> cga = CGA(3)
+    >>> locals().update(cga.blades)
     >>> K = cga.transversion()       # from None
     >>> K = cga.transversion(e1+e2)  # from base vector
     >>> K = cga.transversion(cga.up(e1+e2)) # from null vector
+    >>> T = cga.translation()
     >>> K = cga.transversion(T.mv)  # from existing translation rotor
     '''
     def __init__(self, cga, *args) -> None:

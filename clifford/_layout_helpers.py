@@ -148,8 +148,8 @@ class BasisVectorIds(Generic[IdT]):
         >>> ids = BasisVectorIds([11, 22, 33])
         >>> ids.bitmap_as_tuple(0b110)
         (22, 33)
-        >>> ids.tuple_as_sign_and_bitmap((33, 22))
-        (-1, 0b110)
+        >>> sign, bitmap = ids.tuple_as_sign_and_bitmap((33, 22))
+        >>> assert sign, bitmap == (-1, 0b110)
     """
     def __init__(self, blade_ids: Sequence[IdT]):
         if not _is_unique(blade_ids):
@@ -186,7 +186,7 @@ class BasisVectorIds(Generic[IdT]):
         This is the inverse of :meth:`order_as_tuples`.
 
         >>> ids = BasisVectorIds(['x', 'y'])
-        >>> ids.order_from_tuples([(), ('y'), ('x', 'y'), ('x')])
+        >>> ids.order_from_tuples([(), ('y',), ('x', 'y'), ('x',)])
         BasisBladeOrder([0b00, 0b10, 0b11, 0b01])
         """
         bitmaps = []
@@ -208,7 +208,7 @@ class BasisVectorIds(Generic[IdT]):
 
         >>> ids = BasisVectorIds(['x', 'y'])
         >>> ids.order_as_tuples(BasisBladeOrder([0b00, 0b10, 0b11, 0b01]))
-        [(), ('y'), ('x', 'y'), ('x')])
+        [(), ('y',), ('x', 'y'), ('x',)]
         """
         return [self.bitmap_as_tuple(b) for b in ordering.index_to_bitmap]
 

@@ -110,7 +110,8 @@ def array(obj):
     >>> import clifford as cf
     >>> from clifford import g3
     >>> import numpy as np
-    >>> np.random.rand(10)*cf.array(g3.e12)
+    >>> np.array([1, 2, 3])*cf.array(g3.e12)
+    MVArray([(1^e12), (2^e12), (3^e12)], dtype=object)
     '''
     if isinstance(obj, MultiVector):
         # they passed a single MV so make a list of it.

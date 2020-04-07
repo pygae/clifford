@@ -10,8 +10,9 @@ It can be thought of as equivalent to the builtin :mod:`operator` module, but fo
 
     >>> import functools
     >>> import clifford.operator
-    >>> Ms = [M1, M2, M3] # list of multivectors
-    >>> assert functools.reduce(clifford.operator.op, Ms) == M1 ^ M2 ^ M3
+    >>> from clifford.g3 import *
+    >>> Ms = [e1, e1 + e2, e2 + e3]  # list of multivectors
+    >>> assert functools.reduce(clifford.operator.op, Ms) == Ms[0] ^ Ms[1] ^ Ms[2]
 
 .. autofunction:: gp
 

@@ -229,14 +229,16 @@ class OutermorphismMatrix(LinearMatrix):
 
     Applying it to some multivectors::
 
-        # the transformation we specified
+        >>> # the transformation we specified
         >>> lt(e1), lt(e2), lt(e3)
         ((3^f3), (1^f1), (2^f2))
-        # the one deduced by outermorphism
-        >>> lt(e12), lt(e23), lt(e13)
+
+        >>> # the one deduced by outermorphism
+        >>> lt(e1^e2), lt(e2^e3), lt(e1^e3)
         (-(3^f13), (2^f12), -(6^f23))
-        # and by distributivity
-        >>> lt(1 + e123)
+
+        >>> # and by distributivity
+        >>> lt(1 + (e1^e2^e3))
         1 + (6^f123)
 
     """

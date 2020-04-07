@@ -27,9 +27,9 @@ interpretation::
 
     >>> from clifford.g3c import *
     >>> Round(location=e1, direction=e1^e2, radius=1)
-    Circle(location=(1^e1), direction=(1^e12), radius=1)
-    >>> Round(location=e1, direction=e1^e2^e3, radius=1)
-    Sphere(location=(1^e1), direction=(1^e123), radius=1)
+    Circle(direction=(1^e12), location=(1^e1), radius=1)
+    >>> Round(direction=e1^e2^e3, location=e1, radius=1)
+    Sphere(direction=(1^e123), location=(1^e1), radius=1)
 
 
 Aliased types
@@ -424,13 +424,13 @@ def classify(x) -> Blade:
         >>> from clifford.g3c import *
 
         >>> classify(e1)
-        DualFlat[1](location=0, direction=-(1.0^e23))
+        DualFlat[1](flat=Plane(direction=-(1.0^e23), location=0))
 
         >>> classify(einf)
         InfinitePoint(direction=1.0)
 
         >>> classify(up(e1))
-        Point(location=(1.0^e1), direction=1.0)
+        Point(direction=1.0, location=(1.0^e1))
 
         >>> classify(up(3*e1)^up(4*e2))
         PointPair(direction=-(3.0^e1) + (4.0^e2), location=(1.5^e1) + (2.0^e2), radius=2.5)
@@ -445,7 +445,7 @@ def classify(x) -> Blade:
         Tangent[2](direction=(1.0^e2), location=(1.0^e1))
 
         # how the inheritance works
-        >>> Point.mro()
+        >>> Point.mro()  # doctest: +SKIP
         [Point, Tangent[1], Round[1], Blade[1], Tangent, Round, Blade, object]
 
     The reverse of this operation is :attr:`Blade.mv`.

@@ -793,7 +793,7 @@ class Layout(object):
         if you are lazy,  you might do this to populate your namespace
         with the variables of a given layout.
 
-        >>> locals().update(layout.blades())
+        >>> locals().update(layout.blades())  # doctest: +SKIP
 
         .. versionchanged:: 1.1.0
             This dictionary includes the scalar
