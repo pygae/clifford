@@ -129,3 +129,20 @@ class TestLinearMatrix:
         assert f(e1) == ex
         assert f(e2) == ey
         assert f(e1^e2) == ex^ey^ez
+
+    def test_from_function(self, g2, g3):
+        # passing tests are within the doctests
+
+        # wrong implicit layout
+        with pytest.raises(ValueError):
+            def bad_f(e):
+                # these paths return different layouts!
+                if e.grades() == {0}:
+                    return g3.scalar
+                else:
+                    return e
+            transformations.LinearMatrix.from_function(bad_f, g2)
+
+        # wrong explicit layout
+        with pytest.raises(ValueError):
+            transformations.LinearMatrix.from_function(lambda x: x, g2, g3)
