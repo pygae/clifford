@@ -18,6 +18,7 @@ This module provides some base classes:
 And some matrix-backed implementations:
 
 .. autoclass:: LinearMatrix
+    :members:
 
 .. autoclass:: OutermorphismMatrix
 
