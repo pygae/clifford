@@ -18,6 +18,7 @@ This module provides some base classes:
 And some matrix-backed implementations:
 
 .. autoclass:: LinearMatrix
+    :members:
 
 .. autoclass:: OutermorphismMatrix
 
@@ -189,6 +190,89 @@ class LinearMatrix(FixedLayout, Linear):
     def adjoint(self) -> "LinearMatrix":
         """ The adjoint transformation """
         return LinearMatrix(self._matrix.T, self.layout_dst, self.layout_src)
+
+    @classmethod
+    def from_function(cls, func: Callable[[MultiVector], MultiVector], layout_src: Layout, layout_dst: Layout = None) -> 'LinearMatrix':
+        """ Build a linear transformation from the result of a function applied to each basis blade.
+
+        Parameters
+        ----------
+        func :
+            A function taking basis blades from `layout_src` that produces
+            multivectors in `layout_dst`.
+        layout_src : ~clifford.Layout of S dimensions
+            The layout to pass into the generating function
+        layout_dst : ~clifford.Layout of D dimensions
+            The layout the generating function is expected to produce. If not
+            passed, this is inferred.
+
+        Example
+        -------
+
+        >>> from clifford import transformations, Layout
+        >>> l = Layout([1, 1])
+        >>> e1, e2 = l.basis_vectors_lst
+        >>> rot_90 = transformations.LinearMatrix.from_function(lambda x: (1 + e1*e2)*x*(1 - e1*e2)/2, l)
+        >>> rot_90(e1)
+        (1.0^e2)
+        >>> rot_90(e2)
+        -(1.0^e1)
+        >>> rot_90(e1*e2)
+        (1.0^e12)
+
+        See also
+        --------
+        LinearMatrix.from_rotor : a shorter way to spell the above example
+        clifford.linear_operator_as_matrix : a lower-level function for working with a subset of basis blades
+        """
+        blades_dst = [
+            func(b_src) for b_src in layout_src.blades_list
+        ]
+
+        # check the layouts of the resulting blades match
+        for d in blades_dst:
+            if layout_dst is None:
+                layout_dst = d.layout
+            elif d.layout != layout_dst:
+                raise ValueError(
+                    "result of func() is from the wrong layout, expected: {}, "
+                    "got {}.".format(layout_dst, d.layout))
+
+        matrix = np.array([b_dst.value for b_dst in blades_dst])
+        return cls(matrix, layout_src, layout_dst)
+
+    @classmethod
+    def from_rotor(cls, rotor: MultiVector) -> 'LinearMatrix':
+        """ Build a linear transformation from the result of applying a rotor sandwich.
+
+        The resulting transformation operates within the algebra of the provided rotor.
+
+        Parameters
+        ----------
+        rotor :
+            The rotor to apply
+
+        Example
+        -------
+
+        >>> from clifford import transformations, Layout
+        >>> l = Layout([1, 1])
+        >>> e1, e2 = l.basis_vectors_lst
+        >>> rot_90 = transformations.LinearMatrix.from_rotor(1 + e1*e2)
+        >>> rot_90(e1)
+        (1.0^e2)
+        >>> rot_90(e2)
+        -(1.0^e1)
+        >>> rot_90(e1*e2)
+        (1.0^e12)
+        """
+        # precompute for speed
+        rotor_rev = ~rotor
+        rotor_mag2 = rotor.mag2()
+        return cls.from_function(
+            lambda x: (rotor*x*rotor_rev)/rotor_mag2,
+            rotor.layout, rotor.layout
+        )
 
 
 class OutermorphismMatrix(LinearMatrix):
