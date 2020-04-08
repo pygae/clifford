@@ -30,7 +30,7 @@ between basis vectors of similar algebras:
 This module may in future become the home for optimized rotor transformations,
 or non-linear transformations
 """
-from typing import Dict, Any, Callable
+from typing import Dict, Any, Callable, List, Tuple
 from abc import abstractmethod
 
 import numpy as np
@@ -102,6 +102,22 @@ def _make_outermorphism(
             out[:] = dst_omt_func(out[:], t[:, f_ind[1 << v_src]])
 
     return t
+
+
+class _Mismatch(ValueError):
+    def __init__(self, expected, actual):
+        self.expected = expected
+        self.actual = actual
+
+
+def _all_same(it, first=None):
+    """ Helper to extract the first item from an iterable """
+    for val in it:
+        if first is None:
+            first = val
+        elif first != val:
+            raise _Mismatch(first, val)
+    return first
 
 
 Transformation = Callable[[MultiVector], MultiVector]
@@ -245,16 +261,69 @@ class LinearMatrix(FixedLayout, Linear):
         ]
 
         # check the layouts of the resulting blades match
-        for d in blades_dst:
-            if layout_dst is None:
-                layout_dst = d.layout
-            elif d.layout != layout_dst:
-                raise ValueError(
-                    "result of func() is from the wrong layout, expected: {}, "
-                    "got {}.".format(layout_dst, d.layout))
+        try:
+            layout_dst = _all_same(
+                (d.layout for d in blades_dst), first=layout_dst)
+        except _Mismatch as m:
+            raise ValueError(
+                "result of func() is from the wrong layout, expected: {}, "
+                "got {}.".format(m.expected, m.actual))
 
         matrix = np.array([b_dst.value for b_dst in blades_dst])
         return cls(matrix, layout_src, layout_dst)
+
+    @classmethod
+    def from_mapping(
+        cls,
+        mapping: List[Tuple[MultiVector, MultiVector]],
+        layout_src: Layout = None,
+        layout_dst: Layout = None
+    ):
+        """ Compute a transformation that maps between the pairs in `mapping`.
+
+        The mapping is computed via a least-squares fit.
+
+        Parameters
+        ----------
+        mapping :
+            List of ``(src_mv, dest_mv)`` pairs to map between.
+        layout_src :
+            The source layout. Inferred if not provided.
+        layout_dst :
+            The destination layout. Inferred if not provided.
+        """
+        try:
+            layout_src = _all_same(
+                (s.layout for s, d in mapping), first=layout_src)
+        except _Mismatch as m:
+            raise ValueError(
+                "mapping source is from the wrong layout, expected: {}, "
+                "got {}.".format(m.expected, m.actual))
+        try:
+            layout_dst = _all_same(
+                (d.layout for s, d in mapping), first=layout_dst)
+        except _Mismatch as m:
+            raise ValueError(
+                "mapping source is from the wrong layout, expected: {}, "
+                "got {}.".format(m.expected, m.actual))
+
+        N = len(mapping)
+
+        mat_src = np.stack([s.value for s, d in mapping], axis=-1)
+        mat_dst = np.stack([d.value for s, d in mapping], axis=-1)
+
+        # rewrite in the form needed by lstsq,
+        # `mat @ mat_src = mat_dst` => `mat_src.T @ mat.T = mat_dst.T`
+        mat_T, resid, rank, s = np.linalg.lstsq(mat_src.T, mat_dst.T, rcond=None)
+        mat = mat_T.T
+
+        # if the input mapping was integral, and the matrix contains only
+        # integers, then for convenience keep the result as integers
+        rounded = mat.astype(np.result_type(mat_src.dtype, mat_dst.dtype), copy=False)
+        if rounded.dtype == mat.dtype or np.all(rounded == mat):
+            mat = rounded
+
+        return cls(mat, layout_src, layout_dst)
 
     @classmethod
     def from_rotor(cls, rotor: MultiVector) -> 'LinearMatrix':
