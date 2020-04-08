@@ -1,5 +1,8 @@
+import textwrap
+
 import numpy as np
 import pytest
+from IPython.lib import pretty
 
 from clifford import Layout, ConformalLayout, BasisVectorIds
 from clifford import transformations
@@ -78,6 +81,14 @@ class TestOutermorphismMatrix:
         # test that distributivity is respected
         assert f(g2.scalar + 2*e1 + 3*(e1^e2)) == f(g2.scalar) + 2*f(e1) + 3*f(e1^e2)
 
+        assert pretty.pretty(f) == textwrap.dedent("""\
+        OutermorphismMatrix(array([[ 0,  1],
+                                   [-1,  0]]),
+                            Layout([1, 1],
+                                   ids=BasisVectorIds(['u', 'v']),
+                                   order=BasisBladeOrder.shortlex(2),
+                                   names=['', 'eu', 'ev', 'euv']))""")
+
     def test_between_layouts(self, g2, g3):
         matrix = np.array([[1, 0],
                            [0, 1],
@@ -93,6 +104,19 @@ class TestOutermorphismMatrix:
         assert f(e1) == ex
         assert f(e2) == ey
 
+        assert pretty.pretty(f) == textwrap.dedent("""\
+        OutermorphismMatrix(array([[1, 0],
+                                   [0, 1],
+                                   [0, 0]]),
+                            layout_src=Layout([1, 1],
+                                              ids=BasisVectorIds(['u', 'v']),
+                                              order=BasisBladeOrder.shortlex(2),
+                                              names=['', 'eu', 'ev', 'euv']),
+                            layout_dst=Layout([1, 1, 1],
+                                              ids=BasisVectorIds(['x', 'y', 'z']),
+                                              order=BasisBladeOrder.shortlex(3),
+                                              names=['', 'ex', 'ey', 'ez', 'exy', 'exz', 'eyz', 'exyz']))""")
+
 
 class TestLinearMatrix:
     def test_same_layout(self, g2):
@@ -107,6 +131,16 @@ class TestLinearMatrix:
         f_dual = transformations.LinearMatrix(dual_matrix, g2)
         x = 1 + 2*e2 + 3*e1*e2
         assert f_dual(x) == x.dual()
+
+        assert pretty.pretty(f_dual) == textwrap.dedent("""\
+        LinearMatrix(array([[ 0,  0,  0,  1],
+                            [ 0,  0,  1,  0],
+                            [ 0, -1,  0,  0],
+                            [-1,  0,  0,  0]]),
+                     Layout([1, 1],
+                            ids=BasisVectorIds(['u', 'v']),
+                            order=BasisBladeOrder.shortlex(2),
+                            names=['', 'eu', 'ev', 'euv']))""")
 
     def test_between_layouts(self, g2, g3):
         matrix = np.array([[1, 0, 0, 0],

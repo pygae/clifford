@@ -147,6 +147,21 @@ class FixedLayout(Transformation):
             raise ValueError("Object is from the wrong layout")
         # superclass should produce the result
 
+    def _repr_pretty_layout_args_helper(self, p):
+        """ helper function to be called by _repr_pretty_ in subclasses to print the layout arguments """
+        if self.layout_src is not self.layout_dst:
+            # only show both if they're different
+            prefix = 'layout_src='
+            with p.group(len(prefix), prefix, ''):
+                p.pretty(self.layout_src)
+                p.text(',')
+            p.breakable()
+            prefix = 'layout_dst='
+            with p.group(len(prefix), prefix, ''):
+                p.pretty(self.layout_dst)
+        else:
+            p.pretty(self.layout_src)
+
 
 class LinearMatrix(FixedLayout, Linear):
     """
@@ -274,6 +289,18 @@ class LinearMatrix(FixedLayout, Linear):
             rotor.layout, rotor.layout
         )
 
+    def _repr_pretty_(self, p, cycle):
+        if cycle:
+            raise RuntimeError("Should not be cyclic")
+
+        prefix = '{}('.format(type(self).__name__)
+
+        with p.group(len(prefix), prefix, ')'):
+            p.pretty(self._matrix)
+            p.text(',')
+            p.breakable()
+            self._repr_pretty_layout_args_helper(p)
+
 
 class OutermorphismMatrix(LinearMatrix):
     r"""
@@ -345,6 +372,19 @@ class OutermorphismMatrix(LinearMatrix):
         )
 
         super().__init__(full_matrix, layout_src, layout_dst)
+        self._vector_matrix = matrix
+
+    def _repr_pretty_(self, p, cycle):
+        if cycle:
+            raise RuntimeError("Should not be cyclic")
+
+        prefix = '{}('.format(type(self).__name__)
+
+        with p.group(len(prefix), prefix, ')'):
+            p.pretty(self._vector_matrix)
+            p.text(',')
+            p.breakable()
+            self._repr_pretty_layout_args_helper(p)
 
 
 def between_basis_vectors(layout_src: Layout, layout_dst: Layout, mapping: Dict[Any, Any]=None) -> OutermorphismMatrix:
