@@ -7,7 +7,15 @@ transformations (:mod:`clifford.transformations`)
 
 .. versionadded:: 1.3.0
 
-This module provides some base classes:
+
+This module may in future become the home for optimized rotor transformations,
+or non-linear transformations.
+
+See the :ref:`/tutorials/linear-transformations.ipynb` tutorial for an
+introduction to how to use parts of this module.
+
+Base classes
+------------
 
 .. autodata:: Transformation
 
@@ -15,20 +23,19 @@ This module provides some base classes:
 
 .. autoclass:: FixedLayout
 
-And some matrix-backed implementations:
+Matrix-backed implementations
+-----------------------------
 
 .. autoclass:: LinearMatrix
     :members:
 
 .. autoclass:: OutermorphismMatrix
 
-It also provides a helper function for the most common use case, converting
-between basis vectors of similar algebras:
+Helper functions
+----------------
 
 .. autofunction:: between_basis_vectors
 
-This module may in future become the home for optimized rotor transformations,
-or non-linear transformations
 """
 from typing import Dict, Any, Callable
 from abc import abstractmethod
