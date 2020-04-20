@@ -371,11 +371,36 @@ class TestG3CTools:
                 assert sphere_in_sphere(s, s4)
 
     def test_closest_furthest_circle_points(self):
+        """
+        This just checks if the function calls do  not crash at the moment
+        Not that it is correct
+        """
         for _ in range(100):
             C1 = random_circle()
             C2 = random_circle()
-            pclose = closest_points_on_circles(C1, C2)
-            pfar = furthest_points_on_circles(C1, C2)
+            pclose = iterative_closest_points_on_circles(C1, C2)
+            pfar = iterative_furthest_points_on_circles(C1, C2)
+
+    def test_closest_points_circle_line(self):
+        """
+        This checks that the functions do not fail
+        It also checks that the points produced do lie on the circle and line
+        It does not as of yet check that they actually produce the minimum distance
+        """
+        for i in range(10):
+            L = random_line()
+            C = random_circle()
+            X1, X2 = iterative_closest_points_circle_line(C, L, niterations=50)
+            X1Andreas = closest_point_on_circle_from_line(C, L)
+            X2Andreas = closest_point_on_line_from_circle(C, L)
+
+            assert_allclose((X1 ^ C).value, 0)
+            assert_allclose((X1Andreas ^ C).value, 0)
+            assert_allclose((X2 ^ L).value, 0)
+            assert_allclose((X2Andreas ^ L).value, 0)
+            print(X1 | X2)
+            print(X1Andreas | X2Andreas)
+
 
     def test_general_object_interpolation(self):
 

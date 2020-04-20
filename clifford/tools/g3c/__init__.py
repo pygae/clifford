@@ -403,12 +403,12 @@ def project_points_to_line(point_list, line):
     projected_list = []
     for point in point_list:
         pp = point|line
-        proj_point = (pp*einf*pp)(1)
+        proj_point = normalise_n_minus_1((pp*einf*pp)(1))
         projected_list.append(proj_point)
     return projected_list
 
 
-def closest_points_on_circles(C1, C2, niterations=20):
+def iterative_closest_points_on_circles(C1, C2, niterations=20):
     """
     Given two circles C1 and C2 this calculates the closest
     points on each of them to the other
@@ -431,10 +431,74 @@ def closest_points_on_circles(C1, C2, niterations=20):
     return P1, P2
 
 
-def closest_points_circle_line(C, L, niterations=20):
+def closest_point_on_line_from_circle(C, L):
+    """
+    Returns the point on the line L that is closest to the circle C
+    Uses the algorithm described in Appendix A of Andreas Aristidou's PhD thesis
+    """
+    return project_points_to_line([closest_point_on_circle_from_line(C, L)], L)[0]
+
+
+def closest_point_on_circle_from_line(C, L):
+    """
+    Returns the point on the circle C that is closest to the line L
+    Uses the algorithm described in Appendix A of Andreas Aristidou's PhD thesis
+    """
+    phi = (C^einf).normal()
+    B = meet(L, phi)
+    A = normalise_n_minus_1((C * einf * C)(1))
+    bound_sphere = ((C * phi) * I5).normal()
+    if abs((B**2)[0]) < 1E-6:
+        # The line and plane of the circle are parallel
+        # Project the line into the plane
+        Lpln = (L.normal() + (phi*L*phi)(3).normal()).normal()
+        # Project the centre of the circle onto the line
+        X = (A|Lpln)*einf*(A|Lpln)
+        if sphere_in_sphere(X*I5, bound_sphere):
+            # The circle and line intersect
+            PP = meet(Lpln, bound_sphere)
+            return point_pair_to_end_points(PP)[0]
+        else:
+            L2 = A ^ X ^ einf
+            PP = meet(L2, bound_sphere)
+            return point_pair_to_end_points(PP)[1]
+    P = intersect_line_and_plane_to_point(L, phi)
+    Adash = L*A*L
+    E = up(down(A)*0.5 + down(Adash)*0.5)
+    Edash = normalise_n_minus_1((phi*E*phi)(1))
+    Y = up(down(E)*0.5 + down(Edash)*0.5)
+
+    # If Y is in the sphere that C is the equator of
+    if sphere_in_sphere(Y*I5, bound_sphere):
+        if abs((A | P)[0]) < 1E-6:
+            # Line passes through the centre of the circle
+            if abs((P | Y)[0]) < 1E-6:
+                # Line is perpendicular to plane of the circle
+                L2 = (A^project_points_to_circle([random_conformal_point()], C)[0]^einf).normal()
+            else:
+                # Just project the line
+                L2 = (L.normal() + (phi*L*phi)(3).normal()).normal()
+        elif abs((P | Y)[0]) < 1E-6:
+            # Line is perpendicular to the plane of the circle
+            L2 = A ^ Y ^ einf
+        else:
+            L2 = P ^ Y ^ einf
+    else:
+        L2 = A ^ Y ^ einf
+    PP = meet(L2, bound_sphere)
+    Xs = point_pair_to_end_points(PP)
+    ind = np.argmax([(Xs[0]|P)[0], (Xs[1]|P)[0]])
+    return Xs[ind]
+
+
+def iterative_closest_points_circle_line(C, L, niterations=20):
     """
     Given a circle C and line L this calculates the closest
-    points on each of them to the other
+    points on each of them to the other.
+
+    This is an iterative algorithm based on heuristics
+    Nonetheless it appears to give results on par with
+    closest_point_on_circle_from_line
     """
     cav = average_objects([C, L])
     cav2 = average_objects([C, -L])
@@ -451,10 +515,12 @@ def closest_points_circle_line(C, L, niterations=20):
     for i in range(niterations):
         P1 = project_points_to_circle([P2], C)[0](1)
         P2 = project_points_to_line([P1], L)[0](1)
+    P1 = normalise_n_minus_1(P1)
+    P2 = normalise_n_minus_1(P2)
     return P1, P2
 
 
-def furthest_points_on_circles(C1, C2, niterations=20):
+def iterative_furthest_points_on_circles(C1, C2, niterations=20):
     """
     Given two circles C1 and C2 this calculates the closest
     points on each of them to the other
