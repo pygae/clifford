@@ -338,7 +338,7 @@ class TestG3CTools:
             L = ((S*einf*S)^random_conformal_point()^einf).normal()
             assert sphere_line_intersect(S, L)
 
-    def test_sphere_beyond_plane(self):
+    def test_sphere_beyond_behind_plane(self):
         for i in range(100):
             normal = random_euc_mv().normal()
             euc_perp_dist = np.random.randn() * 3
@@ -346,8 +346,13 @@ class TestG3CTools:
             radius = abs(np.random.randn() * 2)
             sphere1 = I5*(up(normal * (euc_perp_dist + radius*1.1)) - 0.5*radius**2*einf)
             assert sphere_beyond_plane(sphere1, plane)
+            assert not sphere_behind_plane(sphere1, plane)
             sphere2 = I5*(up(normal * (euc_perp_dist - radius*1.1)) - 0.5*radius**2*einf)
             assert not sphere_beyond_plane(sphere2, plane)
+            assert sphere_behind_plane(sphere2, plane)
+            sphere3 = I5*(up(normal * (euc_perp_dist - radius*0.5)) - 0.5*radius**2*einf)
+            assert not sphere_beyond_plane(sphere3, plane)
+            assert not sphere_behind_plane(sphere3, plane)
 
     def test_join_spheres(self):
         for j in range(1000):

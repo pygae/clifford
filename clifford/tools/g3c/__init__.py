@@ -281,8 +281,7 @@ def sphere_beyond_plane(sphere, plane):
     Check if the sphere is fully beyond the plane in the direction of
     the plane normal
     """
-    restrue = True
-    restrue = restrue and ((meet(sphere, plane) ** 2)[0] < 0)
+    restrue = ((meet(sphere, plane) ** 2)[0] < 0)
     restrue = restrue and point_beyond_plane(normalise_n_minus_1((sphere * einf * sphere)(1)), plane)
     return restrue
 
@@ -292,8 +291,9 @@ def sphere_behind_plane(sphere, plane):
     Check if the sphere is fully behind the plane in the direction of
     the plane normal, ie the opposite of sphere_beyond_plane
     """
-    snorm = unsign_sphere(sphere)
-    return (snorm|plane)[0] > get_radius_from_sphere(snorm)
+    restrue = ((meet(sphere, plane) ** 2)[0] < 0)
+    restrue = restrue and not point_beyond_plane(normalise_n_minus_1((sphere * einf * sphere)(1)), plane)
+    return restrue
 
 
 def point_beyond_plane(point, plane):
