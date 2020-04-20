@@ -281,8 +281,10 @@ def sphere_beyond_plane(sphere, plane):
     Check if the sphere is fully beyond the plane in the direction of
     the plane normal
     """
-    snorm = unsign_sphere(sphere)
-    return (snorm|plane)[0] < -get_radius_from_sphere(snorm)
+    restrue = True
+    restrue = restrue and ((meet(sphere, plane) ** 2)[0] < 0)
+    restrue = restrue and point_beyond_plane(normalise_n_minus_1((sphere * einf * sphere)(1)), plane)
+    return restrue
 
 
 def sphere_behind_plane(sphere, plane):
@@ -306,9 +308,10 @@ def unsign_sphere(S):
     """
     Normalises the sign of a sphere
     """
-    return -normalised(S * ((I5 * S) | einf)[0])
+    return layout.MultiVector(val_unsign_sphere(S.value))
 
 
+@numba.njit
 def val_unsign_sphere(S):
     """
     Normalises the sign of a sphere

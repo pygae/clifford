@@ -22,7 +22,7 @@ from clifford.tools.g3c.object_fitting import *
 from clifford.tools.g3c.model_matching import *
 from clifford.tools.g3 import random_euc_mv
 from clifford.tools.g3c.GAOnline import draw_objects, GAScene, GanjaScene
-
+import functools
 
 too_slow_without_jit = pytest.mark.skipif(
     numba.config.DISABLE_JIT, reason="test is too slow without JIT"
@@ -31,6 +31,8 @@ too_slow_without_jit = pytest.mark.skipif(
 
 RTOL_DEFAULT = 1E-4
 ATOL_DEFAULT = 1E-6
+assert_allclose = functools.partial(npt.assert_allclose, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+
 
 @too_slow_without_jit
 class TestRotorGeneration:
@@ -315,11 +317,37 @@ class TestG3CTools:
             average_objects(obj_list, weights=[0.5, 0.5])
 
     def test_point_beyond_plane(self):
-        plane = I5 * ((e1 + e2 + e3).normal() + 2 * einf)
-        P = up((e1 + e2 + e3) * 3)
-        assert point_beyond_plane(P, plane)
-        P = up((e1 + e2 + e3) * 1)
-        assert not point_beyond_plane(P, plane)
+        for i in range(200):
+            normal = random_euc_mv().normal()
+            euc_perp_dist = np.random.randn()*3
+            plane = I5 * (normal + euc_perp_dist * einf)
+            P1 = up(normal * (euc_perp_dist+1))
+            assert point_beyond_plane(P1, plane)
+            P2 = up(normal * (euc_perp_dist-1))
+            assert not point_beyond_plane(P2, plane)
+
+    def test_unsign_sphere(self):
+        for i in range(100):
+            S = unsign_sphere(random_sphere())
+            r = np.random.randn()
+            assert_allclose(unsign_sphere(S*r).value, S.value)
+
+    def test_sphere_line_intersect(self):
+        for i in range(100):
+            S = random_sphere()
+            L = ((S*einf*S)^random_conformal_point()^einf).normal()
+            assert sphere_line_intersect(S, L)
+
+    def test_sphere_beyond_plane(self):
+        for i in range(100):
+            normal = random_euc_mv().normal()
+            euc_perp_dist = np.random.randn() * 3
+            plane = I5 * (normal + euc_perp_dist * einf)
+            radius = abs(np.random.randn() * 2)
+            sphere1 = I5*(up(normal * (euc_perp_dist + radius*1.1)) - 0.5*radius**2*einf)
+            assert sphere_beyond_plane(sphere1, plane)
+            sphere2 = I5*(up(normal * (euc_perp_dist - radius*1.1)) - 0.5*radius**2*einf)
+            assert not sphere_beyond_plane(sphere2, plane)
 
     def test_join_spheres(self):
         for j in range(1000):
