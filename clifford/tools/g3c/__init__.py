@@ -592,15 +592,8 @@ def get_line_reflection_matrix(lines, n_power=1):
     """
     Generates the matrix that sums the reflection of a point in many lines
     """
-    mat2solve = np.zeros((32, 32), dtype=np.float64)
-    for Li in lines:
-        LiMat = get_left_gmt_matrix(Li.value)
-        tmat = np.matmul(np.matmul(LiMat, mask_2minus4), LiMat)
-        mat2solve += tmat
-    mat = np.matmul(mask1, mat2solve)
-    if n_power != 1:
-        mat = np.linalg.matrix_power(mat, n_power)
-    return mat
+    line_array = np.array([l.value for l in lines])
+    return val_get_line_reflection_matrix(line_array, n_power)
 
 
 @numba.njit
@@ -611,11 +604,14 @@ def val_get_line_reflection_matrix(line_array, n_power):
     mat2solve = np.zeros((32, 32), dtype=np.float64)
     for i in range(line_array.shape[0]):
         LiMat = get_left_gmt_matrix(line_array[i, :])
-        tmat = np.matmul(np.matmul(LiMat, mask_2minus4), LiMat)
+        tmat = (LiMat@mask_2minus4)@LiMat
         mat2solve += tmat
-    mat = np.matmul(mask1, mat2solve)
+    mat = mask1@mat2solve/line_array.shape[0]
     if n_power != 1:
-        mat = np.linalg.matrix_power(mat, n_power)
+        c_pow = 1
+        while c_pow < n_power:
+            mat = mat@mat
+            c_pow = c_pow * 2
     return mat
 
 
@@ -629,14 +625,14 @@ def val_truncated_get_line_reflection_matrix(line_array, n_power):
     mat2solve = np.zeros((32, 32), dtype=np.float64)
     for i in range(line_array.shape[0]):
         LiMat = get_left_gmt_matrix(line_array[i, :])
-        tmat = np.matmul(np.matmul(LiMat, mask_2minus4), LiMat)
+        tmat = (LiMat@mask_2minus4)@LiMat
         mat2solve += tmat
-    mat_val = np.matmul(mask1, mat2solve)
+    mat_val = mask1@mat2solve
     mat_val = mat_val[1:6, 1:6].copy()/line_array.shape[0]
     if n_power != 1:
         c_pow = 1
         while c_pow < n_power:
-            mat_val = np.matmul(mat_val, mat_val)
+            mat_val = mat_val@mat_val
             c_pow = c_pow*2
     return mat_val
 
@@ -804,7 +800,7 @@ def get_plane_normal(plane):
 
 def get_nearest_plane_point(plane):
     """ Get the nearest point to the origin on the plane """
-    return get_plane_normal(plane)*get_plane_origin_distance(plane)
+    return up(get_plane_normal(plane)*get_plane_origin_distance(plane))
 
 
 def disturb_object(mv_object, maximum_translation=0.01, maximum_angle=0.01):

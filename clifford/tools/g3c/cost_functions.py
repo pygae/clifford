@@ -74,7 +74,7 @@ def midpoint_and_error_of_line_cluster_svd(line_cluster):
     Uses the SVD and explicit derivatives
     """
     line_cluster_array = np.array([l.value for l in line_cluster])
-    mat2solve = get_line_reflection_matrix(line_cluster)
+    mat2solve = get_line_reflection_matrix(line_cluster, 1)
 
     grade_val = 1
     column_mask = np.array(layout.gradeList) == grade_val

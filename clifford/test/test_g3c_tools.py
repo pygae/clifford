@@ -401,6 +401,55 @@ class TestG3CTools:
             print(X1 | X2)
             print(X1Andreas | X2Andreas)
 
+    def test_get_line_reflection_matrix(self):
+        for i in range(10):
+            lines = [random_line() for i in range(10)]
+            point = random_conformal_point()
+            Lmat = get_line_reflection_matrix(lines, 1)
+            res = layout.MultiVector(Lmat@point.value)
+            new_point = 0
+            for l in lines:
+                new_point += l*point*l
+            new_point = new_point/len(lines)
+            assert_allclose(new_point.value, res.value)
+
+    def test_get_truncated_line_reflection_matrix(self):
+        for i in range(10):
+            lines = [random_line() for i in range(10)]
+            Lmat = get_line_reflection_matrix(lines, 1)
+            Lmat_trunc = val_truncated_get_line_reflection_matrix(np.array([l.value for l in lines]), 1)
+            assert_allclose(Lmat_trunc, Lmat[1:6, 1:6])
+            
+    def test_get_midpoint_between_lines(self):
+        for i in range(50):
+            P = random_conformal_point()
+            T1 = random_translation_rotor()
+            T2 = random_translation_rotor()
+            P1 = apply_rotor(P, T1)
+            P2 = apply_rotor(P, T2)
+            L1 = (P ^ P1 ^ einf).normal()
+            L2 = (P ^ P2 ^ einf).normal()
+            Pmid = midpoint_between_lines(L1, L2)
+            assert_allclose(Pmid.value, P.value)
+        for i in range(50):
+            L1 = random_line()
+            L2 = random_line()
+            Pmid = midpoint_between_lines(L1, L2)
+            L1point = project_points_to_line([Pmid], L1)[0]
+            L2point = project_points_to_line([Pmid], L2)[0]
+            dst = euc_dist(L1point, L2point)
+            middst1 = euc_dist(Pmid, L1point)
+            middst2 = euc_dist(Pmid, L2point)
+            npt.assert_allclose(dst, 2 * middst1)
+            npt.assert_allclose(dst, 2 * middst2)
+
+    def test_get_nearest_plane_point(self):
+        for i in range(100):
+            plane = random_plane()
+            pnt = get_nearest_plane_point(plane)
+            s2 = eo + normalise_n_minus_1((plane*eo*plane)(1))
+            pnt2 = normalise_n_minus_1((s2*einf*s2)(1))
+            assert_allclose(pnt.value, pnt2.value)
 
     def test_general_object_interpolation(self):
 
