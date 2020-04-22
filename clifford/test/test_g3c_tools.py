@@ -420,7 +420,6 @@ class TestG3CTools:
             Lmat = get_line_reflection_matrix(lines, 1)
             Lmat_trunc = val_truncated_get_line_reflection_matrix(np.array([l.value for l in lines]), 1)
             assert_allclose(Lmat_trunc, Lmat[1:6, 1:6])
-            
     def test_get_midpoint_between_lines(self):
         for i in range(50):
             P = random_conformal_point()
