@@ -252,9 +252,10 @@ class TestConformalArray:
         up_array = test_array.up()
         I5 = layout.blades['e12345']
 
-        npt.assert_allclose((up_array * ConformalMVArray([I5])).value,
+        npt.assert_allclose(
+                (up_array * ConformalMVArray([I5])).value,
                 ConformalMVArray([i * I5 for i in up_array]).value,
-                            rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+                rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
 
     def test_from_value_array(self):
         mv = []
