@@ -132,7 +132,7 @@ class TestBasicDPGA:
             Rr = np.e**(-np.random.randn()*rotation_biv)
             Rt = 1 - w0s * np.random.randn()*(axis[0] * w1 + axis[1] * w2 + axis[2] * w3)
             np.testing.assert_allclose((Raxis*Rr*Rt*(~Raxis*line*Raxis)*~Rt*~Rr*~Raxis).value,
-                                       line.value, rtol=1E-4, atol=1E-6)
+                                       line.value, rtol=1E-4, atol=1E-4)
 
             # A bivector line is invariant under its own exponential
             Rline = np.e ** line
