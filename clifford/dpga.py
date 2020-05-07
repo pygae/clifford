@@ -7,6 +7,11 @@ Ron Goldman and Stephen Mann
 
 and
 
+Modeling 3D Geometry in the Clifford Algebra R(4, 4)
+Juan Du, Ron Goldman & Stephen Mann
+
+and
+
 Transverse approach to geometric algebra models for manipulating quadratic surfaces
 Stéphane Breuils, Vincent Nozick, Laurent Fuchs, Akihiro Sugimoto
 June 2019 Calgary Canada
