@@ -145,6 +145,44 @@ class TestBasicDPGA:
             np.testing.assert_allclose(np.linalg.norm(down(RLineOrigin*random_pnt*~RLineOrigin)),
                                        np.linalg.norm(down(random_pnt)), rtol=1E-3, atol=1E-4)
             np.testing.assert_allclose(down(RLineOrigin * (random_pnt + free_direc) * ~RLineOrigin),
-                                       down(RLineOrigin * random_pnt * ~RLineOrigin) + line_direc, rtol=1E-3, atol=1E-4)
+                                       down(RLineOrigin * random_pnt * ~RLineOrigin) + line_direc,
+                                       rtol=1E-3, atol=1E-4)
             np.testing.assert_allclose((Rline*~Rline).value, (1 + 0*w1).value, rtol=1E-4, atol=1E-4)
 
+    def test_quadric(self):
+        # Make a cone which passes through the origin
+        # This is the construction from Transverse Approach paper
+        quadric_coefs = [0.0, 1.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        a, b, c, d, e, f, g, h, i, j = quadric_coefs
+        quadric = 4 * a * (w0s ^ w0) + 4 * b * (w1s ^ w1) + 4 * c * (w2s ^ w2) + 4 * j * (w3s ^ w3) + \
+                  2 * d * ((w0s ^ w1) + (w1s ^ w0)) + 2 * e * ((w0s ^ w2) + (w2s ^ w0)) + \
+                  2 * f * ((w1s ^ w2) + (w2s ^ w1)) + 2 * g * ((w0s ^ w3) + (w3s ^ w0)) + \
+                  2 * h * ((w1s ^ w3) + (w3s ^ w1)) + 2 * i * ((w2s ^ w3) + (w3s ^ w2))
+
+        # The quadrics do not form an OPNS
+        assert quadric ^ w0s != 0*w1
+
+        # They form a `double IPNS'
+        random_pnt = up(np.random.randn(3))
+        doubledp = (random_pnt | quadric | dualise_point(random_pnt))
+        assert doubledp(0) == doubledp  # Not 0 but is a scalar
+        assert (w0 | quadric | w0s) == 0 * w1  # The cone passes through the origin
+
+        # Now let's do the construction from R(4,4) As a computational framework
+        # Let's make a sphere
+        sphere_quad = (w1s^w1) + (w2s^w2) + (w3s^w3) - (w0s^w0)
+
+        # Let's try rotating, it should be invariant under rotation
+        axis = np.random.randn(3)
+        rotation_biv = axis[0] * (e23 - e67) + axis[1] * (e57 - e13) + axis[2] * (e12 - e56)
+        Rr = np.e ** (-rotation_biv)
+        np.testing.assert_allclose((Rr * sphere_quad * ~Rr).value, sphere_quad.value,
+                                   rtol=1E-4, atol=1E-4)
+
+        # Test points on the sphere surface
+        for i in range(10):
+            vec = np.random.randn(3)
+            pnt = up(vec/np.linalg.norm(vec))
+            pnts = dualise_point(pnt)
+            np.testing.assert_allclose((pnt | sphere_quad | pnts).value, 0,
+                                       rtol=1E-4, atol=1E-6)
