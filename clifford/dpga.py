@@ -48,9 +48,7 @@ wbasis = wlist + wslist
 
 
 def up(threedDvec):
-    x = threedDvec[0]
-    y = threedDvec[1]
-    z = threedDvec[2]
+    x, y, z = threedDvec
     return x*w1 + y*w2 + z*w3 + w0
 
 
