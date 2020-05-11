@@ -37,8 +37,9 @@ class TestBasicDPGA:
             assert wi*wis == 1 - wis*wi
 
     def test_up_down(self):
+        rng = np.random.default_rng()  # can pass a seed here later
         for i in range(1000):
-            p = np.random.randn(3)
+            p = rng.standard_normal(3)
             dpga_pnt = up(p)
             pnt_down = down(np.random.rand()*dpga_pnt)
             np.testing.assert_allclose(pnt_down, p)
@@ -46,7 +47,7 @@ class TestBasicDPGA:
     def test_translate(self):
         rng = np.random.default_rng()   # can pass a seed here later
         for i in range(100):
-            tvec = rng.standard_normal()
+            tvec = rng.standard_normal(3)
             wt = tvec[0]*w1 + tvec[1]*w2 + tvec[2]*w3
             biv = w0s*wt
             Rt = 1 - biv
@@ -59,7 +60,7 @@ class TestBasicDPGA:
 
             assert (Rt*~Rt) == 1 + 0*w1
 
-            pnt_vec = np.random.randn(3)
+            pnt_vec = rng.standard_normal(3)
             pnt = up(pnt_vec)
             res = Rt*pnt*~Rt
             desired_result = up(pnt_vec+tvec)
@@ -74,9 +75,10 @@ class TestBasicDPGA:
             print()
 
     def test_rotate(self):
+        rng = np.random.default_rng()  # can pass a seed here later
         for i in range(100):
-            mvec = np.random.randn(3)
-            nvec = np.random.randn(3)
+            mvec = rng.standard_normal(3)
+            nvec = rng.standard_normal(3)
             m = mvec[0] * w1 + mvec[1] * w2 + mvec[2] * w3
             n = nvec[0] * w1 + nvec[1] * w2 + nvec[2] * w3
             ms = mvec[0] * w1s + mvec[1] * w2s + mvec[2] * w3s
@@ -96,7 +98,7 @@ class TestBasicDPGA:
             np.testing.assert_allclose((Rt*uporthog*~Rt).value, uporthog.value, atol=1E-4)
 
             # Points should maintain their distance from the origin
-            pnt_vec = np.random.randn(3)
+            pnt_vec = rng.standard_normal(3)
             l = np.linalg.norm(pnt_vec)
             pnt = up(pnt_vec)
             lres = np.linalg.norm(down(Rt * pnt * ~Rt))
@@ -108,9 +110,10 @@ class TestBasicDPGA:
             print()
 
     def test_line(self):
+        rng = np.random.default_rng()  # can pass a seed here later
         for i in range(100):
-            p1vec = np.random.randn(3)
-            p2vec = np.random.randn(3)
+            p1vec = rng.standard_normal(3)
+            p2vec = rng.standard_normal(3)
             p1 = up(p1vec)
             p2 = up(p2vec)
             line_direc = p2vec - p1vec
@@ -123,7 +126,7 @@ class TestBasicDPGA:
             assert line_alt == line
 
             # The line should be the outer product null space
-            lamb = np.random.randn()
+            lamb = rng.standard_normal()
             assert up(lamb*p1vec + (1 - lamb)*p2vec) ^ line == 0
 
             # Lines can be transformed with rotors
@@ -135,8 +138,8 @@ class TestBasicDPGA:
             # Lines are invariant to screw transformations about their axis
             axis = p1vec - p2vec
             rotation_biv = axis[0]*(e23 - e2b3b) + axis[1]*(e1b3b - e13) + axis[2]*(e12 - e1b2b)
-            Rr = np.e**(-np.random.randn()*rotation_biv)
-            Rt = 1 - w0s * np.random.randn()*(axis[0] * w1 + axis[1] * w2 + axis[2] * w3)
+            Rr = np.e**(-rng.standard_normal()*rotation_biv)
+            Rt = 1 - w0s * rng.standard_normal()*(axis[0] * w1 + axis[1] * w2 + axis[2] * w3)
             np.testing.assert_allclose((Raxis*Rr*Rt*(~Raxis*line*Raxis)*~Rt*~Rr*~Raxis).value,
                                        line.value, rtol=1E-4, atol=1E-4)
 
@@ -147,7 +150,7 @@ class TestBasicDPGA:
             # The exponential of a line is a rotation about the line
             line_origin = (~Raxis*line*Raxis)
             RLineOrigin = np.e ** line_origin
-            random_pnt = up(np.random.randn(3))
+            random_pnt = up(rng.standard_normal(3))
             np.testing.assert_allclose(np.linalg.norm(down(RLineOrigin*random_pnt*~RLineOrigin)),
                                        np.linalg.norm(down(random_pnt)), rtol=1E-3, atol=1E-4)
             np.testing.assert_allclose(down(RLineOrigin * (random_pnt + free_direc) * ~RLineOrigin),
@@ -156,6 +159,7 @@ class TestBasicDPGA:
             np.testing.assert_allclose((Rline*~Rline).value, (1 + 0*w1).value, rtol=1E-4, atol=1E-4)
 
     def test_quadric(self):
+        rng = np.random.default_rng()  # can pass a seed here later
         # Make a cone which passes through the origin
         # This is the construction from Transverse Approach paper
         quadric_coefs = [0.0, 1.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -169,7 +173,7 @@ class TestBasicDPGA:
         assert quadric ^ w0s != 0*w1
 
         # They form a `double IPNS'
-        random_pnt = up(np.random.randn(3))
+        random_pnt = up(rng.standard_normal(3))
         doubledp = (random_pnt | quadric | dualise_point(random_pnt))
         assert doubledp(0) == doubledp  # Not 0 but is a scalar
         assert (w0 | quadric | w0s) == 0 * w1  # The cone passes through the origin
