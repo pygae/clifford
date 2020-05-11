@@ -1,4 +1,3 @@
-
 """ 
 The Cl(4,4) DPGA also known as `Mother Algebra' of Goldman and Mann. see:
 
@@ -49,9 +48,7 @@ wbasis = wlist + wslist
 
 
 def up(threedDvec):
-    x = threedDvec[0]
-    y = threedDvec[1]
-    z = threedDvec[2]
+    x, y, z = threedDvec
     return x*w1 + y*w2 + z*w3 + w0
 
 

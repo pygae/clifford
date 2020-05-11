@@ -44,8 +44,9 @@ class TestBasicDPGA:
             np.testing.assert_allclose(pnt_down, p)
 
     def test_translate(self):
+        rng = np.random.default_rng()   # can pass a seed here later
         for i in range(100):
-            tvec = np.random.randn(3)
+            tvec = rng.standard_normal()
             wt = tvec[0]*w1 + tvec[1]*w2 + tvec[2]*w3
             biv = w0s*wt
             Rt = 1 - biv
