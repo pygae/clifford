@@ -1,4 +1,3 @@
-
 """ 
 The Cl(4,4) DPGA also known as `Mother Algebra' of Goldman and Mann. see:
 
