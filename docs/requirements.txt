@@ -6,6 +6,6 @@ nbsphinx
 ipywidgets
 sphinx>=2.4
 sphinx_rtd_theme
-numba > 0.45.1  # seemed to cause issues with sparse
+numba==0.48.0  # seemed to cause issues with sparse
 
 -r ../requirements.txt
