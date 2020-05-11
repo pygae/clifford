@@ -6,15 +6,23 @@ from clifford.dpga import *
 
 class TestBasicDPGA:
     def test_non_orthogonal_metric(self):
-        for i, a in enumerate(wbasis):
-            for j, b in enumerate(wbasis):
-                res = a|b
-                if i != j and i%4 == j%4:
-                    assert res == (0.5) + 0*w1
-                else:
-                    assert res == 0*w1
-                print(a|b, end=' ')
-            print()
+        w_metric = np.array([
+            [
+                (a | b)[0]
+                for a in wbasis
+            ]
+            for b in wbasis
+        ])
+        assert np.all(w_metric == np.array([
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0],
+        ]) / 2)
 
     def test_bivector_identities(self):
         """
