@@ -16,7 +16,6 @@ Stéphane Breuils, Vincent Nozick, Laurent Fuchs, Akihiro Sugimoto
 June 2019 Calgary Canada
 """
 
-from . import Cl
 from . import Layout, BasisVectorIds
 import numpy as np
 
