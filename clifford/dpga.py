@@ -18,31 +18,31 @@ June 2019 Calgary Canada
 """
 
 from . import Cl
+from . import Layout, BasisVectorIds
 import numpy as np
 
-layout, blades = Cl(4, 4)
+
+layout = Layout([1]*4 + [-1]*4, ids=BasisVectorIds(['{}'.format(i) for i in range(4)] + ['{}b'.format(i) for i in range(4)]))
+blades = layout.bases()
 locals().update(blades)
+
 
 # for shorter reprs
 layout.__name__ = 'layout'
 layout.__module__ = __name__
 
 # Construct the non diagonal basis
-e1b = e5
-e2b = e6
-e3b = e7
-e4b = e8
 
 w1 = 0.5*(e1 + e1b)
 w2 = 0.5*(e2 + e2b)
 w3 = 0.5*(e3 + e3b)
-w0 = 0.5*(e4 + e4b)
+w0 = 0.5*(e0 + e0b)
 wlist = [w1, w2, w3, w0]
 
 w1s = 0.5*(e1 - e1b)
 w2s = 0.5*(e2 - e2b)
 w3s = 0.5*(e3 - e3b)
-w0s = 0.5*(e4 - e4b)
+w0s = 0.5*(e0 - e0b)
 wslist = [w1s, w2s, w3s, w0s]
 
 wbasis = wlist + wslist

@@ -17,6 +17,11 @@ class TestBasicDPGA:
             print()
 
     def test_bivector_identities(self):
+        """
+        These come from section 2 of the paper:
+        R(4, 4) As a Computational Framework for 3-Dimensional Computer Graphics
+        by Ron Goldman and Stephen Mann
+        """
         for wi in wlist:
             for wj in wlist:
                 assert wi^wj == -wj*wi
@@ -128,7 +133,7 @@ class TestBasicDPGA:
 
             # Lines are invariant to screw transformations about their axis
             axis = p1vec - p2vec
-            rotation_biv = axis[0]*(e23 - e67) + axis[1]*(e57 - e13) + axis[2]*(e12 - e56)
+            rotation_biv = axis[0]*(e23 - e2b3b) + axis[1]*(e1b3b - e13) + axis[2]*(e12 - e1b2b)
             Rr = np.e**(-np.random.randn()*rotation_biv)
             Rt = 1 - w0s * np.random.randn()*(axis[0] * w1 + axis[1] * w2 + axis[2] * w3)
             np.testing.assert_allclose((Raxis*Rr*Rt*(~Raxis*line*Raxis)*~Rt*~Rr*~Raxis).value,
@@ -174,7 +179,7 @@ class TestBasicDPGA:
 
         # Let's try rotating, it should be invariant under rotation
         axis = np.random.randn(3)
-        rotation_biv = axis[0] * (e23 - e67) + axis[1] * (e57 - e13) + axis[2] * (e12 - e56)
+        rotation_biv = axis[0] * (e23 - e2b3b) + axis[1] * (e1b3b - e13) + axis[2] * (e12 - e1b2b)
         Rr = np.e ** (-rotation_biv)
         np.testing.assert_allclose((Rr * sphere_quad * ~Rr).value, sphere_quad.value,
                                    rtol=1E-4, atol=1E-4)
