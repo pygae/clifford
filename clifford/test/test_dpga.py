@@ -76,12 +76,6 @@ class TestBasicDPGA:
             assert up(pnt_vec) + wt == desired_result
             assert res == desired_result
 
-            print()
-            print(biv)
-            print(tvec/4)
-            print(biv*biv)
-            print()
-
     def test_rotate(self):
         rng = np.random.default_rng()  # can pass a seed here later
         for i in range(100):
@@ -111,11 +105,6 @@ class TestBasicDPGA:
             pnt = up(pnt_vec)
             lres = np.linalg.norm(down(Rt * pnt * ~Rt))
             np.testing.assert_allclose(l, lres, atol=1E-6)
-
-            print()
-            print(biv)
-            print(vorthog)
-            print()
 
     def test_line(self):
         rng = np.random.default_rng()  # can pass a seed here later
