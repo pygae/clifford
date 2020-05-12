@@ -171,7 +171,7 @@ class TestBasicDPGA:
 
         # They form a `double IPNS'
         random_pnt = up(rng.standard_normal(3))
-        doubledp = (random_pnt | quadric | dualise_point(random_pnt))
+        doubledp = (random_pnt | quadric | dual_point(random_pnt))
         assert doubledp(0) == doubledp  # Not 0 but is a scalar
         assert (w0 | quadric | w0s) == 0 * w1  # The cone passes through the origin
 
@@ -190,6 +190,6 @@ class TestBasicDPGA:
         for i in range(10):
             vec = np.random.randn(3)
             pnt = up(vec/np.linalg.norm(vec))
-            pnts = dualise_point(pnt)
+            pnts = dual_point(pnt)
             np.testing.assert_allclose((pnt | sphere_quad | pnts).value, 0,
                                        rtol=1E-4, atol=1E-6)
