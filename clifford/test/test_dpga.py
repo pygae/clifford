@@ -159,10 +159,14 @@ class TestBasicDPGA:
         # This is the construction from Transverse Approach paper
         quadric_coefs = [0.0, 1.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         a, b, c, d, e, f, g, h, i, j = quadric_coefs
-        quadric = 4 * a * (w0s ^ w0) + 4 * b * (w1s ^ w1) + 4 * c * (w2s ^ w2) + 4 * j * (w3s ^ w3) + \
-                  2 * d * ((w0s ^ w1) + (w1s ^ w0)) + 2 * e * ((w0s ^ w2) + (w2s ^ w0)) + \
-                  2 * f * ((w1s ^ w2) + (w2s ^ w1)) + 2 * g * ((w0s ^ w3) + (w3s ^ w0)) + \
-                  2 * h * ((w1s ^ w3) + (w3s ^ w1)) + 2 * i * ((w2s ^ w3) + (w3s ^ w2))
+        quadric = 4 * a * (w0s ^ w0) + 4 * b * (w1s ^ w1) + \
+                  4 * c * (w2s ^ w2) + 4 * j * (w3s ^ w3) + \
+                  2 * d * ((w0s ^ w1) + (w1s ^ w0)) + \
+                  2 * e * ((w0s ^ w2) + (w2s ^ w0)) + \
+                  2 * f * ((w1s ^ w2) + (w2s ^ w1)) + \
+                  2 * g * ((w0s ^ w3) + (w3s ^ w0)) + \
+                  2 * h * ((w1s ^ w3) + (w3s ^ w1)) + \
+                  2 * i * ((w2s ^ w3) + (w3s ^ w2))
 
         # The quadrics do not form an OPNS
         assert quadric ^ w0s != 0*w1
