@@ -43,7 +43,7 @@ class TestBasicDPGA:
             assert wi*wis == 1 - wis*wi
 
     def test_up_down(self):
-        rng = np.random.default_rng()  # can pass a seed here later
+        rng = np.random.RandomState()  # can pass a seed here later
         for i in range(1000):
             p = rng.standard_normal(3)
             dpga_pnt = up(p)
@@ -51,7 +51,7 @@ class TestBasicDPGA:
             np.testing.assert_allclose(pnt_down, p)
 
     def test_translate(self):
-        rng = np.random.default_rng()   # can pass a seed here later
+        rng = np.random.RandomState()   # can pass a seed here later
         for i in range(100):
             tvec = rng.standard_normal(3)
             wt = tvec[0]*w1 + tvec[1]*w2 + tvec[2]*w3
@@ -75,7 +75,7 @@ class TestBasicDPGA:
             assert res == desired_result
 
     def test_rotate(self):
-        rng = np.random.default_rng()  # can pass a seed here later
+        rng = np.random.RandomState()  # can pass a seed here later
         for i in range(100):
             mvec = rng.standard_normal(3)
             nvec = rng.standard_normal(3)
@@ -105,7 +105,7 @@ class TestBasicDPGA:
             np.testing.assert_allclose(l, lres, atol=1E-6)
 
     def test_line(self):
-        rng = np.random.default_rng()  # can pass a seed here later
+        rng = np.random.RandomState()  # can pass a seed here later
         for i in range(100):
             p1vec = rng.standard_normal(3)
             p2vec = rng.standard_normal(3)
@@ -154,7 +154,7 @@ class TestBasicDPGA:
             np.testing.assert_allclose((Rline*~Rline).value, (1 + 0*w1).value, rtol=1E-4, atol=1E-4)
 
     def test_quadric(self):
-        rng = np.random.default_rng()  # can pass a seed here later
+        rng = np.random.RandomState()  # can pass a seed here later
         # Make a cone which passes through the origin
         # This is the construction from Transverse Approach paper
         quadric_coefs = [0.0, 1.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
