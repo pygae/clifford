@@ -55,6 +55,6 @@ def down(pnt):
     return np.array([(pnt|wis)[0] for wis in [w1s, w2s, w3s]])/((pnt|w0s)[0])
 
 
-def dualise_point(point):
+def dual_point(point):
     x, y, z = down(point)
     return x * w1s + y * w2s + z * w3s + w0s
