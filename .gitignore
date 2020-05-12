@@ -62,3 +62,9 @@ target/
 .ipynb_checkpoints
 
 /docs/api/generated/*
+
+clifford/test/\.hypothesis/
+
+clifford/test/test\.ga
+
+clifford/test/test\.json

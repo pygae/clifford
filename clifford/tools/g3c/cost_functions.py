@@ -15,6 +15,10 @@ ninf_val = einf.value
 sparse_cost_imt = layout.imt_func_generator(grades_a=[0, 2, 4], grades_b=[1])
 sparse_cost_gmt = layout.gmt_func_generator(grades_a=[0, 2, 4], grades_b=[0, 2, 4])
 
+gradeList = np.array(layout.gradeList)
+grade_obj_func = cf.grade_obj_func
+max_float = np.finfo(float).max
+
 
 def check_p(Q):
     """
@@ -162,9 +166,6 @@ def rotor_cost(R):
     return val_rotor_cost_sparse(R.value)
 
 
-gradeList = np.array(layout.gradeList)
-grade_obj_func = cf.grade_obj_func
-max_float = np.finfo(float).max
 @numba.njit
 def val_object_cost_function(obj_a_val, obj_b_val, motor=False):
     """
