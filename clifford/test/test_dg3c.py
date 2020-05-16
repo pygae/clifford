@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from ..dcga import *
+from ..dg3c import *
 
 """
 All basic test identities come from:
