@@ -27,6 +27,9 @@ The easiest way to get started with ``clifford`` is to use one of several predef
 * .. module:: clifford.dpga
 
   ``dpga``: Double PGA also referred to as the Mother Algebra, ``Cl(4, 4)``.
+* .. module:: clifford.dcga
+
+  ``dcga``: Double Conformal Geometric Algebra (DCGA), ``Cl(8, 2)``.
 
 
 
