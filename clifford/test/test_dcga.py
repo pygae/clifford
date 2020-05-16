@@ -60,7 +60,7 @@ class GeometricPrimitiveTests(unittest.TestCase):
         """
         for key, cyc_op in cyclide_ops.items():
             for key2, cyc_op_recip in cyclide_ops_reciprocal.items():
-                assert cyc_op|cyc_op_recip == (1 + 0*e1)*(key == key2)
+                assert cyc_op|cyc_op_recip == layout.scalar*(key == key2)
 
     def test_general_elipsoid(self):
         """
@@ -114,7 +114,7 @@ class GeometricPrimitiveTests(unittest.TestCase):
         Tdcga = (Tc1*Tc2).normal()
 
         # Assert the rotor is normalised
-        assert Tdcga*~Tdcga == 1.0 + 0*eo
+        assert Tdcga*~Tdcga == layout.scalar
 
         # Apply the rotor to the line
         np.testing.assert_allclose((Tdcga*Ldcga*~Tdcga).value, Ldcga.value, rtol=1E-4, atol=1E-6)
