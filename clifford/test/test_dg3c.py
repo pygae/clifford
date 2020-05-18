@@ -1,4 +1,5 @@
 import unittest
+import pytest
 import numpy as np
 from ..dg3c import *
 
@@ -40,6 +41,10 @@ class BasicTests(unittest.TestCase):
             res = down(100*pnt)
             np.testing.assert_allclose(res, pnt_vector)
 
+        # Assert an error is raised if the point is not 3d
+        with pytest.raises(ValueError):
+            up([1, 2, 3, 4])
+
     def test_up_down_cga1(self):
         """
         Test that we can map points up and down from cga1
@@ -51,6 +56,9 @@ class BasicTests(unittest.TestCase):
             res = down_cga1(100*pnt)
             np.testing.assert_allclose(res, pnt_vector)
 
+        # Assert an error is raised if the point is not 3d
+        with pytest.raises(ValueError):
+            up_cga1([1, 2, 3, 4])
 
 class GeometricPrimitiveTests(unittest.TestCase):
     def test_reciprocality(self):

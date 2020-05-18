@@ -38,7 +38,8 @@ def up_cga1(pnt_vector):
     Take a vector and embed it as a point in the first
     copy of cga
     """
-    euc_point = pnt_vector[0]*e1 + pnt_vector[1]*e2 + pnt_vector[2]*e3
+    x, y, z = pnt_vector
+    euc_point = x*e1 + y*e2 + z*e3
     return euc_point + 0.5*(euc_point|euc_point)*einf1 + eo1
 
 
@@ -54,7 +55,8 @@ def up_cga2(pnt_vector):
     Take a vector and embed it as a point in the second
     copy of cga
     """
-    euc_point = pnt_vector[0]*e6 + pnt_vector[1]*e7 + pnt_vector[2]*e8
+    x, y, z = pnt_vector
+    euc_point = x*e6 + y*e7 + z*e8
     return euc_point + 0.5*euc_point**2*einf2 + eo2
 
 
