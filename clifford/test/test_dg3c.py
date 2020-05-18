@@ -60,6 +60,7 @@ class BasicTests(unittest.TestCase):
         with pytest.raises(ValueError):
             up_cga1([1, 2, 3, 4])
 
+
 class GeometricPrimitiveTests(unittest.TestCase):
     def test_reciprocality(self):
         """
