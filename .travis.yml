@@ -26,7 +26,8 @@ x-clifford-templates:
         if [[ "${CONDA}" == "true" ]]; then
           python setup.py develop --no-deps;
         else
-          pip install .;
+          # this avoids an issue where Python 3.5 wheels are missing for llvmlite
+          pip install . --prefer-binary;
         fi
       # always install with pip, conda has too old a version
       - pip install pytest pytest-cov pytest-benchmark
