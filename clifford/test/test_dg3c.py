@@ -51,7 +51,7 @@ class BasicTests(unittest.TestCase):
         """
         rng = np.random.RandomState()
         pnt_vector = rng.randn(3)
-        for i in range(100):
+        for i in range(10):
             pnt = up_cga1(pnt_vector)
             res = down_cga1(100*pnt)
             np.testing.assert_allclose(res, pnt_vector)

@@ -44,7 +44,7 @@ class TestBasicDPGA:
 
     def test_up_down(self):
         rng = np.random.RandomState()  # can pass a seed here later
-        for i in range(1000):
+        for i in range(10):
             p = rng.standard_normal(3)
             dpga_pnt = up(p)
             pnt_down = down(np.random.rand()*dpga_pnt)
@@ -52,7 +52,7 @@ class TestBasicDPGA:
 
     def test_translate(self):
         rng = np.random.RandomState()   # can pass a seed here later
-        for i in range(100):
+        for i in range(10):
             tvec = rng.standard_normal(3)
             wt = tvec[0]*w1 + tvec[1]*w2 + tvec[2]*w3
             biv = w0s*wt
@@ -76,7 +76,7 @@ class TestBasicDPGA:
 
     def test_rotate(self):
         rng = np.random.RandomState()  # can pass a seed here later
-        for i in range(100):
+        for i in range(10):
             mvec = rng.standard_normal(3)
             nvec = rng.standard_normal(3)
             m = mvec[0] * w1 + mvec[1] * w2 + mvec[2] * w3
@@ -106,7 +106,7 @@ class TestBasicDPGA:
 
     def test_line(self):
         rng = np.random.RandomState()  # can pass a seed here later
-        for i in range(100):
+        for i in range(10):
             p1vec = rng.standard_normal(3)
             p2vec = rng.standard_normal(3)
             p1 = up(p1vec)
