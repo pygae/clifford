@@ -170,7 +170,7 @@ class GeometricPrimitiveTests(unittest.TestCase):
         Tdcga = (Tc1 * Tc2).normal()
         assert (Tdcga * E * ~Tdcga) | eo == 0 * e1
 
-    def test_rotation(self):
+    def test_line_rotation(self):
         theta = np.pi/2
         RC1 = np.e ** (-0.5*theta*e12)
         RC2 = np.e ** (-0.5*theta*e67)
@@ -194,6 +194,7 @@ class GeometricPrimitiveTests(unittest.TestCase):
         assert (Rdcga * Ldcga * ~Rdcga)|up(pnt_vec_rotated) == 0*e1
         np.testing.assert_allclose((Rdcga * Ldcga * ~Rdcga).value, Ldcga_rotated.value, rtol=1E-4, atol=1E-6)
 
+    def test_quadric_rotation(self):
         # Construct and ellipsoid
         px = 0
         py = 2.5
