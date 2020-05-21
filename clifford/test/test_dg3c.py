@@ -41,7 +41,7 @@ class BasicTests(unittest.TestCase):
         Test that we can map points up and down into the dpga
         """
         rng = np.random.RandomState()
-        for i in range(5 if numba.config.DISABLE_JIT else 100):
+        for i in range(1 if numba.config.DISABLE_JIT else 100):
             pnt_vector = rng.randn(3)
             pnt = up(pnt_vector)
             res = down(100*pnt)
@@ -68,6 +68,7 @@ class BasicTests(unittest.TestCase):
 
 
 class GeometricPrimitiveTests(unittest.TestCase):
+    @too_slow_without_jit
     def test_reciprocality(self):
         """
         Ensure that the cyclide ops and the reciprocal frame are
@@ -114,6 +115,7 @@ class GeometricPrimitiveTests(unittest.TestCase):
         assert Ldcga | up(pnt_vec_b) == 0 * eo
         assert Ldcga | up(0.5*pnt_vec_a + 0.5*pnt_vec_b) == 0 * eo
 
+    @too_slow_without_jit
     def test_translation(self):
         rng = np.random.RandomState()
         # Make a dcga line
