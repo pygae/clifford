@@ -1,6 +1,8 @@
 import unittest
 import pytest
 import numpy as np
+import numba
+
 from ..dg3c import *
 
 """
@@ -10,6 +12,10 @@ Easter, R.B., Hitzer, E. Double Conformal Geometric Algebra.
 Adv. Appl. Clifford Algebras 27, 2175–2199 (2017).
 https://doi.org/10.1007/s00006-017-0784-0
 """
+
+too_slow_without_jit = pytest.mark.skipif(
+    numba.config.DISABLE_JIT, reason="test is too slow without JIT"
+)
 
 
 class BasicTests(unittest.TestCase):
@@ -35,7 +41,7 @@ class BasicTests(unittest.TestCase):
         Test that we can map points up and down into the dpga
         """
         rng = np.random.RandomState()
-        for i in range(100):
+        for i in range(1 if numba.config.DISABLE_JIT else 100):
             pnt_vector = rng.randn(3)
             pnt = up(pnt_vector)
             res = down(100*pnt)
@@ -51,7 +57,7 @@ class BasicTests(unittest.TestCase):
         """
         rng = np.random.RandomState()
         pnt_vector = rng.randn(3)
-        for i in range(100):
+        for i in range(10 if numba.config.DISABLE_JIT else 100):
             pnt = up_cga1(pnt_vector)
             res = down_cga1(100*pnt)
             np.testing.assert_allclose(res, pnt_vector)
@@ -62,6 +68,7 @@ class BasicTests(unittest.TestCase):
 
 
 class GeometricPrimitiveTests(unittest.TestCase):
+    @too_slow_without_jit
     def test_reciprocality(self):
         """
         Ensure that the cyclide ops and the reciprocal frame are
@@ -108,6 +115,7 @@ class GeometricPrimitiveTests(unittest.TestCase):
         assert Ldcga | up(pnt_vec_b) == 0 * eo
         assert Ldcga | up(0.5*pnt_vec_a + 0.5*pnt_vec_b) == 0 * eo
 
+    @too_slow_without_jit
     def test_translation(self):
         rng = np.random.RandomState()
         # Make a dcga line
@@ -168,7 +176,8 @@ class GeometricPrimitiveTests(unittest.TestCase):
         Tdcga = (Tc1 * Tc2).normal()
         assert (Tdcga * E * ~Tdcga) | eo == 0 * e1
 
-    def test_rotation(self):
+    @too_slow_without_jit
+    def test_line_rotation(self):
         theta = np.pi/2
         RC1 = np.e ** (-0.5*theta*e12)
         RC2 = np.e ** (-0.5*theta*e67)
@@ -192,6 +201,8 @@ class GeometricPrimitiveTests(unittest.TestCase):
         assert (Rdcga * Ldcga * ~Rdcga)|up(pnt_vec_rotated) == 0*e1
         np.testing.assert_allclose((Rdcga * Ldcga * ~Rdcga).value, Ldcga_rotated.value, rtol=1E-4, atol=1E-6)
 
+    @too_slow_without_jit
+    def test_quadric_rotation(self):
         # Construct and ellipsoid
         px = 0
         py = 2.5
@@ -227,6 +238,7 @@ class GeometricPrimitiveTests(unittest.TestCase):
 
         assert Erot|eo == 0*eo
 
+    @too_slow_without_jit
     def test_bivector_orthogonality(self):
         """
         Rotors in each algebra should be orthogonal
