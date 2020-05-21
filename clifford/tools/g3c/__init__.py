@@ -431,15 +431,15 @@ def iterative_closest_points_on_circles(C1, C2, niterations=20):
     return P1, P2
 
 
-def closest_point_on_line_from_circle(C, L):
+def closest_point_on_line_from_circle(C, L, eps=1E-6):
     """
     Returns the point on the line L that is closest to the circle C
     Uses the algorithm described in Appendix A of Andreas Aristidou's PhD thesis
     """
-    return project_points_to_line([closest_point_on_circle_from_line(C, L)], L)[0]
+    return project_points_to_line([closest_point_on_circle_from_line(C, L, eps=eps)], L)[0]
 
 
-def closest_point_on_circle_from_line(C, L):
+def closest_point_on_circle_from_line(C, L, eps=1E-6):
     """
     Returns the point on the circle C that is closest to the line L
     Uses the algorithm described in Appendix A of Andreas Aristidou's PhD thesis
@@ -448,7 +448,7 @@ def closest_point_on_circle_from_line(C, L):
     B = meet(L, phi)
     A = normalise_n_minus_1((C * einf * C)(1))
     bound_sphere = ((C * phi) * I5).normal()
-    if abs((B**2)[0]) < 1E-6:
+    if abs((B**2)[0]) < eps:
         # The line and plane of the circle are parallel
         # Project the line into the plane
         Lpln = (L.normal() + (phi*L*phi)(3).normal()).normal()
@@ -470,15 +470,15 @@ def closest_point_on_circle_from_line(C, L):
 
     # If Y is in the sphere that C is the equator of
     if sphere_in_sphere(Y*I5, bound_sphere):
-        if abs((A | P)[0]) < 1E-6:
+        if abs((A | P)[0]) < eps:
             # Line passes through the centre of the circle
-            if abs((P | Y)[0]) < 1E-6:
+            if abs((P | Y)[0]) < eps:
                 # Line is perpendicular to plane of the circle
                 L2 = (A^project_points_to_circle([random_conformal_point()], C)[0]^einf).normal()
             else:
                 # Just project the line
                 L2 = (L.normal() + (phi*L*phi)(3).normal()).normal()
-        elif abs((P | Y)[0]) < 1E-6:
+        elif abs((P | Y)[0]) < eps:
             # Line is perpendicular to the plane of the circle
             L2 = A ^ Y ^ einf
         else:
@@ -487,8 +487,7 @@ def closest_point_on_circle_from_line(C, L):
         L2 = A ^ Y ^ einf
     PP = meet(L2, bound_sphere)
     Xs = point_pair_to_end_points(PP)
-    ind = np.argmax([(Xs[0]|P)[0], (Xs[1]|P)[0]])
-    return Xs[ind]
+    return max(Xs, key=lambda x: (x | P)[0])
 
 
 def iterative_closest_points_circle_line(C, L, niterations=20):
@@ -604,13 +603,13 @@ def val_get_line_reflection_matrix(line_array, n_power):
     mat2solve = np.zeros((32, 32), dtype=np.float64)
     for i in range(line_array.shape[0]):
         LiMat = get_left_gmt_matrix(line_array[i, :])
-        tmat = (LiMat@mask_2minus4)@LiMat
+        tmat = (LiMat @ mask_2minus4) @ LiMat
         mat2solve += tmat
-    mat = mask1@mat2solve/line_array.shape[0]
+    mat = mask1 @ mat2solve/line_array.shape[0]
     if n_power != 1:
         c_pow = 1
         while c_pow < n_power:
-            mat = mat@mat
+            mat = mat @ mat
             c_pow = c_pow * 2
     return mat
 
@@ -625,15 +624,15 @@ def val_truncated_get_line_reflection_matrix(line_array, n_power):
     mat2solve = np.zeros((32, 32), dtype=np.float64)
     for i in range(line_array.shape[0]):
         LiMat = get_left_gmt_matrix(line_array[i, :])
-        tmat = (LiMat@mask_2minus4)@LiMat
+        tmat = (LiMat @ mask_2minus4) @ LiMat
         mat2solve += tmat
-    mat_val = mask1@mat2solve
+    mat_val = mask1 @ mat2solve
     mat_val = mat_val[1:6, 1:6].copy()/line_array.shape[0]
     if n_power != 1:
         c_pow = 1
         while c_pow < n_power:
-            mat_val = mat_val@mat_val
-            c_pow = c_pow*2
+            mat_val = mat_val @ mat_val
+            c_pow = c_pow * 2
     return mat_val
 
 
