@@ -107,7 +107,7 @@ class TestBasicDPGA:
 
     def test_line(self):
         rng = np.random.RandomState()  # can pass a seed here later
-        for i in range(10 if numba.config.DISABLE_JIT else 100):
+        for i in range(5 if numba.config.DISABLE_JIT else 100):
             p1vec = rng.standard_normal(3)
             p2vec = rng.standard_normal(3)
             p1 = up(p1vec)

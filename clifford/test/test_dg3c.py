@@ -13,6 +13,10 @@ Adv. Appl. Clifford Algebras 27, 2175–2199 (2017).
 https://doi.org/10.1007/s00006-017-0784-0
 """
 
+too_slow_without_jit = pytest.mark.skipif(
+    numba.config.DISABLE_JIT, reason="test is too slow without JIT"
+)
+
 
 class BasicTests(unittest.TestCase):
     def test_metric(self):
@@ -170,6 +174,7 @@ class GeometricPrimitiveTests(unittest.TestCase):
         Tdcga = (Tc1 * Tc2).normal()
         assert (Tdcga * E * ~Tdcga) | eo == 0 * e1
 
+    @too_slow_without_jit
     def test_line_rotation(self):
         theta = np.pi/2
         RC1 = np.e ** (-0.5*theta*e12)
@@ -194,6 +199,7 @@ class GeometricPrimitiveTests(unittest.TestCase):
         assert (Rdcga * Ldcga * ~Rdcga)|up(pnt_vec_rotated) == 0*e1
         np.testing.assert_allclose((Rdcga * Ldcga * ~Rdcga).value, Ldcga_rotated.value, rtol=1E-4, atol=1E-6)
 
+    @too_slow_without_jit
     def test_quadric_rotation(self):
         # Construct and ellipsoid
         px = 0
@@ -230,6 +236,7 @@ class GeometricPrimitiveTests(unittest.TestCase):
 
         assert Erot|eo == 0*eo
 
+    @too_slow_without_jit
     def test_bivector_orthogonality(self):
         """
         Rotors in each algebra should be orthogonal
