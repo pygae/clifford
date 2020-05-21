@@ -1,6 +1,8 @@
 import unittest
 import pytest
 import numpy as np
+import numba
+
 from ..dg3c import *
 
 """
@@ -35,7 +37,7 @@ class BasicTests(unittest.TestCase):
         Test that we can map points up and down into the dpga
         """
         rng = np.random.RandomState()
-        for i in range(100):
+        for i in range(5 if numba.config.DISABLE_JIT else 100):
             pnt_vector = rng.randn(3)
             pnt = up(pnt_vector)
             res = down(100*pnt)
@@ -51,7 +53,7 @@ class BasicTests(unittest.TestCase):
         """
         rng = np.random.RandomState()
         pnt_vector = rng.randn(3)
-        for i in range(10):
+        for i in range(10 if numba.config.DISABLE_JIT else 100):
             pnt = up_cga1(pnt_vector)
             res = down_cga1(100*pnt)
             np.testing.assert_allclose(res, pnt_vector)
