@@ -399,6 +399,57 @@ class TestG3CTools:
             assert_allclose((X2 ^ L).value, 0)
             assert_allclose((X2Andreas ^ L).value, 0)
 
+        ### Choose explicit cases to ensure test coverage
+        # The line and plane of the circle are parallel
+        # line is not in the plane and the projection does meet the circle
+        L = (up(e3)^up(e1+e3)^einf).normal()
+        C = (up(e1)^up(e2)^up(-e1)).normal()
+        X = closest_point_on_circle_from_line(C, L)
+        assert_allclose((X ^ C).value, 0)
+        assert (X == up(e1) or X == up(-e1))
+        # The line and plane of the circle are parallel
+        # line is not in the plane and the projection does not meet the circle
+        L = (up(e3 + 5*e2) ^ up(e1 + e3 + 5*e2) ^ einf).normal()
+        C = (up(e1) ^ up(e2) ^ up(-e1)).normal()
+        X = closest_point_on_circle_from_line(C, L)
+        assert_allclose((X ^ C).value, 0)
+        assert X == up(e2)
+
+        # Line passes through the centre of the circle and is
+        # perpendicular to the circle
+        C = (up(e1) ^ up(e2) ^ up(-e1)).normal()
+        L = (up(0) ^ up(e3) ^ einf).normal()
+        X = closest_point_on_circle_from_line(C, L)
+        assert_allclose((X ^ C).value, 0)
+        # Line passes through the circle and is perpendicular to the circle
+        C = (up(e1) ^ up(e2) ^ up(-e1)).normal()
+        L = (up(0.5*e2) ^ up(e3 + 0.5*e2) ^ einf).normal()
+        X = closest_point_on_circle_from_line(C, L)
+        assert_allclose((X ^ C).value, 0)
+        assert X == up(e2)
+        # Line passes through the centre of the circle and is not
+        # perpendicular to the circle
+        C = (up(e1) ^ up(e2) ^ up(-e1)).normal()
+        L = (up(0) ^ up(e3 + 0.1 * e2) ^ einf).normal()
+        X = closest_point_on_circle_from_line(C, L)
+        assert_allclose((X ^ C).value, 0)
+        assert (X == up(e2) or X == up(-e2))
+        # Line passes through the circle and is not
+        # perpendicular to the circle
+        C = (up(e1) ^ up(e2) ^ up(-e1)).normal()
+        L = (up(0.1 * e2) ^ up(e3 + 0.2 * e2) ^ einf).normal()
+        X = closest_point_on_circle_from_line(C, L)
+        assert_allclose((X ^ C).value, 0)
+        assert (X == up(e2) or X == up(-e2))
+
+        # Line passes outside the circle and is not
+        # perpendicular to the circle
+        C = (up(e1) ^ up(e2) ^ up(-e1)).normal()
+        L = (up(5 * e1) ^ up(e3 + 5 * e1 + e2) ^ einf).normal()
+        X = closest_point_on_circle_from_line(C, L)
+        assert_allclose((X ^ C).value, 0)
+        assert X == up(e1)
+
     def test_get_line_reflection_matrix(self):
         for i in range(10):
             lines = [random_line() for i in range(10)]

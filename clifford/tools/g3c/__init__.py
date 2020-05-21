@@ -453,7 +453,7 @@ def closest_point_on_circle_from_line(C, L, eps=1E-6):
         # Project the line into the plane
         Lpln = (L.normal() + (phi*L*phi)(3).normal()).normal()
         # Project the centre of the circle onto the line
-        X = (A|Lpln)*einf*(A|Lpln)
+        X = normalise_n_minus_1((A|Lpln)*einf*(A|Lpln))
         if sphere_in_sphere(X*I5, bound_sphere):
             # The circle and line intersect
             PP = meet(Lpln, bound_sphere)
@@ -471,13 +471,13 @@ def closest_point_on_circle_from_line(C, L, eps=1E-6):
     # If Y is in the sphere that C is the equator of
     if sphere_in_sphere(Y*I5, bound_sphere):
         if abs((A | P)[0]) < eps:
-            # Line passes through the centre of the circle
-            if abs((P | Y)[0]) < eps:
+            # Just project the line
+            L2 = (L.normal() + (phi * L * phi)(3).normal())
+            if abs(L2) < eps:
                 # Line is perpendicular to plane of the circle
-                L2 = (A^project_points_to_circle([random_conformal_point()], C)[0]^einf).normal()
+                L2 = (A ^ project_points_to_circle([random_conformal_point()], C)[0] ^ einf).normal()
             else:
-                # Just project the line
-                L2 = (L.normal() + (phi*L*phi)(3).normal()).normal()
+                L2 = L2.normal()
         elif abs((P | Y)[0]) < eps:
             # Line is perpendicular to the plane of the circle
             L2 = A ^ Y ^ einf
