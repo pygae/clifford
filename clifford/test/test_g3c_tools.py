@@ -399,7 +399,8 @@ class TestG3CTools:
             assert_allclose((X2 ^ L).value, 0)
             assert_allclose((X2Andreas ^ L).value, 0)
 
-        ### Choose explicit cases to ensure test coverage
+        # Choose explicit cases to ensure test coverage
+
         # The line and plane of the circle are parallel
         # line is not in the plane and the projection does meet the circle
         L = (up(e3)^up(e1+e3)^einf).normal()
