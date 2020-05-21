@@ -41,7 +41,7 @@ class TestRotorGeneration:
             euc_vector_a = random_euc_mv()
             res = generate_translation_rotor(euc_vector_a)
             res2 = (1 + ninf * euc_vector_a / 2)
-            npt.assert_allclose(res.value, res2.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(res.value, res2.value)
 
 
 @too_slow_without_jit
@@ -96,7 +96,7 @@ class TestGeneralLogarithm:
             R = random_rotation_rotor()
             biv_2 = general_logarithm(R)
             biv_3 = ga_log(R)
-            npt.assert_allclose(biv_2.value, biv_3.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(biv_2.value, biv_3.value)
 
     def test_general_logarithm_translation(self):
         # Check we can reverse translation
@@ -105,7 +105,7 @@ class TestGeneralLogarithm:
             biv = ninf * t / 2
             R = general_exp(biv).normal()
             biv_2 = general_logarithm(R)
-            npt.assert_allclose(biv.value, biv_2.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(biv.value, biv_2.value)
 
     def test_general_logarithm_scaling(self):
         # Check we can reverse scaling
@@ -114,7 +114,7 @@ class TestGeneralLogarithm:
             biv = -np.log(scale) * e45 / 2
             R = general_exp(biv).normal()
             biv_2 = general_logarithm(R)
-            npt.assert_allclose(biv.value, biv_2.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(biv.value, biv_2.value)
 
     def test_general_logarithm_RS(self):
         for i in range(5):
@@ -129,8 +129,8 @@ class TestGeneralLogarithm:
 
             biv_alt = ga_log(R) + general_logarithm(S)
 
-            npt.assert_allclose(biv.value, biv_test.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
-            npt.assert_allclose(biv.value, biv_alt.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(biv.value, biv_test.value)
+            assert_allclose(biv.value, biv_alt.value)
 
     def test_general_logarithm_TR(self):
         for i in range(5):
@@ -146,7 +146,7 @@ class TestGeneralLogarithm:
             C1 = random_point_pair()
             C2 = (V * C1 * ~V).normal()
             C3 = (V_rebuilt * C1 * ~V_rebuilt).normal()
-            npt.assert_allclose(C2.value, C3.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(C2.value, C3.value)
 
     def test_general_logarithm_TS(self):
         for i in range(5):
@@ -161,7 +161,7 @@ class TestGeneralLogarithm:
             C1 = random_point_pair()
             C2 = (V * C1 * ~V).normal()
             C3 = (V_rebuilt * C1 * ~V_rebuilt).normal()
-            npt.assert_allclose(C2.value, C3.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(C2.value, C3.value)
 
     def test_general_logarithm_TRS(self):
         for i in range(5):
@@ -177,7 +177,7 @@ class TestGeneralLogarithm:
             C1 = random_point_pair()
             C2 = (V * C1 * ~V).normal()
             C3 = (V_rebuilt * C1 * ~V_rebuilt).normal()
-            npt.assert_allclose(C2.value, C3.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(C2.value, C3.value)
 
     @pytest.mark.parametrize('obj_gen', [
         random_point_pair, random_line, random_circle, random_plane
@@ -189,7 +189,7 @@ class TestGeneralLogarithm:
             R = rotor_between_objects(X, Y)
             biv = general_logarithm(R)
             R_recon = general_exp(biv).normal()
-            npt.assert_allclose(R.value, R_recon.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(R.value, R_recon.value)
 
 
 class TestVisualisation:
@@ -222,9 +222,9 @@ class TestConformalArray:
         up_array = test_array.up()
         down_array = up_array.down()
         for a, b in zip(up_array, up_mv):
-            npt.assert_allclose(a.value, b.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(a.value, b.value)
         for a, b in zip(down_array, mv):
-            npt.assert_allclose(a.value, b.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(a.value, b.value)
 
     @too_slow_without_jit
     def test_apply_rotor(self):
@@ -241,7 +241,7 @@ class TestConformalArray:
             rotated_array = up_array.apply_rotor(R)
             for i, v in enumerate(rotated_array):
                 res = apply_rotor(up_array[i], R[0]).value
-                npt.assert_allclose(v.value, res, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+                assert_allclose(v.value, res)
 
     def test_dual(self):
         mv = []
@@ -252,10 +252,9 @@ class TestConformalArray:
         up_array = test_array.up()
         I5 = layout.blades['e12345']
 
-        npt.assert_allclose(
+        assert_allclose(
                 (up_array * ConformalMVArray([I5])).value,
-                ConformalMVArray([i * I5 for i in up_array]).value,
-                rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+                ConformalMVArray([i * I5 for i in up_array]).value)
 
     def test_from_value_array(self):
         mv = []
@@ -291,7 +290,7 @@ class TestG3CTools:
                 assert gpres == {1}
             new_blade = (reduce(lambda a, b: a ^ b, basis) * scale)
             try:
-                npt.assert_allclose(new_blade.value, X1.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+                assert_allclose(new_blade.value, X1.value)
             except AssertionError:
                 print(X1)
                 print(new_blade)
@@ -373,7 +372,7 @@ class TestG3CTools:
 
     def test_closest_furthest_circle_points(self):
         """
-        This just checks if the function calls do  not crash at the moment
+        This just checks if the function calls do not crash at the moment
         Not that it is correct
         """
         for _ in range(100):
@@ -399,8 +398,6 @@ class TestG3CTools:
             assert_allclose((X1Andreas ^ C).value, 0)
             assert_allclose((X2 ^ L).value, 0)
             assert_allclose((X2Andreas ^ L).value, 0)
-            print(X1 | X2)
-            print(X1Andreas | X2Andreas)
 
     def test_get_line_reflection_matrix(self):
         for i in range(10):
@@ -486,7 +483,7 @@ class TestG3CTools:
             R = rotor_between_objects(a, b)
             for n in [1, 2, 4, 8, 16, 32]:
                 R_n = n_th_rotor_root(R, n)
-                npt.assert_allclose((R_n ** n).value, R.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+                assert_allclose((R_n ** n).value, R.value)
 
     def test_random_point_pair_at_origin(self):
 
@@ -542,7 +539,7 @@ class TestG3CTools:
             r_trans = generate_translation_rotor(rand)
             end_point = r_trans * starting_point * ~r_trans
             translation_vec = down(end_point) - down(starting_point)
-            npt.assert_allclose(translation_vec.value, rand.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(translation_vec.value, rand.value)
 
     def test_intersect_line_and_plane_to_point(self):
         """ Intersection of a line and a plane """
@@ -586,7 +583,7 @@ class TestG3CTools:
             center = get_center_from_sphere(sphere)
             radius = get_radius_from_sphere(sphere)
 
-            npt.assert_allclose(down(center).value, rand_trans.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(down(center).value, rand_trans.value)
             npt.assert_almost_equal(radius, scale_factor)
 
     def test_point_pair_to_end_points(self):
@@ -595,8 +592,8 @@ class TestG3CTools:
             point_b = random_conformal_point()
             pp = (point_a ^ point_b).normal()
             p_a, p_b = point_pair_to_end_points(pp)
-            npt.assert_allclose(p_a.value, point_a.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
-            npt.assert_allclose(p_b.value, point_b.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(p_a.value, point_a.value)
+            assert_allclose(p_b.value, point_b.value)
 
     def test_euc_distance(self):
         for i in range(100):
@@ -604,7 +601,7 @@ class TestG3CTools:
             point_b = random_conformal_point()
             dist = euc_dist(point_a, point_b)
             dist_alt = float(abs(down(point_a) - down(point_b)))
-            npt.assert_allclose(dist, dist_alt, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(dist, dist_alt)
 
     def test_dilation_rotor(self):
         for i in range(100):
@@ -631,7 +628,7 @@ class TestG3CTools:
                 print(' SIGN FLIP')
                 X4 = -X4
             try:
-                npt.assert_allclose(X3.value, X4.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+                assert_allclose(X3.value, X4.value)
             except AssertionError:
                 print(X3)
                 print(X4)
@@ -653,7 +650,7 @@ class TestG3CTools:
                 print('SIGN FLIP ', obj_gen.__name__)
                 C3 = -C3
             try:
-                npt.assert_allclose(C2.value, C3.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+                assert_allclose(C2.value, C3.value)
             except AssertionError:
                 print(R)
                 print(C2*C1 + C1*C2)
@@ -684,7 +681,7 @@ class TestG3CTools:
                 print('SIGN FLIP ', obj_gen.__name__)
                 C3 = -C3
             try:
-                npt.assert_allclose(C2.value, C3.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+                assert_allclose(C2.value, C3.value)
             except AssertionError:
                 print(C2.normal())
                 print(C3.normal())
@@ -700,7 +697,7 @@ class TestG3CTools:
 
         if sum(np.abs((C2 + C3).value)) < 0.0001:
             C3 = -C3
-        npt.assert_allclose(C2.value, C3.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+        assert_allclose(C2.value, C3.value)
 
     # @pytest.mark.skip(reason="unknown")  # Skip this because we know that it is a breaking case
     def test_rotor_between_non_overlapping_spheres(self):
@@ -714,7 +711,7 @@ class TestG3CTools:
         if sum(np.abs((C2 + C3).value)) < 0.0001:
             print('SIGN FLIP ')
             C3 = -C3
-        npt.assert_allclose(C2.value, C3.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+        assert_allclose(C2.value, C3.value)
 
 
 @too_slow_without_jit
@@ -757,9 +754,9 @@ class TestRotorEstimation:
         Y = MVArray([normalise_n_minus_1(apply_rotor(x, random_translation_rotor(noise_std) * R)) for x in X])
         res = de_keninck_twist(Y, X)
         try:
-            npt.assert_allclose(R.value, res.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(R.value, res.value)
         except AssertionError:
-            npt.assert_allclose(R.value, -res.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(R.value, -res.value)
 
     def test_direct_TRS_extraction(self):
         X = MVArray([random_conformal_point() for i in range(100)])
@@ -769,9 +766,9 @@ class TestRotorEstimation:
         Y = MVArray([normalise_n_minus_1(apply_rotor(x, random_translation_rotor(noise_std) * R)) for x in X])
         res = direct_TRS_extraction(Y, X)
         try:
-            npt.assert_allclose(R.value, res.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(R.value, res.value)
         except AssertionError:
-            npt.assert_allclose(R.value, -res.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(R.value, -res.value)
 
     def test_dorst_motor_points(self):
         X = MVArray([random_conformal_point() for i in range(100)])
@@ -780,9 +777,9 @@ class TestRotorEstimation:
         Y = MVArray([normalise_n_minus_1(apply_rotor(x, random_translation_rotor(noise_std) * R)) for x in X])
         res = dorst_motor_estimate(Y, X)
         try:
-            npt.assert_allclose(R.value, res.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(R.value, res.value)
         except AssertionError:
-            npt.assert_allclose(R.value, -res.value, rtol=RTOL_DEFAULT, atol=ATOL_DEFAULT)
+            assert_allclose(R.value, -res.value)
 
     @pytest.mark.parametrize('obj_gen', [
         random_line,
