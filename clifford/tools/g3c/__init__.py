@@ -69,6 +69,11 @@ Geometry Methods
     project_points_to_sphere
     project_points_to_circle
     project_points_to_line
+    iterative_closest_points_on_circles
+    closest_point_on_line_from_circle
+    closest_point_on_circle_from_line
+    iterative_closest_points_circle_line
+    iterative_furthest_points_on_circles
 
 Misc
 --------------------
