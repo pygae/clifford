@@ -399,6 +399,7 @@ class TestG3CTools:
             assert_allclose((X2 ^ L).value, 0)
             assert_allclose((X2Andreas ^ L).value, 0)
 
+def test_closest_points_circle_line_corner_cases(self):
         # Choose explicit cases to ensure test coverage
 
         # The line and plane of the circle are parallel
