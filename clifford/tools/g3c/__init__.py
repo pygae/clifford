@@ -594,7 +594,7 @@ def get_line_reflection_matrix(lines, n_power=1):
 
 
 @numba.njit
-def val_get_line_reflection_matrix(line_array, n_power):
+def val_get_line_reflection_matrix(line_array: np.ndarray, n_power: int) -> np.ndarray:
     """
     Generates the matrix that sums the reflection of a point in many lines
     """
@@ -608,11 +608,10 @@ def val_get_line_reflection_matrix(line_array, n_power):
 
 
 @numba.njit
-def val_truncated_get_line_reflection_matrix(line_array, n_power):
+def val_truncated_get_line_reflection_matrix(line_array: np.ndarray, n_power: int) -> np.ndarray:
     """
     Generates the truncated matrix that sums the
     reflection of a point in many lines
-    n_power should be 1 or a power of 2
     """
     mat2solve = np.zeros((32, 32), dtype=np.float64)
     for i in range(line_array.shape[0]):
