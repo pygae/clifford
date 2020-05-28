@@ -19,6 +19,17 @@ Changes in 1.3.x
    ``Cl(6)`` is 20\ |times| faster. This is achieved by deferring product JIT
    compilation until the product is used for the first time.
  * A new :mod:`clifford.transformations` module for linear transformations.
+ * Two new :doc:`predefined-algebras`, :mod:`clifford.dpga` and :mod:`clifford.dg3c`.
+ * Additional testing and assorted improvements for :mod:`clifford.tools.g3c`.
+ * :mod:`clifford.tools.g3c`:
+
+   * :func:`~clifford.tools.g3c.closest_point_on_circle_from_line` has now been implemented
+     roughly following the procedure described in Appendix A of
+     `Andreas Aristidou's PhD thesis <https://www.repository.cam.ac.uk/handle/1810/237554>`_.
+   * :func:`~clifford.tools.g3c.closest_point_on_line_from_circle` has now also been added,
+     projecting the result of :func:`~clifford.tools.g3c.closest_point_on_circle_from_line`
+     to the line.
+
 
 Bugs fixed
 ----------
@@ -31,6 +42,18 @@ Bugs fixed
    input, rather than silenltly producing nonsense.
  * :func:`Layout.parse_multivector` supports basis vector names which do not
    start with e.
+ * :mod:`clifford.tools.g3c`:
+
+   * :func:`~clifford.tools.g3c.val_midpoint_between_lines` now handles the case that
+     the two lines are touching.
+   * :func:`~clifford.tools.g3c.object_fitting.val_fit_circle` now correctly selects the first and
+     second eigenvalue regardless of order.
+   * :func:`~clifford.tools.g3c.sphere_beyond_plane` now tested and correct.
+   * :func:`~clifford.tools.g3c.sphere_behind_plane` now tested and correct.
+   * :func:`~clifford.tools.g3c.val_unsign_sphere` is now jitted, as it should have
+     been from the start.
+   * :func:`~clifford.tools.g3c.get_nearest_plane_point` correctly returns the conformal
+     point rather than the 3D point.
 
 Compatibility notes
 -------------------
@@ -46,6 +69,18 @@ Compatibility notes
  * The ``imt_prod_mask``, ``omt_prod_mask``, and ``lcmt_prod_mask`` attributes
    of :class:`Layout` objects have been removed, as these were an unnecessary
    intermediate computation that had no need to be public.
+ * :mod:`clifford.tools.g3c`:
+
+   * ``closest_points_on_circles`` has been renamed to
+     :func:`~clifford.tools.g3c.iterative_closest_points_on_circles`.
+   * ``closest_points_circle_line`` has been renamed to
+     :func:`~clifford.tools.g3c.iterative_closest_points_circle_line`.
+   * ``furthest_points_on_circles`` has been renamed to
+     :func:`~clifford.tools.g3c.iterative_furthest_points_on_circles`.
+ * This will be the last release to support :mod:`numba` versions below 0.49.0.
+ * While this release is compatible with :mod:`numba` version 0.49.0, it is
+   recommended to use 0.48.0 which does not emit as many warnings. See the
+   :doc:`installation` instructions for how to follow this guidance.
 
 
 Changes in 1.2.x
