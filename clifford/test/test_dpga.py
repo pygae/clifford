@@ -1,10 +1,18 @@
-
-from clifford.dpga import *
+# do not import dpga here, as that slows down test collection considerably,
+# even if we do not run these tests.
 import numba
+import numpy as np
+
+
+def setup_module():
+    # do this separately so that we get distinct timing information for it
+    import clifford.dpga  # noqa: F401
 
 
 class TestBasicDPGA:
     def test_non_orthogonal_metric(self):
+        from clifford.dpga import wbasis
+
         w_metric = np.array([
             [
                 (a | b)[0]
@@ -29,6 +37,8 @@ class TestBasicDPGA:
         R(4, 4) As a Computational Framework for 3-Dimensional Computer Graphics
         by Ron Goldman and Stephen Mann
         """
+        from clifford.dpga import wlist, wslist, wbasis
+
         for wi in wlist:
             for wj in wlist:
                 assert wi^wj == -wj*wi
@@ -38,12 +48,14 @@ class TestBasicDPGA:
                 assert wis^wjs == -wjs*wis
 
         for w in wbasis:
-            assert w**2 == 0*w1
+            assert w**2 == 0
 
         for wi, wis in zip(wlist, wslist):
             assert wi*wis == 1 - wis*wi
 
     def test_up_down(self):
+        from clifford.dpga import up, down
+
         rng = np.random.RandomState()  # can pass a seed here later
         for i in range(10 if numba.config.DISABLE_JIT else 1000):
             p = rng.standard_normal(3)
@@ -52,6 +64,9 @@ class TestBasicDPGA:
             np.testing.assert_allclose(pnt_down, p)
 
     def test_translate(self):
+        from clifford.dpga import w0, w1, w2, w3, w0s
+        from clifford.dpga import up
+
         rng = np.random.RandomState()   # can pass a seed here later
         for i in range(10 if numba.config.DISABLE_JIT else 100):
             tvec = rng.standard_normal(3)
@@ -76,6 +91,9 @@ class TestBasicDPGA:
             assert res == desired_result
 
     def test_rotate(self):
+        from clifford.dpga import w0, w1, w2, w3, w1s, w2s, w3s
+        from clifford.dpga import up, down
+
         rng = np.random.RandomState()  # can pass a seed here later
         for i in range(10 if numba.config.DISABLE_JIT else 100):
             mvec = rng.standard_normal(3)
@@ -106,6 +124,10 @@ class TestBasicDPGA:
             np.testing.assert_allclose(l, lres, atol=1E-6)
 
     def test_line(self):
+        from clifford.dpga import w0, w1, w2, w3, w0s
+        from clifford.dpga import e12, e13, e23, e1b2b, e1b3b, e2b3b
+        from clifford.dpga import up, down
+
         rng = np.random.RandomState()  # can pass a seed here later
         for i in range(5 if numba.config.DISABLE_JIT else 100):
             p1vec = rng.standard_normal(3)
@@ -155,19 +177,23 @@ class TestBasicDPGA:
             np.testing.assert_allclose((Rline*~Rline).value, (1 + 0*w1).value, rtol=1E-4, atol=1E-4)
 
     def test_quadric(self):
+        from clifford.dpga import w0, w1, w2, w3, w0s, w1s, w2s, w3s
+        from clifford.dpga import e12, e13, e23, e1b2b, e1b3b, e2b3b
+        from clifford.dpga import up, dual_point
+
         rng = np.random.RandomState()  # can pass a seed here later
         # Make a cone which passes through the origin
         # This is the construction from Transverse Approach paper
         quadric_coefs = [0.0, 1.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         a, b, c, d, e, f, g, h, i, j = quadric_coefs
-        quadric = 4 * a * (w0s ^ w0) + 4 * b * (w1s ^ w1) + \
-                  4 * c * (w2s ^ w2) + 4 * j * (w3s ^ w3) + \
-                  2 * d * ((w0s ^ w1) + (w1s ^ w0)) + \
-                  2 * e * ((w0s ^ w2) + (w2s ^ w0)) + \
-                  2 * f * ((w1s ^ w2) + (w2s ^ w1)) + \
-                  2 * g * ((w0s ^ w3) + (w3s ^ w0)) + \
-                  2 * h * ((w1s ^ w3) + (w3s ^ w1)) + \
-                  2 * i * ((w2s ^ w3) + (w3s ^ w2))
+        quadric = (4 * a * (w0s ^ w0) + 4 * b * (w1s ^ w1) +
+                   4 * c * (w2s ^ w2) + 4 * j * (w3s ^ w3) +
+                   2 * d * ((w0s ^ w1) + (w1s ^ w0)) +
+                   2 * e * ((w0s ^ w2) + (w2s ^ w0)) +
+                   2 * f * ((w1s ^ w2) + (w2s ^ w1)) +
+                   2 * g * ((w0s ^ w3) + (w3s ^ w0)) +
+                   2 * h * ((w1s ^ w3) + (w3s ^ w1)) +
+                   2 * i * ((w2s ^ w3) + (w3s ^ w2)))
 
         # The quadrics do not form an OPNS
         assert quadric ^ w0s != 0*w1

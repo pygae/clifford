@@ -1,10 +1,3 @@
-import unittest
-import pytest
-import numpy as np
-import numba
-
-from ..dg3c import *
-
 """
 All basic test identities come from:
 
@@ -13,17 +6,29 @@ Adv. Appl. Clifford Algebras 27, 2175–2199 (2017).
 https://doi.org/10.1007/s00006-017-0784-0
 """
 
+import pytest
+import numpy as np
+import numba
+
 too_slow_without_jit = pytest.mark.skipif(
     numba.config.DISABLE_JIT, reason="test is too slow without JIT"
 )
 
 
-class BasicTests(unittest.TestCase):
+def setup_module():
+    # do this separately so that we get distinct timing information for it
+    import clifford.dg3c  # noqa: F401
+
+
+@too_slow_without_jit
+class TestBasic:
     def test_metric(self):
         """
         Ensure that the metric comes out with a double copy of
         the CGA metric
         """
+        from clifford.dg3c import layout
+
         assert np.all(layout.metric == np.array([
             [1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
             [0., 1., 0., 0., 0., 0., 0., 0., 0., 0.],
@@ -40,6 +45,8 @@ class BasicTests(unittest.TestCase):
         """
         Test that we can map points up and down into the dpga
         """
+        from clifford.dg3c import up, down
+
         rng = np.random.RandomState()
         for i in range(1 if numba.config.DISABLE_JIT else 100):
             pnt_vector = rng.randn(3)
@@ -55,6 +62,8 @@ class BasicTests(unittest.TestCase):
         """
         Test that we can map points up and down from cga1
         """
+        from clifford.dg3c import up_cga1, down_cga1
+
         rng = np.random.RandomState()
         pnt_vector = rng.randn(3)
         for i in range(10 if numba.config.DISABLE_JIT else 100):
@@ -67,22 +76,27 @@ class BasicTests(unittest.TestCase):
             up_cga1([1, 2, 3, 4])
 
 
-class GeometricPrimitiveTests(unittest.TestCase):
+@too_slow_without_jit
+class TestGeometricPrimitives:
     @too_slow_without_jit
     def test_reciprocality(self):
         """
         Ensure that the cyclide ops and the reciprocal frame are
         actually reciprocal...
         """
+        from clifford.dg3c import cyclide_ops, cyclide_ops_reciprocal
+
         for key, cyc_op in cyclide_ops.items():
             for key2, cyc_op_recip in cyclide_ops_reciprocal.items():
-                assert cyc_op|cyc_op_recip == layout.scalar*(key == key2)
+                assert cyc_op|cyc_op_recip == int(key == key2)
 
     def test_general_elipsoid(self):
         """
         Test the construction of a general elipsoid as per
         Appendix A.1
         """
+        from clifford.dg3c import cyclide_ops, eo
+
         px = 0
         py = 1
         pz = 0
@@ -99,9 +113,12 @@ class GeometricPrimitiveTests(unittest.TestCase):
             (px**2 / rx ** 2 + py**2 / ry ** 2 + pz**2 / rz ** 2 - 1) * cyclide_ops['T1']
         ])
         # The cyclides are an IPNS
-        assert E|eo == 0*e1
+        assert E|eo == 0
 
     def test_line(self):
+        from clifford.dg3c import up, up_cga1, up_cga2
+        from clifford.dg3c import einf1, einf2, IC1, IC2
+
         rng = np.random.RandomState()
         # Make a dcga line
         pnt_vec_a = rng.randn(3)
@@ -111,12 +128,17 @@ class GeometricPrimitiveTests(unittest.TestCase):
         Ldcga = Lcga1 ^ Lcga2
 
         # Assert that it is an IPNS
-        assert Ldcga | up(pnt_vec_a) == 0*eo
-        assert Ldcga | up(pnt_vec_b) == 0 * eo
-        assert Ldcga | up(0.5*pnt_vec_a + 0.5*pnt_vec_b) == 0 * eo
+        assert Ldcga | up(pnt_vec_a) == 0
+        assert Ldcga | up(pnt_vec_b) == 0
+        assert Ldcga | up(0.5*pnt_vec_a + 0.5*pnt_vec_b) == 0
 
     @too_slow_without_jit
     def test_translation(self):
+        from clifford.dg3c import up, up_cga1, up_cga2
+        from clifford.dg3c import cyclide_ops
+        from clifford.dg3c import eo, e1, e2, e3, einf1, e6, e7, e8, einf2
+        from clifford.dg3c import IC1, IC2
+
         rng = np.random.RandomState()
         # Make a dcga line
         pnt_vec = rng.randn(3)
@@ -131,7 +153,7 @@ class GeometricPrimitiveTests(unittest.TestCase):
         Tdcga = (Tc1*Tc2).normal()
 
         # Assert the rotor is normalised
-        assert Tdcga*~Tdcga == layout.scalar
+        assert Tdcga*~Tdcga == 1
 
         # Apply the rotor to the line
         np.testing.assert_allclose((Tdcga*Ldcga*~Tdcga).value, Ldcga.value, rtol=1E-4, atol=1E-6)
@@ -156,7 +178,7 @@ class GeometricPrimitiveTests(unittest.TestCase):
             (px ** 2 / rx ** 2 + py ** 2 / ry ** 2 + pz ** 2 / rz ** 2 - 1) * cyclide_ops['T1']
         ])
         # Before moving the elipsoid surface is not touching the origin
-        assert E|eo != 0*e1
+        assert E|eo != 0
 
         # Make a dcga translation rotor to move the ellipsoid
         Tc1 = 1 - 0.5 * rx * e1 * einf1
@@ -178,11 +200,16 @@ class GeometricPrimitiveTests(unittest.TestCase):
 
     @too_slow_without_jit
     def test_line_rotation(self):
+        from clifford.dg3c import up, up_cga1, up_cga2
+        from clifford.dg3c import einf1, einf2
+        from clifford.dg3c import e12, e67
+        from clifford.dg3c import IC1, IC2
+
         theta = np.pi/2
         RC1 = np.e ** (-0.5*theta*e12)
         RC2 = np.e ** (-0.5*theta*e67)
         Rdcga = (RC1 * RC2).normal()
-        assert Rdcga * ~Rdcga == 1.0 + 0 * eo
+        assert Rdcga * ~Rdcga == 1
 
         # Construct a line
         pnt_vec = np.array([1, 0, 0])
@@ -198,12 +225,16 @@ class GeometricPrimitiveTests(unittest.TestCase):
         Ldcga_rotated = Lcga1_rotated ^ Lcga2_rotated
 
         # Assert the rotor rotates it
-        assert (Rdcga * Ldcga * ~Rdcga)|up(pnt_vec_rotated) == 0*e1
+        assert (Rdcga * Ldcga * ~Rdcga)|up(pnt_vec_rotated) == 0
         np.testing.assert_allclose((Rdcga * Ldcga * ~Rdcga).value, Ldcga_rotated.value, rtol=1E-4, atol=1E-6)
 
     @too_slow_without_jit
     def test_quadric_rotation(self):
         # Construct and ellipsoid
+        from clifford.dg3c import cyclide_ops
+        from clifford.dg3c import eo, e2, e7, einf1, einf2
+        from clifford.dg3c import e23, e78
+
         px = 0
         py = 2.5
         pz = 0
@@ -219,7 +250,7 @@ class GeometricPrimitiveTests(unittest.TestCase):
             (1 / rz ** 2) * cyclide_ops['Tz2'],
             (px ** 2 / rx ** 2 + py ** 2 / ry ** 2 + pz ** 2 / rz ** 2 - 1) * cyclide_ops['T1']
         ])
-        assert E | eo != 0 * eo
+        assert E | eo != 0
 
         # Make a dcga translation rotor to move the ellipsoid
         Tc1 = 1 - 0.5 * py * e2 * einf1
@@ -236,13 +267,15 @@ class GeometricPrimitiveTests(unittest.TestCase):
 
         Erot = Comborotor*E*~Comborotor
 
-        assert Erot|eo == 0*eo
+        assert Erot|eo == 0
 
     @too_slow_without_jit
     def test_bivector_orthogonality(self):
         """
         Rotors in each algebra should be orthogonal
         """
+        from clifford.dg3c import e2, e7, einf1, einf2
+        from clifford.dg3c import e12, e67
         theta = np.pi / 2
         RC1 = np.e ** (-0.5 * theta * e12)
         RC2 = np.e ** (-0.5 * theta * e67)
@@ -258,7 +291,3 @@ class GeometricPrimitiveTests(unittest.TestCase):
         Texp = np.e ** (-0.5 * mag * (e2 * einf1 + e7 * einf2))
         np.testing.assert_allclose(Texp.value, Tdcga.value,
                                    rtol=1E-4, atol=1E-6)
-
-
-if __name__ == '__main__':
-    unittest.main()
