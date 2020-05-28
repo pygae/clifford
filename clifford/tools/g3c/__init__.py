@@ -410,6 +410,9 @@ def iterative_closest_points_on_circles(C1, C2, niterations=20):
     """
     Given two circles C1 and C2 this calculates the closest
     points on each of them to the other
+
+    .. versionchanged:: 1.3
+        Renamed from ``closest_points_on_circles``
     """
     cav = average_objects([C1, C2])
     cav2 = average_objects([C1, -C2])
@@ -433,6 +436,8 @@ def closest_point_on_line_from_circle(C, L, eps=1E-6):
     """
     Returns the point on the line L that is closest to the circle C
     Uses the algorithm described in Appendix A of Andreas Aristidou's PhD thesis
+
+    .. versionadded:: 1.3
     """
     return project_points_to_line([closest_point_on_circle_from_line(C, L, eps=eps)], L)[0]
 
@@ -441,6 +446,8 @@ def closest_point_on_circle_from_line(C, L, eps=1E-6):
     """
     Returns the point on the circle C that is closest to the line L
     Uses the algorithm described in Appendix A of Andreas Aristidou's PhD thesis
+
+    .. versionadded:: 1.3
     """
     phi = (C^einf).normal()
     B = meet(L, phi)
@@ -496,6 +503,9 @@ def iterative_closest_points_circle_line(C, L, niterations=20):
     This is an iterative algorithm based on heuristics
     Nonetheless it appears to give results on par with
     :func:`closest_point_on_circle_from_line`.
+
+    .. versionchanged:: 1.3
+        Renamed from ``closest_points_circle_line``
     """
     cav = average_objects([C, L])
     cav2 = average_objects([C, -L])
@@ -521,6 +531,9 @@ def iterative_furthest_points_on_circles(C1, C2, niterations=20):
     """
     Given two circles C1 and C2 this calculates the closest
     points on each of them to the other
+
+    .. versionchanged:: 1.3
+        Renamed from ``furthest_points_on_circles``
     """
     P2 = random_conformal_point()
     P1 = project_points_to_circle([P2], C1, closest=False)[0](1)
