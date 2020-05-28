@@ -161,7 +161,9 @@ Root Finding
 Submodules
 --------------------
 .. autosummary::
-    :toctree: object_fitting
+    :toctree: generated/
+    
+    object_fitting
 
 
 """

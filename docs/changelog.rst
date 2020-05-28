@@ -22,6 +22,7 @@ Changes in 1.3.x
  * Two new :doc:`predefined-algebras`, :mod:`clifford.dpga` and :mod:`clifford.dg3c`.
  * Additional testing and assorted improvements for :mod:`clifford.tools.g3c`.
  * :mod:`clifford.tools.g3c`:
+
    * :func:`~clifford.tools.g3c.closest_point_on_circle_from_line` has now been implemented
      roughly following the procedure described in Appendix A of
      `Andreas Aristidou's PhD thesis <https://www.repository.cam.ac.uk/handle/1810/237554>`_.
@@ -42,6 +43,7 @@ Bugs fixed
  * :func:`Layout.parse_multivector` supports basis vector names which do not
    start with e.
  * :mod:`clifford.tools.g3c`:
+
    * :func:`~clifford.tools.g3c.val_midpoint_between_lines` now handles the case that
      the two lines are touching.
    * :func:`~clifford.tools.g3c.object_fitting.val_fit_circle` now correctly selects the first and
@@ -68,6 +70,7 @@ Compatibility notes
    of :class:`Layout` objects have been removed, as these were an unnecessary
    intermediate computation that had no need to be public.
  * :mod:`clifford.tools.g3c`:
+
    * ``closest_points_on_circles`` has been renamed to
      :func:`~clifford.tools.g3c.iterative_closest_points_on_circles`.
    * ``closest_points_circle_line`` has been renamed to
