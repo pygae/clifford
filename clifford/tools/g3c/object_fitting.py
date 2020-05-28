@@ -4,14 +4,17 @@ Tools for fitting geometric primitives to point clouds
 Object Fitting
 ==========================================================
 
-fit_circle
-val_fit_circle
-fit_line
-val_fit_line
-fit_sphere
-val_fit_sphere
-fit_plane
-val_fit_plane
+.. autosummary::
+    :toctree: generated/
+
+    fit_circle
+    val_fit_circle
+    fit_line
+    val_fit_line
+    fit_sphere
+    val_fit_sphere
+    fit_plane
+    val_fit_plane
 """
 
 from . import *

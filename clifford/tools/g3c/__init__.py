@@ -158,6 +158,12 @@ Root Finding
     rotor_between_planes
     val_rotor_rotor_between_planes
 
+Submodules
+--------------------
+.. autosummary::
+    :toctree: object_fitting
+
+
 """
 
 import math
