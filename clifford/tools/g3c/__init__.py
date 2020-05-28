@@ -74,6 +74,8 @@ Geometry Methods
     closest_point_on_circle_from_line
     iterative_closest_points_circle_line
     iterative_furthest_points_on_circles
+    sphere_beyond_plane
+    sphere_behind_plane
 
 Misc
 --------------------
@@ -112,6 +114,7 @@ Misc
     interpret_multivector_as_object
     normalise_TR_to_unit_T
     scale_TR_translation
+    val_unsign_sphere
 
 
 Root Finding
