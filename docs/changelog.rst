@@ -20,13 +20,13 @@ Changes in 1.3.x
    compilation until the product is used for the first time.
  * A new :mod:`clifford.transformations` module for linear transformations.
  * Two new :doc:`predefined-algebras`, :mod:`clifford.dpga` and :mod:`clifford.dg3c`.
- * Additional testing and assorted improvements for :mod:`clifford.tools.g3c`
+ * Additional testing and assorted improvements for :mod:`clifford.tools.g3c`.
  * :func:`clifford.tools.g3c.closest_point_on_circle_from_line` has now been implemented
    roughly following the procedure described in Appendix A of `Andreas Aristidou's PhD thesis
-   <https://www.repository.cam.ac.uk/handle/1810/237554>`
+   <https://www.repository.cam.ac.uk/handle/1810/237554>`.
  * :func:`clifford.tools.g3c.closest_point_on_line_from_circle` has now also been added,
    projecting the result of :func:`clifford.tools.g3c.closest_point_on_circle_from_line`
-   to the line
+   to the line.
 
 
 Bugs fixed
@@ -41,15 +41,15 @@ Bugs fixed
  * :func:`Layout.parse_multivector` supports basis vector names which do not
    start with e.
  * :func:`clifford.tools.g3c.val_midpoint_between_lines` now handles the case that
-   the two lines are touching
+   the two lines are touching.
  * :func:`clifford.tools.g3c.val_fit_circle` now correctly selects the first and
-   second eigenvalue regardless of order
- * :func:`clifford.tools.g3c.sphere_beyond_plane` now tested and correct
- * :func:`clifford.tools.g3c.sphere_behind_plane` now tested and correct
+   second eigenvalue regardless of order.
+ * :func:`clifford.tools.g3c.sphere_beyond_plane` now tested and correct.
+ * :func:`clifford.tools.g3c.sphere_behind_plane` now tested and correct.
  * :func:`clifford.tools.g3c.val_unsign_sphere` is now jitted, as it should have
-   been from the start
+   been from the start.
  * :func:`clifford.tools.g3c.get_nearest_plane_point` correctly returns the conformal
-   point rather than the 3D point
+   point rather than the 3D point.
 
 Compatibility notes
 -------------------
