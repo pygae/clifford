@@ -65,12 +65,12 @@ Compatibility notes
  * The ``imt_prod_mask``, ``omt_prod_mask``, and ``lcmt_prod_mask`` attributes
    of :class:`Layout` objects have been removed, as these were an unnecessary
    intermediate computation that had no need to be public.
- * clifford.tools.g3c.closest_points_on_circles is now renamed to
-   :func:`clifford.tools.g3c.iterative_closest_points_on_circles`
- * clifford.tools.g3c.closest_points_circle_line is now renamed to
-   :func:`clifford.tools.g3c.iterative_closest_points_circle_line`
- * clifford.tools.g3c.furthest_points_on_circles is now renamed to
-   :func:`clifford.tools.g3c.iterative_furthest_points_on_circles`
+ * ``clifford.tools.g3c.closest_points_on_circles`` has been renamed to
+   :func:`~clifford.tools.g3c.iterative_closest_points_on_circles`.
+ * ``clifford.tools.g3c.closest_points_circle_line`` has been renamed to
+   :func:`~clifford.tools.g3c.iterative_closest_points_circle_line`.
+ * ``clifford.tools.g3c.furthest_points_on_circles`` has been renamed to
+   :func:`~clifford.tools.g3c.iterative_furthest_points_on_circles`.
  * This will be the last release to support :mod:`numba` versions below 0.49.0.
  * While this release is compatible with :mod:`numba` version 0.49.0, it is
    recommended to use 0.48.0 which does not emit as many warnings. See the
