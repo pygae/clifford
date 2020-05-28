@@ -20,6 +20,7 @@ Changes in 1.3.x
    compilation until the product is used for the first time.
  * A new :mod:`clifford.transformations` module for linear transformations.
  * Two new :doc:`predefined-algebras`, :mod:`clifford.dpga` and :mod:`clifford.dg3c`.
+ * Additional testing and assorted improvements for :mod:`clifford.tools.g3c`
 
 Bugs fixed
 ----------
@@ -32,6 +33,12 @@ Bugs fixed
    input, rather than silenltly producing nonsense.
  * :func:`Layout.parse_multivector` supports basis vector names which do not
    start with e.
+ * :func:`clifford.tools.g3c.val_midpoint_between_lines` now handles the case that
+   the two lines are touching
+ * :func:`clifford.tools.g3c.val_fit_circle` now correctly selects the first and
+   second eigenvalue regardless of order
+ * :func:`clifford.tools.g3c.sphere_beyond_plane` now tested and correct
+ * :func:`clifford.tools.g3c.sphere_behind_plane` now tested and correct
 
 Compatibility notes
 -------------------
