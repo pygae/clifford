@@ -6,6 +6,11 @@ nbsphinx
 ipywidgets
 sphinx>=2.4
 sphinx_rtd_theme
-numba==0.48.0
+
+# while we support 0.49, it emits tonnes of warnings so we pin this back
+numba ~= 0.48.0
+
+# needed due to pypa/pip#988, sparse 0.10.0 requires numba 0.49.0
+sparse ~= 0.9.0
 
 -r ../requirements.txt
