@@ -19,6 +19,7 @@ Changes in 1.3.x
    ``Cl(6)`` is 20\ |times| faster. This is achieved by deferring product JIT
    compilation until the product is used for the first time.
  * A new :mod:`clifford.transformations` module for linear transformations.
+ * Two new :doc:`predefined-algebras`, :mod:`clifford.dpga` and :mod:`clifford.dg3c`.
 
 Bugs fixed
 ----------
@@ -46,6 +47,10 @@ Compatibility notes
  * The ``imt_prod_mask``, ``omt_prod_mask``, and ``lcmt_prod_mask`` attributes
    of :class:`Layout` objects have been removed, as these were an unnecessary
    intermediate computation that had no need to be public.
+ * This will be the last release to support :mod:`numba` versions below 0.49.0.
+ * While this release is compatible with :mod:`numba` version 0.49.0, it is
+   recommended to use 0.48.0 which does not emit as many warnings. See the
+   :doc:`installation` instructions for how to follow this guidance.
 
 
 Changes in 1.2.x
