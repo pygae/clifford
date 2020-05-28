@@ -15,6 +15,7 @@ too_slow_without_jit = pytest.mark.skipif(
 )
 
 
+@too_slow_without_jit
 class TestBasic:
     def test_metric(self):
         """
@@ -70,6 +71,7 @@ class TestBasic:
             up_cga1([1, 2, 3, 4])
 
 
+@too_slow_without_jit
 class TestGeometricPrimitives:
     @too_slow_without_jit
     def test_reciprocality(self):
