@@ -21,6 +21,12 @@ Changes in 1.3.x
  * A new :mod:`clifford.transformations` module for linear transformations.
  * Two new :doc:`predefined-algebras`, :mod:`clifford.dpga` and :mod:`clifford.dg3c`.
  * Additional testing and assorted improvements for :mod:`clifford.tools.g3c`
+ * :func:`clifford.tools.g3c.closest_point_on_circle_from_line` has now been implemented
+   roughly following the proceedure described in Appendix A of Andreas Aristidou's PhD thesis
+ * :func:`clifford.tools.g3c.closest_point_on_line_from_circle` has now also been added,
+   projecting the result of :func:`clifford.tools.g3c.closest_point_on_circle_from_line`
+   to the line
+
 
 Bugs fixed
 ----------
@@ -39,6 +45,10 @@ Bugs fixed
    second eigenvalue regardless of order
  * :func:`clifford.tools.g3c.sphere_beyond_plane` now tested and correct
  * :func:`clifford.tools.g3c.sphere_behind_plane` now tested and correct
+ * :func:`clifford.tools.g3c.val_unsign_sphere` is now jitted, as it should have
+   been from the start
+ * :func:`clifford.tools.g3c.get_nearest_plane_point` correctly returns the conformal
+   point rather than the 3D point
 
 Compatibility notes
 -------------------
@@ -54,6 +64,12 @@ Compatibility notes
  * The ``imt_prod_mask``, ``omt_prod_mask``, and ``lcmt_prod_mask`` attributes
    of :class:`Layout` objects have been removed, as these were an unnecessary
    intermediate computation that had no need to be public.
+ * clifford.tools.g3c.closest_points_on_circles is now renamed to
+   :func:`clifford.tools.g3c.iterative_closest_points_on_circles`
+ * clifford.tools.g3c.closest_points_circle_line is now renamed to
+   :func:`clifford.tools.g3c.iterative_closest_points_circle_line`
+ * clifford.tools.g3c.furthest_points_on_circles is now renamed to
+   :func:`clifford.tools.g3c.iterative_furthest_points_on_circles`
  * This will be the last release to support :mod:`numba` versions below 0.49.0.
  * While this release is compatible with :mod:`numba` version 0.49.0, it is
    recommended to use 0.48.0 which does not emit as many warnings. See the
