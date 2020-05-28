@@ -281,8 +281,8 @@ def sphere_beyond_plane(sphere, plane):
     Check if the sphere is fully beyond the plane in the direction of
     the plane normal
     """
-    snorm = unsign_sphere(sphere)
-    return (snorm|plane)[0] < -get_radius_from_sphere(snorm)
+    no_intersection = ((meet(sphere, plane) ** 2)[0] < 0)
+    return no_intersection and point_beyond_plane(normalise_n_minus_1((sphere * einf * sphere)(1)), plane)
 
 
 def sphere_behind_plane(sphere, plane):
@@ -290,8 +290,8 @@ def sphere_behind_plane(sphere, plane):
     Check if the sphere is fully behind the plane in the direction of
     the plane normal, ie the opposite of sphere_beyond_plane
     """
-    snorm = unsign_sphere(sphere)
-    return (snorm|plane)[0] > get_radius_from_sphere(snorm)
+    no_intersection = ((meet(sphere, plane) ** 2)[0] < 0)
+    return no_intersection and not point_beyond_plane(normalise_n_minus_1((sphere * einf * sphere)(1)), plane)
 
 
 def point_beyond_plane(point, plane):
@@ -306,9 +306,10 @@ def unsign_sphere(S):
     """
     Normalises the sign of a sphere
     """
-    return -normalised(S * ((I5 * S) | einf)[0])
+    return layout.MultiVector(val_unsign_sphere(S.value))
 
 
+@numba.njit
 def val_unsign_sphere(S):
     """
     Normalises the sign of a sphere
@@ -400,12 +401,12 @@ def project_points_to_line(point_list, line):
     projected_list = []
     for point in point_list:
         pp = point|line
-        proj_point = (pp*einf*pp)(1)
+        proj_point = normalise_n_minus_1((pp*einf*pp)(1))
         projected_list.append(proj_point)
     return projected_list
 
 
-def closest_points_on_circles(C1, C2, niterations=20):
+def iterative_closest_points_on_circles(C1, C2, niterations=20):
     """
     Given two circles C1 and C2 this calculates the closest
     points on each of them to the other
@@ -428,10 +429,73 @@ def closest_points_on_circles(C1, C2, niterations=20):
     return P1, P2
 
 
-def closest_points_circle_line(C, L, niterations=20):
+def closest_point_on_line_from_circle(C, L, eps=1E-6):
+    """
+    Returns the point on the line L that is closest to the circle C
+    Uses the algorithm described in Appendix A of Andreas Aristidou's PhD thesis
+    """
+    return project_points_to_line([closest_point_on_circle_from_line(C, L, eps=eps)], L)[0]
+
+
+def closest_point_on_circle_from_line(C, L, eps=1E-6):
+    """
+    Returns the point on the circle C that is closest to the line L
+    Uses the algorithm described in Appendix A of Andreas Aristidou's PhD thesis
+    """
+    phi = (C^einf).normal()
+    B = meet(L, phi)
+    A = normalise_n_minus_1((C * einf * C)(1))
+    bound_sphere = ((C * phi) * I5).normal()
+    if abs((B**2)[0]) < eps:
+        # The line and plane of the circle are parallel
+        # Project the line into the plane
+        Lpln = (L.normal() + (phi*L*phi)(3).normal()).normal()
+        # Project the centre of the circle onto the line
+        X = normalise_n_minus_1((A|Lpln)*einf*(A|Lpln))
+        if sphere_in_sphere(X*I5, bound_sphere):
+            # The circle and line intersect
+            PP = meet(Lpln, bound_sphere)
+            return point_pair_to_end_points(PP)[0]
+        else:
+            L2 = A ^ X ^ einf
+            PP = meet(L2, bound_sphere)
+            return point_pair_to_end_points(PP)[1]
+    P = intersect_line_and_plane_to_point(L, phi)
+    Adash = L*A*L
+    E = up(down(A)*0.5 + down(Adash)*0.5)
+    Edash = normalise_n_minus_1((phi*E*phi)(1))
+    Y = up(down(E)*0.5 + down(Edash)*0.5)
+
+    # If Y is in the sphere that C is the equator of
+    if sphere_in_sphere(Y*I5, bound_sphere):
+        if abs((A | P)[0]) < eps:
+            # Just project the line
+            L2 = (L.normal() + (phi * L * phi)(3).normal())
+            if abs(L2) < eps:
+                # Line is perpendicular to plane of the circle
+                L2 = (A ^ project_points_to_circle([random_conformal_point()], C)[0] ^ einf).normal()
+            else:
+                L2 = L2.normal()
+        elif abs((P | Y)[0]) < eps:
+            # Line is perpendicular to the plane of the circle
+            L2 = A ^ Y ^ einf
+        else:
+            L2 = P ^ Y ^ einf
+    else:
+        L2 = A ^ Y ^ einf
+    PP = meet(L2, bound_sphere)
+    Xs = point_pair_to_end_points(PP)
+    return max(Xs, key=lambda x: (x | P)[0])
+
+
+def iterative_closest_points_circle_line(C, L, niterations=20):
     """
     Given a circle C and line L this calculates the closest
-    points on each of them to the other
+    points on each of them to the other.
+
+    This is an iterative algorithm based on heuristics
+    Nonetheless it appears to give results on par with
+    :func:`closest_point_on_circle_from_line`.
     """
     cav = average_objects([C, L])
     cav2 = average_objects([C, -L])
@@ -448,10 +512,12 @@ def closest_points_circle_line(C, L, niterations=20):
     for i in range(niterations):
         P1 = project_points_to_circle([P2], C)[0](1)
         P2 = project_points_to_line([P1], L)[0](1)
+    P1 = normalise_n_minus_1(P1)
+    P2 = normalise_n_minus_1(P2)
     return P1, P2
 
 
-def furthest_points_on_circles(C1, C2, niterations=20):
+def iterative_furthest_points_on_circles(C1, C2, niterations=20):
     """
     Given two circles C1 and C2 this calculates the closest
     points on each of them to the other
@@ -523,53 +589,38 @@ def get_line_reflection_matrix(lines, n_power=1):
     """
     Generates the matrix that sums the reflection of a point in many lines
     """
-    mat2solve = np.zeros((32, 32), dtype=np.float64)
-    for Li in lines:
-        LiMat = get_left_gmt_matrix(Li.value)
-        tmat = np.matmul(np.matmul(LiMat, mask_2minus4), LiMat)
-        mat2solve += tmat
-    mat = np.matmul(mask1, mat2solve)
-    if n_power != 1:
-        mat = np.linalg.matrix_power(mat, n_power)
-    return mat
+    line_array = np.array([l.value for l in lines])
+    return val_get_line_reflection_matrix(line_array, n_power)
 
 
 @numba.njit
-def val_get_line_reflection_matrix(line_array, n_power):
+def val_get_line_reflection_matrix(line_array: np.ndarray, n_power: int) -> np.ndarray:
     """
     Generates the matrix that sums the reflection of a point in many lines
     """
     mat2solve = np.zeros((32, 32), dtype=np.float64)
     for i in range(line_array.shape[0]):
         LiMat = get_left_gmt_matrix(line_array[i, :])
-        tmat = np.matmul(np.matmul(LiMat, mask_2minus4), LiMat)
+        tmat = (LiMat @ mask_2minus4) @ LiMat
         mat2solve += tmat
-    mat = np.matmul(mask1, mat2solve)
-    if n_power != 1:
-        mat = np.linalg.matrix_power(mat, n_power)
-    return mat
+    mat = mask1 @ mat2solve/line_array.shape[0]
+    return np.linalg.matrix_power(mat, n_power)
 
 
 @numba.njit
-def val_truncated_get_line_reflection_matrix(line_array, n_power):
+def val_truncated_get_line_reflection_matrix(line_array: np.ndarray, n_power: int) -> np.ndarray:
     """
     Generates the truncated matrix that sums the
     reflection of a point in many lines
-    n_power should be 1 or a power of 2
     """
     mat2solve = np.zeros((32, 32), dtype=np.float64)
     for i in range(line_array.shape[0]):
         LiMat = get_left_gmt_matrix(line_array[i, :])
-        tmat = np.matmul(np.matmul(LiMat, mask_2minus4), LiMat)
+        tmat = (LiMat @ mask_2minus4) @ LiMat
         mat2solve += tmat
-    mat_val = np.matmul(mask1, mat2solve)
+    mat_val = mask1 @ mat2solve
     mat_val = mat_val[1:6, 1:6].copy()/line_array.shape[0]
-    if n_power != 1:
-        c_pow = 1
-        while c_pow < n_power:
-            mat_val = np.matmul(mat_val, mat_val)
-            c_pow = c_pow*2
-    return mat_val
+    return np.linalg.matrix_power(mat_val, n_power)
 
 
 @numba.njit
@@ -735,7 +786,7 @@ def get_plane_normal(plane):
 
 def get_nearest_plane_point(plane):
     """ Get the nearest point to the origin on the plane """
-    return get_plane_normal(plane)*get_plane_origin_distance(plane)
+    return up(get_plane_normal(plane)*get_plane_origin_distance(plane))
 
 
 def disturb_object(mv_object, maximum_translation=0.01, maximum_angle=0.01):
