@@ -604,12 +604,7 @@ def val_get_line_reflection_matrix(line_array, n_power):
         tmat = (LiMat @ mask_2minus4) @ LiMat
         mat2solve += tmat
     mat = mask1 @ mat2solve/line_array.shape[0]
-    if n_power != 1:
-        c_pow = 1
-        while c_pow < n_power:
-            mat = mat @ mat
-            c_pow = c_pow * 2
-    return mat
+    return np.linalg.matrix_power(mat, n_power)
 
 
 @numba.njit
@@ -626,12 +621,7 @@ def val_truncated_get_line_reflection_matrix(line_array, n_power):
         mat2solve += tmat
     mat_val = mask1 @ mat2solve
     mat_val = mat_val[1:6, 1:6].copy()/line_array.shape[0]
-    if n_power != 1:
-        c_pow = 1
-        while c_pow < n_power:
-            mat_val = mat_val @ mat_val
-            c_pow = c_pow * 2
-    return mat_val
+    return np.linalg.matrix_power(mat_val, n_power)
 
 
 @numba.njit
