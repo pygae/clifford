@@ -22,8 +22,8 @@ Changes in 1.3.x
  * Two new :doc:`predefined-algebras`, :mod:`clifford.dpga` and :mod:`clifford.dg3c`.
  * Additional testing and assorted improvements for :mod:`clifford.tools.g3c`.
  * :func:`clifford.tools.g3c.closest_point_on_circle_from_line` has now been implemented
-   roughly following the procedure described in Appendix A of `Andreas Aristidou's PhD thesis
-   <https://www.repository.cam.ac.uk/handle/1810/237554>`.
+   roughly following the procedure described in Appendix A of
+   `Andreas Aristidou's PhD thesis <https://www.repository.cam.ac.uk/handle/1810/237554>`_.
  * :func:`clifford.tools.g3c.closest_point_on_line_from_circle` has now also been added,
    projecting the result of :func:`clifford.tools.g3c.closest_point_on_circle_from_line`
    to the line.
