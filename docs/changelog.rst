@@ -44,7 +44,7 @@ Bugs fixed
  * :mod:`clifford.tools.g3c`:
    * :func:`~clifford.tools.g3c.val_midpoint_between_lines` now handles the case that
      the two lines are touching.
-   * :func:`~clifford.tools.g3c.val_fit_circle` now correctly selects the first and
+   * :func:`~clifford.tools.g3c.object_fitting.val_fit_circle` now correctly selects the first and
      second eigenvalue regardless of order.
    * :func:`~clifford.tools.g3c.sphere_beyond_plane` now tested and correct.
    * :func:`~clifford.tools.g3c.sphere_behind_plane` now tested and correct.
