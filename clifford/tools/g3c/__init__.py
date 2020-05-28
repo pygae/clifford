@@ -495,7 +495,7 @@ def iterative_closest_points_circle_line(C, L, niterations=20):
 
     This is an iterative algorithm based on heuristics
     Nonetheless it appears to give results on par with
-    closest_point_on_circle_from_line
+    :func:`closest_point_on_circle_from_line`.
     """
     cav = average_objects([C, L])
     cav2 = average_objects([C, -L])
