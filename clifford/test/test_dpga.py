@@ -4,6 +4,11 @@ import numba
 import numpy as np
 
 
+def setup_module():
+    # do this separately so that we get distinct timing information for it
+    import clifford.dpga  # noqa: F401
+
+
 class TestBasicDPGA:
     def test_non_orthogonal_metric(self):
         from clifford.dpga import wbasis

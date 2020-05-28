@@ -15,6 +15,11 @@ too_slow_without_jit = pytest.mark.skipif(
 )
 
 
+def setup_module():
+    # do this separately so that we get distinct timing information for it
+    import clifford.dg3c  # noqa: F401
+
+
 @too_slow_without_jit
 class TestBasic:
     def test_metric(self):
