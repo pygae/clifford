@@ -162,7 +162,7 @@ Submodules
 --------------------
 .. autosummary::
     :toctree: generated/
-    
+
     object_fitting
 
 
