@@ -20,6 +20,10 @@ It can be thought of as equivalent to the builtin :mod:`operator` module, but fo
 
 .. autofunction:: ip
 
+.. versionchanged:: 1.3.0
+    These functions used to be in :mod:`clifford`, but have been moved to this
+    submodule.
+
 """
 def gp(M, N):
     """

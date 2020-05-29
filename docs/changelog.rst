@@ -6,22 +6,25 @@ Changelog
 Changes in 1.3.x
 ++++++++++++++++
 
+ * Python 3.8 is officially supported. 1.2.0 was pinned to a bad numba version
+   that was incompatible with 3.8.
  * A new :mod:`clifford.operator` module to contain the previously undocumented
    :func:`~clifford.operator.gp`, :func:`~clifford.operator.op`, and
    :func:`~clifford.operator.ip` helpers.
- * Python 3.8 is officially supported. 1.2.0 was pinned to a bad numba version
-   that was incompatible with 3.8.
- * :func:`clifford.ugly` now results in less ugly output for
-   :doc:`predefined-algebras`.
- * Improvements throughout the documentation, and some tutorials for
-   :doc:`tutorials/cga/index`.
+ * A new :mod:`clifford.transformations` module for linear transformations.
+ * Two new :doc:`predefined-algebras`, :mod:`clifford.dpga` and :mod:`clifford.dg3c`.
+ * Improvements throughout the documentation:
+
+   * Better overall structure, visible in the docs sidebar.
+   * New tutorials for :doc:`tutorials/cga/index` on visualization and applications.
+   * New tutorial on :doc:`tutorials/apollonius-cga-augmented`.
+   * New tutorial on :doc:`tutorials/linear-transformations`.
+   * New |launch binder| links at the top of each notebook tutorial, to run
+     examples from the browser.
  * Faster algebra construction. ``Cl(3)`` is now 100\ |times| faster, and
    ``Cl(6)`` is 20\ |times| faster. This is achieved by deferring product JIT
    compilation until the product is used for the first time.
- * A new :mod:`clifford.transformations` module for linear transformations.
- * Two new :doc:`predefined-algebras`, :mod:`clifford.dpga` and :mod:`clifford.dg3c`.
- * Additional testing and assorted improvements for :mod:`clifford.tools.g3c`.
- * :mod:`clifford.tools.g3c`:
+ * Additional testing and assorted improvements for :mod:`clifford.tools.g3c`:
 
    * :func:`~clifford.tools.g3c.closest_point_on_circle_from_line` has now been implemented
      roughly following the procedure described in Appendix A of
@@ -29,7 +32,11 @@ Changes in 1.3.x
    * :func:`~clifford.tools.g3c.closest_point_on_line_from_circle` has now also been added,
      projecting the result of :func:`~clifford.tools.g3c.closest_point_on_circle_from_line`
      to the line.
+ * :func:`clifford.ugly` now results in less ugly output for
+   :doc:`predefined-algebras`.
 
+
+.. |launch binder| image:: https://mybinder.org/badge_logo.svg
 
 Bugs fixed
 ----------
@@ -42,7 +49,7 @@ Bugs fixed
    input, rather than silenltly producing nonsense.
  * :func:`Layout.parse_multivector` supports basis vector names which do not
    start with e.
- * :mod:`clifford.tools.g3c`:
+ * In :mod:`clifford.tools.g3c`:
 
    * :func:`~clifford.tools.g3c.val_midpoint_between_lines` now handles the case that
      the two lines are touching.
@@ -69,7 +76,7 @@ Compatibility notes
  * The ``imt_prod_mask``, ``omt_prod_mask``, and ``lcmt_prod_mask`` attributes
    of :class:`Layout` objects have been removed, as these were an unnecessary
    intermediate computation that had no need to be public.
- * :mod:`clifford.tools.g3c`:
+ * Some functions in :mod:`clifford.tools.g3c` have been renamed:
 
    * ``closest_points_on_circles`` has been renamed to
      :func:`~clifford.tools.g3c.iterative_closest_points_on_circles`.
