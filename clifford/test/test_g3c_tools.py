@@ -1,6 +1,7 @@
 import random
 from functools import reduce
 import time
+import functools
 
 
 import numpy as np
@@ -22,10 +23,11 @@ from clifford.tools.g3c.object_fitting import *
 from clifford.tools.g3c.model_matching import *
 from clifford.tools.g3 import random_euc_mv
 from clifford.tools.g3c.GAOnline import draw_objects, GAScene, GanjaScene
-import functools
+from clifford._numba_utils import DISABLE_JIT
+
 
 too_slow_without_jit = pytest.mark.skipif(
-    numba.config.DISABLE_JIT, reason="test is too slow without JIT"
+    DISABLE_JIT, reason="test is too slow without JIT"
 )
 
 
