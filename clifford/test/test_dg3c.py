@@ -8,10 +8,11 @@ https://doi.org/10.1007/s00006-017-0784-0
 
 import pytest
 import numpy as np
-import numba
+
+from clifford._numba_utils import DISABLE_JIT
 
 too_slow_without_jit = pytest.mark.skipif(
-    numba.config.DISABLE_JIT, reason="test is too slow without JIT"
+    DISABLE_JIT, reason="test is too slow without JIT"
 )
 
 
@@ -48,7 +49,7 @@ class TestBasic:
         from clifford.dg3c import up, down
 
         rng = np.random.RandomState()
-        for i in range(1 if numba.config.DISABLE_JIT else 100):
+        for i in range(1 if DISABLE_JIT else 100):
             pnt_vector = rng.randn(3)
             pnt = up(pnt_vector)
             res = down(100*pnt)
@@ -66,7 +67,7 @@ class TestBasic:
 
         rng = np.random.RandomState()
         pnt_vector = rng.randn(3)
-        for i in range(10 if numba.config.DISABLE_JIT else 100):
+        for i in range(10 if DISABLE_JIT else 100):
             pnt = up_cga1(pnt_vector)
             res = down_cga1(100*pnt)
             np.testing.assert_allclose(res, pnt_vector)

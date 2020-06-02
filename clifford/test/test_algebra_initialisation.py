@@ -1,11 +1,11 @@
 import numpy as np
 import pytest
-import numba
 
 from clifford import Cl, conformalize, _powerset
+from clifford._numba_utils import DISABLE_JIT
 
 too_slow_without_jit = pytest.mark.skipif(
-    numba.config.DISABLE_JIT, reason="test is too slow without JIT"
+    DISABLE_JIT, reason="test is too slow without JIT"
 )
 
 

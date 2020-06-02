@@ -9,7 +9,8 @@ from typing import Iterator
 import numba
 import numba.extending
 import numba.types
-import numba.config
+
+from . import _numba_utils
 
 
 def set_bit_indices(x: int) -> Iterator[int]:
@@ -33,7 +34,7 @@ def __builtin_popcnt(tyctx, x):
         return sig, impl
 
 
-if numba.config.DISABLE_JIT:
+if _numba_utils.DISABLE_JIT:
     def count_set_bits(bitmap: int) -> int:
         """ Counts the number of bits set to 1 in bitmap """
         count = 0
