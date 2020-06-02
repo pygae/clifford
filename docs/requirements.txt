@@ -7,6 +7,9 @@ ipywidgets
 sphinx>=2.4
 sphinx_rtd_theme
 
+# I haven't released this yet
+-e git+https://git@github.com/sphinx-contrib/prettyspecialmethods.git@36395ba530427060ef35f3075d0d9373da24d95d#egg=sphinxcontrib-prettyspecialmethods
+
 # while we support 0.49, it emits tonnes of warnings so we pin this back
 numba ~= 0.48.0
 

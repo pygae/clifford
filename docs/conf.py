@@ -53,6 +53,7 @@ extensions = [
     'IPython.sphinxext.ipython_console_highlighting',
     #'numpydoc',
     'sphinx.ext.viewcode',
+    'sphinxcontrib.prettyspecialmethods',
 
     #'sphinx.ext.mathjax',
 ]
