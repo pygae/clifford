@@ -14,6 +14,13 @@ import functools
 
 import numba
 
+try:
+    from numba.core.config import DISABLE_JIT
+    import numba.core.serialize as _serialize
+except ImportError:
+    from numba.config import DISABLE_JIT
+    import numba.serialize as _serialize
+
 
 class pickleable_function:
     """
@@ -32,13 +39,13 @@ class pickleable_function:
 
     @classmethod
     def _rebuild(cls, *args):
-        return cls(numba.serialize._rebuild_function(*args))
+        return cls(_serialize._rebuild_function(*args))
 
     def __reduce__(self):
-        globs = numba.serialize._get_function_globals_for_reduction(self.__func)
+        globs = _serialize._get_function_globals_for_reduction(self.__func)
         return (
             self._rebuild,
-            numba.serialize._reduce_function(self.__func, globs)
+            _serialize._reduce_function(self.__func, globs)
         )
 
     def __call__(self, *args, **kwargs):
@@ -69,7 +76,7 @@ class _fake_generated_jit:
         return func(*args)
 
 
-if not numba.config.DISABLE_JIT:
+if not DISABLE_JIT:
     njit = numba.njit
     generated_jit = numba.generated_jit
 else:

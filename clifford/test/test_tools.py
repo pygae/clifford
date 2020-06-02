@@ -1,16 +1,17 @@
-from clifford import Cl
-
 import unittest
-import pytest
 
-from clifford.tools import orthoFrames2Versor as of2v
+import pytest
 import numpy as np
+from numpy import exp, float64, testing
 import numba
 
-from numpy import exp, float64, testing
+from clifford import Cl
+from clifford.tools import orthoFrames2Versor as of2v
+from clifford._numba_utils import DISABLE_JIT
+
 
 too_slow_without_jit = pytest.mark.skipif(
-    numba.config.DISABLE_JIT, reason="test is too slow without JIT"
+    DISABLE_JIT, reason="test is too slow without JIT"
 )
 
 
