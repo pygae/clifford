@@ -84,11 +84,13 @@ Compatibility notes
      :func:`~clifford.tools.g3c.iterative_closest_points_circle_line`.
    * ``furthest_points_on_circles`` has been renamed to
      :func:`~clifford.tools.g3c.iterative_furthest_points_on_circles`.
- * This will be the last release to support :mod:`numba` versions below 0.49.0.
  * While this release is compatible with :mod:`numba` version 0.49.0, it is
    recommended to use 0.48.0 which does not emit as many warnings. See the
    :doc:`installation` instructions for how to follow this guidance.
 
+Patch releases
+--------------
+* 1.3.1: Added compatibility with :mod:`numba` version 0.50.0.
 
 Changes in 1.2.x
 ++++++++++++++++
