@@ -7,7 +7,10 @@ from ._ast_transformer import GATransformer
 
 
 class jit_func(object):
-
+    """
+    This is a JIT decorator that re-writes the AST and then numba JITs
+    the resulting function.
+    """
     def __init__(self, layout, ast_debug=False):
         self.layout = layout
         self.ast_debug = ast_debug
@@ -16,41 +19,41 @@ class jit_func(object):
         # Get the function source
         fname = func.__name__
         source = inspect.getsource(func)
-        source = '\n'.join(source.splitlines()[1:]) # remove the decorator first line.
+        # Remove the decorator first line.
+        source = '\n'.join(source.splitlines()[1:])
+        # Remove the indentation
+        indentation = source.splitlines()[0].find('def')
+        print(indentation)
+        source = '\n'.join([line[indentation:] for line in source.splitlines()])
 
         # Re-write the ast
         tree = ast.parse(source)
         if self.ast_debug:
-            print('\n\n\n\n TRANFORMING FROM \n\n\n\n')
+            print('\n\n\n\n TRANSFORMING FROM \n\n\n\n')
             astpretty.pprint(tree)
 
         tree = GATransformer().visit(tree)
         ast.fix_missing_locations(tree)
 
         if self.ast_debug:
-            print('\n\n\n\n TRANFORMING TO \n\n\n\n')
+            print('\n\n\n\n TRANSFORMING TO \n\n\n\n')
             astpretty.pprint(tree)
+
+        # Set things up into locals and globals so that they JIT ok...
+        locals_dict = {'as_ga': self.layout.as_ga_value_vector_func,
+                       'ga_add': self.layout.overload_add_func,
+                       'ga_sub': self.layout.overload_sub_func,
+                       'ga_mul': self.layout.overload_mul_func,
+                       'ga_xor': self.layout.overload_xor_func,
+                       'ga_or': self.layout.overload_or_func}
+        globs = globals()
+        for k, v in locals_dict.items():
+            globs[k] = v
 
         # Compile the function
         co = compile(tree, '<ast>', "exec")
-        locals_dict = {}
-        exec(co, globals(), locals_dict)
+        exec(co, globs, locals_dict)
         new_func = locals_dict[fname]
-
-        # Set things up into memory so that they JIT ok...
-        as_ga = self.layout.as_ga_value_vector_func
-        ga_add = self.layout.overload_add_func
-        ga_sub = self.layout.overload_sub_func
-        ga_mul = self.layout.overload_mul_func
-        ga_xor = self.layout.overload_xor_func
-        ga_or = self.layout.overload_or_func
-
-        # globals()['as_ga'] = as_ga
-        # globals()['ga_add'] = ga_add
-        # globals()['ga_sub'] = ga_sub
-        # globals()['ga_mul'] = ga_mul
-        # globals()['ga_xor'] = ga_xor
-        # globals()['ga_or'] = ga_or
 
         # JIT the function
         jitted_func = njit(new_func)
