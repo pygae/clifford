@@ -1,7 +1,12 @@
 
 import ast
-import astpretty
+try:
+    import astpretty
+    AST_PRETTY_AVAILABLE = True
+except:
+    AST_PRETTY_AVAILABLE = False
 import inspect
+import warnings
 from ._numba_utils import njit
 from ._ast_transformer import GATransformer
 
@@ -13,7 +18,15 @@ class jit_func(object):
     """
     def __init__(self, layout, ast_debug=False):
         self.layout = layout
-        self.ast_debug = ast_debug
+        if AST_PRETTY_AVAILABLE:
+            self.ast_debug = ast_debug
+        else:
+            if ast_debug:
+                warnings.warn('''
+The ast_debug flag is set to True, but the astpretty module is not importable.
+To see ast_debug output please pip install astpretty
+''')
+            self.ast_debug = False
 
     def __call__(self, func):
         # Get the function source
