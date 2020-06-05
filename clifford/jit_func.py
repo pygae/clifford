@@ -46,7 +46,10 @@ class jit_func(object):
                        'ga_mul': self.layout.overload_mul_func,
                        'ga_xor': self.layout.overload_xor_func,
                        'ga_or': self.layout.overload_or_func}
-        globs = globals()
+        # TODO: Work out a better way to deal with changes to globals
+        globs = {}
+        for k, v in globals().items():
+            globs[k] = v
         for k, v in locals_dict.items():
             globs[k] = v
 
