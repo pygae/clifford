@@ -207,13 +207,13 @@ def get_overload_add(layout):
 
     @overload(ga_add, inline='always')
     def ol_ga_add(a, b):
-        if isinstance(a, (types.Integer, types.Float)) and isinstance(b, types.Array):
+        if isinstance(a, types.abstract.Number) and isinstance(b, types.Array):
             def impl(a, b):
                 op = b.astype(np.float32)
                 op[scalar_index] += a
                 return op
             return impl
-        elif isinstance(a, types.Array) and isinstance(b, (types.Integer, types.Float)):
+        elif isinstance(a, types.Array) and isinstance(b, types.abstract.Number):
             def impl(a, b):
                 op = a.astype(np.float32)
                 op[scalar_index] += b
@@ -240,13 +240,13 @@ def get_overload_sub(layout):
 
     @overload(ga_sub, inline='always')
     def ol_ga_sub(a, b):
-        if isinstance(a, (types.Integer, types.Float)) and isinstance(b, types.Array):
+        if isinstance(a, types.abstract.Number) and isinstance(b, types.Array):
             def impl(a, b):
                 op = -b.astype(np.float32)
                 op[scalar_index] += a
                 return op
             return impl
-        elif isinstance(a, types.Array) and isinstance(b, (types.Integer, types.Float)):
+        elif isinstance(a, types.Array) and isinstance(b, types.abstract.Number):
             def impl(a, b):
                 op = a.astype(np.float32)
                 op[scalar_index] -= b
@@ -301,11 +301,11 @@ def get_overload_xor(layout):
             def impl(a, b):
                 return omt_func(a, b)
             return impl
-        elif isinstance(a, types.Array) and isinstance(b, (types.Integer, types.Float)):
+        elif isinstance(a, types.Array) and isinstance(b, types.abstract.Number):
             def impl(a, b):
                 return omt_func(a, as_ga(b))
             return impl
-        elif isinstance(a, (types.Integer, types.Float)) and isinstance(b, types.Array):
+        elif isinstance(a, types.abstract.Number) and isinstance(b, types.Array):
             def impl(a, b):
                 return omt_func(as_ga(a), b)
             return impl
@@ -334,11 +334,11 @@ def get_overload_or(layout):
             def impl(a, b):
                 return imt_func(a, b)
             return impl
-        elif isinstance(a, types.Array) and isinstance(b, (types.Integer, types.Float)):
+        elif isinstance(a, types.Array) and isinstance(b, types.abstract.Number):
             def impl(a, b):
                 return imt_func(a, as_ga(b))
             return impl
-        elif isinstance(a, (types.Integer, types.Float)) and isinstance(b, types.Array):
+        elif isinstance(a, types.abstract.Number) and isinstance(b, types.Array):
             def impl(a, b):
                 return imt_func(as_ga(a), b)
             return impl
