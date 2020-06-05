@@ -36,7 +36,6 @@ To see ast_debug output please pip install astpretty
         source = '\n'.join(source.splitlines()[1:])
         # Remove the indentation
         indentation = source.splitlines()[0].find('def')
-        print(indentation)
         source = '\n'.join([line[indentation:] for line in source.splitlines()])
 
         # Re-write the ast
