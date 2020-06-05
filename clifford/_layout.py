@@ -374,6 +374,46 @@ def get_overload_reverse(layout):
     return ga_rev
 
 
+def get_project_to_grade_func(layout):
+    """
+    Returns a function that projects a multivector to a given grade
+    """
+    gradeList = np.array(layout.gradeList, dtype=int)
+    ndims = layout.gaDims
+    @_numba_utils.njit
+    def project_to_grade(A, g):
+        op = np.zeros(ndims)
+        for i in range(ndims):
+            if gradeList[i] == g:
+                op[i] = A[i]
+        return op
+    return project_to_grade
+
+
+def get_overload_call(layout):
+    """
+    Returns an overloaded JITed function that works on
+    MultiVector value arrays
+    """
+    def ga_call(a, b):
+        # dummy function to overload
+        pass
+
+    project_to_grade = layout.project_to_grade_func
+    @overload(ga_call, inline='always')
+    def ol_ga_call(a, b):
+        if isinstance(a, types.Array) and isinstance(b, types.Integer):
+            def impl(a, b):
+                return project_to_grade(a, b)
+            return impl
+        else:
+            def impl(a, b):
+                return a(b)
+            return impl
+
+    return ga_call
+
+
 class Layout(object):
     r""" Layout stores information regarding the geometric algebra itself and the
     internal representation of multivectors.
@@ -827,6 +867,14 @@ class Layout(object):
     @_cached_property
     def overload_reverse_func(self):
         return get_overload_reverse(self)
+
+    @_cached_property
+    def project_to_grade_func(self):
+        return get_project_to_grade_func(self)
+
+    @_cached_property
+    def overload_call_func(self):
+        return get_overload_call(self)
 
     @_cached_property
     def adjoint_func(self):
