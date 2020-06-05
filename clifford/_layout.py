@@ -201,7 +201,7 @@ def get_overload_add(layout):
     """
     scalar_index = layout._basis_blade_order.bitmap_to_index[0]
 
-    def ga_add(x):
+    def ga_add(a, b):
         # dummy function to overload
         pass
 
@@ -234,7 +234,7 @@ def get_overload_sub(layout):
     """
     scalar_index = layout._basis_blade_order.bitmap_to_index[0]
 
-    def ga_sub(x):
+    def ga_sub(a, b):
         # dummy function to overload
         pass
 
@@ -265,7 +265,7 @@ def get_overload_mul(layout):
     Returns an overloaded JITed function that works on
     MultiVector value arrays
     """
-    def ga_mul(x):
+    def ga_mul(a, b):
         # dummy function to overload
         pass
 
@@ -289,7 +289,7 @@ def get_overload_xor(layout):
     Returns an overloaded JITed function that works on
     MultiVector value arrays
     """
-    def ga_xor(x):
+    def ga_xor(a, b):
         # dummy function to overload
         pass
 
@@ -322,7 +322,7 @@ def get_overload_or(layout):
     Returns an overloaded JITed function that works on
     MultiVector value arrays
     """
-    def ga_or(x):
+    def ga_or(a, b):
         # dummy function to overload
         pass
 
@@ -348,6 +348,30 @@ def get_overload_or(layout):
             return impl
 
     return ga_or
+
+
+def get_overload_reverse(layout):
+    """
+    Returns an overloaded JITed function that works on
+    MultiVector value arrays
+    """
+    def ga_rev(x):
+        # dummy function to overload
+        pass
+
+    adjoint_func = layout.adjoint_func
+    @overload(ga_rev, inline='always')
+    def ol_ga_rev(x):
+        if isinstance(x, types.Array):
+            def impl(x):
+                return adjoint_func(x)
+            return impl
+        else:
+            def impl(x):
+                return ~x
+            return impl
+
+    return ga_rev
 
 
 class Layout(object):
@@ -799,6 +823,10 @@ class Layout(object):
     @_cached_property
     def overload_sub_func(self):
         return get_overload_sub(self)
+
+    @_cached_property
+    def overload_reverse_func(self):
+        return get_overload_reverse(self)
 
     @_cached_property
     def adjoint_func(self):

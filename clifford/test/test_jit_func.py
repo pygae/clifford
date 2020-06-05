@@ -5,6 +5,22 @@ from ..jit_func import jit_func
 
 
 class TestJITFunc(unittest.TestCase):
+
+    def test_reverse(self):
+        from clifford.g3c import layout, blades
+        e12 = blades['e12']
+
+        @jit_func(layout=layout, ast_debug=True)
+        def test_func(A):
+            op = ~A
+            return op
+
+        def slow_test_func(A):
+            op = ~A
+            return op
+
+        np.testing.assert_allclose(test_func(e12).value, slow_test_func(e12).value)
+
     def test_compound_expression(self):
         from clifford.g3c import layout, blades
         e1 = blades['e1']
@@ -13,11 +29,11 @@ class TestJITFunc(unittest.TestCase):
 
         @jit_func(layout=layout, ast_debug=True)
         def test_func(A, B, C):
-            op = (((A * B) * C) | (B ^ A)) - 3.1 - A - 7 * B + 5 + C + 2.5 + (2 ^ (A * B * C) ^ 3) + (A | 5)
+            op = ~(((A * B) * C) | (B ^ A)) - 3.1 - A - 7 * B + 5 + C + 2.5 + (2 ^ (A * B * C) ^ 3) + (A | 5)
             return op
 
         def slow_test_func(A, B, C):
-            op = (((A * B) * C) | (B ^ A)) - 3.1 - A - 7 * B + 5 + C + 2.5 + (2 ^ (A * B * C) ^ 3) + (A | 5)
+            op = ~(((A * B) * C) | (B ^ A)) - 3.1 - A - 7 * B + 5 + C + 2.5 + (2 ^ (A * B * C) ^ 3) + (A | 5)
             return op
 
         np.testing.assert_allclose(test_func(e1, e2, einf).value, slow_test_func(e1, e2, einf).value)
@@ -30,11 +46,11 @@ class TestJITFunc(unittest.TestCase):
 
         @jit_func(layout=layout)
         def test_func(A, B, C):
-            op = (((A * B) * C) | (B ^ A)) - 3.1 - A - 7 * B + 5 + C + 2.5 + (2 ^ (A * B * C) ^ 3) + (A | 5)
+            op = ~(((A * B) * C) | (B ^ A)) - 3.1 - A - 7 * B + 5 + C + 2.5 + (2 ^ (A * B * C) ^ 3) + (A | 5)
             return op
 
         def slow_test_func(A, B, C):
-            op = (((A * B) * C) | (B ^ A)) - 3.1 - A - 7 * B + 5 + C + 2.5 + (2 ^ (A * B * C) ^ 3) + (A | 5)
+            op = ~(((A * B) * C) | (B ^ A)) - 3.1 - A - 7 * B + 5 + C + 2.5 + (2 ^ (A * B * C) ^ 3) + (A | 5)
             return op
 
         test_func(e1, e2, einf)

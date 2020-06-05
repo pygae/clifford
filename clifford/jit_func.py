@@ -57,7 +57,8 @@ To see ast_debug output please pip install astpretty
                        'ga_sub': self.layout.overload_sub_func,
                        'ga_mul': self.layout.overload_mul_func,
                        'ga_xor': self.layout.overload_xor_func,
-                       'ga_or': self.layout.overload_or_func}
+                       'ga_or': self.layout.overload_or_func,
+                       'ga_rev': self.layout.overload_reverse_func}
         # TODO: Work out a better way to deal with changes to globals
         globs = {}
         for k, v in globals().items():

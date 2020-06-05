@@ -6,8 +6,8 @@ class GATransformer(ast.NodeTransformer):
     """
     This is an AST transformer that converts operations into
     JITable counterparts that work on MultiVector value arrays.
-    We crawl the AST and convert BinOp's into numba overloaded
-    functions.
+    We crawl the AST and convert BinOps and UnaryOps into numba
+    overloaded functions.
     """
     def visit_BinOp(self, node):
         ops = {
@@ -25,5 +25,20 @@ class GATransformer(ast.NodeTransformer):
             return ast.Call(
                 func=ast.Name(id=func_name, ctx=ast.Load()),
                 args=[self.visit(node.left), self.visit(node.right)],
+                keywords=[]
+            )
+
+    def visit_UnaryOp(self, node):
+        ops = {
+            ast.Invert: 'ga_rev'
+        }
+        try:
+            func_name = ops[type(node.op)]
+        except KeyError:
+            return node
+        else:
+            return ast.Call(
+                func=ast.Name(id=func_name, ctx=ast.Load()),
+                args=[self.visit(node.operand)],
                 keywords=[]
             )
