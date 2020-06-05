@@ -10,45 +10,20 @@ class GATransformer(ast.NodeTransformer):
     functions.
     """
     def visit_BinOp(self, node):
-        if isinstance(node.op, ast.Mult):
-            new_node = ast.Call(
-                func=ast.Name(id='ga_mul', ctx=ast.Load()),
-                args=[node.left, node.right],
+        ops = {
+            ast.Mult: 'ga_mul',
+            ast.BitXor: 'ga_xor',
+            ast.BitOr: 'ga_or',
+            ast.Add: 'ga_add',
+            ast.Sub: 'ga_sub',
+        }
+        try:
+            func_name = ops[type(node.op)]
+        except KeyError:
+            return node
+        else:
+            return ast.Call(
+                func=ast.Name(id=func_name, ctx=ast.Load()),
+                args=[self.visit(node.left), self.visit(node.right)],
                 keywords=[]
             )
-            new_node = GATransformer().visit(new_node)
-            return new_node
-        elif isinstance(node.op, ast.BitXor):
-            new_node = ast.Call(
-                func=ast.Name(id='ga_xor', ctx=ast.Load()),
-                args=[node.left, node.right],
-                keywords=[]
-            )
-            new_node = GATransformer().visit(new_node)
-            return new_node
-        elif isinstance(node.op, ast.BitOr):
-            new_node = ast.Call(
-                func=ast.Name(id='ga_or', ctx=ast.Load()),
-                args=[node.left, node.right],
-                keywords=[]
-            )
-            new_node = GATransformer().visit(new_node)
-            return new_node
-        elif isinstance(node.op, ast.Add):
-            new_node = ast.Call(
-                func=ast.Name(id='ga_add', ctx=ast.Load()),
-                args=[node.left, node.right],
-                keywords=[]
-            )
-            new_node = GATransformer().visit(new_node)
-            return new_node
-        elif isinstance(node.op, ast.Sub):
-            new_node = ast.Call(
-                func=ast.Name(id='ga_sub', ctx=ast.Load()),
-                args=[node.left, node.right],
-                keywords=[]
-            )
-            new_node = GATransformer().visit(new_node)
-            return new_node
-        return node
-
