@@ -2,6 +2,13 @@
 import ast
 
 
+class DecoratorRemover(ast.NodeTransformer):
+    """ Strip decorators from FunctionDefs"""
+    def visit_FunctionDef(self, node):
+        node.decorator_list = []
+        return node
+
+
 class GATransformer(ast.NodeTransformer):
     """
     This is an AST transformer that converts operations into

@@ -7,8 +7,9 @@ except ImportError:
     AST_PRETTY_AVAILABLE = False
 import inspect
 import warnings
+import textwrap
 from ._numba_utils import njit
-from ._ast_transformer import GATransformer
+from ._ast_transformer import DecoratorRemover, GATransformer
 
 
 class jit_func(object):
@@ -31,19 +32,20 @@ class jit_func(object):
         # Get the function source
         fname = func.__name__
         source = inspect.getsource(func)
-        # Remove the decorator first line.
-        source = '\n'.join(source.splitlines()[1:])
         # Remove the indentation
-        indentation = source.splitlines()[0].find('def')
-        source = '\n'.join([line[indentation:] for line in source.splitlines()])
+        source = textwrap.dedent(source)
 
-        # Re-write the ast
+        # Parse the source
         tree = ast.parse(source)
         if self.ast_debug:
             print('\n\n\n\n TRANSFORMING FROM \n\n\n\n')
             astpretty.pprint(tree)
 
+        # Remove the decorators from the function
+        tree = DecoratorRemover().visit(tree)
+        # Re-write the ast
         tree = GATransformer().visit(tree)
+        # Fix it all up
         ast.fix_missing_locations(tree)
 
         if self.ast_debug:
