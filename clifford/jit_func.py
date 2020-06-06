@@ -3,7 +3,7 @@ import ast
 try:
     import astpretty
     AST_PRETTY_AVAILABLE = True
-except:
+except ImportError:
     AST_PRETTY_AVAILABLE = False
 import inspect
 import warnings
