@@ -52,7 +52,7 @@ class GATransformer(ast.NodeTransformer):
             if len(node.args) == 1:
                 return ast.Call(
                     func=ast.Name(id='ga_call', ctx=ast.Load()),
-                    args=[node.func, node.args[0]],
+                    args=[self.visit(node.func), node.args[0]],
                     keywords=[]
                 )
             else:
