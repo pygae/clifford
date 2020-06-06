@@ -22,10 +22,9 @@ class jit_func(object):
             self.ast_debug = ast_debug
         else:
             if ast_debug:
-                warnings.warn('''
-The ast_debug flag is set to True, but the astpretty module is not importable.
-To see ast_debug output please pip install astpretty
-''')
+                warnings.warn(
+                    'The ast_debug flag is set to True, but the astpretty module is not importable.\n'
+                    'To see ast_debug output please pip install astpretty')
             self.ast_debug = False
 
     def __call__(self, func):
