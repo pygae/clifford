@@ -47,7 +47,7 @@ class GATransformer(ast.NodeTransformer):
         try:
             nfuncid = node.func.id
             return node
-        except:
+        except AttributeError:
             # Only allow a single grade to be selected for now
             if len(node.args) == 1:
                 return ast.Call(
@@ -57,3 +57,5 @@ class GATransformer(ast.NodeTransformer):
                 )
             else:
                 return node
+        except:
+            return node
