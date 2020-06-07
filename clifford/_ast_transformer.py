@@ -51,18 +51,14 @@ class GATransformer(ast.NodeTransformer):
             )
 
     def visit_Call(self, node):
-        try:
-            nfuncid = node.func.id
+        if len(node.args) == 1:
+            return ast.Call(
+                func=ast.Name(id='ga_call', ctx=ast.Load()),
+                args=[self.visit(node.func), self.visit(node.args[0])],
+                keywords=[]
+            )
+        else:
+            node.func = self.visit(node.func)
+            node.args = [self.visit(a) for a in node.args]
             return node
-        except AttributeError:
-            # Only allow a single grade to be selected for now
-            if len(node.args) == 1:
-                return ast.Call(
-                    func=ast.Name(id='ga_call', ctx=ast.Load()),
-                    args=[self.visit(node.func), node.args[0]],
-                    keywords=[]
-                )
-            else:
-                return node
-        except:
-            return node
+
