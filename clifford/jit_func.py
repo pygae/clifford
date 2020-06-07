@@ -17,8 +17,10 @@ class jit_func(object):
     This is a JIT decorator that re-writes the AST and then numba JITs
     the resulting function.
     """
-    def __init__(self, layout, ast_debug=False):
+    def __init__(self, layout, ast_debug=False, mv_constants={}, scalar_constants={}):
         self.layout = layout
+        self.mv_constants = mv_constants
+        self.scalar_constants = scalar_constants
         if AST_PRETTY_AVAILABLE:
             self.ast_debug = ast_debug
         else:
@@ -61,6 +63,13 @@ class jit_func(object):
                        'ga_or': self.layout.overload_or_func,
                        'ga_rev': self.layout.overload_reverse_func,
                        'ga_call': self.layout.overload_call_func}
+
+        # Add the passed multivector and scalar constants
+        for k, v in self.mv_constants.items():
+            locals_dict[k] = v.value
+        for k, v in self.scalar_constants.items():
+            locals_dict[k] = v
+
         # TODO: Work out a better way to deal with changes to globals
         globs = {}
         for k, v in globals().items():
@@ -79,4 +88,5 @@ class jit_func(object):
         # Wrap the JITed function
         def wrapper(*args, **kwargs):
             return self.layout.MultiVector(value=jitted_func(*[a.value for a in args], **kwargs))
+        wrapper.value = jitted_func
         return wrapper
