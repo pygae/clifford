@@ -67,6 +67,7 @@ class TestJITFunc:
         einf = self.layout.einf
 
         pi = np.pi
+
         def slow_test_func(A, B, C, D):
             op = ~(((A * B) * ~C) | (B ^ A)) - 3.1 - A - 7 * B + 5 + C + 2.5 + (2 ^ (A * B * C) ^ 3) + (A | 5) + (A + D)(2) + pi*e12345
             return op
@@ -82,6 +83,7 @@ class TestJITFunc:
     def test_benchmark(self, use_jit, benchmark):
         e12345 = self.blades['e12345']
         pi = np.pi
+
         def test_func(A, B, C, D):
             op = ~(((A * B) * ~C) | (B ^ A)) - 3.1 - A - 7 * B + 5 + C + 2.5 + (2 ^ (A * B * C) ^ 3) + (A | 5) + (A + D)(2) + pi*e12345
             return op
