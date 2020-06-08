@@ -23,6 +23,31 @@ class TestJITFunc:
 
         np.testing.assert_allclose(test_func(e1, e12).value, slow_test_func(e1, e12).value)
 
+    def test_nested_functions(self):
+        e1 = self.blades['e1']
+        e12 = self.blades['e12']
+
+        def test_func_1(A, B):
+            op = (A(1)+B(2))(1)
+            return op
+
+        def test_func_2(A):
+            op = ~A + 5*e12
+            return op
+
+        def compound_func(A, B):
+            return test_func_2(test_func_1(A, B))
+
+        test_func_1_jit = jit_func(self.layout)(test_func_1)
+        test_func_2_jit = jit_func(self.layout,
+                                   mv_constants={'e12': e12})(test_func_2)
+
+        test_compound_func = jit_func(self.layout,
+                                      mv_constants={'test_func_1': test_func_1_jit,
+                                                    'test_func_2': test_func_2_jit})(compound_func)
+
+        np.testing.assert_allclose(test_compound_func(e1, e12).value, compound_func(e1, e12).value)
+
     def test_reverse(self):
         e12 = self.blades['e12']
 
@@ -67,4 +92,3 @@ class TestJITFunc:
                                  scalar_constants={'pi': pi}
                                  )(test_func)
         benchmark(test_func, self.blades['e1'], self.blades['e2'], self.layout.einf, self.blades['e34'])
-
