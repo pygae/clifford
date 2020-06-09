@@ -41,3 +41,10 @@ class TestBasic:
         ab = add(e1, e2)
         assert ab == e1 + e2
         assert ab.layout is e1.layout
+
+    def test_constant_multivector(self):
+        @numba.njit
+        def add_e1(a):
+            return cf.MultiVector(a.layout, a.value + e1.value)
+
+        assert add_e1(e2) == e1 + e2

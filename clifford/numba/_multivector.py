@@ -10,12 +10,12 @@ from numba.extending import NativeValue
 try:
     # module locations as of numba 0.49.0
     import numba.np.numpy_support as _numpy_support
-    from numba.core.imputils import impl_ret_borrowed
+    from numba.core.imputils import impl_ret_borrowed, lower_constant
     from numba.core import cgutils, types
 except ImportError:
     # module locations prior to numba 0.49.0
     import numba.numpy_support as _numpy_support
-    from numba.targets.imputils import impl_ret_borrowed
+    from numba.targets.imputils import impl_ret_borrowed, lower_constant
     from numba import cgutils, types
 
 from .._multivector import MultiVector
@@ -46,7 +46,8 @@ class MultiVectorType(types.Type):
 
 @numba.extending.typeof_impl.register(MultiVector)
 def _typeof_MultiVector(val: MultiVector, c) -> MultiVectorType:
-    return MultiVectorType(dtype=val.value.dtype)
+    val._numba_type_ = MultiVectorType(dtype=val.value.dtype)
+    return val._numba_type_
 
 
 @numba.extending.register_model(MultiVectorType)
@@ -75,6 +76,18 @@ def impl_MultiVector(context, builder, sig, args):
     mv.layout = layout
     mv.value = value
     return impl_ret_borrowed(context, builder, sig.return_type, mv._getvalue())
+
+
+@lower_constant(MultiVectorType)
+def lower_constant_MultiVector(context, builder, typ: MultiVectorType, pyval: MultiVector):
+    value = context.get_constant_generic(builder, typ.value_type, pyval.value)
+    layout = context.get_constant_generic(builder, typ.layout_type, pyval.layout)
+    return impl_ret_borrowed(
+        context,
+        builder,
+        typ,
+        cgutils.pack_struct(builder, (layout, value)),
+    )
 
 
 @numba.extending.unbox(MultiVectorType)
