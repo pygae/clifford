@@ -44,10 +44,23 @@ class MultiVectorType(types.Type):
         return LayoutType()
 
 
-@numba.extending.typeof_impl.register(MultiVector)
-def _typeof_MultiVector(val: MultiVector, c) -> MultiVectorType:
-    val._numba_type_ = MultiVectorType(dtype=val.value.dtype)
-    return val._numba_type_
+# The docs say we should use register a function to determine the numba type
+# with `@numba.extending.typeof_impl.register(MultiVector)`, but this is way
+# too slow (https://github.com/numba/numba/issues/5839). Instead, we use the
+# undocumented `_numba_type_` attribute, and use our own cache. In future
+# this may need to be a weak cache, but for now the objects are tiny anyway.
+_cache = {}
+
+@property
+def _numba_type_(self):
+    dt = self.value.dtype
+    try:
+        return _cache[dt]
+    except KeyError:
+        ret = _cache[dt] = MultiVectorType(dtype=dt)
+        return ret
+
+MultiVector._numba_type_ = _numba_type_
 
 
 @numba.extending.register_model(MultiVectorType)
