@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 import sparse
 
+
 # TODO: move some of these functions to this file if they're not useful anywhere
 # else
 import clifford as cf
