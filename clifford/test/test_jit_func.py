@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from ..jit_func import jit_func
+from clifford.experimental.jit_func import jit_func
 
 
 class TestJITFunc:

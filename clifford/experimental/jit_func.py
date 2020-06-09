@@ -13,8 +13,8 @@ import functools
 import numpy as np
 from numba.extending import overload
 from numba import types
-from ._numba_utils import njit
-from ._ast_transformer import DecoratorRemover, GATransformer
+from .._numba_utils import njit
+from .._ast_transformer import DecoratorRemover, GATransformer
 
 
 def get_as_ga_vector_func(layout):
