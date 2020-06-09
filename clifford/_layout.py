@@ -5,9 +5,6 @@ import warnings
 import numpy as np
 import sparse
 
-from numba.extending import overload
-from numba import types
-
 
 # TODO: move some of these functions to this file if they're not useful anywhere
 # else
@@ -177,241 +174,6 @@ def construct_graded_mt(
     )
     dims = len(blade_order.grades)
     return sparse.COO(coords=coords, data=mult_table_vals, shape=(dims, dims, dims))
-
-
-def get_as_ga_vector_func(layout):
-    """
-    Returns a function that converts a scalar into a GA value vector
-    for the given algebra
-    """
-    scalar_index = layout._basis_blade_order.bitmap_to_index[0]
-    ndims = layout.gaDims
-    @_numba_utils.njit
-    def as_ga_value_vector(x):
-        op = np.zeros(ndims)
-        op[scalar_index] = x
-        return op
-    return as_ga_value_vector
-
-
-def get_overload_add(layout):
-    """
-    Returns an overloaded JITed function that works on
-    MultiVector value arrays
-    """
-    scalar_index = layout._basis_blade_order.bitmap_to_index[0]
-
-    def ga_add(a, b):
-        # dummy function to overload
-        pass
-
-    @overload(ga_add, inline='always')
-    def ol_ga_add(a, b):
-        if isinstance(a, types.abstract.Number) and isinstance(b, types.Array):
-            def impl(a, b):
-                op = b.astype(np.float32)
-                op[scalar_index] += a
-                return op
-            return impl
-        elif isinstance(a, types.Array) and isinstance(b, types.abstract.Number):
-            def impl(a, b):
-                op = a.astype(np.float32)
-                op[scalar_index] += b
-                return op
-            return impl
-        else:
-            def impl(a, b):
-                return a + b
-            return impl
-
-    return ga_add
-
-
-def get_overload_sub(layout):
-    """
-    Returns an overloaded JITed function that works on
-    MultiVector value arrays
-    """
-    scalar_index = layout._basis_blade_order.bitmap_to_index[0]
-
-    def ga_sub(a, b):
-        # dummy function to overload
-        pass
-
-    @overload(ga_sub, inline='always')
-    def ol_ga_sub(a, b):
-        if isinstance(a, types.abstract.Number) and isinstance(b, types.Array):
-            def impl(a, b):
-                op = -b.astype(np.float32)
-                op[scalar_index] += a
-                return op
-            return impl
-        elif isinstance(a, types.Array) and isinstance(b, types.abstract.Number):
-            def impl(a, b):
-                op = a.astype(np.float32)
-                op[scalar_index] -= b
-                return op
-            return impl
-        else:
-            def impl(a, b):
-                return a - b
-            return impl
-
-    return ga_sub
-
-
-def get_overload_mul(layout):
-    """
-    Returns an overloaded JITed function that works on
-    MultiVector value arrays
-    """
-    def ga_mul(a, b):
-        # dummy function to overload
-        pass
-
-    gmt_func = layout.gmt_func
-    @overload(ga_mul, inline='always')
-    def ol_ga_mul(a, b):
-        if isinstance(a, types.Array) and isinstance(b, types.Array):
-            def impl(a, b):
-                return gmt_func(a, b)
-            return impl
-        else:
-            def impl(a, b):
-                return a*b
-            return impl
-
-    return ga_mul
-
-
-def get_overload_xor(layout):
-    """
-    Returns an overloaded JITed function that works on
-    MultiVector value arrays
-    """
-    def ga_xor(a, b):
-        # dummy function to overload
-        pass
-
-    as_ga = layout.as_ga_value_vector_func
-    omt_func = layout.omt_func
-    @overload(ga_xor, inline='always')
-    def ol_ga_xor(a, b):
-        if isinstance(a, types.Array) and isinstance(b, types.Array):
-            def impl(a, b):
-                return omt_func(a, b)
-            return impl
-        elif isinstance(a, types.Array) and isinstance(b, types.abstract.Number):
-            def impl(a, b):
-                return omt_func(a, as_ga(b))
-            return impl
-        elif isinstance(a, types.abstract.Number) and isinstance(b, types.Array):
-            def impl(a, b):
-                return omt_func(as_ga(a), b)
-            return impl
-        else:
-            def impl(a, b):
-                return a^b
-            return impl
-
-    return ga_xor
-
-
-def get_overload_or(layout):
-    """
-    Returns an overloaded JITed function that works on
-    MultiVector value arrays
-    """
-    def ga_or(a, b):
-        # dummy function to overload
-        pass
-
-    as_ga = layout.as_ga_value_vector_func
-    imt_func = layout.imt_func
-    @overload(ga_or, inline='always')
-    def ol_ga_or(a, b):
-        if isinstance(a, types.Array) and isinstance(b, types.Array):
-            def impl(a, b):
-                return imt_func(a, b)
-            return impl
-        elif isinstance(a, types.Array) and isinstance(b, types.abstract.Number):
-            def impl(a, b):
-                return imt_func(a, as_ga(b))
-            return impl
-        elif isinstance(a, types.abstract.Number) and isinstance(b, types.Array):
-            def impl(a, b):
-                return imt_func(as_ga(a), b)
-            return impl
-        else:
-            def impl(a, b):
-                return a|b
-            return impl
-
-    return ga_or
-
-
-def get_overload_reverse(layout):
-    """
-    Returns an overloaded JITed function that works on
-    MultiVector value arrays
-    """
-    def ga_rev(x):
-        # dummy function to overload
-        pass
-
-    adjoint_func = layout.adjoint_func
-    @overload(ga_rev, inline='always')
-    def ol_ga_rev(x):
-        if isinstance(x, types.Array):
-            def impl(x):
-                return adjoint_func(x)
-            return impl
-        else:
-            def impl(x):
-                return ~x
-            return impl
-
-    return ga_rev
-
-
-def get_project_to_grade_func(layout):
-    """
-    Returns a function that projects a multivector to a given grade
-    """
-    gradeList = np.array(layout.gradeList, dtype=int)
-    ndims = layout.gaDims
-    @_numba_utils.njit
-    def project_to_grade(A, g):
-        op = np.zeros(ndims)
-        for i in range(ndims):
-            if gradeList[i] == g:
-                op[i] = A[i]
-        return op
-    return project_to_grade
-
-
-def get_overload_call(layout):
-    """
-    Returns an overloaded JITed function that works on
-    MultiVector value arrays
-    """
-    def ga_call(a, b):
-        # dummy function to overload
-        pass
-
-    project_to_grade = layout.project_to_grade_func
-    @overload(ga_call, inline='always')
-    def ol_ga_call(a, b):
-        if isinstance(a, types.Array) and isinstance(b, types.Integer):
-            def impl(a, b):
-                return project_to_grade(a, b)
-            return impl
-        else:
-            def impl(a, b):
-                return a(b)
-            return impl
-
-    return ga_call
 
 
 class Layout(object):
@@ -611,11 +373,6 @@ class Layout(object):
         self.dual_func
         self.vee_func
         self.inv_func
-        self.overload_mul_func
-        self.overload_xor_func
-        self.overload_or_func
-        self.overload_add_func
-        self.overload_sub_func
 
     @_cached_property
     def gmt(self):
@@ -817,10 +574,6 @@ class Layout(object):
         return comp_func
 
     @_cached_property
-    def as_ga_value_vector_func(self):
-        return get_as_ga_vector_func(self)
-
-    @_cached_property
     def gmt_func(self):
         return get_mult_function(self.gmt, self.gradeList)
 
@@ -843,38 +596,6 @@ class Layout(object):
     @_cached_property
     def right_complement_func(self):
         return self._gen_complement_func(omt=self.omt.T)
-
-    @_cached_property
-    def overload_mul_func(self):
-        return get_overload_mul(self)
-
-    @_cached_property
-    def overload_xor_func(self):
-        return get_overload_xor(self)
-
-    @_cached_property
-    def overload_or_func(self):
-        return get_overload_or(self)
-
-    @_cached_property
-    def overload_add_func(self):
-        return get_overload_add(self)
-
-    @_cached_property
-    def overload_sub_func(self):
-        return get_overload_sub(self)
-
-    @_cached_property
-    def overload_reverse_func(self):
-        return get_overload_reverse(self)
-
-    @_cached_property
-    def project_to_grade_func(self):
-        return get_project_to_grade_func(self)
-
-    @_cached_property
-    def overload_call_func(self):
-        return get_overload_call(self)
 
     @_cached_property
     def adjoint_func(self):
