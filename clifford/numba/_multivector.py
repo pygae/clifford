@@ -121,10 +121,13 @@ def box_MultiVector(typ: MultiVectorType, val: NativeValue, c) -> MultiVector:
     mv = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
     mv_obj = c.box(typ.value_type, mv.value)
     layout_obj = c.box(typ.layout_type, mv.layout)
-    class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(MultiVector))
+
+    # All the examples use `c.pyapi.unserialize(c.pyapi.serialize_object(MultiVector))` here.
+    # Doing so is much slower, as it incurs pickle. This is probably safe.
+    class_obj_ptr = c.context.add_dynamic_addr(c.builder, id(MultiVector), info=MultiVector.__name__)
+    class_obj = c.builder.bitcast(class_obj_ptr, c.pyapi.pyobj)
     res = c.pyapi.call_function_objargs(class_obj, (layout_obj, mv_obj))
     c.pyapi.decref(mv_obj)
-    c.pyapi.decref(class_obj)
     c.pyapi.decref(layout_obj)
     return res
 
