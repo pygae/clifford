@@ -117,7 +117,8 @@ def linear_operator_as_matrix(func, input_blades, output_blades):
     ndimout = len(output_blades)
     mat = np.zeros((ndimout, ndimin))
     for i, b in enumerate(input_blades):
-        mat[:, i] = np.array([func(b)[j] for j in output_blades])
+        b_result = func(b)
+        mat[:, i] = np.array([b_result[j] for j in output_blades])
     return mat
 
 
