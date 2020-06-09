@@ -3,7 +3,7 @@ import ast
 
 
 class DecoratorRemover(ast.NodeTransformer):
-    """ Strip decorators from FunctionDefs"""
+    """ Strip decorators from top-level FunctionDefs"""
     def visit_FunctionDef(self, node):
         node.decorator_list = []
         return node
@@ -52,12 +52,9 @@ class GATransformer(ast.NodeTransformer):
 
     def visit_Call(self, node):
         if len(node.args) == 1:
-            return ast.Call(
-                func=ast.Name(id='ga_call', ctx=ast.Load()),
-                args=[self.visit(node.func), self.visit(node.args[0])],
-                keywords=[]
-            )
-        else:
-            node.func = self.visit(node.func)
-            node.args = [self.visit(a) for a in node.args]
+            node = self.generic_visit(node)
+            node.args = [node.func] + node.args
+            node.func = ast.Name(id='ga_call', ctx=ast.Load())
             return node
+        else:
+            return self.generic_visit(node)

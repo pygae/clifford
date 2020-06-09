@@ -65,17 +65,13 @@ class jit_func(object):
                        'ga_call': self.layout.overload_call_func}
 
         # Add the passed multivector and scalar constants
-        for k, v in self.mv_constants.items():
-            locals_dict[k] = v.value
-        for k, v in self.scalar_constants.items():
-            locals_dict[k] = v
+        locals_dict.update(self.mv_constants)
+        locals_dict.update(self.scalar_constants)
 
         # TODO: Work out a better way to deal with changes to globals
         globs = {}
-        for k, v in globals().items():
-            globs[k] = v
-        for k, v in locals_dict.items():
-            globs[k] = v
+        globs.update(globals)
+        globs.update(locals_dict)
 
         # Compile the function
         co = compile(tree, '<ast>', "exec")
