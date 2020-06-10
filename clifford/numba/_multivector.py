@@ -155,6 +155,8 @@ def ga_add(a, b):
             return a.layout.MultiVector(op)
         return impl
     elif isinstance(a, MultiVectorType) and isinstance(b, MultiVectorType):
+        if a.layout_type != b.layout_type:
+            raise numba.TypingError("MultiVector objects belong to different layouts")
         def impl(a, b):
             return a.layout.MultiVector(a.value + b.value)
         return impl
@@ -177,9 +179,11 @@ def ga_sub(a, b):
             return a.layout.MultiVector(op)
         return impl
     elif isinstance(a, MultiVectorType) and isinstance(b, MultiVectorType):
-            def impl(a, b):
-                return a.layout.MultiVector(a.value - b.value)
-            return impl
+        if a.layout_type != b.layout_type:
+            raise numba.TypingError("MultiVector objects belong to different layouts")
+        def impl(a, b):
+            return MultiVector(a.layout, a.value - b.value)
+        return impl
 
 
 @numba.extending.overload(operator.mul)
@@ -193,7 +197,10 @@ def ga_mul(a, b):
             return a.layout.MultiVector(a.value*b)
         return impl
     elif isinstance(a, MultiVectorType) and isinstance(b, MultiVectorType):
+        if a.layout_type != b.layout_type:
+            raise numba.TypingError("MultiVector objects belong to different layouts")
         gmt_func = a.layout_type.obj.gmt_func
         def impl(a, b):
             return a.layout.MultiVector(gmt_func(a.value, b.value))
         return impl
+
