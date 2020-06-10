@@ -5,6 +5,7 @@ For now, this just supports .value wrapping / unwrapping
 """
 import numba
 import operator
+import numpy as np
 from numba.extending import NativeValue
 import llvmlite.ir
 
@@ -214,6 +215,14 @@ def ga_xor(a, b):
         def impl(a, b):
             return a.layout.MultiVector(omt_func(a.value, b.value))
         return impl
+    elif isinstance(a, MultiVectorType) and isinstance(b, types.abstract.Number):
+        def impl(a, b):
+            return a.layout.MultiVector(a.value*b)
+        return impl
+    elif isinstance(a, types.abstract.Number) and isinstance(b, MultiVectorType):
+        def impl(a, b):
+            return b.layout.MultiVector(b.value*a)
+        return impl
 
 
 @numba.extending.overload(operator.or_)
@@ -224,4 +233,12 @@ def ga_or(a, b):
         imt_func = a.layout_type.obj.imt_func
         def impl(a, b):
             return a.layout.MultiVector(imt_func(a.value, b.value))
+        return impl
+    elif isinstance(a, MultiVectorType) and isinstance(b, types.abstract.Number):
+        def impl(a, b):
+            return a.layout.MultiVector(np.zeros_like(a.value))
+        return impl
+    elif isinstance(a, types.abstract.Number) and isinstance(b, MultiVectorType):
+        def impl(a, b):
+            return b.layout.MultiVector(np.zeros_like(b.value))
         return impl

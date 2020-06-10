@@ -60,9 +60,10 @@ class TestBasic:
 
 
 class TestOverloads:
-    @pytest.mark.parametrize("op", [operator.add, operator.sub,
-                                    operator.mul, operator.xor,
-                                    operator.or_])
+    @pytest.mark.parametrize("op", [
+        pytest.param(getattr(operator, op), id=op)
+        for op in ['add', 'sub', 'mul', 'xor', 'or_']
+    ])
     @pytest.mark.parametrize("a,b", [(e1, e2), (1, e1), (e1, 1),
                                      (0.5, 0.5 * e1), (0.5 * e1, 0.5),
                                      (e1, 0.5), (0.5, e1),
