@@ -3,7 +3,6 @@ Numba support for MultiVector objects.
 
 For now, this just supports .value wrapping / unwrapping
 """
-import numpy as np
 import numba
 from numba.extending import NativeValue
 import llvmlite.ir
@@ -27,22 +26,20 @@ __all__ = ['MultiVectorType']
 
 
 class MultiVectorType(types.Type):
-    def __init__(self, dtype: np.dtype):
-        assert isinstance(dtype, np.dtype)
-        self.dtype = dtype
-        super().__init__(name='MultiVector[{!r}]'.format(numba.from_dtype(dtype)))
+    def __init__(self, layout: LayoutType, dtype: types.DType):
+        self.layout_type = layout
+        self._scalar_type = dtype
+        super().__init__(name='MultiVector({!r}, {!r})'.format(
+            self.layout_type, self._scalar_type
+        ))
 
     @property
     def key(self):
-        return self.dtype
+        return self.layout_type, self._scalar_type
 
     @property
     def value_type(self):
-        return numba.from_dtype(self.dtype)[:]
-
-    @property
-    def layout_type(self):
-        return LayoutType()
+        return self._scalar_type[:]
 
 
 # The docs say we should use register a function to determine the numba type
@@ -50,15 +47,22 @@ class MultiVectorType(types.Type):
 # too slow (https://github.com/numba/numba/issues/5839). Instead, we use the
 # undocumented `_numba_type_` attribute, and use our own cache. In future
 # this may need to be a weak cache, but for now the objects are tiny anyway.
-_cache = {}
 
 @property
 def _numba_type_(self):
+    layout_type = self.layout._numba_type_
+
+    cache = layout_type._cache
     dt = self.value.dtype
+
+    # now use the dtype to key that cache.
     try:
-        return _cache[dt]
+        return cache[dt]
     except KeyError:
-        ret = _cache[dt] = MultiVectorType(dtype=dt)
+        # Computing and hashing `dtype_type` is slow, so we do not use it as a
+        # hash key. The raw numpy dtype is much faster to use as a key.
+        dtype_type = _numpy_support.from_dtype(dt)
+        ret = cache[dt] = MultiVectorType(layout_type, dtype_type)
         return ret
 
 MultiVector._numba_type_ = _numba_type_
@@ -78,7 +82,7 @@ class MultiVectorModel(numba.extending.models.StructModel):
 def type_MultiVector(context):
     def typer(layout, value):
         if isinstance(layout, LayoutType) and isinstance(value, types.Array):
-            return MultiVectorType(_numpy_support.as_dtype(value.dtype))
+            return MultiVectorType(layout, value.dtype)
     return typer
 
 

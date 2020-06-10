@@ -4,59 +4,65 @@ from numba.extending import NativeValue
 import llvmlite.ir
 try:
     # module locations as of numba 0.49.0
-    from numba.core import cgutils, types
+    from numba.core import types
     from numba.core.imputils import lower_constant
 except ImportError:
     # module locations prior to numba 0.49.0
-    from numba import cgutils, types
+    from numba import types
     from numba.targets.imputils import lower_constant
 
-from .._layout import Layout
+from .._layout import Layout, _cached_property
+from .._layout_helpers import layout_short_name
 from .._multivector import MultiVector
 
 
-opaque_layout = types.Opaque('Opaque(Layout)')
+# In future we want to store some of the layout in the type (the `order` etc),
+# but store the `names` in the layout instances, so that we can reuse jitted
+# functions across different basis vector names.
 
-
-class LayoutType(types.Type):
-    def __init__(self):
-        super().__init__("LayoutType")
+class LayoutType(types.Dummy):
+    def __init__(self, layout):
+        self.obj = layout
+        # cache of multivector types for this layout
+        self._cache = {}
+        layout_name = layout_short_name(layout)
+        if layout_name is not None:
+            name = "LayoutType({})".format(layout_name)
+        else:
+            name = "LayoutType({!r})".format(layout)
+        super().__init__(name)
 
 
 @numba.extending.register_model(LayoutType)
-class LayoutModel(numba.extending.models.StructModel):
-    def __init__(self, dmm, fe_typ):
-        members = [
-            ('obj', opaque_layout),
-        ]
-        super().__init__(dmm, fe_typ, members)
+class LayoutModel(numba.extending.models.OpaqueModel):
+    pass
 
+# The docs say we should use register a function to determine the numba type
+# with `@numba.extending.typeof_impl.register(LayoutType)`, but this is way
+# too slow (https://github.com/numba/numba/issues/5839). Instead, we use the
+# undocumented `_numba_type_` attribute, and use our own cache.
 
-@numba.extending.typeof_impl.register(Layout)
-def _typeof_Layout(val: Layout, c) -> LayoutType:
-    return LayoutType()
+@_cached_property
+def _numba_type_(self):
+    return LayoutType(self)
 
+Layout._numba_type_ = _numba_type_
 
-# Derived from the `Dispatcher` boxing
 
 @lower_constant(LayoutType)
 def lower_constant_Layout(context, builder, typ: LayoutType, pyval: Layout) -> llvmlite.ir.Value:
-    layout = cgutils.create_struct_proxy(typ)(context, builder)
-    layout.obj = context.add_dynamic_addr(builder, id(pyval), info=type(pyval).__name__)
-    return layout._getvalue()
+    return context.get_dummy_value()
 
 
 @numba.extending.unbox(LayoutType)
 def unbox_Layout(typ: LayoutType, obj: Layout, c) -> NativeValue:
-    layout = cgutils.create_struct_proxy(typ)(c.context, c.builder)
-    layout.obj = obj
-    return NativeValue(layout._getvalue())
+    return NativeValue(c.context.get_dummy_value())
 
+# Derived from the `Dispatcher` boxing
 
 @numba.extending.box(LayoutType)
 def box_Layout(typ: LayoutType, val: llvmlite.ir.Value, c) -> Layout:
-    val = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
-    obj = val.obj
+    obj = c.context.add_dynamic_addr(c.builder, id(typ.obj), info=typ.name)
     c.pyapi.incref(obj)
     return obj
 
