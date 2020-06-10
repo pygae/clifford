@@ -143,15 +143,17 @@ numba.extending.make_attribute_wrapper(MultiVectorType, 'layout', 'layout')
 def ga_add(a, b):
     if isinstance(a, types.abstract.Number) and isinstance(b, MultiVectorType):
         scalar_index = b.layout_type.obj._basis_blade_order.bitmap_to_index[0]
+        ret_type = np.result_type(_numpy_support.as_dtype(a), _numpy_support.as_dtype(b.value_type.dtype))
         def impl(a, b):
-            op = b.value.copy()
+            op = b.value.astype(ret_type)
             op[scalar_index] += a
             return b.layout.MultiVector(op)
         return impl
     elif isinstance(a, MultiVectorType) and isinstance(b, types.abstract.Number):
         scalar_index = a.layout_type.obj._basis_blade_order.bitmap_to_index[0]
+        ret_type = np.result_type(_numpy_support.as_dtype(a.value_type.dtype), _numpy_support.as_dtype(b))
         def impl(a, b):
-            op = a.value.copy()
+            op = a.value.astype(ret_type)
             op[scalar_index] += b
             return a.layout.MultiVector(op)
         return impl
@@ -167,15 +169,17 @@ def ga_add(a, b):
 def ga_sub(a, b):
     if isinstance(a, types.abstract.Number) and isinstance(b, MultiVectorType):
         scalar_index = b.layout_type.obj._basis_blade_order.bitmap_to_index[0]
+        ret_type = np.result_type(_numpy_support.as_dtype(a), _numpy_support.as_dtype(b.value_type.dtype))
         def impl(a, b):
-            op = -b.value
+            op = -b.value.astype(ret_type)
             op[scalar_index] += a
             return b.layout.MultiVector(op)
         return impl
     elif isinstance(a, MultiVectorType) and isinstance(b, types.abstract.Number):
         scalar_index = a.layout_type.obj._basis_blade_order.bitmap_to_index[0]
+        ret_type = np.result_type(_numpy_support.as_dtype(a.value_type.dtype), _numpy_support.as_dtype(b))
         def impl(a, b):
-            op = a.value.copy()
+            op = a.value.astype(ret_type)
             op[scalar_index] -= b
             return a.layout.MultiVector(op)
         return impl
