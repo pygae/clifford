@@ -141,9 +141,9 @@ numba.extending.make_attribute_wrapper(MultiVectorType, 'layout', 'layout')
 @numba.extending.overload(operator.add)
 def ga_add(a, b):
     if isinstance(a, types.abstract.Number) and isinstance(b, MultiVectorType):
+        scalar_index = b.layout_type.obj._basis_blade_order.bitmap_to_index[0]
         def impl(a, b):
             op = b.value
-            scalar_index = b.layout._basis_blade_order.bitmap_to_index[0]
             op[scalar_index] += a
             return MultiVector(layout=b.layout, value=op)
         return impl
@@ -151,7 +151,6 @@ def ga_add(a, b):
         scalar_index = a.layout_type.obj._basis_blade_order.bitmap_to_index[0]
         def impl(a, b):
             op = a.value
-            scalar_index = a.layout._basis_blade_order.bitmap_to_index[0]
             op[scalar_index] += b
             return MultiVector(layout=a.layout, value=op)
         return impl
@@ -168,16 +167,16 @@ def ga_add(a, b):
 @numba.extending.overload(operator.sub)
 def ga_sub(a, b):
     if isinstance(a, types.abstract.Number) and isinstance(b, MultiVectorType):
+        scalar_index = b.layout_type.obj._basis_blade_order.bitmap_to_index[0]
         def impl(a, b):
             op = -b.value
-            scalar_index = b.layout._basis_blade_order.bitmap_to_index[0]
             op[scalar_index] += a
             return MultiVector(layout=b.layout, value=op)
         return impl
     elif isinstance(a, MultiVectorType) and isinstance(b, types.abstract.Number):
+        scalar_index = a.layout_type.obj._basis_blade_order.bitmap_to_index[0]
         def impl(a, b):
             op = a.value
-            scalar_index = a.layout._basis_blade_order.bitmap_to_index[0]
             op[scalar_index] -= b
             return MultiVector(layout=a.layout, value=op)
         return impl
@@ -202,9 +201,10 @@ def ga_mul(a, b):
             return MultiVector(layout=a.layout, value=a.value*b)
         return impl
     elif isinstance(a, MultiVectorType) and isinstance(b, MultiVectorType):
-            def impl(a, b):
-                return MultiVector(a.layout, a.layout.gmt_func(a, b))
-            return impl
+        gmt_func = a.layout_type.obj.gmt_func
+        def impl(a, b):
+            return MultiVector(a.layout, gmt_func(a.value, b.value))
+        return impl
     else:
         def impl(a, b):
             return a * b
