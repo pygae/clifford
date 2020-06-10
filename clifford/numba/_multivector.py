@@ -6,6 +6,7 @@ For now, this just supports .value wrapping / unwrapping
 import numpy as np
 import numba
 from numba.extending import NativeValue
+import llvmlite.ir
 
 try:
     # module locations as of numba 0.49.0
@@ -92,7 +93,7 @@ def impl_MultiVector(context, builder, sig, args):
 
 
 @lower_constant(MultiVectorType)
-def lower_constant_MultiVector(context, builder, typ: MultiVectorType, pyval: MultiVector):
+def lower_constant_MultiVector(context, builder, typ: MultiVectorType, pyval: MultiVector) -> llvmlite.ir.Value:
     mv = cgutils.create_struct_proxy(typ)(context, builder)
     mv.value = context.get_constant_generic(builder, typ.value_type, pyval.value)
     mv.layout = context.get_constant_generic(builder, typ.layout_type, pyval.layout)
@@ -113,7 +114,7 @@ def unbox_MultiVector(typ: MultiVectorType, obj: MultiVector, c) -> NativeValue:
 
 
 @numba.extending.box(MultiVectorType)
-def box_MultiVector(typ: MultiVectorType, val: NativeValue, c) -> MultiVector:
+def box_MultiVector(typ: MultiVectorType, val: llvmlite.ir.Value, c) -> MultiVector:
     mv = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
     mv_obj = c.box(typ.value_type, mv.value)
     layout_obj = c.box(typ.layout_type, mv.layout)

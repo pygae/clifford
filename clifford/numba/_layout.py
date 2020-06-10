@@ -1,5 +1,7 @@
 import numba
 import numba.extending
+from numba.extending import NativeValue
+import llvmlite.ir
 try:
     # module locations as of numba 0.49.0
     from numba.core import cgutils, types
@@ -38,24 +40,24 @@ def _typeof_Layout(val: Layout, c) -> LayoutType:
 # Derived from the `Dispatcher` boxing
 
 @lower_constant(LayoutType)
-def lower_constant_dispatcher(context, builder, typ, pyval):
+def lower_constant_Layout(context, builder, typ: LayoutType, pyval: Layout) -> llvmlite.ir.Value:
     layout = cgutils.create_struct_proxy(typ)(context, builder)
     layout.obj = context.add_dynamic_addr(builder, id(pyval), info=type(pyval).__name__)
     return layout._getvalue()
 
 
 @numba.extending.unbox(LayoutType)
-def unbox_Layout(typ, obj, context):
-    layout = cgutils.create_struct_proxy(typ)(context.context, context.builder)
+def unbox_Layout(typ: LayoutType, obj: Layout, c) -> NativeValue:
+    layout = cgutils.create_struct_proxy(typ)(c.context, c.builder)
     layout.obj = obj
-    return numba.extending.NativeValue(layout._getvalue())
+    return NativeValue(layout._getvalue())
 
 
 @numba.extending.box(LayoutType)
-def box_Layout(typ, val, context):
-    val = cgutils.create_struct_proxy(typ)(context.context, context.builder, value=val)
+def box_Layout(typ: LayoutType, val: llvmlite.ir.Value, c) -> Layout:
+    val = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
     obj = val.obj
-    context.pyapi.incref(obj)
+    c.pyapi.incref(obj)
     return obj
 
 # methods
