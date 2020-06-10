@@ -204,3 +204,24 @@ def ga_mul(a, b):
             return a.layout.MultiVector(gmt_func(a.value, b.value))
         return impl
 
+
+@numba.extending.overload(operator.xor)
+def ga_xor(a, b):
+    if isinstance(a, MultiVectorType) and isinstance(b, MultiVectorType):
+        if a.layout_type != b.layout_type:
+            raise numba.TypingError("MultiVector objects belong to different layouts")
+        omt_func = a.layout_type.obj.omt_func
+        def impl(a, b):
+            return a.layout.MultiVector(omt_func(a.value, b.value))
+        return impl
+
+
+@numba.extending.overload(operator.or_)
+def ga_or(a, b):
+    if isinstance(a, MultiVectorType) and isinstance(b, MultiVectorType):
+        if a.layout_type != b.layout_type:
+            raise numba.TypingError("MultiVector objects belong to different layouts")
+        imt_func = a.layout_type.obj.imt_func
+        def impl(a, b):
+            return a.layout.MultiVector(imt_func(a.value, b.value))
+        return impl
