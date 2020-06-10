@@ -48,3 +48,10 @@ class TestBasic:
             return cf.MultiVector(a.layout, a.value + e1.value)
 
         assert add_e1(e2) == e1 + e2
+
+    def test_multivector_shorthand(self):
+        @numba.njit
+        def double(a):
+            return a.layout.MultiVector(a.value*2)
+
+        assert double(e2) == 2 * e2
