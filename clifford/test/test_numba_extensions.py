@@ -77,4 +77,7 @@ class TestOverloads:
         ab_alt = overload(a, b)
         assert ab == ab_alt
         assert ab.layout is ab_alt.layout
-        assert ab.value.dtype == ab_alt.value.dtype
+        # numba disagrees with numpy about what type `int` is on windows, so we
+        # can't directly compare the dtypes. We only care that the float / int
+        # state is kept anyway.
+        assert ab.value.dtype.kind == ab_alt.value.dtype.kind
