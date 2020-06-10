@@ -1,7 +1,9 @@
 import numba
+import operator
 
 from clifford.g3c import layout, e1, e2
 import clifford as cf
+import pytest
 
 
 @numba.njit
@@ -55,3 +57,27 @@ class TestBasic:
             return a.layout.MultiVector(a.value*2)
 
         assert double(e2) == 2 * e2
+
+
+class TestOverloads:
+    @pytest.mark.parametrize("op", [
+        pytest.param(getattr(operator, op), id=op)
+        for op in ['add', 'sub', 'mul', 'xor', 'or_']
+    ])
+    @pytest.mark.parametrize("a,b", [(e1, e2), (1, e1), (e1, 1),
+                                     (0.5, 0.5 * e1), (0.5 * e1, 0.5),
+                                     (e1, 0.5), (0.5, e1),
+                                     (1, 0.5*e1), (0.5*e1, 1)])
+    def test_overload(self, op, a, b):
+        @numba.njit
+        def overload(a, b):
+            return op(a, b)
+
+        ab = op(a, b)
+        ab_alt = overload(a, b)
+        assert ab == ab_alt
+        assert ab.layout is ab_alt.layout
+        # numba disagrees with numpy about what type `int` is on windows, so we
+        # can't directly compare the dtypes. We only care that the float / int
+        # state is kept anyway.
+        assert ab.value.dtype.kind == ab_alt.value.dtype.kind
