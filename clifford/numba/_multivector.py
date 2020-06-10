@@ -162,8 +162,9 @@ def ga_add(a, b):
             return a + b
         return impl
 
+
 @numba.extending.overload(operator.sub)
-def ga_add(a, b):
+def ga_sub(a, b):
     if isinstance(a, types.abstract.Number) and isinstance(b, MultiVectorType):
         def impl(a, b):
             op = -b.value
@@ -185,4 +186,24 @@ def ga_add(a, b):
     else:
         def impl(a, b):
             return a + b
+        return impl
+
+
+@numba.extending.overload(operator.mul)
+def ga_mul(a, b):
+    if isinstance(a, types.abstract.Number) and isinstance(b, MultiVectorType):
+        def impl(a, b):
+            return MultiVector(layout=b.layout, value=a*b.value)
+        return impl
+    elif isinstance(a, MultiVectorType) and isinstance(b, types.abstract.Number):
+        def impl(a, b):
+            return MultiVector(layout=a.layout, value=a.value*b)
+        return impl
+    elif isinstance(a, MultiVectorType) and isinstance(b, MultiVectorType):
+            def impl(a, b):
+                return MultiVector(a.layout, a.layout.gmt_func(a, b))
+            return impl
+    else:
+        def impl(a, b):
+            return a * b
         return impl
