@@ -10,6 +10,7 @@ except ImportError:
     from numba.targets.imputils import lower_constant
 
 from .._layout import Layout
+from .._multivector import MultiVector
 
 
 opaque_layout = types.Opaque('Opaque(Layout)')
@@ -56,3 +57,11 @@ def box_Layout(typ, val, context):
     obj = val.obj
     context.pyapi.incref(obj)
     return obj
+
+# methods
+
+@numba.extending.overload_method(LayoutType, 'MultiVector')
+def Layout_MultiVector(self, value):
+    def impl(self, value):
+        return MultiVector(self, value)
+    return impl
