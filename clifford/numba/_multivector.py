@@ -182,7 +182,7 @@ def ga_sub(a, b):
         if a.layout_type != b.layout_type:
             raise numba.TypingError("MultiVector objects belong to different layouts")
         def impl(a, b):
-            return MultiVector(a.layout, a.value - b.value)
+            return a.layout.MultiVector(a.value - b.value)
         return impl
 
 
