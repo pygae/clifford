@@ -7,6 +7,7 @@ import numpy as np
 import clifford as cf
 from . import general_exp
 from . import _settings
+from ._layout_helpers import layout_short_name
 
 
 class MultiVector(object):
@@ -507,11 +508,12 @@ class MultiVector(object):
         else:
             dtype_str = None
 
-        if hasattr(self.layout, '__name__') and '__module__' in self.layout.__dict__:
-            fmt = "{l.__module__}.{l.__name__}.MultiVector({v!r}{d})"
+        l_name = layout_short_name(self.layout)
+        args = dict(v=list(self.value), d=dtype_str)
+        if l_name is not None:
+            return "{l}.MultiVector({v!r}{d})".format(l=l_name, **args)
         else:
-            fmt = "{l!r}.MultiVector({v!r}{d})"
-        return fmt.format(l=self.layout, v=list(self.value), d=dtype_str)
+            return "{l!r}.MultiVector({v!r}{d})".format(l=self.layout, **args)
 
     def _repr_pretty_(self, p, cycle):
         if cycle:
@@ -521,8 +523,9 @@ class MultiVector(object):
             p.text(str(self))
             return
 
-        if hasattr(self.layout, '__name__') and '__module__' in self.layout.__dict__:
-            prefix = "{l.__module__}.{l.__name__}.MultiVector(".format(l=self.layout)
+        l_name = layout_short_name(self.layout)
+        if l_name is not None:
+            prefix = "{}.MultiVector(".format(l_name)
             include_layout = False
         else:
             include_layout = True
