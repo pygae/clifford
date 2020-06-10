@@ -59,7 +59,7 @@ class TestBasic:
         assert double(e2) == 2 * e2
 
 
-class TestOverloads:
+class TestOperators:
     @pytest.mark.parametrize("op", [
         pytest.param(getattr(operator, op), id=op)
         for op in ['add', 'sub', 'mul', 'xor', 'or_']
@@ -68,7 +68,7 @@ class TestOverloads:
                                      (0.5, 0.5 * e1), (0.5 * e1, 0.5),
                                      (e1, 0.5), (0.5, e1),
                                      (1, 0.5*e1), (0.5*e1, 1)])
-    def test_overload(self, op, a, b):
+    def test_binary(self, op, a, b):
         @numba.njit
         def overload(a, b):
             return op(a, b)
@@ -81,3 +81,37 @@ class TestOverloads:
         # can't directly compare the dtypes. We only care that the float / int
         # state is kept anyway.
         assert ab.value.dtype.kind == ab_alt.value.dtype.kind
+
+    # `op` is not parametrized, for simplicity we only support MultiVector / scalar.
+    @pytest.mark.parametrize("a,b", [(e1, 2), (2.0*e1, 2)])
+    def test_truediv(self, a, b):
+        op = operator.truediv
+
+        @numba.njit
+        def overload(a, b):
+            return op(a, b)
+
+        ab = op(a, b)
+        ab_alt = overload(a, b)
+        assert ab == ab_alt
+        assert ab.layout is ab_alt.layout
+        # numba disagrees with numpy about what type `int` is on windows, so we
+        # can't directly compare the dtypes. We only care that the float / int
+        # state is kept anyway.
+        assert ab.value.dtype.kind == ab_alt.value.dtype.kind
+
+    @pytest.mark.parametrize("op", [
+        pytest.param(getattr(operator, op), id=op)
+        for op in ['pos', 'neg', 'invert']
+    ])
+    @pytest.mark.parametrize("a", [layout.scalar, e1, 0.5*e1, e1^e2, 1 + (e1^e2)])
+    def test_unary(self, op, a):
+        @numba.njit
+        def overload(a):
+            return op(a)
+
+        ret = op(a)
+        ret_alt = overload(a)
+        assert ret == ret_alt
+        assert ret.layout is ret_alt.layout
+        assert ret.value.dtype == ret_alt.value.dtype
