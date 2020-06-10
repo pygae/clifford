@@ -195,16 +195,8 @@ I5 = e12345
 I3 = e123
 E0 = ninf ^ -no
 niono = ninf ^ no
-E0_val = E0.value
-I5_val = I5.value
-ninf_val = ninf.value
-no_val = no.value
-I3_val = I3.value
-eo_val = eo.value
 
 unit_scalar_mv = 1.0 + 0.0*e1
-unit_scalar_mv_val = unit_scalar_mv.value
-
 adjoint_func = layout.adjoint_func
 gmt_func = layout.gmt_func
 omt_func = layout.omt_func
@@ -330,7 +322,7 @@ def val_unsign_sphere(S):
     """
     Normalises the sign of a sphere
     """
-    return val_normalised(S*(-imt_func(dual_func(S), ninf_val)[0]))
+    return val_normalised(S*(-imt_func(dual_func(S), ninf.value)[0]))
 
 
 def join_spheres(S1in, S2in):
@@ -661,11 +653,11 @@ def val_get_line_intersection(L3_val, Ldd_val):
     Pd = 0.5*(Xdd+Xddd)
     P = -(Pd*ninf*Pd)(1)/(2*(Pd|einf)**2)[0]
     """
-    Xdd = gmt_func(gmt_func(Ldd_val, no_val), Ldd_val) + no_val
+    Xdd = gmt_func(gmt_func(Ldd_val, no.value), Ldd_val) + no.value
     Xddd = gmt_func(gmt_func(L3_val, Xdd), L3_val)
     Pd = 0.5*(Xdd+Xddd)
-    P = -gmt_func(gmt_func(Pd, ninf_val), Pd)
-    imt_value = imt_func(Pd, ninf_val)
+    P = -gmt_func(gmt_func(Pd, ninf.value), Pd)
+    imt_value = imt_func(Pd, ninf.value)
     P_denominator = 2*(gmt_func(imt_value, imt_value))[0]
     return project_val(P/P_denominator, 1)
 
@@ -690,7 +682,7 @@ def val_midpoint_between_lines(L1_val, L2_val):
     L3 = val_normalised(L1_val + L2_val)
     Ldd = val_normalised(L1_val - L2_val)
     S = val_get_line_intersection(L3, Ldd)
-    return val_normalise_n_minus_1(project_val(gmt_func(S, gmt_func(ninf_val, S)), 1))
+    return val_normalise_n_minus_1(project_val(gmt_func(S, gmt_func(ninf.value, S)), 1))
 
 
 def midpoint_between_lines(L1, L2):
@@ -731,14 +723,14 @@ def val_midpoint_of_line_cluster(array_line_cluster):
     power_mat = np.linalg.matrix_power(accumulator_matrix / array_line_cluster.shape[0], 256)
 
     # Get a point that lies on the first line as an approximation to the e-vector
-    pp_val = imt_func(array_line_cluster[0, :], eo_val)
-    p_start = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(pp_val, ninf_val), pp_val), 1))
+    pp_val = imt_func(array_line_cluster[0, :], eo.value)
+    p_start = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(pp_val, ninf.value), pp_val), 1))
 
     # Apply the matrix
     p_end = project_val(power_mat @ p_start, 1)
 
     # Remove any junk that has come along with it
-    final_point = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(p_end, ninf_val), p_end), 1))
+    final_point = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(p_end, ninf.value), p_end), 1))
     return final_point
 
 
@@ -753,16 +745,16 @@ def val_midpoint_of_line_cluster_grad(array_line_cluster):
     for i in range(array_line_cluster.shape[0]):
         p = val_midpoint_between_lines(average_line, array_line_cluster[i, :])
         val_point_track += p
-    S = gmt_func(I5_val, val_point_track)
-    center_point = val_normalise_n_minus_1(project_val(gmt_func(S, gmt_func(ninf_val, S)), 1))
+    S = gmt_func(I5.value, val_point_track)
+    center_point = val_normalise_n_minus_1(project_val(gmt_func(S, gmt_func(ninf.value, S)), 1))
     # Take a derivative of the cost function at this point
     grad = np.zeros(32)
     for i in range(array_line_cluster.shape[0]):
         l_val = array_line_cluster[i, :]
         grad += (gmt_func(gmt_func(l_val, center_point), l_val))
     grad = val_normalise_n_minus_1(project_val(grad, 1))
-    s_val = gmt_func(I5_val, project_val(center_point + grad, 1))
-    center_point = val_normalise_n_minus_1(gmt_func(gmt_func(s_val, ninf_val), s_val))
+    s_val = gmt_func(I5.value, project_val(center_point + grad, 1))
+    center_point = val_normalise_n_minus_1(gmt_func(gmt_func(s_val, ninf.value), s_val))
     return center_point
 
 
@@ -906,7 +898,7 @@ def val_generate_translation_rotor(euc_vector_a):
     """
     Generates a rotor that translates objects along the euclidean vector euc_vector_a
     """
-    T = gmt_func(ninf_val, euc_vector_a) / 2
+    T = gmt_func(ninf.value, euc_vector_a) / 2
     T[0] += 1
     return T
 
@@ -966,7 +958,7 @@ def val_normalise_n_minus_1(mv_val):
     """
     Normalises a conformal point so that it has an inner product of -1 with einf
     """
-    scale = imt_func(mv_val, ninf_val)[0]
+    scale = imt_func(mv_val, ninf.value)[0]
     if scale != 0.0:
         return -mv_val/scale
     else:
@@ -1019,8 +1011,8 @@ def val_point_pair_to_end_points(T):
     P[0] += 0.5
     P_twiddle = -0.5*F
     P_twiddle[0] += 0.5
-    A = val_normalise_n_minus_1(-gmt_func(P_twiddle, imt_func(T, ninf_val)))
-    B = val_normalise_n_minus_1(gmt_func(P, imt_func(T, ninf_val)))
+    A = val_normalise_n_minus_1(-gmt_func(P_twiddle, imt_func(T, ninf.value)))
+    B = val_normalise_n_minus_1(gmt_func(P, imt_func(T, ninf.value)))
     output = np.zeros((2, 32))
     output[0, :] = A
     output[1, :] = B
@@ -1375,19 +1367,19 @@ def val_motor_between_rounds(X1, X2):
     T = generate_translation_rotor(t)
     return normalised(T*R)
     """
-    F1 = val_normalised(omt_func(X1, ninf_val))
-    F2 = val_normalised(omt_func(X2, ninf_val))
+    F1 = val_normalised(omt_func(X1, ninf.value))
+    F2 = val_normalised(omt_func(X2, ninf.value))
 
     if np.abs(F1[31]) > 1E-5:
         # Its spheres we are dealing with
-        R = unit_scalar_mv_val
+        R = unit_scalar_mv.value
         X3 = X1
     else:
         R = val_rotor_between_objects_root(F1, F2)
         X3 = val_apply_rotor(X1, R)
 
-    C1 = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(X3, ninf_val), X3), 1))
-    C2 = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(X2, ninf_val), X2), 1))
+    C1 = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(X3, ninf.value), X3), 1))
+    C2 = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(X2, ninf.value), X2), 1))
 
     t = np.zeros(32)
     t[1:4] = (C2 - C1)[1:4]
@@ -1400,7 +1392,7 @@ def val_motor_between_objects(X1, X2):
     """
     Calculates a motor that takes X1 to X2
     """
-    carrier = omt_func(X1, ninf_val)
+    carrier = omt_func(X1, ninf.value)
     if np.sum(np.abs(carrier)) < 1E-4:
         # They are flats
         return val_rotor_between_objects_root(X1, X2)
@@ -1525,7 +1517,7 @@ def val_rotor_between_objects_explicit(X1, X2):
     K_val[0] = K_val[0] + 2
 
     if np.sum(np.abs(K_val)) < 0.0000001:
-        return unit_scalar_mv_val
+        return unit_scalar_mv.value
 
     if np.sum(np.abs(project_val(M12_val, 4))) > 0.00001:
         K_val_4 = project_val(K_val, 4)
@@ -1761,7 +1753,7 @@ def apply_rotor_inv(mv_in, rotor, rotor_inv):
 @numba.njit
 def mult_with_ninf(mv):
     """ Convenience function for multiplication with ninf """
-    return gmt_func(mv, ninf_val)
+    return gmt_func(mv, ninf.value)
 
 
 # @numba.njit
@@ -1777,7 +1769,7 @@ def val_convert_2D_polar_line_to_conformal_line(rho, theta):
     y2 = int(y0 - 10000 * (a))
     p1_val = val_convert_2D_point_to_conformal(x1, y1)
     p2_val = val_convert_2D_point_to_conformal(x2, y2)
-    line_val = omt_func(omt_func(p1_val, p2_val), ninf_val)
+    line_val = omt_func(omt_func(p1_val, p2_val), ninf.value)
     line_val = line_val/abs(layout.MultiVector(line_val))
     return line_val
 
@@ -1793,7 +1785,7 @@ def val_up(mv_val):
     """ Fast jitted up mapping """
     temp = np.zeros(32)
     temp[0] = 0.5
-    return mv_val - no_val + omt_func(temp, gmt_func(gmt_func(mv_val, mv_val), ninf_val))
+    return mv_val - no.value + omt_func(temp, gmt_func(gmt_func(mv_val, mv_val), ninf.value))
 
 
 def fast_up(mv):
@@ -1812,13 +1804,13 @@ def val_normalInv(mv_val):
 @numba.njit
 def val_homo(mv_val):
     """ A fast, jitted version of homo() """
-    return gmt_func(mv_val, val_normalInv(imt_func(-mv_val, ninf_val)))
+    return gmt_func(mv_val, val_normalInv(imt_func(-mv_val, ninf.value)))
 
 
 @numba.njit
 def val_down(mv_val):
     """ A fast, jitted version of down() """
-    return gmt_func(omt_func(val_homo(mv_val), E0_val), E0_val)
+    return gmt_func(omt_func(val_homo(mv_val), E0.value), E0.value)
 
 
 def fast_down(mv):
@@ -1862,7 +1854,7 @@ def dual_func(a_val):
     """
     Fast dual
     """
-    return dual_gmt_func(I5_val, a_val)
+    return dual_gmt_func(I5.value, a_val)
 
 
 def fast_dual(a):

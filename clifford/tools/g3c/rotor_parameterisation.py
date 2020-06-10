@@ -16,11 +16,6 @@ unit_scalar_mv = 1.0 + 0.0*e1
 imt_func = layout.imt_func
 gmt_func = layout.gmt_func
 adjoint_func = layout.adjoint_func
-e4_val = e4.value
-ninf_val = einf.value
-I5_val = I5.value
-no_val = no.value
-I3_val = I3.value
 
 
 def dorst_sinh(A):
@@ -172,13 +167,13 @@ def val_exp(B_val):
     """
     Fast implementation of the translation and rotation specific exp function
     """
-    t_val = imt_func(B_val, no_val)
+    t_val = imt_func(B_val, no.value)
 
     phiP_val = B_val - mult_with_ninf(t_val)
     phi = np.sqrt(-float(gmt_func(phiP_val, phiP_val)[0]))
     P_val = phiP_val / phi
 
-    P_n_val = gmt_func(P_val, I3_val)
+    P_n_val = gmt_func(P_val, I3.value)
     t_nor_val = gmt_func(imt_func(t_val, P_n_val), P_n_val)
     t_par_val = t_val - t_nor_val
 
@@ -268,7 +263,7 @@ def val_vec_repr_to_bivector(x):
     t_val[1] = x[0]
     t_val[2] = x[1]
     t_val[3] = x[2]
-    B_val = gmt_func(t_val, ninf_val)
+    B_val = gmt_func(t_val, ninf.value)
     B_val[6] += x[3]
     B_val[7] += x[4]
     B_val[10] += x[5]
