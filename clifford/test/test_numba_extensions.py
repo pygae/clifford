@@ -2,6 +2,7 @@ import numba
 
 from clifford.g3c import layout, e1, e2
 import clifford as cf
+import pytest
 
 
 @numba.njit
@@ -58,37 +59,39 @@ class TestBasic:
 
 
 class TestOverloads:
-    def test_overload_add(self):
-
-        @numba.njit
-        def add_value(a, b):
-            return cf.MultiVector(a.layout, a.value + b.value)
+    @pytest.mark.parametrize("a,b", [(e1, e2), (1, e1), (0.5, 0.5*e1), (e1, 1), (0.5*e1, 0.5)])
+    def test_overload_add(self, a, b):
 
         @numba.njit
         def add_overload(a, b):
             return a + b
 
-        ab = add_value(e1, e2)
-        assert ab == e1 + e2
-        assert ab.layout is e1.layout
-
-        ab_alt = add_overload(e1, e2)
+        ab = a + b
+        ab_alt = add_overload(a, b)
         assert ab == ab_alt
+        assert ab.layout is layout
 
-    def test_overload_sub(self):
-
-        @numba.njit
-        def sub_value(a, b):
-            return cf.MultiVector(a.layout, a.value - b.value)
+    @pytest.mark.parametrize("a,b", [(e1, e2), (1, e1), (0.5, 0.5*e1), (e1, 1), (0.5*e1, 0.5)])
+    def test_overload_sub(self, a, b):
 
         @numba.njit
         def sub_overload(a, b):
             return a - b
 
-        ab = sub_value(e1, e2)
-        assert ab == e1 - e2
-        assert ab.layout is e1.layout
-
-        ab_alt = sub_overload(e1, e2)
+        ab = a - b
+        ab_alt = sub_overload(a, b)
         assert ab == ab_alt
+        assert ab.layout is layout
+
+    @pytest.mark.parametrize("a,b", [(e1, e2), (1, e1), (0.5, 0.5*e1), (e1, 1), (0.5*e1, 0.5)])
+    def test_overload_mul(self, a, b):
+
+        @numba.njit
+        def mul_overload(a, b):
+            return a*b
+
+        ab = a*b
+        ab_alt = mul_overload(a, b)
+        assert ab == ab_alt
+        assert ab.layout is layout
 
