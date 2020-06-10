@@ -93,14 +93,10 @@ def impl_MultiVector(context, builder, sig, args):
 
 @lower_constant(MultiVectorType)
 def lower_constant_MultiVector(context, builder, typ: MultiVectorType, pyval: MultiVector):
-    value = context.get_constant_generic(builder, typ.value_type, pyval.value)
-    layout = context.get_constant_generic(builder, typ.layout_type, pyval.layout)
-    return impl_ret_borrowed(
-        context,
-        builder,
-        typ,
-        cgutils.pack_struct(builder, (layout, value)),
-    )
+    mv = cgutils.create_struct_proxy(typ)(context, builder)
+    mv.value = context.get_constant_generic(builder, typ.value_type, pyval.value)
+    mv.layout = context.get_constant_generic(builder, typ.layout_type, pyval.layout)
+    return mv._getvalue()
 
 
 @numba.extending.unbox(MultiVectorType)
