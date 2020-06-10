@@ -1,4 +1,5 @@
 import numba
+import operator
 
 from clifford.g3c import layout, e1, e2
 import clifford as cf
@@ -59,39 +60,17 @@ class TestBasic:
 
 
 class TestOverloads:
-    @pytest.mark.parametrize("a,b", [(e1, e2), (1, e1), (0.5, 0.5*e1), (e1, 1), (0.5*e1, 0.5)])
-    def test_overload_add(self, a, b):
-
+    @pytest.mark.parametrize("op", [operator.add, operator.sub, operator.mul])
+    @pytest.mark.parametrize("a,b", [(e1, e2), (1, e1), (e1, 1),
+                                     (0.5, 0.5 * e1), (0.5 * e1, 0.5),
+                                     (e1, 0.5), (0.5, e1),
+                                     (1, 0.5*e1), (0.5*e1, 1)])
+    def test_overload(self, op, a, b):
         @numba.njit
-        def add_overload(a, b):
-            return a + b
+        def overload(a, b):
+            return op(a, b)
 
-        ab = a + b
-        ab_alt = add_overload(a, b)
+        ab = op(a, b)
+        ab_alt = overload(a, b)
         assert ab == ab_alt
-        assert ab.layout is layout
-
-    @pytest.mark.parametrize("a,b", [(e1, e2), (1, e1), (0.5, 0.5*e1), (e1, 1), (0.5*e1, 0.5)])
-    def test_overload_sub(self, a, b):
-
-        @numba.njit
-        def sub_overload(a, b):
-            return a - b
-
-        ab = a - b
-        ab_alt = sub_overload(a, b)
-        assert ab == ab_alt
-        assert ab.layout is layout
-
-    @pytest.mark.parametrize("a,b", [(e1, e2), (1, e1), (0.5, 0.5*e1), (e1, 1), (0.5*e1, 0.5)])
-    def test_overload_mul(self, a, b):
-
-        @numba.njit
-        def mul_overload(a, b):
-            return a*b
-
-        ab = a*b
-        ab_alt = mul_overload(a, b)
-        assert ab == ab_alt
-        assert ab.layout is layout
-
+        assert ab.layout is ab_alt.layout
