@@ -77,3 +77,4 @@ class TestOverloads:
         ab_alt = overload(a, b)
         assert ab == ab_alt
         assert ab.layout is ab_alt.layout
+        assert ab.value.dtype == ab_alt.value.dtype

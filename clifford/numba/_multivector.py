@@ -239,10 +239,12 @@ def ga_or(a, b):
             return a.layout.MultiVector(imt_func(a.value, b.value))
         return impl
     elif isinstance(a, MultiVectorType) and isinstance(b, types.abstract.Number):
+        ret_type = np.result_type(_numpy_support.as_dtype(a.value_type.dtype), _numpy_support.as_dtype(b))
         def impl(a, b):
-            return a.layout.MultiVector(np.zeros_like(a.value))
+            return a.layout.MultiVector(np.zeros_like(a.value, dtype=ret_type))
         return impl
     elif isinstance(a, types.abstract.Number) and isinstance(b, MultiVectorType):
+        ret_type = np.result_type(_numpy_support.as_dtype(a), _numpy_support.as_dtype(b.value_type.dtype))
         def impl(a, b):
-            return b.layout.MultiVector(np.zeros_like(b.value))
+            return b.layout.MultiVector(np.zeros_like(b.value, dtype=ret_type))
         return impl
