@@ -214,6 +214,11 @@ mask5 = layout.get_grade_projection_matrix(5)
 mask_2minus4 = mask2 - mask4
 
 
+def _defunct_wrapper(f):
+    """ marker for val_ functions which are no longer faster """
+    return f
+
+
 def interpret_multivector_as_object(mv):
     """
     Takes an input multivector and returns what kind of object it is
@@ -261,19 +266,21 @@ def interpret_multivector_as_object(mv):
 
 
 @numba.njit
+@_defunct_wrapper
 def val_sphere_line_intersect(s, l):
-    """
-    Checks for intersection between a sphere and a line
-    """
-    mv = meet_val(s, l)
-    return imt_func(mv, mv)[0] > 0
+    return sphere_line_intersect(
+        layout.MultiVector(s),
+        layout.MultiVector(l),
+    )
 
 
+@numba.njit
 def sphere_line_intersect(s, l):
     """
     Checks for intersection between a sphere and a line
     """
-    return val_sphere_line_intersect(s.value, l.value)
+    mv = meet(s, l)
+    return (mv | mv).value[0] > 0
 
 
 def sphere_in_sphere(S1, S2, tolerance=10**-6):
@@ -315,15 +322,13 @@ def unsign_sphere(S):
     """
     Normalises the sign of a sphere
     """
-    return layout.MultiVector(val_unsign_sphere(S.value))
+    return normalised(S*(-(fast_dual(S) | ninf).value[0]))
 
 
 @numba.njit
+@_defunct_wrapper
 def val_unsign_sphere(S):
-    """
-    Normalises the sign of a sphere
-    """
-    return val_normalised(S*(-imt_func(dual_func(S), ninf.value)[0]))
+    return unsign_sphere(layout.MultiVector(S)).value
 
 
 def join_spheres(S1in, S2in):
@@ -646,21 +651,12 @@ def val_truncated_get_line_reflection_matrix(line_array: np.ndarray, n_power: in
 
 
 @numba.njit
+@_defunct_wrapper
 def val_get_line_intersection(L3_val, Ldd_val):
-    """
-    Gets the point of intersection of two orthogonal lines that meet
-    Xdd = Ldd*no*Ldd + no
-    Xddd = L3*Xdd*L3
-    Pd = 0.5*(Xdd+Xddd)
-    P = -(Pd*ninf*Pd)(1)/(2*(Pd|einf)**2)[0]
-    """
-    Xdd = gmt_func(gmt_func(Ldd_val, no.value), Ldd_val) + no.value
-    Xddd = gmt_func(gmt_func(L3_val, Xdd), L3_val)
-    Pd = 0.5*(Xdd+Xddd)
-    P = -gmt_func(gmt_func(Pd, ninf.value), Pd)
-    imt_value = imt_func(Pd, ninf.value)
-    P_denominator = 2*(gmt_func(imt_value, imt_value))[0]
-    return project_val(P/P_denominator, 1)
+    return get_line_intersection(
+        layout.MultiVector(L3_val),
+        layout.MultiVector(Ldd_val)
+    ).value
 
 
 @numba.njit
@@ -672,19 +668,19 @@ def get_line_intersection(L3, Ldd):
     Pd = 0.5*(Xdd+Xddd)
     P = -(Pd*ninf*Pd)(1)/(2*(Pd|einf)**2)[0]
     """
-    return layout.MultiVector(val_get_line_intersection(L3.value, Ldd.value))
+    Xdd = Ldd * no * Ldd + no
+    Xddd = L3 * Xdd * L3
+    Pd = 0.5*(Xdd+Xddd)
+    P = -(Pd * ninf * Pd)
+    imt = Pd | ninf
+    P_denominator = 2*(imt * imt).value[0]
+    return _project(P/P_denominator, 1)
 
 
 @numba.njit
+@_defunct_wrapper
 def val_midpoint_between_lines(L1_val, L2_val):
-    """
-    Gets the point that is maximally close to both lines
-    Hadfield and Lasenby AGACSE2018
-    """
-    L3 = val_normalised(L1_val + L2_val)
-    Ldd = val_normalised(L1_val - L2_val)
-    S = val_get_line_intersection(L3, Ldd)
-    return val_normalise_n_minus_1(project_val(gmt_func(S, gmt_func(ninf.value, S)), 1))
+    return midpoint_between_lines(layout.MultiVector(L1_val, L2_val)).value
 
 
 @numba.njit
@@ -693,7 +689,10 @@ def midpoint_between_lines(L1, L2):
     Gets the point that is maximally close to both lines
     Hadfield and Lasenby AGACSE2018
     """
-    return layout.MultiVector(val_midpoint_between_lines(L1.value, L2.value))
+    L3 = normalised(L1 + L2)
+    Ldd = normalised(L1 - L2)
+    S = get_line_intersection(L3, Ldd)
+    return normalise_n_minus_1(_project(S * ninf * S, 1))
 
 
 @numba.njit
@@ -853,22 +852,28 @@ def random_rotation_translation_rotor(maximum_translation=10.0, maximum_angle=np
 
 
 @numba.njit
+@_defunct_wrapper
 def project_val(val, grade):
+    return _project(layout.MultiVector(val), grade).value
+
+
+@numba.njit
+def _project(mv, grade):
     """ fast grade projection """
-    output = np.zeros(32)
+    output = np.zeros_like(mv.value)
     if grade == 0:
-        output[0] = val[0]
+        output[0] = mv.value[0]
     elif grade == 1:
-        output[1:6] = val[1:6]
+        output[1:6] = mv.value[1:6]
     elif grade == 2:
-        output[6:16] = val[6:16]
+        output[6:16] = mv.value[6:16]
     elif grade == 3:
-        output[16:26] = val[16:26]
+        output[16:26] = mv.value[16:26]
     elif grade == 4:
-        output[26:31] = val[26:31]
+        output[26:31] = mv.value[26:31]
     elif grade == 5:
-        output[31] = val[31]
-    return output
+        output[31] = mv.value[31]
+    return mv.layout.MultiVector(output)
 
 
 def random_conformal_point(l_max=10):
@@ -891,30 +896,23 @@ def generate_dilation_rotor(scale):
 
 
 @numba.njit
+@_defunct_wrapper
+def val_generate_translation_rotor(euc_vector_a):
+    return generate_translation_rotor(layout.MultiVector(euc_vector_a)).value
+
+
+@numba.njit
 def generate_translation_rotor(euc_vector_a):
     """
     Generates a rotor that translates objects along the euclidean vector euc_vector_a
     """
-    return layout.MultiVector(val_generate_translation_rotor(euc_vector_a.value))
+    return 1 + ninf * euc_vector_a / 2
 
 
 @numba.njit
-def val_generate_translation_rotor(euc_vector_a):
-    """
-    Generates a rotor that translates objects along the euclidean vector euc_vector_a
-    """
-    T = gmt_func(ninf.value, euc_vector_a) / 2
-    T[0] += 1
-    return T
-
-
-@numba.njit
+@_defunct_wrapper
 def meet_val(a_val, b_val):
-    """
-    The meet algorithm as described in "A Covariant Approach to Geometry"
-    I5*((I5*A) ^ (I5*B))
-    """
-    return dual_func(omt_func(dual_func(a_val), dual_func(b_val)))
+    return meet(layout.MultiVector(a_val), layout.MultiVector(b_val)).value
 
 
 @numba.njit
@@ -923,29 +921,16 @@ def meet(A, B):
     The meet algorithm as described in "A Covariant Approach to Geometry"
     I5*((I5*A) ^ (I5*B))
     """
-    return layout.MultiVector(meet_val(A.value, B.value))
+    return fast_dual(fast_dual(A) ^ fast_dual(B))
 
 
 @numba.njit
+@_defunct_wrapper
 def val_intersect_line_and_plane_to_point(line_val, plane_val):
-    """
-    Returns the point at the intersection of a line and plane
-    """
-    m = meet_val(line_val, plane_val)
-    if gmt_func(m, m)[0] < 0.000001:
-        return np.array([-1.])
-    output = np.zeros(32)
-    A = val_normalised(m)
-    if A[15] < 0:
-        output[1] = A[8]
-        output[2] = A[11]
-        output[3] = A[14]
-    else:
-        output[1] = -A[8]
-        output[2] = -A[11]
-        output[3] = -A[14]
-    output = val_up(output)
-    return output
+    return intersect_line_and_plane_to_point(
+        layout.MultiVector(line_val),
+        layout.MultiVector(plane_val)
+    ).value
 
 
 @numba.njit
@@ -954,22 +939,26 @@ def intersect_line_and_plane_to_point(line, plane):
     Returns the point at the intersection of a line and plane
     If there is no intersection it returns None
     """
-    ans = val_intersect_line_and_plane_to_point(line.value, plane.value)
-    if ans[0] == -1.:
+    m = meet(line, plane)
+    if (m * m).value[0] < 0.000001:
         return None
-    return layout.MultiVector(ans)
+    output = layout.MultiVector(np.zeros(32))
+    A = normalised(m)
+    if A.value[15] < 0:
+        output.value[1] = A.value[8]
+        output.value[2] = A.value[11]
+        output.value[3] = A.value[14]
+    else:
+        output.value[1] = -A.value[8]
+        output.value[2] = -A.value[11]
+        output.value[3] = -A.value[14]
+    return fast_up(output)
 
 
 @numba.njit
+@_defunct_wrapper
 def val_normalise_n_minus_1(mv_val):
-    """
-    Normalises a conformal point so that it has an inner product of -1 with einf
-    """
-    scale = imt_func(mv_val, ninf.value)[0]
-    if scale != 0.0:
-        return -mv_val/scale
-    else:
-        raise ZeroDivisionError('Multivector has 0 einf component')
+    return normalise_n_minus_1(layout.MultiVector(mv_val)).value
 
 
 @numba.njit
@@ -977,7 +966,11 @@ def normalise_n_minus_1(mv):
     """
     Normalises a conformal point so that it has an inner product of -1 with einf
     """
-    return layout.MultiVector(val_normalise_n_minus_1(mv.value))
+    scale = (mv | ninf).value[0]
+    if scale != 0.0:
+        return -mv/scale
+    else:
+        raise ZeroDivisionError('MultiVector has 0 einf component')
 
 
 def quaternion_and_vector_to_rotor(quaternion, vector):
@@ -1009,21 +1002,12 @@ def get_radius_from_sphere(sphere):
 
 
 @numba.njit
+@_defunct_wrapper
 def val_point_pair_to_end_points(T):
-    """
-    Extracts the end points of a point pair bivector
-    """
-    beta = np.sqrt(abs(gmt_func(T, T)[0]))
-    F = T / beta
-    P = 0.5*F
-    P[0] += 0.5
-    P_twiddle = -0.5*F
-    P_twiddle[0] += 0.5
-    A = val_normalise_n_minus_1(-gmt_func(P_twiddle, imt_func(T, ninf.value)))
-    B = val_normalise_n_minus_1(gmt_func(P, imt_func(T, ninf.value)))
+    A, B = point_pair_to_end_points(layout.MultiVector(T))
     output = np.zeros((2, 32))
-    output[0, :] = A
-    output[1, :] = B
+    output[0, :] = A.value
+    output[1, :] = B.value
     return output
 
 
@@ -1032,9 +1016,12 @@ def point_pair_to_end_points(T):
     """
     Extracts the end points of a point pair bivector
     """
-    output = val_point_pair_to_end_points(T.value)
-    A = layout.MultiVector(output[0, :])
-    B = layout.MultiVector(output[1, :])
+    beta = np.sqrt(abs((T * T).value[0]))
+    F = T / beta
+    P = 0.5*F + 0.5
+    P_twiddle = -0.5*F + 0.5
+    A = normalise_n_minus_1(-(P_twiddle * (T | ninf)))
+    B = normalise_n_minus_1((P * (T | ninf)))
     return A, B
 
 
@@ -1048,72 +1035,65 @@ def euc_dist(conf_mv_a, conf_mv_b):
 
 
 @numba.jit
+@_defunct_wrapper
 def dorst_norm_val(sigma_val):
+    return dorst_norm(layout.MultiVector(sigma_val))
+
+
+@numba.jit
+def dorst_norm(sigma):
     """ Square Root of Rotors - Implements the norm of a rotor"""
-    sigma_4 = project_val(sigma_val, 4)
-    sqrd_ans = sigma_val[0] ** 2 - gmt_func(sigma_4, sigma_4)[0]
+    sigma_4 = _project(sigma, 4)
+    sqrd_ans = sigma.value[0] ** 2 - (sigma_4 * sigma_4).value[0]
     return math.sqrt(sqrd_ans)
 
 
 @numba.njit
+@_defunct_wrapper
 def check_sigma_for_positive_root_val(sigma_val):
-    """ Square Root of Rotors - Checks for a positive root """
-    return (sigma_val[0] + dorst_norm_val(sigma_val)) > 0
+    return check_sigma_for_positive_root(layout.MultiVector(sigma_val))
 
 
 @numba.njit
 def check_sigma_for_positive_root(sigma):
     """ Square Root of Rotors - Checks for a positive root """
-    return check_sigma_for_positive_root_val(sigma.value)
+    return (sigma.value[0] + dorst_norm(sigma)) > 0
 
 
 @numba.njit
+@_defunct_wrapper
 def check_sigma_for_negative_root_val(sigma_value):
-    """ Square Root of Rotors - Checks for a negative root """
-    return (sigma_value[0] - dorst_norm_val(sigma_value)) > 0
+    return check_sigma_for_negative_root(layout.MultiVector(sigma_value))
 
 
 @numba.njit
 def check_sigma_for_negative_root(sigma):
     """ Square Root of Rotors - Checks for a negative root """
-    return check_sigma_for_negative_root_val(sigma.value)
+    return (sigma.value[0] - dorst_norm(sigma)) > 0
 
 
 @numba.njit
+@_defunct_wrapper
 def check_infinite_roots_val(sigma_value):
-    """ Square Root of Rotors - Checks for a infinite roots """
-    return (sigma_value[0] + dorst_norm_val(sigma_value)) < 0.0000000001
+    return check_infinite_roots(layout.MultiVector(sigma_value))
 
 
 @numba.njit
 def check_infinite_roots(sigma):
     """ Square Root of Rotors - Checks for a infinite roots """
-    return check_infinite_roots_val(sigma.value)
+    return (sigma.value[0] + dorst_norm(sigma)) < 0.0000000001
 
 
 @numba.njit
+@_defunct_wrapper
 def positive_root_val(sigma_val):
-    """
-    Square Root of Rotors - Evaluates the positive root
-    Square Root of Rotors - Evaluates the positive root
-    """
-    norm_s = dorst_norm_val(sigma_val)
-    denominator = (math.sqrt(2) * math.sqrt(sigma_val[0] + norm_s))
-    result = sigma_val/denominator
-    result[0] += norm_s/denominator
-    return result
+    return positive_root(layout.MultiVector(sigma_val)).value
 
 
 @numba.njit
+@_defunct_wrapper
 def negative_root_val(sigma_val):
-    """
-    Square Root of Rotors - Evaluates the positive root
-    """
-    norm_s = dorst_norm_val(sigma_val)
-    denominator = (math.sqrt(2) * math.sqrt(sigma_val[0] - norm_s))
-    result = sigma_val/denominator
-    result[0] -= norm_s/denominator
-    return result
+    return negative_root(layout.MultiVector(sigma_val)).value
 
 
 @numba.njit
@@ -1121,96 +1101,70 @@ def positive_root(sigma):
     """
     Square Root of Rotors - Evaluates the positive root
     """
-    res_val = positive_root_val(sigma.value)
-    return layout.MultiVector(res_val)
+    norm_s = dorst_norm(sigma)
+    denominator = (math.sqrt(2) * math.sqrt(sigma.value[0] + norm_s))
+    return (sigma + norm_s)/denominator
 
 
 @numba.njit
 def negative_root(sigma):
     """ Square Root of Rotors - Evaluates the negative root """
-    res_val = negative_root_val(sigma.value)
-    return layout.MultiVector(res_val)
+    norm_s = dorst_norm(sigma)
+    denominator = (math.sqrt(2) * math.sqrt(sigma.value[0] - norm_s))
+    return (sigma - norm_s)/denominator
 
 
 @numba.njit
+@_defunct_wrapper
 def general_root_val(sigma_value):
-    """
+    return general_root(layout.MultiVector(sigma_value)).value
+
+
+@numba.njit
+def general_root(sigma):
+    """ The general case of the root of a grade 0, 4 multivector
+
     Square Root and Logarithm of Rotors
     in 3D Conformal Geometric Algebra
     Using Polar Decomposition
     Leo Dorst and Robert Valkenburg
     """
-    if check_sigma_for_positive_root_val(sigma_value):
-        k = positive_root_val(sigma_value)
-        output = np.zeros((2, sigma_value.shape[0]))
-        output[0, :] = k.copy()
-        return output
-    elif check_sigma_for_negative_root_val(sigma_value):
-        k = positive_root_val(sigma_value)
-        k2 = negative_root_val(sigma_value)
-        output = np.zeros((2, sigma_value.shape[0]))
-        output[0, :] = k.copy()
-        output[1, :] = k2.copy()
-        return output
-    elif check_infinite_roots_val(sigma_value):
-        output = np.zeros((2, sigma_value.shape[0]))
-        output[:, 0] = 1.0
-        return output
+    ndims = sigma.value.shape[0]
+    if check_sigma_for_positive_root(sigma):
+        return positive_root(sigma), sigma.layout.MultiVector(np.zeros(ndims))
+    elif check_sigma_for_negative_root(sigma):
+        return positive_root(sigma), negative_root(sigma)
+    elif check_infinite_roots(sigma):
+        output = np.zeros(ndims)
+        output[0] = 1.0
+        return sigma.layout.MultiVector(output), sigma.layout.MultiVector(output)
     else:
         raise ValueError('No root exists')
 
 
 @numba.njit
-def general_root(sigma):
-    """ The general case of the root of a grade 0, 4 multivector """
-    output = general_root_val(sigma.value)
-    return [layout.MultiVector(output[0, :].copy()), layout.MultiVector(output[1, :].copy())]
-
-
-@numba.njit
+@_defunct_wrapper
 def val_annihilate_k(K_val, C_val):
-    """ Removes K from C = KX via (K[0] - K[4])*C """
-    k_4 = -project_val(K_val, 4)
-    k_4[0] += K_val[0]
-    return val_normalised(gmt_func(k_4, C_val))
+    return annihilate_k(layout.MultiVector(K_val), layout.MultiVector(C_val)).value
 
 
 @numba.njit
 def annihilate_k(K, C):
     """ Removes K from C = KX via (K[0] - K[4])*C """
-    return layout.MultiVector(val_annihilate_k(K.value, C.value))
+    k_4 = K.value[0] - _project(K, 4)
+    return normalised(k_4 * C)
 
 
 @numba.njit
+@_defunct_wrapper
 def pos_twiddle_root_val(C_value):
-    """
-    Square Root and Logarithm of Rotors
-    in 3D Conformal Geometric Algebra
-    Using Polar Decomposition
-    Leo Dorst and Robert Valkenburg
-    """
-    sigma_val = gmt_func(C_value, adjoint_func(C_value))
-    k_value = general_root_val(sigma_val)
-    output = np.zeros((2, 32))
-    output[0, :] = val_annihilate_k(k_value[0, :], C_value)
-    output[1, :] = val_annihilate_k(k_value[1, :], C_value)
-    return output
+    return pos_twiddle_root(layout.MultiVector(C_value)).value
 
 
 @numba.njit
+@_defunct_wrapper
 def neg_twiddle_root_val(C_value):
-    """
-    Square Root and Logarithm of Rotors
-    in 3D Conformal Geometric Algebra
-    Using Polar Decomposition
-    Leo Dorst and Robert Valkenburg
-    """
-    sigma_val = -gmt_func(C_value, adjoint_func(C_value))
-    k_value = general_root_val(sigma_val)
-    output = np.zeros((2, 32))
-    output[0, :] = val_annihilate_k(k_value[0, :], C_value)
-    output[1, :] = val_annihilate_k(k_value[1, :], C_value)
-    return output
+    return neg_twiddle_root(layout.MultiVector(C_value)).value
 
 
 @numba.njit
@@ -1221,8 +1175,9 @@ def pos_twiddle_root(C):
     Using Polar Decomposition
     Leo Dorst and Robert Valkenburg
     """
-    output = pos_twiddle_root_val(C.value)
-    return [layout.MultiVector(output[0, :]), layout.MultiVector(output[1, :])]
+    sigma = C * ~C
+    k1, k2 = general_root(sigma)
+    return annihilate_k(k1, C), annihilate_k(k2, C)
 
 
 @numba.njit
@@ -1233,8 +1188,9 @@ def neg_twiddle_root(C):
     Using Polar Decomposition
     Leo Dorst and Robert Valkenburg
     """
-    output = neg_twiddle_root_val(C.value)
-    return [layout.MultiVector(output[0, :]), layout.MultiVector(output[1, :])]
+    sigma = -(C * ~C)
+    k1, k2 = general_root(sigma)
+    return annihilate_k(k1, C), annihilate_k(k2, C)
 
 
 def square_roots_of_rotor(R):
@@ -1337,11 +1293,7 @@ def rotor_between_objects(X1, X2):
     For any two conformal objects X1 and X2 this returns a rotor that takes X1 to X2
     Return a valid object from the addition result 1 + gamma*X2X1
     """
-    return cf.MultiVector(
-        layout,
-        val_rotor_between_objects_root(val_normalised(X1.value),
-                                       val_normalised(X2.value))
-    )
+    return rotor_between_objects_root(normalised(X1), normalised(X2))
 
 
 def TRS_between_rounds(X1, X2):
@@ -1365,15 +1317,6 @@ def motor_between_rounds(X1, X2):
     """
     Calculate the motor between any pair of rounds of the same grade
     Line up the carriers, then line up the centers
-    """
-    return layout.MultiVector(val_motor_between_rounds(X1.value, X2.value))
-
-
-@numba.njit
-def val_motor_between_rounds(X1, X2):
-    """
-    Calculate the motor between any pair of rounds of the same grade
-    Line up the carriers, then line up the centers
 
     Optimised form of this:
 
@@ -1386,38 +1329,36 @@ def val_motor_between_rounds(X1, X2):
     T = generate_translation_rotor(t)
     return normalised(T*R)
     """
-    F1 = val_normalised(omt_func(X1, ninf.value))
-    F2 = val_normalised(omt_func(X2, ninf.value))
+    F1 = normalised(X1 ^ ninf)
+    F2 = normalised(X2 ^ ninf)
 
-    if np.abs(F1[31]) > 1E-5:
+    if np.abs(F1.value[31]) > 1E-5:
         # Its spheres we are dealing with
-        R = unit_scalar_mv.value
+        R = unit_scalar_mv
         X3 = X1
     else:
-        R = val_rotor_between_objects_root(F1, F2)
-        X3 = val_apply_rotor(X1, R)
+        R = rotor_between_objects_root(F1, F2)
+        X3 = apply_rotor(X1, R)
 
-    C1 = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(X3, ninf.value), X3), 1))
-    C2 = val_normalise_n_minus_1(project_val(gmt_func(gmt_func(X2, ninf.value), X2), 1))
+    C1 = normalise_n_minus_1(_project(X3 * ninf * X3, 1))
+    C2 = normalise_n_minus_1(_project(X2 * ninf * X2, 1))
 
-    t = np.zeros(32)
-    t[1:4] = (C2 - C1)[1:4]
-    T = val_generate_translation_rotor(t)
-    return val_normalised(gmt_func(T, R))
+    t = layout.MultiVector(np.zeros(32))
+    t.value[1:4] = (C2 - C1).value[1:4]
+    T = generate_translation_rotor(t)
+    return normalised(T * R)
 
 
 @numba.njit
+@_defunct_wrapper
+def val_motor_between_rounds(X1, X2):
+    return motor_between_rounds(layout.MultiVector(X1), layout.MultiVector(X2)).value
+
+
+@numba.njit
+@_defunct_wrapper
 def val_motor_between_objects(X1, X2):
-    """
-    Calculates a motor that takes X1 to X2
-    """
-    carrier = omt_func(X1, ninf.value)
-    if np.sum(np.abs(carrier)) < 1E-4:
-        # They are flats
-        return val_rotor_between_objects_root(X1, X2)
-    else:
-        # Rounds
-        return val_motor_between_rounds(X1, X2)
+    return motor_between_objects(layout.MultiVector(X1), layout.MultiVector(X2)).value
 
 
 @numba.njit
@@ -1425,7 +1366,13 @@ def motor_between_objects(X1, X2):
     """
     Calculates a motor that takes X1 to X2
     """
-    return layout.MultiVector(val_motor_between_objects(X1.value, X2.value))
+    carrier = (X1 ^ ninf)
+    if np.sum(np.abs(carrier.value)) < 1E-4:
+        # They are flats
+        return rotor_between_objects_root(X1, X2)
+    else:
+        # Rounds
+        return motor_between_rounds(X1, X2)
 
 
 def calculate_S_over_mu(X1, X2):
@@ -1457,37 +1404,43 @@ def calculate_S_over_mu(X1, X2):
     return S/np.sqrt(mu)
 
 
-I5eoval = (I5 * eo).value
-biv3dmask = (e12+e13+e23).value
+I5eo = (I5 * eo)
+biv3dmask = (e12+e13+e23)
 
 
 @numba.njit
 def val_rotor_between_objects_root(X1, X2):
+    return rotor_between_objects_root(
+        layout.MultiVector(X1),
+        layout.MultiVector(X2)
+    ).value
+
+
+@numba.njit
+def rotor_between_objects_root(X1, X2):
     """
     Lasenby and Hadfield AGACSE2018
     For any two conformal objects X1 and X2 this returns a rotor that takes X1 to X2
     Uses the square root of rotors for efficiency and numerical stability
     """
-    X21 = gmt_func(X2, X1)
-    X12 = gmt_func(X1, X2)
-    gamma = gmt_func(X1, X1)[0]
+    X21 = (X2 * X1)
+    X12 = (X1 * X2)
+    gamma = (X1 * X1).value[0]
     if gamma > 0:
-        C_val = gamma*gmt_func(X2, X1)
-        C_val[0] += 1
-        if abs(C_val[0]) < 1E-6:
-            R = val_normalised(project_val(gmt_func(I5eoval, X21), 2))
-            return val_normalised(gmt_func(R, val_rotor_between_objects_root(X1, -X2)))
-        return val_normalised(pos_twiddle_root_val(C_val)[0, :])
+        C = 1 + gamma*(X2 * X1)
+        if abs(C.value[0]) < 1E-6:
+            R = normalised(_project(I5eo * X21, 2))
+            return normalised(R * rotor_between_objects_root(X1, -X2))
+        return normalised(pos_twiddle_root(C)[0])
     else:
-        C_val = -X21
-        C_val[0] += 1
-        if abs(C_val[0]) < 1E-6:
-            R = project_val(gmt_func(I5eoval, X21), 2)
-            R = val_normalised(project_val(gmt_func(R, biv3dmask), 2))
-            R2 = val_normalised(val_rotor_between_objects_root(val_apply_rotor(X1, R), X2))
-            return val_normalised(gmt_func(R2, R))
+        C = 1 - X21
+        if abs(C.value[0]) < 1E-6:
+            R = _project(I5eo * X21, 2)
+            R = normalised(_project(R * biv3dmask, 2))
+            R2 = normalised(rotor_between_objects_root(apply_rotor(X1, R), X2))
+            return normalised(R2 * R)
         else:
-            return val_normalised(C_val)
+            return normalised(C)
 
 
 @numba.njit
@@ -1566,67 +1519,69 @@ sparse_line_gmt = layout.gmt_func_generator(grades_a=[3], grades_b=[3])
 
 
 @numba.njit
+@_defunct_wrapper
 def val_norm(mv_val):
-    """ Returns sqrt(abs(~A*A)) """
-    return np.sqrt(np.abs(gmt_func(adjoint_func(mv_val), mv_val)[0]))
+    return norm(layout.MultiVector(mv_val))
 
 
 @numba.njit
 def norm(mv):
     """ Returns sqrt(abs(~A*A)) """
-    return val_norm(mv.value)
+    return np.sqrt(np.abs((~mv * mv).value[0]))
 
 
 @numba.njit
+@_defunct_wrapper
 def val_normalised(mv_val):
-    """ Returns A/sqrt(abs(~A*A)) """
-    return mv_val/val_norm(mv_val)
+    return normalised(layout.MultiVector(mv_val)).value
 
 
 @numba.njit
 def normalised(mv):
-    """ fast version of the normal() function """
-    return layout.MultiVector(val_normalised(mv.value))
+    """ Returns A/sqrt(abs(~A*A)) """
+    return mv/norm(mv)
 
 
 @numba.njit
+@_defunct_wrapper
 def val_rotor_between_lines(L1_val, L2_val):
     """ Implements a very optimised rotor line to line extraction """
-    L21_val = sparse_line_gmt(L2_val, L1_val)
-    L12_val = sparse_line_gmt(L1_val, L2_val)
-    K_val = L21_val + L12_val
-    K_val[0] += 2.0
-    beta_val = project_val(K_val, 4)
-    alpha = 2 * K_val[0]
-
-    denominator = np.sqrt(alpha / 2)
-    numerator_val = -beta_val/alpha
-    numerator_val[0] += 1.0
-    normalisation_val = numerator_val/denominator
-
-    output_val = L21_val
-    output_val[0] += 1
-    return gmt_func(normalisation_val, output_val)
+    return rotor_between_lines(
+        layout.MultiVector(L1_val),
+        layout.MultiVector(L2_val)
+    ).value
 
 
 @numba.njit
 def rotor_between_lines(L1, L2):
-    """ return the rotor between two lines """
-    return layout.MultiVector(val_rotor_between_lines(L1.value, L2.value))
+    """ Implements a very optimised rotor line to line extraction """
+    L21 = layout.MultiVector(sparse_line_gmt(L2.value, L1.value))
+    L12 = layout.MultiVector(sparse_line_gmt(L1.value, L2.value))
+    K = L21 + L12 + 2.0
+    beta = _project(K, 4)
+    alpha = 2 * K.value[0]
+
+    denominator = np.sqrt(alpha / 2)
+    numerator = 1.0 - beta/alpha
+    normalisation = numerator/denominator
+
+    output = 1 + L21
+    return normalisation * output
 
 
 @numba.njit
 def rotor_between_planes(P1, P2):
     """ return the rotor between two planes """
-    return layout.MultiVector(val_rotor_rotor_between_planes(P1.value, P2.value))
+    return normalised(1 - (P2 * P1))
 
 
 @numba.njit
+@_defunct_wrapper
 def val_rotor_rotor_between_planes(P1_val, P2_val):
-    """ return the rotor between two planes """
-    P21_val = -gmt_func(P2_val, P1_val)
-    P21_val[0] += 1
-    return val_normalised(P21_val)
+    return rotor_between_planes(
+        layout.MultiVector(P1_val),
+        layout.MultiVector(P2_val)
+    ).value
 
 
 def random_bivector():
@@ -1753,27 +1708,34 @@ def random_plane():
 
 
 @numba.njit
+@_defunct_wrapper
 def val_apply_rotor(mv_val, rotor_val):
-    """ Applies rotor to multivector in a fast way - JITTED """
-    return gmt_func(rotor_val, gmt_func(mv_val, adjoint_func(rotor_val)))
+    return apply_rotor(
+        layout.MultiVector(mv_val),
+        layout.MultiVector(rotor_val),
+    ).value
 
 
 @numba.njit
 def apply_rotor(mv_in, rotor):
     """ Applies rotor to multivector in a fast way """
-    return layout.MultiVector(val_apply_rotor(mv_in.value, rotor.value))
+    return rotor * (mv_in * ~rotor)
 
 
 @numba.njit
+@_defunct_wrapper
 def val_apply_rotor_inv(mv_val, rotor_val, rotor_val_inv):
-    """ Applies rotor to multivector in a fast way takes pre computed adjoint"""
-    return gmt_func(rotor_val, gmt_func(mv_val, rotor_val_inv))
+    return apply_rotor_inv(
+        layout.MultiVector(mv_val),
+        layout.MultiVector(rotor_val),
+        layout.MultiVector(rotor_val_inv)
+    ).value
 
 
 @numba.njit
 def apply_rotor_inv(mv_in, rotor, rotor_inv):
     """ Applies rotor to multivector in a fast way takes pre computed adjoint"""
-    return layout.MultiVector(val_apply_rotor_inv(mv_in.value, rotor.value, rotor_inv.value))
+    return rotor * (mv_in * rotor_inv)
 
 
 @numba.njit
@@ -1808,43 +1770,53 @@ def convert_2D_polar_line_to_conformal_line(rho, theta):
 
 
 @numba.njit
+@_defunct_wrapper
 def val_up(mv_val):
-    """ Fast jitted up mapping """
-    temp = np.zeros(32)
-    temp[0] = 0.5
-    return mv_val - no.value + omt_func(temp, gmt_func(gmt_func(mv_val, mv_val), ninf.value))
+    return fast_up(layout.MultiVector(mv_val)).value
 
 
 @numba.njit
 def fast_up(mv):
-    """ Fast up mapping """
-    return layout.MultiVector(val_up(mv.value))
+    """ Fast jitted up mapping """
+    return mv - no + (0.5 * ((mv * mv) * ninf))
 
 
 @numba.njit
+@_defunct_wrapper
 def val_normalInv(mv_val):
+    return fast_normalInv(layout.MultiVector(mv_val)).value
+
+
+@numba.njit
+def fast_normalInv(mv):
     """ A fast, jitted version of normalInv """
-    Madjoint_val = adjoint_func(mv_val)
-    MadjointM = gmt_func(Madjoint_val, mv_val)[0]
-    return Madjoint_val / MadjointM
+    Madjoint = ~mv
+    MadjointM = (Madjoint * mv).value[0]
+    return Madjoint / MadjointM
 
 
 @numba.njit
+@_defunct_wrapper
 def val_homo(mv_val):
-    """ A fast, jitted version of homo() """
-    return gmt_func(mv_val, val_normalInv(imt_func(-mv_val, ninf.value)))
+    return fast_homo(layout.MultiVector(mv_val)).value
 
 
 @numba.njit
+def fast_homo(mv):
+    """ A fast, jitted version of homo() """
+    return mv * fast_normalInv(-mv | ninf)
+
+
+@numba.njit
+@_defunct_wrapper
 def val_down(mv_val):
-    """ A fast, jitted version of down() """
-    return gmt_func(omt_func(val_homo(mv_val), E0.value), E0.value)
+    return fast_down(layout.MultiVector(mv_val)).value
 
 
 @numba.njit
 def fast_down(mv):
     """ A fast version of down() """
-    return layout.MultiVector(val_down(mv.value))
+    return (fast_homo(mv) ^ E0) * E0
 
 
 def val_distance_point_to_line(point, line):
@@ -1855,18 +1827,18 @@ def val_distance_point_to_line(point, line):
 
 
 @numba.njit
+@_defunct_wrapper
 def val_convert_2D_point_to_conformal(x, y):
-    """ Convert a 2D point to conformal """
-    mv_val = np.zeros(32)
-    mv_val[1] = x
-    mv_val[2] = y
-    return val_up(mv_val)
+    return convert_2D_point_to_conformal(x, y).value
 
 
 @numba.njit
 def convert_2D_point_to_conformal(x, y):
     """ Convert a 2D point to conformal """
-    return layout.MultiVector(val_convert_2D_point_to_conformal(x, y))
+    mv_val = np.zeros(32)
+    mv_val[1] = x
+    mv_val[2] = y
+    return fast_up(layout.MultiVector(mv_val))
 
 
 def distance_polar_line_to_euc_point_2d(rho, theta, x, y):
@@ -1880,11 +1852,9 @@ dual_gmt_func = layout.gmt_func_generator(grades_a=[5], grades_b=[0, 1, 2, 3, 4,
 
 
 @numba.njit
+@_defunct_wrapper
 def dual_func(a_val):
-    """
-    Fast dual
-    """
-    return dual_gmt_func(I5.value, a_val)
+    return fast_dual(layout.MultiVector(a_val)).value
 
 
 @numba.njit
@@ -1892,7 +1862,7 @@ def fast_dual(a):
     """
     Fast dual
     """
-    return layout.MultiVector(dual_func(a.value))
+    return layout.MultiVector(dual_gmt_func(I5.value, a.value))
 
 
 class ConformalMVArray(cf.MVArray):
