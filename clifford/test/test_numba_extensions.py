@@ -48,3 +48,40 @@ class TestBasic:
             return cf.MultiVector(a.layout, a.value + e1.value)
 
         assert add_e1(e2) == e1 + e2
+
+
+class TestOverloads:
+    def test_overload_add(self):
+
+        @numba.njit
+        def add_value(a, b):
+            return cf.MultiVector(a.layout, a.value + b.value)
+
+        @numba.njit
+        def add_overload(a, b):
+            return a + b
+
+        ab = add_value(e1, e2)
+        assert ab == e1 + e2
+        assert ab.layout is e1.layout
+
+        ab_alt = add_overload(e1, e2)
+        assert ab == ab_alt
+
+    def test_overload_sub(self):
+
+        @numba.njit
+        def sub_value(a, b):
+            return cf.MultiVector(a.layout, a.value - b.value)
+
+        @numba.njit
+        def sub_overload(a, b):
+            return a - b
+
+        ab = sub_value(e1, e2)
+        assert ab == e1 - e2
+        assert ab.layout is e1.layout
+
+        ab_alt = sub_overload(e1, e2)
+        assert ab == ab_alt
+
