@@ -148,6 +148,7 @@ def ga_add(a, b):
             return MultiVector(layout=b.layout, value=op)
         return impl
     elif isinstance(a, MultiVectorType) and isinstance(b, types.abstract.Number):
+        scalar_index = a.layout_type.obj._basis_blade_order.bitmap_to_index[0]
         def impl(a, b):
             op = a.value
             scalar_index = a.layout._basis_blade_order.bitmap_to_index[0]
@@ -155,9 +156,9 @@ def ga_add(a, b):
             return MultiVector(layout=a.layout, value=op)
         return impl
     elif isinstance(a, MultiVectorType) and isinstance(b, MultiVectorType):
-            def impl(a, b):
-                return MultiVector(a.layout, a.value + b.value)
-            return impl
+        def impl(a, b):
+            return MultiVector(a.layout, a.value + b.value)
+        return impl
     else:
         def impl(a, b):
             return a + b
