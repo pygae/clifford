@@ -19,8 +19,6 @@ imt_func = layout.imt_func
 gmt_func = layout.gmt_func
 inv_func = layout.inv_func
 adjoint_func = layout.adjoint_func
-e4_val = e4.value
-ninf_val = einf.value
 e123inf = e123*einf
 
 motor_basis = [1 + 0 * e1, e12, e13, e23,
@@ -156,10 +154,7 @@ def val_in_plane_estimate_rotation(bv, A, Y):
     return adjoint_func(val_normalised(R))
 
 
-e23_val = e23.value
-e12_val = e12.value
-e13_val = e13.value
-dekeninckbivmat = np.array([e23_val, e12_val, e13_val])
+dekeninckbivmat = np.array([e23.value, e12.value, e13.value])
 
 
 @numba.njit

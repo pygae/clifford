@@ -7,9 +7,6 @@ from .rotor_parameterisation import general_logarithm
 imt_func = layout.imt_func
 gmt_func = layout.gmt_func
 adjoint_func = layout.adjoint_func
-e4_val = e4.value
-e5_val = e5.value
-ninf_val = einf.value
 
 
 sparse_cost_imt = layout.imt_func_generator(grades_a=[0, 2, 4], grades_b=[1])
@@ -61,8 +58,8 @@ def midpoint_and_error_of_line_cluster_eig(line_cluster):
     """
     line_cluster_array = np.array([l.value for l in line_cluster], dtype=np.float64)
     mat2solve = val_truncated_get_line_reflection_matrix(line_cluster_array, 128)
-    start = imt_func(no_val, sum(l.value for l in line_cluster))
-    start = gmt_func(gmt_func(start, ninf_val), start)[1:6]
+    start = imt_func(no.value, sum(l.value for l in line_cluster))
+    start = gmt_func(gmt_func(start, ninf.value), start)[1:6]
 
     point_val = np.zeros(32)
     point_val[1:6] = np.matmul(mat2solve, start)
@@ -153,7 +150,7 @@ def val_rotor_cost_sparse(R_val):
     """
     rotation_val = R_val.copy()
     rotation_val[0] -= 1
-    translation_val = sparse_cost_imt(R_val, e4_val)
+    translation_val = sparse_cost_imt(R_val, e4.value)
     a = abs(float(sparse_cost_gmt(rotation_val, adjoint_func(rotation_val))[0]))
     b = abs(float(gmt_func(translation_val, adjoint_func(translation_val))[0]))
     return a + b
