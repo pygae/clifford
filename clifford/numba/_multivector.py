@@ -247,3 +247,37 @@ def ga_or(a, b):
         def impl(a, b):
             return a.layout.MultiVector(np.zeros_like(a.value, dtype=ret_type))
         return impl
+
+
+@numba.extending.overload(operator.truediv)
+def ga_truediv(a, b):
+    if isinstance(a, MultiVectorType) and isinstance(b, types.abstract.Number):
+        def impl(a, b):
+            return a.layout.MultiVector(a.value / b)
+        return impl
+    # TODO: implement inversion for the other pairs
+
+
+@numba.extending.overload(operator.invert)
+def ga_invert(a):
+    if isinstance(a, MultiVectorType):
+        adjoint_func = a.layout_type.obj.adjoint_func
+        def impl(a):
+            return a.layout.MultiVector(adjoint_func(a.value))
+        return impl
+
+
+@numba.extending.overload(operator.pos)
+def ga_pos(a):
+    if isinstance(a, MultiVectorType):
+        def impl(a):
+            return a.layout.MultiVector(a.value.copy())
+        return impl
+
+
+@numba.extending.overload(operator.neg)
+def ga_neg(a):
+    if isinstance(a, MultiVectorType):
+        def impl(a):
+            return a.layout.MultiVector(-a.value)
+        return impl
