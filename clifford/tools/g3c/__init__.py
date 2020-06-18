@@ -1158,13 +1158,21 @@ def annihilate_k(K, C):
 @numba.njit
 @_defunct_wrapper
 def pos_twiddle_root_val(C_value):
-    return pos_twiddle_root(layout.MultiVector(C_value)).value
+    A, B = pos_twiddle_root(layout.MultiVector(C_value))
+    output = np.zeros((2, 32))
+    output[0, :] = A.value
+    output[1, :] = B.value
+    return output
 
 
 @numba.njit
 @_defunct_wrapper
 def neg_twiddle_root_val(C_value):
-    return neg_twiddle_root(layout.MultiVector(C_value)).value
+    A, B = neg_twiddle_root(layout.MultiVector(C_value))
+    output = np.zeros((2, 32))
+    output[0, :] = A.value
+    output[1, :] = B.value
+    return output
 
 
 @numba.njit
