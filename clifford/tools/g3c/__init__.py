@@ -927,10 +927,14 @@ def meet(A, B):
 @numba.njit
 @_defunct_wrapper
 def val_intersect_line_and_plane_to_point(line_val, plane_val):
-    return intersect_line_and_plane_to_point(
+    ret = intersect_line_and_plane_to_point(
         layout.MultiVector(line_val),
         layout.MultiVector(plane_val)
-    ).value
+    )
+    if ret is None:
+        return np.array([-1.])
+    else:
+        return ret.value
 
 
 @numba.njit
