@@ -1,7 +1,7 @@
 import numba
 import operator
 
-from clifford.g3c import layout, e1, e2
+from clifford.g3c import layout, e1, e2, e3, e4, e5
 import clifford as cf
 import pytest
 
@@ -115,3 +115,25 @@ class TestOperators:
         assert ret == ret_alt
         assert ret.layout is ret_alt.layout
         assert ret.value.dtype == ret_alt.value.dtype
+
+    # We have a special overload for literal arguments for speed
+    def literal_grade_func(a, grade):
+        @numba.njit
+        def grade_func(a):
+            return a(grade)
+        return grade_func(a)
+
+    @numba.njit
+    def grade_func(a, grade):
+        return a(grade)
+
+    @pytest.mark.parametrize('func', [literal_grade_func, grade_func])
+    def test_grade_projection(self, func):
+        a = 1 + e1 + (e1^e2) + (e1^e2^e3) + (e1^e2^e3^e4) + (e1^e2^e3^e4^e5)
+
+        assert func(a, 0) == 1
+        assert func(a, 1) == e1
+        assert func(a, 2) == e1^e2
+        assert func(a, 3) == e1^e2^e3
+        assert func(a, 4) == e1^e2^e3^e4
+        assert func(a, 5) == e1^e2^e3^e4^e5
