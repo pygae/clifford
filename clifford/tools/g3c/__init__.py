@@ -322,7 +322,7 @@ def unsign_sphere(S):
     """
     Normalises the sign of a sphere
     """
-    return normalised(S*(-(fast_dual(S) | ninf).value[0]))
+    return (S*(-(fast_dual(S) | ninf).value[0])).normal()
 
 
 @numba.njit
@@ -337,9 +337,9 @@ def join_spheres(S1in, S2in):
     """
     s1 = unsign_sphere(S1in)
     s2 = unsign_sphere(S2in)
-    L = normalised(((s1 * I5) ^ (s2 * I5) ^ einf)(3))
-    pp1 = normalised(meet(s1, L)(2))
-    pp2 = normalised(meet(s2, L)(2))
+    L = (((s1 * I5) ^ (s2 * I5) ^ einf)(3)).normal()
+    pp1 = (meet(s1, L)(2)).normal()
+    pp2 = (meet(s2, L)(2)).normal()
     p1 = point_pair_to_end_points(pp1)[0]
     p2 = point_pair_to_end_points(pp2)[1]
     if (p1|(s2*I5))[0] > 0.0:
@@ -348,7 +348,7 @@ def join_spheres(S1in, S2in):
         opt_sphere = s1(4)
     else:
         p12 = p1 ^ p2
-        L2 = normalised(p12 * (p12 ^ einf))
+        L2 = (p12 * (p12 ^ einf)).normal()
         opt_sphere = (L2*I5)(4)
     return unsign_sphere(opt_sphere)
 
@@ -392,7 +392,7 @@ def project_points_to_sphere(point_list, sphere, closest=True):
     projected_list = []
     C = sphere*einf*sphere
     for point in point_list:
-        proj_point = point_pair_to_end_points(meet(normalised(point^C^einf), sphere))[point_index]
+        proj_point = point_pair_to_end_points(meet((point^C^einf).normal(), sphere))[point_index]
         projected_list.append(proj_point)
     return projected_list
 
@@ -402,7 +402,7 @@ def project_points_to_circle(point_list, circle, closest=True):
     Takes a load of point and projects them onto a circle
     The closest flag determines if it should be the closest or furthest point on the circle
     """
-    circle_plane = normalised(circle^einf)
+    circle_plane = (circle^einf).normal()
     planar_points = project_points_to_plane(point_list, circle_plane)
     circle_points = project_points_to_sphere(planar_points, -circle*circle_plane*I5, closest=closest)
     return circle_points
@@ -689,8 +689,8 @@ def midpoint_between_lines(L1, L2):
     Gets the point that is maximally close to both lines
     Hadfield and Lasenby AGACSE2018
     """
-    L3 = normalised(L1 + L2)
-    Ldd = normalised(L1 - L2)
+    L3 = (L1 + L2).normal()
+    Ldd = (L1 - L2).normal()
     S = get_line_intersection(L3, Ldd)
     return normalise_n_minus_1((S * ninf * S)(1))
 
@@ -928,7 +928,7 @@ def intersect_line_and_plane_to_point(line, plane):
     if (m * m).value[0] < 0.000001:
         return None
     output = layout.MultiVector(np.zeros(32))
-    A = normalised(m)
+    A = m.normal()
     if A.value[15] < 0:
         output.value[1] = A.value[8]
         output.value[2] = A.value[11]
@@ -1137,7 +1137,7 @@ def val_annihilate_k(K_val, C_val):
 def annihilate_k(K, C):
     """ Removes K from C = KX via (K[0] - K[4])*C """
     k_4 = K.value[0] - K(4)
-    return normalised(k_4 * C)
+    return (k_4 * C).normal()
 
 
 @numba.njit
@@ -1216,7 +1216,7 @@ def interp_objects_root(C1, C2, alpha):
     Return a valid object from the addition result C
     """
     C = (1 - alpha) * C1 + alpha*C2
-    C3 = normalised(neg_twiddle_root(C)[0])
+    C3 = neg_twiddle_root(C)[0].normal()
     if cf.grade_obj(C1, 0.00001) != cf.grade_obj(C3, 0.00001):
         raise ValueError('Created object is not same grade')
     return C3
@@ -1231,7 +1231,7 @@ def general_object_interpolation(object_alpha_array, object_list, new_alpha_arra
     f = interp1d(object_alpha_array, obj_array, kind=kind)
     new_value_array = np.transpose(f(new_alpha_array))
     new_conf_array = MVArray.from_value_array(layout, new_value_array)
-    return [normalised(neg_twiddle_root(C)[0]) for C in new_conf_array]
+    return [neg_twiddle_root(C)[0].normal() for C in new_conf_array]
 
 
 @numba.njit
@@ -1273,7 +1273,7 @@ def average_objects(obj_list, weights=[], check_grades=True):
         C = sum([o * w for o, w in zip(obj_list, weights)])
     else:
         C = sum(obj_list) / len(obj_list)
-    C3 = normalised(neg_twiddle_root(C)[0])
+    C3 = neg_twiddle_root(C)[0].normal()
     if check_grades:
         if cf.grade_obj(obj_list[0], 0.00001) != cf.grade_obj(C3, 0.00001):
             raise ValueError('Created object is not same grade \n' + str(obj_list[0]) + '\n' + str(C3))
@@ -1286,7 +1286,7 @@ def rotor_between_objects(X1, X2):
     For any two conformal objects X1 and X2 this returns a rotor that takes X1 to X2
     Return a valid object from the addition result 1 + gamma*X2X1
     """
-    return rotor_between_objects_root(normalised(X1), normalised(X2))
+    return rotor_between_objects_root(X1.normal(), X2.normal())
 
 
 def TRS_between_rounds(X1, X2):
@@ -1295,14 +1295,14 @@ def TRS_between_rounds(X1, X2):
     Bring rounds to origin, line up carriers, calculate scale
     """
     T1 = generate_translation_rotor(-down((X1 * einf * X1)(1)))
-    X1h = normalised(T1 * X1 * ~T1)
+    X1h = (T1 * X1 * ~T1).normal()
     T2 = generate_translation_rotor(-down((X2 * einf * X2)(1)))
-    X2h = normalised(T2 * X2 * ~T2)
-    X1f = normalised(X1h ^ einf)
-    X2f = normalised(X2h ^ einf)
+    X2h = (T2 * X2 * ~T2).normal()
+    X1f = (X1h ^ einf).normal()
+    X2f = (X2h ^ einf).normal()
     Rc = rotor_between_objects(X1f, X2f)
-    S = generate_dilation_rotor(get_radius_from_sphere(normalised(X2h*X2f*I5))/get_radius_from_sphere(normalised(X1h*X1f*I5)))
-    return normalised((~T2)*S*Rc*T1)
+    S = generate_dilation_rotor(get_radius_from_sphere((X2h*X2f*I5).normal())/get_radius_from_sphere((X1h*X1f*I5).normal()))
+    return ((~T2)*S*Rc*T1).normal()
 
 
 @numba.njit
@@ -1313,17 +1313,17 @@ def motor_between_rounds(X1, X2):
 
     Optimised form of this:
 
-    R = rotor_between_objects(normalised(X1^einf), normalised(X2^einf))
+    R = rotor_between_objects((X1^einf).normal(), (X2^einf).normal())
     X3 = apply_rotor(X1, R)
     C1 = normalise_n_minus_1((X3 * einf * X3)(1)).value[1:4]
     C2 = normalise_n_minus_1((X2 * einf * X2)(1)).value[1:4]
     t = layout.MultiVector()
     t.value[1:4] = C2 - C1
     T = generate_translation_rotor(t)
-    return normalised(T*R)
+    return (T*R).normal()
     """
-    F1 = normalised(X1 ^ ninf)
-    F2 = normalised(X2 ^ ninf)
+    F1 = (X1 ^ ninf).normal()
+    F2 = (X2 ^ ninf).normal()
 
     if np.abs(F1.value[31]) > 1E-5:
         # Its spheres we are dealing with
@@ -1339,7 +1339,7 @@ def motor_between_rounds(X1, X2):
     t = layout.MultiVector(np.zeros(32))
     t.value[1:4] = (C2 - C1).value[1:4]
     T = generate_translation_rotor(t)
-    return normalised(T * R)
+    return (T * R).normal()
 
 
 @numba.njit
@@ -1422,18 +1422,18 @@ def rotor_between_objects_root(X1, X2):
     if gamma > 0:
         C = 1 + gamma*(X2 * X1)
         if abs(C.value[0]) < 1E-6:
-            R = normalised((I5eo * X21)(2))
-            return normalised(R * rotor_between_objects_root(X1, -X2))
-        return normalised(pos_twiddle_root(C)[0])
+            R = (I5eo * X21)(2).normal()
+            return (R * rotor_between_objects_root(X1, -X2)).normal()
+        return pos_twiddle_root(C)[0].normal()
     else:
         C = 1 - X21
         if abs(C.value[0]) < 1E-6:
             R = (I5eo * X21)(2)
-            R = normalised((R * biv3dmask)(2))
-            R2 = normalised(rotor_between_objects_root(apply_rotor(X1, R), X2))
-            return normalised(R2 * R)
+            R = (R * biv3dmask)(2).normal()
+            R2 = rotor_between_objects_root(apply_rotor(X1, R), X2).normal()
+            return (R2 * R).normal()
         else:
-            return normalised(C)
+            return C.normal()
 
 
 @numba.njit
@@ -1519,8 +1519,8 @@ def val_norm(mv_val):
 
 @numba.njit
 def norm(mv):
-    """ Returns sqrt(abs(~A*A)) """
-    return np.sqrt(np.abs((~mv * mv).value[0]))
+    """ Alias of :meth:`clifford.MultiVector.__abs__` """
+    return abs(mv)
 
 
 @numba.njit
@@ -1531,8 +1531,8 @@ def val_normalised(mv_val):
 
 @numba.njit
 def normalised(mv):
-    """ Returns A/sqrt(abs(~A*A)) """
-    return mv/norm(mv)
+    """ Alias of :meth:`clifford.MultiVector.normal` """
+    return mv.normal()
 
 
 @numba.njit
@@ -1565,7 +1565,7 @@ def rotor_between_lines(L1, L2):
 @numba.njit
 def rotor_between_planes(P1, P2):
     """ return the rotor between two planes """
-    return normalised(1 - (P2 * P1))
+    return (1 - (P2 * P1)).normal()
 
 
 @numba.njit
