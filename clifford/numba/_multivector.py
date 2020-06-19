@@ -23,6 +23,7 @@ except ImportError:
 from .._multivector import MultiVector
 
 from ._layout import LayoutType
+from ._overload_call import overload_call
 
 __all__ = ['MultiVectorType']
 
@@ -280,4 +281,28 @@ def ga_neg(a):
     if isinstance(a, MultiVectorType):
         def impl(a):
             return a.layout.MultiVector(-a.value)
+        return impl
+
+
+@overload_call(MultiVectorType)
+def ga_call(self, arg):
+    # grade projection
+    grades = self.layout_type.obj._basis_blade_order.grades
+    if isinstance(arg, types.IntegerLiteral):
+        # Optimized case where the mask can be computed at compile-time.
+        # using `nonzero` makes the resulting array smaller.
+        inds, = (grades == arg.literal_value).nonzero()
+        def impl(self, arg):
+            mv = self.layout.MultiVector(np.zeros_like(self.value))
+            mv.value[inds] = self.value[inds]
+            return mv
+        return impl
+    elif isinstance(arg, types.Integer):
+        # runtime grade selection - should be less common
+        def impl(self, arg):
+            # probably faster to not call nonzero here
+            inds = grades == arg
+            mv = self.layout.MultiVector(np.zeros_like(self.value))
+            mv.value[inds] = self.value[inds]
+            return mv
         return impl

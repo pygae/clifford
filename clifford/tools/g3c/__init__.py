@@ -674,7 +674,7 @@ def get_line_intersection(L3, Ldd):
     P = -(Pd * ninf * Pd)
     imt = Pd | ninf
     P_denominator = 2*(imt * imt).value[0]
-    return _project(P/P_denominator, 1)
+    return (P/P_denominator)(1)
 
 
 @numba.njit
@@ -692,7 +692,7 @@ def midpoint_between_lines(L1, L2):
     L3 = normalised(L1 + L2)
     Ldd = normalised(L1 - L2)
     S = get_line_intersection(L3, Ldd)
-    return normalise_n_minus_1(_project(S * ninf * S, 1))
+    return normalise_n_minus_1((S * ninf * S)(1))
 
 
 @numba.njit
@@ -854,26 +854,7 @@ def random_rotation_translation_rotor(maximum_translation=10.0, maximum_angle=np
 @numba.njit
 @_defunct_wrapper
 def project_val(val, grade):
-    return _project(layout.MultiVector(val), grade).value
-
-
-@numba.njit
-def _project(mv, grade):
-    """ fast grade projection """
-    output = np.zeros_like(mv.value)
-    if grade == 0:
-        output[0] = mv.value[0]
-    elif grade == 1:
-        output[1:6] = mv.value[1:6]
-    elif grade == 2:
-        output[6:16] = mv.value[6:16]
-    elif grade == 3:
-        output[16:26] = mv.value[16:26]
-    elif grade == 4:
-        output[26:31] = mv.value[26:31]
-    elif grade == 5:
-        output[31] = mv.value[31]
-    return mv.layout.MultiVector(output)
+    return layout.MultiVector(val)(grade).value
 
 
 def random_conformal_point(l_max=10):
@@ -1047,7 +1028,7 @@ def dorst_norm_val(sigma_val):
 @numba.jit
 def dorst_norm(sigma):
     """ Square Root of Rotors - Implements the norm of a rotor"""
-    sigma_4 = _project(sigma, 4)
+    sigma_4 = sigma(4)
     sqrd_ans = sigma.value[0] ** 2 - (sigma_4 * sigma_4).value[0]
     return math.sqrt(sqrd_ans)
 
@@ -1155,7 +1136,7 @@ def val_annihilate_k(K_val, C_val):
 @numba.njit
 def annihilate_k(K, C):
     """ Removes K from C = KX via (K[0] - K[4])*C """
-    k_4 = K.value[0] - _project(K, 4)
+    k_4 = K.value[0] - K(4)
     return normalised(k_4 * C)
 
 
@@ -1352,8 +1333,8 @@ def motor_between_rounds(X1, X2):
         R = rotor_between_objects_root(F1, F2)
         X3 = apply_rotor(X1, R)
 
-    C1 = normalise_n_minus_1(_project(X3 * ninf * X3, 1))
-    C2 = normalise_n_minus_1(_project(X2 * ninf * X2, 1))
+    C1 = normalise_n_minus_1((X3 * ninf * X3)(1))
+    C2 = normalise_n_minus_1((X2 * ninf * X2)(1))
 
     t = layout.MultiVector(np.zeros(32))
     t.value[1:4] = (C2 - C1).value[1:4]
@@ -1441,14 +1422,14 @@ def rotor_between_objects_root(X1, X2):
     if gamma > 0:
         C = 1 + gamma*(X2 * X1)
         if abs(C.value[0]) < 1E-6:
-            R = normalised(_project(I5eo * X21, 2))
+            R = normalised((I5eo * X21)(2))
             return normalised(R * rotor_between_objects_root(X1, -X2))
         return normalised(pos_twiddle_root(C)[0])
     else:
         C = 1 - X21
         if abs(C.value[0]) < 1E-6:
-            R = _project(I5eo * X21, 2)
-            R = normalised(_project(R * biv3dmask, 2))
+            R = (I5eo * X21)(2)
+            R = normalised((R * biv3dmask)(2))
             R2 = normalised(rotor_between_objects_root(apply_rotor(X1, R), X2))
             return normalised(R2 * R)
         else:
@@ -1570,7 +1551,7 @@ def rotor_between_lines(L1, L2):
     L21 = layout.MultiVector(sparse_line_gmt(L2.value, L1.value))
     L12 = layout.MultiVector(sparse_line_gmt(L1.value, L2.value))
     K = L21 + L12 + 2.0
-    beta = _project(K, 4)
+    beta = K(4)
     alpha = 2 * K.value[0]
 
     denominator = np.sqrt(alpha / 2)
