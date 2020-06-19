@@ -306,3 +306,21 @@ def ga_call(self, arg):
             mv.value[inds] = self.value[inds]
             return mv
         return impl
+
+
+@numba.extending.overload_method(MultiVectorType, 'mag2')
+def MultiVector_mag2(self):
+    def impl(self):
+        return (~self * self).value[0]
+    return impl
+
+
+@numba.extending.overload(abs)
+def MultiVector___abs__(self):
+    if isinstance(self, MultiVectorType):
+        return MultiVector.__abs__
+
+
+@numba.extending.overload_method(MultiVectorType, 'normal')
+def MultiVector_normal(self):
+    return MultiVector.normal
