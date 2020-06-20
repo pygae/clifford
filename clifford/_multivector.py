@@ -636,7 +636,7 @@ class MultiVector(object):
 
     def isVersor(self) -> bool:
         """Returns true if multivector is a versor.
-        From Leo Dorsts GA for computer science section 21.5, definition from 7.6.4
+        From :cite:`ga4cs` section 21.5, definition from 7.6.4
         """
         Vhat = self.gradeInvol()
         Vrev = ~self
@@ -837,7 +837,7 @@ class MultiVector(object):
         """
         Factorises a blade into basis vectors and an overall scale.
 
-        Uses Leo Dorsts algorithm from 21.6 of GA for Computer Science
+        Uses the algorithm from :cite:`ga4cs`, section 21.6.
         """
         if not self.isBlade():
             raise ValueError("self is not a blade")

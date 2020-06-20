@@ -36,8 +36,7 @@ def dorst_sinh(A):
 
 def dorst_atanh2(s, c):
     """
-    Atanh2 of a bivector as given in square root and logarithm of rotors
-    by Dorst and Valkenburg
+    Atanh2 of a bivector as given in :cite:`log-of-rotors`
     """
     s2 = (s * s)[0]
     if s2 > 0:
@@ -72,8 +71,8 @@ def decompose_bivector(F):
 def general_logarithm(R):
     """
     Takes a general conformal rotor and returns the log
-    From square root and loagrithm of rotors by Leo Dorst
-    and Robert Valkenburg
+
+    From :cite:`log-of-rotors`.
     """
     F = 2 * (R(4) - R[0]) * R(2)
     S1, S2 = decompose_bivector(F)
@@ -197,8 +196,8 @@ def ga_exp(B):
 def interpolate_TR_rotors(R_n_plus_1, R_n, interpolation_fraction):
     """
     Interpolates TR type rotors
-    Mesh Vertex Pose and Position Interpolation using Geometric Algebra.
-    Rich Wareham and Joan Lasenby
+
+    From :cite:`wareham-interpolation`.
     """
     if interpolation_fraction < np.finfo(float).eps:
         return R_n
@@ -211,11 +210,7 @@ def interpolate_TR_rotors(R_n_plus_1, R_n, interpolation_fraction):
 def interpolate_rotors(R_n_plus_1, R_n, interpolation_fraction):
     """
     Interpolates all conformal type rotors
-    Mesh Vertex Pose and Position Interpolation using Geometric Algebra
-    Rich Wareham and Joan Lasenby
-    and
-    Square Root and Logarithm of Rotors
-    Leo Dorst and Robert Valkenburg
+    From :cite:`wareham-interpolation` and :cite:`log-of-rotors`.
     """
     if interpolation_fraction < np.finfo(float).eps:
         return R_n
@@ -228,8 +223,8 @@ def interpolate_rotors(R_n_plus_1, R_n, interpolation_fraction):
 def extractRotorComponents(R):
     """
     Extracts the translation and rotation information from a TR rotor
-    Mesh Vertex Pose and Position Interpolation using Geometric Algebra.
-    Rich Wareham and Joan Lasenby
+
+    From :cite:`wareham-interpolation`.
     """
     phi = np.arccos(float(R[0]))             # scalar
     phi2 = phi * phi                  # scalar
@@ -245,10 +240,10 @@ def ga_log(R):
     """
     R must be a TR rotor. grades in [0, 2, 4]
 
-    Presented by R. Wareham (Applications of CGA)
+    Presented in :cite:`wareham-applications`.
 
-
-    WARNING: DOES NOT COMMUTE log(A * B) != log(A) + log(B)
+    .. warning::
+        Does not commute, ``log(A * B) != log(A) + log(B)``
     """
     phiP, t_normal_n, t_perpendicular_n = extractRotorComponents(R)
     return phiP + t_normal_n + t_perpendicular_n

@@ -124,7 +124,7 @@ class Linear(Transformation):
 
         This is such that :math:`f(a) * b = a * \bar f(b)`, where :math:`*` is the scalar product.
 
-        See GA4CS section 4.3.2.
+        See :cite:`ga4cs` section 4.3.2.
         """
         raise NotImplementedError
 
@@ -319,7 +319,7 @@ class OutermorphismMatrix(LinearMatrix):
 
     Such a transformation is grade preserving.
 
-    See GA4CS Chapter 4 for more information
+    See :cite:`ga4cs` Chapter 4 for more information
 
     Arguments
     ---------
