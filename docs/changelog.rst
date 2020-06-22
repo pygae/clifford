@@ -3,6 +3,12 @@
 Changelog
 =========
 
+Changes in 1.4.x
+++++++++++++++++
+
+ * Projection using :meth:`Multivector.__call__` no longer raises :exc:`ValueError`
+   for grades not present in the algebra, and instead just returns zero.
+
 Changes in 1.3.x
 ++++++++++++++++
 

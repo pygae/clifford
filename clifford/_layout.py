@@ -268,8 +268,6 @@ class Layout(object):
         normalized signature, with all values ``+1`` or ``-1``
     bladeTupList :
         list of blades
-    gradeList :
-        corresponding list of the grades of each blade
     gaDims :
         2**dims
     names :
@@ -334,24 +332,19 @@ class Layout(object):
         self._basis_vector_ids = ids
         self._basis_blade_order = order
 
-        self.gradeList = list(self._basis_blade_order.grades)
-        self.gaDims = len(self.gradeList)
+        self.gaDims = len(order.grades)
 
         self._metric = None
 
         if names is None or isinstance(names, str):
             if isinstance(names, str):
-                e = str(names)
+                e = names
             else:
                 e = 'e'
-            self.names = []
-
-            for i in range(self.gaDims):
-                if self.gradeList[i] >= 1:
-                    self.names.append(e + ''.join(
-                        map(str, self.bladeTupList[i])))
-                else:
-                    self.names.append('')
+            self.names = [
+                e + ''.join(map(str, tup)) if tup else ''
+                for tup in self.bladeTupList
+            ]
 
         elif len(names) == self.gaDims:
             self.names = names
@@ -371,6 +364,10 @@ class Layout(object):
         self.dual_func
         self.vee_func
         self.inv_func
+
+    @property
+    def gradeList(self):
+        return list(self._basis_blade_order.grades)
 
     @_cached_property
     def gmt(self):
@@ -518,25 +515,25 @@ class Layout(object):
 
     def gmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(
-            self.gmt, self.gradeList,
+            self.gmt, self._basis_blade_order.grades,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
     def imt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(
-            self.imt, self.gradeList,
+            self.imt, self._basis_blade_order.grades,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
     def omt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(
-            self.omt, self.gradeList,
+            self.omt, self._basis_blade_order.grades,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
     def lcmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(
-            self.lcmt, self.gradeList,
+            self.lcmt, self._basis_blade_order.grades,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
@@ -545,7 +542,7 @@ class Layout(object):
         Returns the matrix M_g that performs grade projection via left multiplication
         eg. ``M_g@A.value = A(g).value``
         """
-        diag_mask = 1.0 * (np.array(self.gradeList) == grade)
+        diag_mask = 1.0 * (self._basis_blade_order.grades == grade)
         return np.diag(diag_mask)
 
     def _gen_complement_func(self, omt):
@@ -573,19 +570,19 @@ class Layout(object):
 
     @_cached_property
     def gmt_func(self):
-        return get_mult_function(self.gmt, self.gradeList)
+        return get_mult_function(self.gmt, self._basis_blade_order.grades)
 
     @_cached_property
     def imt_func(self):
-        return get_mult_function(self.imt, self.gradeList)
+        return get_mult_function(self.imt, self._basis_blade_order.grades)
 
     @_cached_property
     def omt_func(self):
-        return get_mult_function(self.omt, self.gradeList)
+        return get_mult_function(self.omt, self._basis_blade_order.grades)
 
     @_cached_property
     def lcmt_func(self):
-        return get_mult_function(self.lcmt, self.gradeList)
+        return get_mult_function(self.lcmt, self._basis_blade_order.grades)
 
     @_cached_property
     def left_complement_func(self):
@@ -600,7 +597,7 @@ class Layout(object):
         '''
         This function returns a fast jitted adjoint function
         '''
-        grades = np.array(self.gradeList)
+        grades = self._basis_blade_order.grades
         signs = np.power(-1, grades*(grades-1)//2)
         @_numba_utils.njit
         def adjoint_func(value):
@@ -621,7 +618,7 @@ class Layout(object):
         n_dims = mult_table.shape[1]
 
         identity = np.zeros((n_dims,))
-        identity[self.gradeList.index(0)] = 1
+        identity[self._basis_blade_order.bitmap_to_index[0]] = 1
 
         @_numba_utils.njit
         def leftLaInvJIT(value):
@@ -657,15 +654,11 @@ class Layout(object):
         return cf.MVArray.from_value_array(self, data_array)
 
     def grade_mask(self, grade: int) -> np.ndarray:
-        return np.equal(grade, self.gradeList)
+        return grade == self._basis_blade_order.grades
 
     @property
     def rotor_mask(self) -> np.ndarray:
-        return sum(
-            self.grade_mask(i)
-            for i in range(self.dims + 1)
-            if not i % 2
-        )
+        return self._basis_blade_order.grades % 2 == 0
 
     @property
     def metric(self) -> np.ndarray:
@@ -769,7 +762,7 @@ class Layout(object):
         '''
         return [
             self._basis_blade(i)
-            for i, i_grade in enumerate(self.gradeList)
+            for i, i_grade in enumerate(self._basis_blade_order.grades)
             if i_grade == grade
         ]
 
@@ -799,7 +792,7 @@ class Layout(object):
         """
         return {
             name: self._basis_blade(i, mvClass)
-            for i, (name, grade) in enumerate(zip(self.names, self.gradeList))
+            for i, (name, grade) in enumerate(zip(self.names, self._basis_blade_order.grades))
             if grades is None or grade in grades
         }
 
