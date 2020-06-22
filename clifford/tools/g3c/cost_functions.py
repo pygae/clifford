@@ -95,7 +95,8 @@ def midpoint_and_error_of_line_cluster(line_cluster):
     """
     Gets an approximate center point of a line cluster
     as well as an estimate of the error
-    Hadfield and Lasenby AGACSE2018
+
+    From :cite:`rotor-between`.
     """
     line_cluster_array = np.array([l.value for l in line_cluster])
     cp_val = val_midpoint_of_line_cluster(line_cluster_array)
@@ -106,7 +107,8 @@ def midpoint_and_error_of_line_cluster_grad(line_cluster):
     """
     Gets an approximate center point of a line cluster
     as well as an estimate of the error
-    Hadfield and Lasenby AGACSE2018
+
+    From :cite:`rotor-between`.
     """
     line_cluster_array = np.array([l.value for l in line_cluster])
     cp_val = val_midpoint_of_line_cluster_grad(line_cluster_array)

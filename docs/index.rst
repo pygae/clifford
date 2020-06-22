@@ -60,3 +60,4 @@ Scalars, vectors, and higher-grade entities can be mixed freely and consistently
     :hidden:
 
     resources
+    bibliography

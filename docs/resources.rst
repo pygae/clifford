@@ -31,10 +31,6 @@ Links
 Introductory textbooks
 ~~~~~~~~~~~~~~~~~~~~~~
 
-* `Geometric Algebra for Physicists <ga4physicists>`_, by Doran and Lasenby
-* `Geometric Algebra for Computer Science <ga4cs>`_, by Dorst, Fontijne and Mann
-* `New Foundations for Classical Mechanics <nf4mechanics>`_, by David Hestenes
-
-.. _ga4physicists: http://www.mrao.cam.ac.uk/~cjld1/pages/book.htm
-.. _ga4cs: https://dl.acm.org/doi/book/10.5555/1610323
-.. _nf4mechanics: http://geocalc.clas.asu.edu/html/NFCM.html
+* `Geometric Algebra for Physicists <http://www.mrao.cam.ac.uk/~cjld1/pages/book.htm>`_, by Doran and Lasenby
+* `Geometric Algebra for Computer Science <https://dl.acm.org/doi/book/10.5555/1610323>`_, by Dorst, Fontijne and Mann
+* `New Foundations for Classical Mechanics <http://geocalc.clas.asu.edu/html/NFCM.html>`_, by David Hestenes

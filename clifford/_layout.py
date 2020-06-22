@@ -60,8 +60,7 @@ def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
 def gmt_element(bitmap_a, bitmap_b, sig_array):
     """
     Element of the geometric multiplication table given blades a, b.
-    The implementation used here is described in chapter 19 of
-    Leo Dorst's book, Geometric Algebra For Computer Science
+    The implementation used here is described in :cite:`ga4cs` chapter 19.
     """
     output_sign = canonical_reordering_sign(bitmap_a, bitmap_b, sig_array)
     output_bitmap = bitmap_a^bitmap_b
