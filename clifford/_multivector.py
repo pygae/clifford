@@ -442,13 +442,10 @@ class MultiVector(object):
         if len(others) != 0:
             return sum([self.__call__(k) for k in (other,)+others])
 
-        if grade not in self.layout.gradeList:
-            raise ValueError("algebra does not have grade %s" % grade)
-
         if not np.issubdtype(type(grade), np.integer):
             raise ValueError("grade must be an integer")
 
-        mask = np.equal(grade, self.layout.gradeList)
+        mask = self.layout.grade_mask(grade)
 
         newValue = np.multiply(mask, self.value)
 
@@ -462,7 +459,7 @@ class MultiVector(object):
         s = ''
         p = _settings._print_precision
 
-        for grade, name, coeff in zip(self.layout.gradeList, self.layout.names, self.value):
+        for grade, name, coeff in zip(self.layout._basis_blade_order.grades, self.layout.names, self.value):
             # if we have nothing yet, don't use + and - as operators but
             # use - as an unary prefix if necessary
             if s:
@@ -616,7 +613,7 @@ class MultiVector(object):
         """
 
         indices = list(range(self.layout.gaDims))
-        indices.remove(self.layout.gradeList.index(0))
+        del indices[self.layout._basis_blade_order.bitmap_to_index[0]]
 
         for i in indices:
             if abs(self.value[i]) < _settings._eps:
@@ -669,12 +666,9 @@ class MultiVector(object):
         """
         if eps is None:
             eps = _settings._eps
-        nonzero = abs(self.value) > eps
-        return {
-            grade_i
-            for grade_i, nonzero_i in zip(self.layout.gradeList, nonzero)
-            if nonzero_i
-        }
+        nonzero_grades = self.layout._basis_blade_order.grades[abs(self.value) > eps]
+
+        return set(nonzero_grades)
 
     @property
     def blades_list(self) -> List['MultiVector']:
@@ -786,7 +780,7 @@ class MultiVector(object):
                   {(-1)^i \left<M\right>_i}
         """
 
-        signs = np.power(-1, self.layout.gradeList)
+        signs = np.power(-1, self.layout._basis_blade_order.grades)
 
         newValue = signs * self.value
 

@@ -273,7 +273,7 @@ def grade_obj(objin, threshold=0.0000001):
     '''
     Returns the modal grade of a multivector
     '''
-    return grade_obj_func(objin.value, np.asarray(objin.layout.gradeList), threshold)
+    return grade_obj_func(objin.value, objin.layout._basis_blade_order.grades, threshold)
 
 
 def grades_present(objin: 'MultiVector', threshold=0.0000001) -> Set[int]:
@@ -407,7 +407,7 @@ def randomMV(
             grades = [grades]
         newValue = np.zeros((layout.gaDims,))
         for i in range(layout.gaDims):
-            if layout.gradeList[i] in grades:
+            if layout._basis_blade_order.grades[i] in grades:
                 newValue[i] = uniform(min, max)
         mv = mvClass(layout, newValue)
 
