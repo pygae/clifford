@@ -9,14 +9,38 @@ normal_array = np.vectorize(MultiVector.normal)
 call_array = np.vectorize(MultiVector.__call__)
 
 
-class MVArray(np.ndarray):
-    '''
-    MultiVector Array
-    '''
+def _interrogate_nested_mvs(input_array):
+    """
+    Calculates the shape of the nested input_array, and gets the associated layout.
+    Stops descending when it encounters a MultiVector.
+    """
+    if not isinstance(input_array[0], MultiVector):
+        nested_shape, layout, dtype = _interrogate_nested_mvs(input_array[0])
+        return (len(input_array), *nested_shape), layout, dtype
+    else:
+        return tuple([len(input_array)]), input_array[0].layout, type(input_array[0].value[0])
 
+
+def _index_nested_iterable(input_iterable, index):
+    """
+    Given a nested iterable, input_iterable, return the element given by the
+    1d index iterable
+    """
+    res = input_iterable[index[0]]
+    for ind in index[1:]:
+        res = res[ind]
+    return res
+
+
+class MVArray(np.ndarray):
+    """
+    MultiVector Array
+    """
     def __new__(cls, input_array):
-        obj = np.empty(len(input_array), dtype=object)
-        obj[:] = input_array
+        input_shape, layout, dtype = _interrogate_nested_mvs(input_array)
+        obj = np.empty(input_shape, dtype=object)
+        for index in np.ndindex(input_shape):
+            obj[index] = _index_nested_iterable(input_array, index)
         obj = obj.view(cls)
         return obj
 
@@ -29,7 +53,8 @@ class MVArray(np.ndarray):
         """
         Return an np array of the values of multivectors
         """
-        return np.array([mv.value for mv in self])
+        v_value_get = np.vectorize(lambda x: x.value, otypes=[np.ndarray], signature='()->(n)')
+        return np.array(v_value_get(self), dtype=float)
 
     @staticmethod
     def from_value_array(layout, value_array):
@@ -49,9 +74,9 @@ class MVArray(np.ndarray):
                       sparse=sparse, support=support, compression_opts=compression_opts)
 
     def sum(self):
-        '''
+        """
         sum elements of this MVArray
-        '''
+        """
         out = self[0]
         for k in self[1:]:
             out += k
