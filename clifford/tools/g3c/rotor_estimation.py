@@ -104,12 +104,12 @@ def lambda_estimate(Y_point_list, X_point_list, n_samples=50):
         i = indices[0]
         j = indices[1]
         k = indices[2]
-        lambdai2 = (X_point_list[i]|X_point_list[j])[0]
-        lambdai2 *= (X_point_list[i]|X_point_list[k])[0]
-        lambdai2 *= (Y_point_list[j]|Y_point_list[k])[0]
-        denom = (Y_point_list[i]|Y_point_list[j])[0]
-        denom *= (Y_point_list[i]|Y_point_list[k])[0]
-        denom *= (X_point_list[j]|X_point_list[k])[0]
+        lambdai2 = (X_point_list[i]|X_point_list[j])[()]
+        lambdai2 *= (X_point_list[i]|X_point_list[k])[()]
+        lambdai2 *= (Y_point_list[j]|Y_point_list[k])[()]
+        denom = (Y_point_list[i]|Y_point_list[j])[()]
+        denom *= (Y_point_list[i]|Y_point_list[k])[()]
+        denom *= (X_point_list[j]|X_point_list[k])[()]
         lamb2est += lambdai2/denom
     return np.sqrt(lamb2est/n_samples)
 

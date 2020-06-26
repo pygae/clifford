@@ -667,7 +667,7 @@ class Layout(object):
             self._metric = np.zeros((len(basis_vectors), len(basis_vectors)))
             for i, v in enumerate(basis_vectors):
                 for j, v2 in enumerate(basis_vectors):
-                    self._metric[i, j] = (v | v2)[0]
+                    self._metric[i, j] = (v | v2)[()]
             return self._metric.copy()
         else:
             return self._metric.copy()

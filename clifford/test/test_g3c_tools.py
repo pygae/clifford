@@ -622,7 +622,7 @@ class TestG3CTools:
         for i in range(500):
             mv = np.random.rand() * random_conformal_point()
             mv_normed = normalise_n_minus_1(mv)
-            npt.assert_almost_equal((mv_normed | ninf)[0], -1.0)
+            npt.assert_almost_equal((mv_normed | ninf)[()], -1.0)
 
     def test_get_properties_of_sphere(self):
         for i in range(100):

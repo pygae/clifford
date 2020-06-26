@@ -1,6 +1,7 @@
 import numbers
 import math
 from typing import List, Set, Tuple, Union
+import warnings
 
 import numpy as np
 
@@ -380,8 +381,14 @@ class MultiVector(object):
     # sequence special methods
     def __len__(self) -> int:
         """Returns length of value array.
-        """
 
+        .. deprecated:: 1.4.0
+            Use ``self.layout.gaDims`` or ``len(self.value)`` instead.
+        """
+        warnings.warn(
+            "Treating MultiVector objects like a sequence is deprecated. "
+            "To access the coefficients as a sequence, use the `.value` attribute.",
+            DeprecationWarning, stacklevel=2)
         return self.layout.gaDims
 
     def __getitem__(self, key: Union['MultiVector', tuple, int]) -> numbers.Number:
@@ -390,7 +397,10 @@ class MultiVector(object):
 
         If key is a blade tuple (e.g. ``(0, 1)`` or ``(1, 3)``), or a blade,
         (e.g. ``e12``),  then return the (real) value of that blade's coefficient.
-        Otherwise, treat key as an index into the list of coefficients.
+
+        .. deprecated:: 1.4.0
+            If an integer is passed, it is treated as an index into ``self.value``.
+            Use ``self.value[i]`` directly.
         """
         if isinstance(key, MultiVector):
             inds, = np.nonzero(key.value)
@@ -400,7 +410,12 @@ class MultiVector(object):
         elif isinstance(key, tuple):
             sign, idx = self.layout._sign_and_index_from_tuple(key)
             return sign*self.value[idx]
-        return self.value[key]
+        else:
+            warnings.warn(
+                "Treating MultiVector objects like a sequence is deprecated. "
+                "To access the coefficients as a sequence, use the `.value` attribute.",
+                DeprecationWarning, stacklevel=2)
+            return self.value[key]
 
     def __setitem__(self, key:  Union[tuple, int], value: numbers.Number) -> None:
         """
@@ -408,12 +423,19 @@ class MultiVector(object):
 
         If key is a blade tuple (e.g. (0, 1) or (1, 3)), then set
         the (real) value of that blade's coeficient.
-        Otherwise treat key as an index into the list of coefficients.
+
+        .. deprecated:: 1.4.0
+            If an integer is passed, it is treated as an index into ``self.value``.
+            Use ``self.value[i]`` directly.
         """
         if isinstance(key, tuple):
             sign, idx = self.layout._sign_and_index_from_tuple(key)
             self.value[idx] = sign*value
         else:
+            warnings.warn(
+                "Treating MultiVector objects like a sequence is deprecated. "
+                "To access the coefficients as a sequence, use the `.value` attribute.",
+                DeprecationWarning, stacklevel=2)
             self.value[key] = value
 
     # grade projection
@@ -637,7 +659,7 @@ class MultiVector(object):
         """
         Vhat = self.gradeInvol()
         Vrev = ~self
-        Vinv = Vrev/(self*Vrev)[0]
+        Vinv = Vrev/(self*Vrev)[()]
 
         # Test if the versor inverse (~V)/(V * ~V) is truly the inverse of the
         # multivector V
@@ -675,10 +697,10 @@ class MultiVector(object):
         '''
         ordered list of blades present in this MV
         '''
-        blades_list = self.layout.blades_list
-        value = self.value
+        b = [v*b for v, b in zip(self.value, self.layout.blades_list)]
 
-        b = [value[0]] + [value[k]*blades_list[k] for k in range(1, len(self))]
+        # note that by doing Mv != 0 instead of coef != 0 we add float eps to
+        # our comparison
         return [k for k in b if k != 0]
 
     def normal(self) -> 'MultiVector':

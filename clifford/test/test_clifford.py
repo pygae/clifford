@@ -487,11 +487,11 @@ class TestBasicConformal41:
         e4 = layout.blades['e4']
         e5 = layout.blades['e5']
 
-        assert (e1 * e1)[0] == 1
-        assert (e2 * e2)[0] == 1
-        assert (e3 * e3)[0] == 1
-        assert (e4 * e4)[0] == 1
-        assert (e5 * e5)[0] == -1
+        assert (e1 * e1)[()] == 1
+        assert (e2 * e2)[()] == 1
+        assert (e3 * e3)[()] == 1
+        assert (e4 * e4)[()] == 1
+        assert (e5 * e5)[()] == -1
 
     def test_vee(self, g3c):
         layout = g3c
