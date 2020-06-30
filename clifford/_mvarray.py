@@ -39,6 +39,7 @@ class MVArray(np.ndarray):
     """
     def __new__(cls, input_array):
         input_shape, layout, dtype = _interrogate_nested_mvs(input_array)
+        # copying this across elementwise is necessary to prevent numpy recursing into the multivector coefficients
         obj = np.empty(input_shape, dtype=object)
         for index in np.ndindex(input_shape):
             obj[index] = _index_nested_iterable(input_array, index)
