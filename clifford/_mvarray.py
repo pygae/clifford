@@ -38,12 +38,21 @@ class MVArray(np.ndarray):
     MultiVector Array
     """
     def __new__(cls, input_array):
+
         input_shape, layout, dtype = _interrogate_nested_mvs(input_array)
+        # copying this across elementwise is necessary to prevent numpy recursing into the multivector coefficients
         obj = np.empty(input_shape, dtype=object)
         for index in np.ndindex(input_shape):
             obj[index] = _index_nested_iterable(input_array, index)
-        obj = obj.view(cls)
-        return obj
+
+        # Record the layout and dtype
+        self = obj.view(cls)
+        self.layout = layout
+        self.value_dtype = dtype
+
+        # Set up the vectorised function
+        self.v_value_get = np.vectorize(lambda x: x.value, otypes=[self.value_dtype], signature='()->(n)')
+        return self
 
     def __array_finalize__(self, obj):
         if obj is None:
@@ -54,8 +63,7 @@ class MVArray(np.ndarray):
         """
         Return an np array of the values of multivectors
         """
-        v_value_get = np.vectorize(lambda x: x.value, otypes=[np.float], signature='()->(n)')
-        return v_value_get(self)
+        return self.v_value_get(self)
 
     @staticmethod
     def from_value_array(layout, value_array):
