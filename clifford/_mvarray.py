@@ -1,6 +1,10 @@
 import numpy as np
 
+import operator
+import functools
 
+from typing import Tuple
+from clifford import Layout
 from clifford.io import write_ga_file, read_ga_file  # noqa: F401
 from ._multivector import MultiVector
 
@@ -9,16 +13,16 @@ normal_array = np.vectorize(MultiVector.normal)
 call_array = np.vectorize(MultiVector.__call__)
 
 
-def _interrogate_nested_mvs(input_array):
+def _interrogate_nested_mvs(input_array) -> Tuple[Tuple[int], Layout, np.dtype]:
     """
     Calculates the shape of the nested input_array, and gets the associated layout.
     Stops descending when it encounters a MultiVector.
     """
-    if not isinstance(input_array[0], MultiVector):
+    if not isinstance(input_array, MultiVector):
         nested_shape, layout, dtype = _interrogate_nested_mvs(input_array[0])
         return (len(input_array), *nested_shape), layout, dtype
     else:
-        return tuple([len(input_array)]), input_array[0].layout, type(input_array[0].value[0])
+        return (), input_array.layout, input_array.value.dtype
 
 
 def _index_nested_iterable(input_iterable, index):
@@ -26,10 +30,7 @@ def _index_nested_iterable(input_iterable, index):
     Given a nested iterable, input_iterable, return the element given by the
     1d index iterable
     """
-    res = input_iterable[index[0]]
-    for ind in index[1:]:
-        res = res[ind]
-    return res
+    return functools.reduce(operator.getitem, index, input_iterable)
 
 
 class MVArray(np.ndarray):
