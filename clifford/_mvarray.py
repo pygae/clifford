@@ -54,8 +54,8 @@ class MVArray(np.ndarray):
         """
         Return an np array of the values of multivectors
         """
-        v_value_get = np.vectorize(lambda x: x.value, otypes=[np.ndarray], signature='()->(n)')
-        return np.array(v_value_get(self), dtype=float)
+        v_value_get = np.vectorize(lambda x: x.value, otypes=[np.float], signature='()->(n)')
+        return v_value_get(self)
 
     @staticmethod
     def from_value_array(layout, value_array):
