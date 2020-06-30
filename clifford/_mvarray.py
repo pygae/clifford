@@ -1,11 +1,11 @@
+import functools
+import operator
+from typing import Tuple
+
 import numpy as np
 
-import operator
-import functools
-
-from typing import Tuple
-from clifford import Layout
 from clifford.io import write_ga_file, read_ga_file  # noqa: F401
+from ._layout import Layout
 from ._multivector import MultiVector
 
 dual_array = np.vectorize(MultiVector.dual)
