@@ -196,20 +196,19 @@ class TestClifford:
 
         assert 1 + e1 == e1 + np.float64(1)
 
+    def _random_value_array(self, layout, Nrows, Ncolumns):
+        value_array = np.zeros((Nrows, Ncolumns, layout.gaDims))
+        for i in range(Nrows):
+            for j in range(Ncolumns):
+                value_array[i, j, :] = layout.randomMV().value
+        return value_array
+
     def test_2d_mv_array(self, g3):
         layout, blades = g3, g3.blades
         Nrows = 2
         Ncolumns = 3
-
-        value_array_a = np.zeros((Nrows, Ncolumns, layout.gaDims))
-        for i in range(Nrows):
-            for j in range(Ncolumns):
-                value_array_a[i, j, :] = layout.randomMV().value
-
-        value_array_b = np.zeros((Nrows, Ncolumns, layout.gaDims))
-        for i in range(Nrows):
-            for j in range(Ncolumns):
-                value_array_b[i, j, :] = layout.randomMV().value
+        value_array_a = self._random_value_array(g3, Nrows, Ncolumns)
+        value_array_b = self._random_value_array(g3, Nrows, Ncolumns)
 
         mv_array_a = MVArray.from_value_array(layout, value_array_a)
         assert mv_array_a.shape == (Nrows, Ncolumns)
