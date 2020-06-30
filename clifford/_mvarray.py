@@ -45,32 +45,31 @@ class MVArray(np.ndarray):
         for index in np.ndindex(input_shape):
             obj[index] = _index_nested_iterable(input_array, index)
 
-        # Record the layout and dtype
         self = obj.view(cls)
-        self.layout = layout
-        self.value_dtype = dtype
-
-        # Set up the vectorised function
-        self.v_value_get = np.vectorize(lambda x: x.value, otypes=[self.value_dtype], signature='()->(n)')
         return self
 
     def __array_finalize__(self, obj):
         if obj is None:
             return
 
+    def _get_first_element(self):
+        return _index_nested_iterable(self, [0] * len(self.shape))
+
     @property
     def value(self):
         """
         Return an np array of the values of multivectors
         """
-        return self.v_value_get(self)
+        value_dtype = self._get_first_element().value.dtype
+        v_value_get = np.vectorize(lambda x: x.value, otypes=[value_dtype], signature='()->(n)')
+        return v_value_get(self)
 
     @staticmethod
     def from_value_array(layout, value_array):
         """
         Constructs an array of mvs from a value array
         """
-        v_new_mv = np.vectorize(lambda v: MultiVector(layout, v), otypes=[MVArray], signature='(n)->()')
+        v_new_mv = np.vectorize(lambda v: MultiVector(layout, v), otypes=[MultiVector], signature='(n)->()')
         return MVArray(v_new_mv(value_array))
 
     def save(self, filename, compression=True, transpose=False,
@@ -78,7 +77,9 @@ class MVArray(np.ndarray):
         """
         Saves the array to a ga file
         """
-        write_ga_file(filename, self.value, self[0].layout.metric, self[0].layout.basis_names,
+        first_element = self._get_first_element()
+        write_ga_file(filename, self.value, first_element.layout.metric,
+                      first_element.layout.basis_names,
                       compression=compression, transpose=transpose,
                       sparse=sparse, support=support, compression_opts=compression_opts)
 
