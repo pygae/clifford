@@ -33,7 +33,7 @@ def _index_nested_iterable(input_iterable, index):
     return functools.reduce(operator.getitem, index, input_iterable)
 
 
-@functools.lru_cache
+@functools.lru_cache(None)
 def _get_vectorized_value_func(dtype):
     return np.vectorize(lambda x: x.value, otypes=[dtype], signature='()->(n)')
 
