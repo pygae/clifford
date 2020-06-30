@@ -33,6 +33,11 @@ def _index_nested_iterable(input_iterable, index):
     return functools.reduce(operator.getitem, index, input_iterable)
 
 
+@functools.lru_cache
+def _get_vectorized_value_func(dtype):
+    return np.vectorize(lambda x: x.value, otypes=[dtype], signature='()->(n)')
+
+
 class MVArray(np.ndarray):
     """
     MultiVector Array
@@ -61,15 +66,14 @@ class MVArray(np.ndarray):
         Return an np array of the values of multivectors
         """
         value_dtype = self._get_first_element().value.dtype
-        v_value_get = np.vectorize(lambda x: x.value, otypes=[value_dtype], signature='()->(n)')
-        return v_value_get(self)
+        return _get_vectorized_value_func(value_dtype)(self)
 
     @staticmethod
     def from_value_array(layout, value_array):
         """
         Constructs an array of mvs from a value array
         """
-        v_new_mv = np.vectorize(lambda v: MultiVector(layout, v), otypes=[MultiVector], signature='(n)->()')
+        v_new_mv = np.vectorize(lambda v: layout.MultiVector(v), otypes=[MultiVector], signature='(n)->()')
         return MVArray(v_new_mv(value_array))
 
     def save(self, filename, compression=True, transpose=False,
