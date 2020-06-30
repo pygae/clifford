@@ -15,7 +15,7 @@ class TestBasicDPGA:
 
         w_metric = np.array([
             [
-                (a | b)[0]
+                (a | b)[()]
                 for a in wbasis
             ]
             for b in wbasis

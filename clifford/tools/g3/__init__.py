@@ -62,7 +62,7 @@ def quaternion_to_rotor(quaternion):
     Q = layout.MultiVector()
     Q.value[1:4] = quaternion[1:4]
     Q = -e123*Q
-    Q[0] = quaternion[0]
+    Q.value[0] = quaternion[0]
     return Q
 
 
@@ -71,7 +71,7 @@ def rotor_to_quaternion(R):
     Converts a pure rotation rotor into a quaternion
     """
     Q = (e123*R).value[0:4]
-    Q[0] = R[0]
+    Q[0] = R.value[0]
     return Q
 
 
@@ -167,7 +167,7 @@ def generate_rotation_rotor(theta, euc_vector_m, euc_vector_n):
     euc_vector_n = euc_vector_n / abs(euc_vector_n)
     euc_vector_m = euc_vector_m / abs(euc_vector_m)
     bivector_B = (euc_vector_m ^ euc_vector_n)
-    bivector_B = bivector_B / (math.sqrt((-bivector_B * bivector_B)[0]))
+    bivector_B = bivector_B / (math.sqrt((-bivector_B * bivector_B)[()]))
     rotor = math.cos(theta / 2) - bivector_B * math.sin(theta / 2)
     return rotor
 
@@ -181,7 +181,7 @@ def angle_between_vectors(v1, v2):
     """
     Returns the angle between two conformal vectors
     """
-    clipped = np.clip((v1 | v2)[0], -1.0, 1.0)
+    clipped = np.clip((v1 | v2)[()], -1.0, 1.0)
     return math.acos(clipped)
 
 
@@ -196,7 +196,7 @@ def np_to_euc_mv(np_in):
 
 def euc_mv_to_np(euc_point):
     """ Converts a 3d GA point to a 3d numpy vector """
-    return euc_point[1:4].copy()
+    return euc_point.value[1:4].copy()
 
 
 def euc_cross_prod(euc_a, euc_b):

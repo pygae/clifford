@@ -52,7 +52,7 @@ def up(threedDvec):
 
 
 def down(pnt):
-    return np.array([(pnt|wis)[0] for wis in [w1s, w2s, w3s]])/((pnt|w0s)[0])
+    return np.array([(pnt|wis)[()] for wis in [w1s, w2s, w3s]])/((pnt|w0s)[()])
 
 
 def dual_point(point):
