@@ -244,6 +244,11 @@ class TestClifford:
                 value_array_ip[i, j, :] = layout.imt_func(value_array_a[i, j, :], value_array_b[i, j, :])
         assert np.all(mv_array_ip.value == value_array_ip)
 
+        # check properties of the array are preserved (no need to check both a and b)
+        np.testing.assert_array_equal(mv_array_a.value, value_array_a)
+        assert mv_array_a.value.dtype == value_array_a.dtype
+        assert type(mv_array_a.value) == type(value_array_a)
+
     def test_array_control(self, g3):
         '''
         test methods to take control addition from numpy arrays
