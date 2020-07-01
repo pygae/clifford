@@ -58,7 +58,7 @@ class MVArray(np.ndarray):
             return
 
     def _get_first_element(self):
-        return _index_nested_iterable(self, [0] * len(self.shape))
+        return self[(0,) * self.ndim]
 
     @property
     def value(self):
