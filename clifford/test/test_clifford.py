@@ -219,26 +219,19 @@ class TestClifford:
         np.testing.assert_array_equal(mv_array_a.value, value_array_a)
         assert mv_array_a.value.dtype == value_array_a.dtype
         assert type(mv_array_a.value) == type(value_array_a)
-        assert type(mv_array_a) == MVArray
-        assert type(mv_array_a.value) == np.ndarray
 
         # Check addition
         mv_array_sum = mv_array_a + mv_array_b
         array_sum = value_array_a + value_array_b
         np.testing.assert_array_equal(mv_array_sum.value, array_sum)
-        assert mv_array_sum.value.dtype == array_sum.dtype
-        assert type(mv_array_sum.value) == type(array_sum)
-        assert type(mv_array_sum) == MVArray
 
         # Check elementwise gp
-        mv_array_gp = mv_array_a*mv_array_b
+        mv_array_gp = mv_array_a * mv_array_b
         value_array_gp = np.zeros((Nrows, Ncolumns, layout.gaDims))
         for i in range(Nrows):
             for j in range(Ncolumns):
                 value_array_gp[i, j, :] = layout.gmt_func(value_array_a[i, j, :], value_array_b[i, j, :])
         np.testing.assert_array_equal(mv_array_gp.value, value_array_gp)
-        assert mv_array_gp.value.dtype == value_array_gp.dtype
-        assert type(mv_array_gp.value) == type(value_array_gp)
 
         # Check elementwise op
         mv_array_op = mv_array_a ^ mv_array_b
@@ -247,8 +240,6 @@ class TestClifford:
             for j in range(Ncolumns):
                 value_array_op[i, j, :] = layout.omt_func(value_array_a[i, j, :], value_array_b[i, j, :])
         np.testing.assert_array_equal(mv_array_op.value, value_array_op)
-        assert mv_array_op.value.dtype == value_array_op.dtype
-        assert type(mv_array_op.value) == type(value_array_op)
 
         # Check elementwise ip
         mv_array_ip = mv_array_a | mv_array_b
@@ -257,8 +248,6 @@ class TestClifford:
             for j in range(Ncolumns):
                 value_array_ip[i, j, :] = layout.imt_func(value_array_a[i, j, :], value_array_b[i, j, :])
         np.testing.assert_array_equal(mv_array_ip.value, value_array_ip)
-        assert mv_array_ip.value.dtype == value_array_ip.dtype
-        assert type(mv_array_ip.value) == type(value_array_ip)
 
     def test_array_control(self, g3):
         '''
@@ -306,19 +295,11 @@ class TestClifford:
 
         normed_array = test_array.normal()
         other_array = np.array([t.normal().value for t in test_array])
-
         np.testing.assert_array_equal(normed_array.value, other_array)
-        assert normed_array.value.dtype == other_array.dtype
-        assert type(normed_array.value) == type(other_array)
-        assert type(normed_array) == MVArray
 
         dual_array = test_array.dual()
         other_array_2 = np.array([t.dual().value for t in test_array])
-
         np.testing.assert_array_equal(dual_array.value, other_array_2)
-        assert dual_array.value.dtype == other_array_2.dtype
-        assert type(dual_array.value) == type(other_array_2)
-        assert type(dual_array) == MVArray
 
     def test_comparison_operators(self, g3):
         layout, blades = g3, g3.blades
