@@ -219,6 +219,8 @@ class TestClifford:
         np.testing.assert_array_equal(mv_array_a.value, value_array_a)
         assert mv_array_a.value.dtype == value_array_a.dtype
         assert type(mv_array_a.value) == type(value_array_a)
+        assert type(mv_array_a) == MVArray
+        assert type(mv_array_a.value) == np.ndarray
 
         # Check addition
         mv_array_sum = mv_array_a + mv_array_b
@@ -226,6 +228,7 @@ class TestClifford:
         np.testing.assert_array_equal(mv_array_sum.value, array_sum)
         assert mv_array_sum.value.dtype == array_sum.dtype
         assert type(mv_array_sum.value) == type(array_sum)
+        assert type(mv_array_sum) == MVArray
 
         # Check elementwise gp
         mv_array_gp = mv_array_a*mv_array_b
@@ -303,11 +306,19 @@ class TestClifford:
 
         normed_array = test_array.normal()
         other_array = np.array([t.normal().value for t in test_array])
-        np.testing.assert_almost_equal(normed_array.value, other_array)
+
+        np.testing.assert_array_equal(normed_array.value, other_array)
+        assert normed_array.value.dtype == other_array.dtype
+        assert type(normed_array.value) == type(other_array)
+        assert type(normed_array) == MVArray
 
         dual_array = test_array.dual()
         other_array_2 = np.array([t.dual().value for t in test_array])
-        np.testing.assert_almost_equal(dual_array.value, other_array_2)
+
+        np.testing.assert_array_equal(dual_array.value, other_array_2)
+        assert dual_array.value.dtype == other_array_2.dtype
+        assert type(dual_array.value) == type(other_array_2)
+        assert type(dual_array) == MVArray
 
     def test_comparison_operators(self, g3):
         layout, blades = g3, g3.blades
