@@ -196,6 +196,59 @@ class TestClifford:
 
         assert 1 + e1 == e1 + np.float64(1)
 
+    def _random_value_array(self, layout, Nrows, Ncolumns):
+        value_array = np.zeros((Nrows, Ncolumns, layout.gaDims))
+        for i in range(Nrows):
+            for j in range(Ncolumns):
+                value_array[i, j, :] = layout.randomMV().value
+        return value_array
+
+    def test_2d_mv_array(self, g3):
+        layout, blades = g3, g3.blades
+        Nrows = 2
+        Ncolumns = 3
+        value_array_a = self._random_value_array(g3, Nrows, Ncolumns)
+        value_array_b = self._random_value_array(g3, Nrows, Ncolumns)
+
+        mv_array_a = MVArray.from_value_array(layout, value_array_a)
+        assert mv_array_a.shape == (Nrows, Ncolumns)
+        mv_array_b = MVArray.from_value_array(layout, value_array_b)
+        assert mv_array_b.shape == (Nrows, Ncolumns)
+
+        # check properties of the array are preserved (no need to check both a and b)
+        np.testing.assert_array_equal(mv_array_a.value, value_array_a)
+        assert mv_array_a.value.dtype == value_array_a.dtype
+        assert type(mv_array_a.value) == type(value_array_a)
+
+        # Check addition
+        mv_array_sum = mv_array_a + mv_array_b
+        array_sum = value_array_a + value_array_b
+        np.testing.assert_array_equal(mv_array_sum.value, array_sum)
+
+        # Check elementwise gp
+        mv_array_gp = mv_array_a * mv_array_b
+        value_array_gp = np.zeros((Nrows, Ncolumns, layout.gaDims))
+        for i in range(Nrows):
+            for j in range(Ncolumns):
+                value_array_gp[i, j, :] = layout.gmt_func(value_array_a[i, j, :], value_array_b[i, j, :])
+        np.testing.assert_array_equal(mv_array_gp.value, value_array_gp)
+
+        # Check elementwise op
+        mv_array_op = mv_array_a ^ mv_array_b
+        value_array_op = np.zeros((Nrows, Ncolumns, layout.gaDims))
+        for i in range(Nrows):
+            for j in range(Ncolumns):
+                value_array_op[i, j, :] = layout.omt_func(value_array_a[i, j, :], value_array_b[i, j, :])
+        np.testing.assert_array_equal(mv_array_op.value, value_array_op)
+
+        # Check elementwise ip
+        mv_array_ip = mv_array_a | mv_array_b
+        value_array_ip = np.zeros((Nrows, Ncolumns, layout.gaDims))
+        for i in range(Nrows):
+            for j in range(Ncolumns):
+                value_array_ip[i, j, :] = layout.imt_func(value_array_a[i, j, :], value_array_b[i, j, :])
+        np.testing.assert_array_equal(mv_array_ip.value, value_array_ip)
+
     def test_array_control(self, g3):
         '''
         test methods to take control addition from numpy arrays
@@ -242,11 +295,11 @@ class TestClifford:
 
         normed_array = test_array.normal()
         other_array = np.array([t.normal().value for t in test_array])
-        np.testing.assert_almost_equal(normed_array.value, other_array)
+        np.testing.assert_array_equal(normed_array.value, other_array)
 
         dual_array = test_array.dual()
         other_array_2 = np.array([t.dual().value for t in test_array])
-        np.testing.assert_almost_equal(dual_array.value, other_array_2)
+        np.testing.assert_array_equal(dual_array.value, other_array_2)
 
     def test_comparison_operators(self, g3):
         layout, blades = g3, g3.blades
