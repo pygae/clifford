@@ -13,7 +13,7 @@ normal_array = np.vectorize(MultiVector.normal)
 call_array = np.vectorize(MultiVector.__call__)
 
 
-def _interrogate_nested_mvs(input_array) -> Tuple[Tuple[int], Layout, np.dtype]:
+def _interrogate_nested_mvs(input_array) -> Tuple[Tuple[int, ...], Layout, np.dtype]:
     """
     Calculates the shape of the nested input_array, and gets the associated layout.
     Stops descending when it encounters a MultiVector.
@@ -73,7 +73,7 @@ class MVArray(np.ndarray):
         """
         Constructs an array of mvs from a value array
         """
-        v_new_mv = np.vectorize(lambda v: layout.MultiVector(v), otypes=[MultiVector], signature='(n)->()')
+        v_new_mv = np.vectorize(lambda v: layout.MultiVector(v), otypes=[object], signature='(n)->()')
         return MVArray(v_new_mv(value_array))
 
     def save(self, filename, compression=True, transpose=False,
