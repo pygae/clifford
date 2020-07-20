@@ -1,9 +1,11 @@
-import numba
 import operator
+import pickle
+
+import numba
+import pytest
 
 from clifford.g3c import layout, e1, e2, e3, e4, e5
 import clifford as cf
-import pytest
 
 
 @numba.njit
@@ -160,3 +162,13 @@ class TestOperators:
 
         assert func(a, 0, 1) == 1 + e1
         assert func(a, 0, 1, 2, 3, 4, 5) == a
+
+
+def test_pickling():
+    lt = layout._numba_type_
+    assert pickle.loads(pickle.dumps(lt)) is lt
+
+    # gh-349, populating `lt._cache` should not break pickling
+    e1._numba_type_  # int
+    (e1 * 1.0)._numba_type_  # float
+    assert pickle.loads(pickle.dumps(lt)) is lt
