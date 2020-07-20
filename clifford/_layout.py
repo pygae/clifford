@@ -581,6 +581,50 @@ class Layout(object):
         return comp_func
 
     @_cached_property
+    def _hitzer_inverse(self):
+        """
+        Performs the inversion operation as described in the paper :cite:`Hitzer_Sangwine_2017`
+        """
+        tot = np.sum(self.sig != 0)
+        @_numba_utils.njit
+        def hitzer_inverse(operand):
+            if tot == 0:
+                numerator = operand.layout.scalar
+            elif tot == 1:
+                # Equation 4.3
+                mv_invol = operand.gradeInvol()
+                numerator = mv_invol
+            elif tot == 2:
+                # Equation 5.5
+                mv_conj = operand.conjugate()
+                numerator = mv_conj
+            elif tot == 3:
+                # Equation 6.5  without the rearrangement from 6.4
+                mv_conj = operand.conjugate()
+                mv_mul_mv_conj = operand * mv_conj
+                numerator = (mv_conj * ~mv_mul_mv_conj)
+            elif tot == 4:
+                # Equation 7.7
+                mv_conj = operand.conjugate()
+                mv_mul_mv_conj = operand * mv_conj
+                numerator = mv_conj * (mv_mul_mv_conj - 2 * mv_mul_mv_conj(3, 4))
+            elif tot == 5:
+                # Equation 8.22 without the rearrangement from 8.21
+                mv_conj = operand.conjugate()
+                mv_mul_mv_conj = operand * mv_conj
+                combo_op = mv_conj * ~mv_mul_mv_conj
+                mv_combo_op = operand * combo_op
+                numerator = combo_op * (mv_combo_op - 2 * mv_combo_op(1, 4))
+            else:
+                raise NotImplementedError(
+                    'Closed form inverses for algebras with more than 5 dimensions are not implemented')
+            denominator = (operand * numerator).value[0]
+            if denominator == 0:
+                raise ValueError('Multivector has no inverse')
+            return numerator / denominator
+        return hitzer_inverse
+
+    @_cached_property
     def gmt_func(self):
         return get_mult_function(self.gmt, self._basis_blade_order.grades)
 

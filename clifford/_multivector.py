@@ -716,6 +716,9 @@ class MultiVector(object):
 
         return self / abs(self)
 
+    def hitzer_inverse(self):
+        return self.layout._hitzer_inverse(self)
+
     def leftLaInv(self) -> 'MultiVector':
         """Return left-inverse using a computational linear algebra method
         proposed by Christian Perwass.
@@ -729,14 +732,17 @@ class MultiVector(object):
         ----------
         fallback : bool, optional
             If `None`, perform no checks on whether normal inv is appropriate.
-            If `True`, fallback to a linalg approach if necessary.
+            If `True`, fallback to a Hitzer and Sangwine's method :cite:`Hitzer_Sangwine_2017` if possible and a linalg approach if not.
             If `False`, raise an error if normal inv is not appropriate.
         """
         Madjoint = ~self
         MadjointM = (Madjoint * self)
         if fallback is not None and not MadjointM.isScalar():
             if fallback:
-                return self.leftLaInv()
+                try:
+                    return self.hitzer_inverse()
+                except NotImplementedError:
+                    return self.leftLaInv()
             else:
                 raise ValueError("no inverse exists for this multivector")
 
