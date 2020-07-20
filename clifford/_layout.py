@@ -459,6 +459,18 @@ class Layout(object):
             return dual_func
 
     @_cached_property
+    def _grade_invol(self):
+        """
+        Generates the grade involution function
+        """
+        signs = np.power(-1, self._basis_blade_order.grades)
+        @_numba_utils.njit
+        def grade_inv_func(mv):
+            newValue = signs * mv.value
+            return self.MultiVector(newValue)
+        return grade_inv_func
+
+    @_cached_property
     def vee_func(self):
         """
         Generates the vee product function

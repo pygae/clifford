@@ -801,12 +801,7 @@ class MultiVector(object):
             M^* = \sum_{i=0}^{\text{dims}}
                   {(-1)^i \left<M\right>_i}
         """
-
-        signs = np.power(-1, self.layout._basis_blade_order.grades)
-
-        newValue = signs * self.value
-
-        return self._newMV(newValue)
+        return self.layout._grade_invol(self)
 
     @property
     def even(self) -> 'MultiVector':
