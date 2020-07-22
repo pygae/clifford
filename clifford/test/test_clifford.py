@@ -60,7 +60,7 @@ class TestClifford:
             1 / a
         for i in range(10):
             a = randomMV(layout, grades=[0, 1])
-            denominator = float(a(1)**2-a(0)**2)
+            denominator = (a(1)**2)[()]-(a[()]**2)
             if abs(denominator) > 1.e-5:
                 a_inv = (-a(0)/denominator) + ((1./denominator) * a(1))
                 assert abs((a * a_inv)-1.) < 1.e-11

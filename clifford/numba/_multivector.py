@@ -337,3 +337,16 @@ def MultiVector___abs__(self):
 @numba.extending.overload_method(MultiVectorType, 'normal')
 def MultiVector_normal(self):
     return MultiVector.normal
+
+
+@numba.extending.overload_method(MultiVectorType, 'gradeInvol')
+def MultiVector_gradeInvol(self):
+    g_func = self.layout_type.obj._grade_invol
+    def impl(self):
+        return g_func(self)
+    return impl
+
+
+@numba.extending.overload_method(MultiVectorType, 'conjugate')
+def MultiVector_conjugate(self):
+    return MultiVector.conjugate
