@@ -17,4 +17,5 @@ class TestClosedForm:
         for i in range(Ntests):
             mv = layout.randomMV()
             mv_inv = mv.hitzer_inverse()
-            assert np.all(np.abs(((mv * mv_inv) - 1.).value) < 1.e-11)
+            np.testing.assert_almost_equal((mv * mv_inv).value,
+                                           (1.0 + 0*blades["e1"]).value)
