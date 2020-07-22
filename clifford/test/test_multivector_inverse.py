@@ -18,4 +18,4 @@ class TestClosedForm:
             mv = layout.randomMV()
             mv_inv = mv.hitzer_inverse()
             np.testing.assert_almost_equal((mv * mv_inv).value,
-                                           (1.0 + 0*blades["e1"]).value)
+                                           layout.scalar.value)
