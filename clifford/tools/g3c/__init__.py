@@ -899,8 +899,9 @@ def meet_val(a_val, b_val):
 @numba.njit
 def meet(A, B):
     """
-    The meet algorithm as described in "A Covariant Approach to Geometry"
-    I5*((I5*A) ^ (I5*B))
+    The meet algorithm as described in :cite:`lasenby-covariant-approach`.
+
+    ``I5*((I5*A) ^ (I5*B))``
     """
     return fast_dual(fast_dual(A) ^ fast_dual(B))
 
