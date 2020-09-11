@@ -129,11 +129,10 @@ class MultiVector(object):
 
             newValue = self.value&other
 
-
         return self.layout.MultiVector(newValue)
 
     def _rvee(self, other) -> 'MultiVector':
-        """Right-hand vee product, :math:`NM`"""
+        """Right-hand vee product, :math:`A \vee B`, see :meth:`~MultiVector.vee` """
 
         other, mv = self._checkOther(other, coerce=True)
 
