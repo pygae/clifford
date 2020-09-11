@@ -447,10 +447,14 @@ class Layout(object):
         else:
             # Equivalent to but faster than
             #   Iinv = self.pseudoScalar.inv().value
-            Iinv = np.zeros(self.gaDims, dtype=int)
             II_scalar = self.gmt[-1, 0, -1]
+            inv_II_scalar = 1 / II_scalar
+            if II_scalar == 1 or -1:
+                Iinv = np.zeros(self.gaDims, dtype=int)
+            else:
+                Iinv = np.zeros(self.gaDims, dtype=type(inv_II_scalar))
             # set the pseudo-scalar part
-            Iinv[-1] = 1 / II_scalar
+            Iinv[-1] = inv_II_scalar
 
             gmt_func = self.gmt_func
             @_numba_utils.njit
