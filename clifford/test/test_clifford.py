@@ -386,6 +386,7 @@ class TestClifford:
         operator.pos,
         operator.neg,
         MultiVector.gradeInvol,
+        MultiVector.dual,
         MultiVector.right_complement,
         MultiVector.left_complement,
     ])
