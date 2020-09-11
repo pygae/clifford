@@ -1,7 +1,7 @@
 
 import pytest
 import numpy as np
-
+import clifford as cf
 
 from clifford import Cl, randomMV, Frame, \
     conformalize, grade_obj, MultiVector
@@ -33,14 +33,19 @@ def g4_1():
 
 
 @pytest.fixture(scope='module')
-def g3c(g3):
-    return conformalize(g3)[0]
+def g3c():
+    return conformalize(Cl(3)[0])[0]
+
+
+@pytest.fixture(scope='module')
+def pga():
+    return Cl(3, 0, 1)[0]
 
 
 class TestCliffordComplex:
-    @pytest.fixture(params=[3, 4, 5], ids='Cl({})'.format)
-    def algebra(self, request, g3, g4, g5):
-        return {3: g3, 4: g4, 5: g5}[request.param]
+    @pytest.fixture(params=[3, 4, 5, (4,1), 'g3c', (3,0,1)], ids='Cl({})'.format)
+    def algebra(self, request, g3, g4, g5, g4_1, g3c, pga):
+        return {3: g3, 4: g4, 5: g5, (4,1): g4_1, 'g3c': g3c, (3,0,1): pga}[request.param]
 
     def test_addition(self, algebra):
         A = algebra.randomMV()
