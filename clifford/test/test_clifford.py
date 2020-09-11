@@ -379,6 +379,7 @@ class TestClifford:
         e1 = blades['e1'].astype(dtype)
         e2 = blades['e2'].astype(dtype)
         assert func(e1, np.int8(1)).value.dtype == dtype
+        assert func(np.int8(1), e1).value.dtype == dtype
         assert func(e1, e2).value.dtype == dtype
 
     @pytest.mark.parametrize('func', [
