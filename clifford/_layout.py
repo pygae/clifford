@@ -449,7 +449,7 @@ class Layout(object):
             #   Iinv = self.pseudoScalar.inv().value
             II_scalar = self.gmt[-1, 0, -1]
             inv_II_scalar = 1 / II_scalar
-            if II_scalar == 1 or -1:
+            if II_scalar in (1, -1):
                 Iinv = np.zeros(self.gaDims, dtype=int)
             else:
                 Iinv = np.zeros(self.gaDims, dtype=type(inv_II_scalar))
