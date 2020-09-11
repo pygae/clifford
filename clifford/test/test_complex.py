@@ -3,8 +3,8 @@ import pytest
 import numpy as np
 import clifford as cf
 
-from clifford import Cl, randomMV, Frame, \
-    conformalize, grade_obj, MultiVector
+from clifford import Cl, conformalize
+
 
 # using fixtures here results in them only being created if needed
 @pytest.fixture(scope='module')
@@ -43,9 +43,9 @@ def pga():
 
 
 class TestCliffordComplex:
-    @pytest.fixture(params=[3, 4, 5, (4,1), 'g3c', (3,0,1)], ids='Cl({})'.format)
+    @pytest.fixture(params=[3, 4, 5, (4, 1), 'g3c', (3, 0, 1)], ids='Cl({})'.format)
     def algebra(self, request, g3, g4, g5, g4_1, g3c, pga):
-        return {3: g3, 4: g4, 5: g5, (4,1): g4_1, 'g3c': g3c, (3,0,1): pga}[request.param]
+        return {3: g3, 4: g4, 5: g5, (4, 1): g4_1, 'g3c': g3c, (3, 0, 1): pga}[request.param]
 
     def test_addition(self, algebra):
         A = algebra.randomMV()
@@ -68,7 +68,7 @@ class TestCliffordComplex:
         C = algebra.randomMV()
         D = algebra.randomMV()
         res = (p(A + 1j*B, C + 1j*D)).value
-        res2 = p(A, C).value + 1j*p(B, C).value + 1j*p(A, D).value - p(B, D).value 
+        res2 = p(A, C).value + 1j*p(B, C).value + 1j*p(A, D).value - p(B, D).value
         np.testing.assert_allclose(res, res2)
 
     def test_reverse(self, algebra):
