@@ -496,10 +496,10 @@ class MultiVector(object):
             else:
                 if coeff < 0:
                     sep = seps[1]
-                    abs_coeff = -round(coeff, p)
+                    abs_coeff = -np.round(coeff, p)
                 else:
                     sep = seps[0]
-                    abs_coeff = round(coeff, p)
+                    abs_coeff = np.round(coeff, p)
 
                 if grade == 0:
                     # scalar
