@@ -574,7 +574,7 @@ class Layout(object):
 
         @_numba_utils.njit
         def comp_func(Xval):
-            Yval = np.zeros(dims)
+            Yval = np.zeros(dims, dtype=Xval.dtype)
             for i, s in enumerate(signlist):
                 Yval[i] = Xval[dims-1-i]*s
             return Yval

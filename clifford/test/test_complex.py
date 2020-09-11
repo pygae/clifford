@@ -40,7 +40,8 @@ def g3c():
 
 @pytest.fixture(scope='module')
 def pga():
-    return Cl(3, 0, 1)[0]
+    from clifford.pga import layout
+    return layout
 
 
 class TestCliffordComplex:
@@ -62,7 +63,8 @@ class TestCliffordComplex:
         res2 = A.value - 1j*B.value
         np.testing.assert_array_equal(res, res2)
 
-    @pytest.mark.parametrize('p', [cf.operator.gp, cf.operator.op, cf.operator.ip])
+    @pytest.mark.parametrize('p', [cf.operator.gp, cf.operator.op, cf.operator.ip,
+                                   cf.MultiVector.lc, cf.MultiVector.vee])
     def test_prod(self, algebra, p):
         A = algebra.randomMV()
         B = algebra.randomMV()
@@ -84,4 +86,11 @@ class TestCliffordComplex:
         B = algebra.randomMV()
         res = ((A + 1j*B)(2)).value
         res2 = A(2).value + 1j*B(2).value
+        np.testing.assert_array_equal(res, res2)
+
+    def test_dual(self, algebra):
+        A = algebra.randomMV()
+        B = algebra.randomMV()
+        res = (A + 1j*B).dual().value
+        res2 = A.dual().value + 1j*B.dual().value
         np.testing.assert_array_equal(res, res2)
