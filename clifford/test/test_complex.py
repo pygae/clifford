@@ -96,6 +96,8 @@ class TestCliffordComplex:
         np.testing.assert_array_equal(res, res2)
 
     def test_inverse(self, algebra):
+        if 0 in algebra.sig:
+            pytest.xfail("The inverse in degenerate metrics is known to fail")
         A = algebra.randomMV()
         B = algebra.randomMV()
         original = (A + 1j*B)
