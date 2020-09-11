@@ -1,3 +1,9 @@
+"""
+This file tests the behaviour of clifford with complex numbers. The tests
+below are based on an informed guess about the correct behavior, and we
+should not be afraid of changing them if the things we're testing for turn
+out to not be the conventional definitions.
+"""
 
 import pytest
 import numpy as np
