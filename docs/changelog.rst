@@ -9,6 +9,9 @@ Changes in 1.4.x
  * Projection using :meth:`Multivector.__call__` no longer raises :exc:`ValueError`
    for grades not present in the algebra, and instead just returns zero.
 
+ * Where possible, ``MultiVector``\ s preserve their data type in the dual, and
+   the right and left complements.
+
 Changes in 1.3.x
 ++++++++++++++++
 
