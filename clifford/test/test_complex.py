@@ -94,3 +94,12 @@ class TestCliffordComplex:
         res = (A + 1j*B).dual().value
         res2 = A.dual().value + 1j*B.dual().value
         np.testing.assert_array_equal(res, res2)
+
+    def test_inverse(self, algebra):
+        A = algebra.randomMV()
+        B = algebra.randomMV()
+        original = (A + 1j*B)
+        res = algebra.scalar + 0j
+        res2 = original*original.inv()
+        np.testing.assert_almost_equal(res2.value.real, res.value.real)
+        np.testing.assert_almost_equal(res2.value.imag, res.value.imag)
