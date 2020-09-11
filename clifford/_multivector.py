@@ -496,10 +496,14 @@ class MultiVector(object):
             else:
                 if coeff < 0:
                     sep = seps[1]
-                    abs_coeff = -np.round(coeff, p)
+                    sign = -1
                 else:
                     sep = seps[0]
-                    abs_coeff = np.round(coeff, p)
+                    sign = 1
+                if np.issubdtype(self.value.dtype, np.inexact):
+                    abs_coeff = sign*np.round(coeff, p)
+                else:
+                    abs_coeff = sign*coeff
 
                 if grade == 0:
                     # scalar
