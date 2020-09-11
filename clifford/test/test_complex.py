@@ -52,14 +52,14 @@ class TestCliffordComplex:
         B = algebra.randomMV()
         res = (A + 1j*B).value
         res2 = A.value + 1j*B.value
-        np.testing.assert_allclose(res, res2)
+        np.testing.assert_array_equal(res, res2)
 
     def test_subtraction(self, algebra):
         A = algebra.randomMV()
         B = algebra.randomMV()
         res = (A - 1j*B).value
         res2 = A.value - 1j*B.value
-        np.testing.assert_allclose(res, res2)
+        np.testing.assert_array_equal(res, res2)
 
     @pytest.mark.parametrize('p', [cf.operator.gp, cf.operator.op, cf.operator.ip])
     def test_prod(self, algebra, p):
@@ -76,13 +76,11 @@ class TestCliffordComplex:
         B = algebra.randomMV()
         res = (~(A + 1j*B)).value
         res2 = (~A).value + 1j*(~B).value
-        np.testing.assert_allclose(res, res2)
+        np.testing.assert_array_equal(res, res2)
 
     def test_grade_selection(self, algebra):
         A = algebra.randomMV()
         B = algebra.randomMV()
         res = ((A + 1j*B)(2)).value
         res2 = A(2).value + 1j*B(2).value
-        np.testing.assert_allclose(res, res2)
-
-    
+        np.testing.assert_array_equal(res, res2)
