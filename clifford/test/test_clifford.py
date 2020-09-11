@@ -372,6 +372,7 @@ class TestClifford:
         operator.mul,
         operator.xor,  # outer product
         operator.or_,  # inner product
+        operator.and_, # vee product
     ])
     def test_binary_op_preserves_dtype(self, dtype, func, g3):
         """ test that simple binary ops on blades do not promote types """
