@@ -447,10 +447,14 @@ class Layout(object):
         else:
             # Equivalent to but faster than
             #   Iinv = self.pseudoScalar.inv().value
-            Iinv = np.zeros(self.gaDims)
             II_scalar = self.gmt[-1, 0, -1]
+            inv_II_scalar = 1 / II_scalar
+            if II_scalar in (1, -1):
+                Iinv = np.zeros(self.gaDims, dtype=int)
+            else:
+                Iinv = np.zeros(self.gaDims, dtype=type(inv_II_scalar))
             # set the pseudo-scalar part
-            Iinv[-1] = 1 / II_scalar
+            Iinv[-1] = inv_II_scalar
 
             gmt_func = self.gmt_func
             @_numba_utils.njit
@@ -574,7 +578,7 @@ class Layout(object):
 
         @_numba_utils.njit
         def comp_func(Xval):
-            Yval = np.zeros(dims)
+            Yval = np.zeros(dims, dtype=Xval.dtype)
             for i, s in enumerate(signlist):
                 Yval[i] = Xval[dims-1-i]*s
             return Yval

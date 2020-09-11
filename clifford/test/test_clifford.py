@@ -379,6 +379,7 @@ class TestClifford:
         e1 = blades['e1'].astype(dtype)
         e2 = blades['e2'].astype(dtype)
         assert func(e1, np.int8(1)).value.dtype == dtype
+        assert func(np.int8(1), e1).value.dtype == dtype
         assert func(e1, e2).value.dtype == dtype
 
     @pytest.mark.parametrize('func', [
@@ -386,6 +387,9 @@ class TestClifford:
         operator.pos,
         operator.neg,
         MultiVector.gradeInvol,
+        MultiVector.dual,
+        MultiVector.right_complement,
+        MultiVector.left_complement,
     ])
     def test_unary_op_preserves_dtype(self, func, g3):
         """ test that simple unary ops on blades do not promote types """
