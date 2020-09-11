@@ -61,31 +61,14 @@ class TestCliffordComplex:
         res2 = A.value - 1j*B.value
         np.testing.assert_allclose(res, res2)
 
-    def test_gp(self, algebra):
+    @pytest.mark.parametrize('p', [cf.operator.gp, cf.operator.op, cf.operator.ip])
+    def test_prod(self, algebra, p):
         A = algebra.randomMV()
         B = algebra.randomMV()
         C = algebra.randomMV()
         D = algebra.randomMV()
-        res = ((A + 1j*B)*(C + 1j*D)).value
-        res2 = (A*C).value + 1j*(B*C).value + 1j*(A*D).value - (B*D).value 
-        np.testing.assert_allclose(res, res2)
-
-    def test_op(self, algebra):
-        A = algebra.randomMV()
-        B = algebra.randomMV()
-        C = algebra.randomMV()
-        D = algebra.randomMV()
-        res = ((A + 1j*B)^(C + 1j*D)).value
-        res2 = (A^C).value + 1j*(B^C).value + 1j*(A^D).value - (B^D).value 
-        np.testing.assert_allclose(res, res2)
-
-    def test_ip(self, algebra):
-        A = algebra.randomMV()
-        B = algebra.randomMV()
-        C = algebra.randomMV()
-        D = algebra.randomMV()
-        res = ((A + 1j*B)|(C + 1j*D)).value
-        res2 = (A|C).value + 1j*(B|C).value + 1j*(A|D).value - (B|D).value 
+        res = (p(A + 1j*B, C + 1j*D)).value
+        res2 = p(A, C).value + 1j*p(B, C).value + 1j*p(A, D).value - p(B, D).value 
         np.testing.assert_allclose(res, res2)
 
     def test_reverse(self, algebra):
