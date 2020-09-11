@@ -386,6 +386,8 @@ class TestClifford:
         operator.pos,
         operator.neg,
         MultiVector.gradeInvol,
+        MultiVector.dual,
+        MultiVector.right_complement
     ])
     def test_unary_op_preserves_dtype(self, func, g3):
         """ test that simple unary ops on blades do not promote types """

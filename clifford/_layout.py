@@ -447,7 +447,7 @@ class Layout(object):
         else:
             # Equivalent to but faster than
             #   Iinv = self.pseudoScalar.inv().value
-            Iinv = np.zeros(self.gaDims)
+            Iinv = np.zeros(self.gaDims, dtype=int)
             II_scalar = self.gmt[-1, 0, -1]
             # set the pseudo-scalar part
             Iinv[-1] = 1 / II_scalar
