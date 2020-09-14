@@ -257,7 +257,7 @@ def interpret_multivector_as_object(mv):
             else:
                 return 5  # Line
         elif grade == 4:  # Sphere or plane
-            if abs(((mv*I5)|no)[0]) > epsilon:
+            if abs(((mv*I5)|no)[()]) > epsilon:
                 return 7  # Plane
             else:
                 return 6  # Sphere
@@ -286,9 +286,9 @@ def sphere_line_intersect(s, l):
 def sphere_in_sphere(S1, S2, tolerance=10**-6):
     """
     Checks if one sphere is inside the other
-    (S1|S2)[0] < -1
+    (S1|S2)[()] < -1
     """
-    return (unsign_sphere(S1)|unsign_sphere(S2))[0] <= -1 + tolerance
+    return (unsign_sphere(S1)|unsign_sphere(S2))[()] <= -1 + tolerance
 
 
 def sphere_beyond_plane(sphere, plane):
@@ -296,7 +296,7 @@ def sphere_beyond_plane(sphere, plane):
     Check if the sphere is fully beyond the plane in the direction of
     the plane normal
     """
-    no_intersection = ((meet(sphere, plane) ** 2)[0] < 0)
+    no_intersection = ((meet(sphere, plane) ** 2)[()] < 0)
     return no_intersection and point_beyond_plane(normalise_n_minus_1((sphere * einf * sphere)(1)), plane)
 
 
@@ -305,7 +305,7 @@ def sphere_behind_plane(sphere, plane):
     Check if the sphere is fully behind the plane in the direction of
     the plane normal, ie the opposite of sphere_beyond_plane
     """
-    no_intersection = ((meet(sphere, plane) ** 2)[0] < 0)
+    no_intersection = ((meet(sphere, plane) ** 2)[()] < 0)
     return no_intersection and not point_beyond_plane(normalise_n_minus_1((sphere * einf * sphere)(1)), plane)
 
 
@@ -314,7 +314,7 @@ def point_beyond_plane(point, plane):
     Check if the point is fully beyond the plane in the direction of
     the plane normal
     """
-    return (point|(I5*plane))[0] < 0
+    return (point|(I5*plane))[()] < 0
 
 
 @numba.njit
@@ -342,9 +342,9 @@ def join_spheres(S1in, S2in):
     pp2 = (meet(s2, L)(2)).normal()
     p1 = point_pair_to_end_points(pp1)[0]
     p2 = point_pair_to_end_points(pp2)[1]
-    if (p1|(s2*I5))[0] > 0.0:
+    if (p1|(s2*I5))[()] > 0.0:
         opt_sphere = s2(4)
-    elif (p2|(s1*I5))[0] > 0.0:
+    elif (p2|(s1*I5))[()] > 0.0:
         opt_sphere = s1(4)
     else:
         p12 = p1 ^ p2
@@ -434,7 +434,7 @@ def iterative_closest_points_on_circles(C1, C2, niterations=20):
     P_list = point_pair_to_end_points(PP)
     dmin = np.inf
     for Ptest in P_list:
-        d = -(project_points_to_circle([Ptest], C1)[0](1)|project_points_to_circle([Ptest], C2)[0](1))[0]
+        d = -(project_points_to_circle([Ptest], C1)[0](1)|project_points_to_circle([Ptest], C2)[0](1))[()]
         if d < dmin:
             dmin = d
             P2 = Ptest
@@ -467,7 +467,7 @@ def closest_point_on_circle_from_line(C, L, eps=1E-6):
     B = meet(L, phi)
     A = normalise_n_minus_1((C * einf * C)(1))
     bound_sphere = ((C * phi) * I5).normal()
-    if abs((B**2)[0]) < eps:
+    if abs((B**2)[()]) < eps:
         # The line and plane of the circle are parallel
         # Project the line into the plane
         Lpln = (L.normal() + (phi*L*phi)(3).normal()).normal()
@@ -489,7 +489,7 @@ def closest_point_on_circle_from_line(C, L, eps=1E-6):
 
     # If Y is in the sphere that C is the equator of
     if sphere_in_sphere(Y*I5, bound_sphere):
-        if abs((A | P)[0]) < eps:
+        if abs((A | P)[()]) < eps:
             # Just project the line
             L2 = (L.normal() + (phi * L * phi)(3).normal())
             if abs(L2) < eps:
@@ -497,7 +497,7 @@ def closest_point_on_circle_from_line(C, L, eps=1E-6):
                 L2 = (A ^ project_points_to_circle([random_conformal_point()], C)[0] ^ einf).normal()
             else:
                 L2 = L2.normal()
-        elif abs((P | Y)[0]) < eps:
+        elif abs((P | Y)[()]) < eps:
             # Line is perpendicular to the plane of the circle
             L2 = A ^ Y ^ einf
         else:
@@ -506,7 +506,7 @@ def closest_point_on_circle_from_line(C, L, eps=1E-6):
         L2 = A ^ Y ^ einf
     PP = meet(L2, bound_sphere)
     Xs = point_pair_to_end_points(PP)
-    return max(Xs, key=lambda x: (x | P)[0])
+    return max(Xs, key=lambda x: (x | P)[()])
 
 
 def iterative_closest_points_circle_line(C, L, niterations=20):
@@ -527,7 +527,7 @@ def iterative_closest_points_circle_line(C, L, niterations=20):
     P_list = point_pair_to_end_points(PP)
     dmin = np.inf
     for Ptest in P_list:
-        d = -(project_points_to_circle([Ptest], C)[0](1)|project_points_to_line([Ptest], L)[0](1))[0]
+        d = -(project_points_to_circle([Ptest], C)[0](1)|project_points_to_line([Ptest], L)[0](1))[()]
         if d < dmin:
             dmin = d
             P2 = Ptest
@@ -766,9 +766,9 @@ def get_circle_in_euc(circle):
     Ic = (circle^ninf).normal()
     GAnormal = get_plane_normal(Ic)
     inPlaneDual = circle*Ic
-    mag = float((inPlaneDual|ninf)[0])
+    mag = (inPlaneDual|ninf)[()]
     inPlaneDual = -inPlaneDual/mag
-    radius_squared = (inPlaneDual*inPlaneDual)[0]
+    radius_squared = (inPlaneDual*inPlaneDual)[()]
     radius = math.sqrt(abs(radius_squared))
     if radius_squared < 0:
         # We have an imaginary circle, return it as a negative radius as our signal
@@ -800,7 +800,7 @@ def line_to_point_and_direction(line):
 
 def get_plane_origin_distance(plane):
     """ Get the distance between a given plane and the origin """
-    return float(((plane*I5)|no)[0])
+    return ((plane*I5)|no)[()]
 
 
 def get_plane_normal(plane):
@@ -899,8 +899,9 @@ def meet_val(a_val, b_val):
 @numba.njit
 def meet(A, B):
     """
-    The meet algorithm as described in "A Covariant Approach to Geometry"
-    I5*((I5*A) ^ (I5*B))
+    The meet algorithm as described in :cite:`lasenby-covariant-approach`.
+
+    ``I5*((I5*A) ^ (I5*B))``
     """
     return fast_dual(fast_dual(A) ^ fast_dual(B))
 
@@ -982,7 +983,7 @@ def get_radius_from_sphere(sphere):
     Returns the radius of a sphere
     """
     dual_sphere = sphere * I5
-    dual_sphere = dual_sphere / (-dual_sphere | ninf)[0]
+    dual_sphere = dual_sphere / (-dual_sphere | ninf)[()]
     return math.sqrt(abs(dual_sphere * dual_sphere))
 
 
@@ -1012,7 +1013,7 @@ def point_pair_to_end_points(T):
 
 def euc_dist(conf_mv_a, conf_mv_b):
     """ Returns the distance between two conformal points """
-    dot_result = (conf_mv_a|conf_mv_b)[0]
+    dot_result = (conf_mv_a|conf_mv_b)[()]
     if dot_result < 0.0:
         return math.sqrt(-2.0*dot_result)
     else:
@@ -1374,26 +1375,26 @@ def calculate_S_over_mu(X1, X2):
     For any two conformal objects X1 and X2 this returns a factor that corrects
     the X1 + X2 back to a blade
     """
-    gamma1 = (X1 * X1)[0]
-    gamma2 = (X2 * X2)[0]
+    gamma1 = (X1 * X1)[()]
+    gamma2 = (X2 * X2)[()]
 
     M12 = X1 * X2 + X2 * X1
     K = 2 + gamma1 * M12
-    mu = (K[0]**2 - K(4)**2)[0]
+    mu = (K[()]**2 - K(4)**2)[()]
 
     if sum(np.abs(M12(4).value)) > 0.0000001:
-        lamb = (-(K(4) * K(4)))[0]
-        mu = K[0] ** 2 + lamb
+        lamb = (-(K(4) * K(4)))[()]
+        mu = K[()] ** 2 + lamb
         root_mu = np.sqrt(mu)
         if abs(lamb) < 0.0000001:
-            beta = 1.0 / (2 * np.sqrt(K[0]))
+            beta = 1.0 / (2 * np.sqrt(K[()]))
         else:
-            beta_sqrd = 1 / (2 * (root_mu + K[0]))
+            beta_sqrd = 1 / (2 * (root_mu + K[()]))
             beta = np.sqrt(beta_sqrd)
         S = -gamma1/(2*beta) + beta*M12(4)
         return S/np.sqrt(mu)
     else:
-        S = np.sqrt(abs(K[0]))
+        S = np.sqrt(abs(K[()]))
     return S/np.sqrt(mu)
 
 

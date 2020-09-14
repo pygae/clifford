@@ -1,9 +1,11 @@
-import numba
 import operator
+import pickle
+
+import numba
+import pytest
 
 from clifford.g3c import layout, e1, e2, e3, e4, e5
 import clifford as cf
-import pytest
 
 
 @numba.njit
@@ -127,7 +129,21 @@ class TestOperators:
     def grade_func(a, grade):
         return a(grade)
 
-    @pytest.mark.parametrize('func', [literal_grade_func, grade_func])
+    # vararg versions
+    def literal_grade_func_star(a, *grades):
+        @numba.njit
+        def grade_func(a):
+            return a(*grades)
+        return grade_func(a)
+
+    @numba.njit
+    def grade_func_star(a, *grades):
+        return a(*grades)
+
+    @pytest.mark.parametrize('func', [
+        literal_grade_func, grade_func,
+        literal_grade_func_star, grade_func_star,
+    ])
     def test_grade_projection(self, func):
         a = 1 + e1 + (e1^e2) + (e1^e2^e3) + (e1^e2^e3^e4) + (e1^e2^e3^e4^e5)
 
@@ -137,3 +153,22 @@ class TestOperators:
         assert func(a, 3) == e1^e2^e3
         assert func(a, 4) == e1^e2^e3^e4
         assert func(a, 5) == e1^e2^e3^e4^e5
+
+    @pytest.mark.parametrize('func', [
+        literal_grade_func_star, grade_func_star,
+    ])
+    def test_multiple_grade_projection(self, func):
+        a = 1 + e1 + (e1^e2) + (e1^e2^e3) + (e1^e2^e3^e4) + (e1^e2^e3^e4^e5)
+
+        assert func(a, 0, 1) == 1 + e1
+        assert func(a, 0, 1, 2, 3, 4, 5) == a
+
+
+def test_pickling():
+    lt = layout._numba_type_
+    assert pickle.loads(pickle.dumps(lt)) is lt
+
+    # gh-349, populating `lt._cache` should not break pickling
+    e1._numba_type_  # int
+    (e1 * 1.0)._numba_type_  # float
+    assert pickle.loads(pickle.dumps(lt)) is lt

@@ -447,16 +447,32 @@ class Layout(object):
         else:
             # Equivalent to but faster than
             #   Iinv = self.pseudoScalar.inv().value
-            Iinv = np.zeros(self.gaDims)
             II_scalar = self.gmt[-1, 0, -1]
+            inv_II_scalar = 1 / II_scalar
+            if II_scalar in (1, -1):
+                Iinv = np.zeros(self.gaDims, dtype=int)
+            else:
+                Iinv = np.zeros(self.gaDims, dtype=type(inv_II_scalar))
             # set the pseudo-scalar part
-            Iinv[-1] = 1 / II_scalar
+            Iinv[-1] = inv_II_scalar
 
             gmt_func = self.gmt_func
             @_numba_utils.njit
             def dual_func(Xval):
                 return gmt_func(Xval, Iinv)
             return dual_func
+
+    @_cached_property
+    def _grade_invol(self):
+        """
+        Generates the grade involution function
+        """
+        signs = np.power(-1, self._basis_blade_order.grades)
+        @_numba_utils.njit
+        def grade_inv_func(mv):
+            newValue = signs * mv.value
+            return self.MultiVector(newValue)
+        return grade_inv_func
 
     @_cached_property
     def vee_func(self):
@@ -562,11 +578,55 @@ class Layout(object):
 
         @_numba_utils.njit
         def comp_func(Xval):
-            Yval = np.zeros(dims)
+            Yval = np.zeros(dims, dtype=Xval.dtype)
             for i, s in enumerate(signlist):
                 Yval[i] = Xval[dims-1-i]*s
             return Yval
         return comp_func
+
+    @_cached_property
+    def _hitzer_inverse(self):
+        """
+        Performs the inversion operation as described in the paper :cite:`Hitzer_Sangwine_2017`
+        """
+        tot = np.sum(self.sig != 0)
+        @_numba_utils.njit
+        def hitzer_inverse(operand):
+            if tot == 0:
+                numerator = operand.layout.scalar
+            elif tot == 1:
+                # Equation 4.3
+                mv_invol = operand.gradeInvol()
+                numerator = mv_invol
+            elif tot == 2:
+                # Equation 5.5
+                mv_conj = operand.conjugate()
+                numerator = mv_conj
+            elif tot == 3:
+                # Equation 6.5  without the rearrangement from 6.4
+                mv_conj = operand.conjugate()
+                mv_mul_mv_conj = operand * mv_conj
+                numerator = (mv_conj * ~mv_mul_mv_conj)
+            elif tot == 4:
+                # Equation 7.7
+                mv_conj = operand.conjugate()
+                mv_mul_mv_conj = operand * mv_conj
+                numerator = mv_conj * (mv_mul_mv_conj - 2 * mv_mul_mv_conj(3, 4))
+            elif tot == 5:
+                # Equation 8.22 without the rearrangement from 8.21
+                mv_conj = operand.conjugate()
+                mv_mul_mv_conj = operand * mv_conj
+                combo_op = mv_conj * ~mv_mul_mv_conj
+                mv_combo_op = operand * combo_op
+                numerator = combo_op * (mv_combo_op - 2 * mv_combo_op(1, 4))
+            else:
+                raise NotImplementedError(
+                    'Closed form inverses for algebras with more than 5 dimensions are not implemented')
+            denominator = (operand * numerator).value[0]
+            if denominator == 0:
+                raise ValueError('Multivector has no inverse')
+            return numerator / denominator
+        return hitzer_inverse
 
     @_cached_property
     def gmt_func(self):
@@ -667,7 +727,7 @@ class Layout(object):
             self._metric = np.zeros((len(basis_vectors), len(basis_vectors)))
             for i, v in enumerate(basis_vectors):
                 for j, v2 in enumerate(basis_vectors):
-                    self._metric[i, j] = (v | v2)[0]
+                    self._metric[i, j] = (v | v2)[()]
             return self._metric.copy()
         else:
             return self._metric.copy()

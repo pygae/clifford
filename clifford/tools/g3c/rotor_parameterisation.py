@@ -23,7 +23,7 @@ def dorst_sinh(A):
     sinh of a bivector as given in square root and logarithm of rotors
     by Dorst and Valkenburg
     """
-    A2 = (A * A)[0]
+    A2 = (A * A)[()]
     if A2 > 0:
         root_A2 = np.sqrt(A2)
         return (np.sinh(root_A2) / root_A2) * A
@@ -38,7 +38,7 @@ def dorst_atanh2(s, c):
     """
     Atanh2 of a bivector as given in :cite:`log-of-rotors`
     """
-    s2 = (s * s)[0]
+    s2 = (s * s)[()]
     if s2 > 0:
         root_s2 = np.sqrt(s2)
         return (np.arcsinh(root_s2) / root_s2) * s
@@ -60,8 +60,8 @@ def decompose_bivector(F):
     if F2 == 0:
         return +F, 0*e1
     c2 = 0.5 * F2(4)
-    c1_2 = (c1 * c1)[0]
-    c2_2 = (c2 * c2)[0]
+    c1_2 = (c1 * c1)[()]
+    c2_2 = (c2 * c2)[()]
     lambs = np.roots([1, -c1_2, c2_2])
     F1 = (c1 * c2 - lambs[0] * c1) / (lambs[1] - lambs[0])
     F2 = (c1 * c2 - lambs[1] * c1) / (lambs[0] - lambs[1])
@@ -74,15 +74,15 @@ def general_logarithm(R):
 
     From :cite:`log-of-rotors`.
     """
-    F = 2 * (R(4) - R[0]) * R(2)
+    F = 2 * (R(4) - R[()]) * R(2)
     S1, S2 = decompose_bivector(F)
 
     def dorst_cosh(S):
-        s2 = (S * S)[0]
+        s2 = (S * S)[()]
         if abs(s2) < 0.000001:
-            return (R ** 2)[0]
+            return (R ** 2)[()]
         else:
-            return -((R ** 2)(2) * (S / s2))[0]
+            return -((R ** 2)(2) * (S / s2))[()]
 
     C1 = dorst_cosh(S2)
     C2 = dorst_cosh(S1)
@@ -226,7 +226,7 @@ def extractRotorComponents(R):
 
     From :cite:`wareham-interpolation`.
     """
-    phi = np.arccos(float(R[0]))             # scalar
+    phi = np.arccos(R[()])             # scalar
     phi2 = phi * phi                  # scalar
     # Notice: np.sinc(pi * x)/(pi x)
     phi_sinc = np.sinc(phi/np.pi)             # scalar

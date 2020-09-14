@@ -47,7 +47,7 @@ def down_cga1(point_cga1):
     """
     Take a point in CGA
     """
-    return (point_cga1/-(point_cga1|einf1)[0]).value[1:4]
+    return (point_cga1/-(point_cga1|einf1)[()]).value[1:4]
 
 
 def up_cga2(pnt_vector):

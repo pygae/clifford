@@ -32,6 +32,13 @@ class LayoutType(types.Dummy):
             name = "LayoutType({!r})".format(layout)
         super().__init__(name)
 
+    def __getstate__(self):
+        # the cache causes issues with numba's pickle modifications, as it
+        # contains a self-reference.
+        d = self.__dict__.copy()
+        d['_cache'] = {}
+        return d
+
 
 @numba.extending.register_model(LayoutType)
 class LayoutModel(numba.extending.models.OpaqueModel):

@@ -285,27 +285,40 @@ def ga_neg(a):
 
 
 @overload_call(MultiVectorType)
-def ga_call(self, arg):
-    # grade projection
-    grades = self.layout_type.obj._basis_blade_order.grades
-    if isinstance(arg, types.IntegerLiteral):
-        # Optimized case where the mask can be computed at compile-time.
-        # using `nonzero` makes the resulting array smaller.
-        inds, = (grades == arg.literal_value).nonzero()
-        def impl(self, arg):
-            mv = self.layout.MultiVector(np.zeros_like(self.value))
-            mv.value[inds] = self.value[inds]
-            return mv
-        return impl
-    elif isinstance(arg, types.Integer):
-        # runtime grade selection - should be less common
-        def impl(self, arg):
-            # probably faster to not call nonzero here
-            inds = grades == arg
-            mv = self.layout.MultiVector(np.zeros_like(self.value))
-            mv.value[inds] = self.value[inds]
-            return mv
-        return impl
+def ga_call(self, *args):
+    # a numba quirk means that varargs can end up passed in two different ways
+    if len(args) == 1 and isinstance(args[0], (types.StarArgTuple, types.StarArgUniTuple)):
+        args = args[0].types
+
+    # grade selection
+    if len(args) > 0:
+        # grade projection
+        grades = self.layout_type.obj._basis_blade_order.grades
+        if all(isinstance(arg, types.IntegerLiteral) for arg in args):
+            # Optimized case where the mask can be computed at compile-time.
+            inds = (grades == args[0].literal_value)
+            for arg in args[1:]:
+                inds |= (grades == arg.literal_value)
+            # using `nonzero` makes the resulting array smaller.
+            inds = inds.nonzero()
+            def impl(self, *args):
+                mv = self.layout.MultiVector(np.zeros_like(self.value))
+                mv.value[inds] = self.value[inds]
+                return mv
+            return impl
+        elif all(isinstance(arg, types.Integer) for arg in args):
+            # runtime grade selection - should be less common. This includes
+            # the case where only some grades are known at compile-time.
+            def impl(self, *args):
+                # probably faster to not call nonzero here
+                inds = (grades == args[0])
+                # can't use `for arg in args` here due to numba/numba#5372
+                for i in range(1, len(args)):
+                    inds |= (grades == args[i])
+                mv = self.layout.MultiVector(np.zeros_like(self.value))
+                mv.value[inds] = self.value[inds]
+                return mv
+            return impl
 
 
 @numba.extending.overload_method(MultiVectorType, 'mag2')
@@ -324,3 +337,16 @@ def MultiVector___abs__(self):
 @numba.extending.overload_method(MultiVectorType, 'normal')
 def MultiVector_normal(self):
     return MultiVector.normal
+
+
+@numba.extending.overload_method(MultiVectorType, 'gradeInvol')
+def MultiVector_gradeInvol(self):
+    g_func = self.layout_type.obj._grade_invol
+    def impl(self):
+        return g_func(self)
+    return impl
+
+
+@numba.extending.overload_method(MultiVectorType, 'conjugate')
+def MultiVector_conjugate(self):
+    return MultiVector.conjugate

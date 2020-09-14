@@ -28,7 +28,7 @@ def check_p_cost(P, Q):
     """
     For leo dorsts check product cost
     """
-    return (P|check_p(Q))[0]
+    return (P|check_p(Q))[()]
 
 
 def point_to_line_cluster_distance(point, line_cluster):
@@ -134,7 +134,7 @@ def midline_and_error_of_plane_cluster(plane_cluster):
     ref_line = line_list[0]
     line_sum = 0.0 * e1
     for l in line_list:
-        if (ref_line | l)[0] > 0:
+        if (ref_line | l)[()] > 0:
             line_sum += l
         else:
             line_sum -= l
@@ -190,7 +190,7 @@ def alt_rotor_cost(V):
     scale_cost = np.abs(-2*logV[e45])
     scalefac = np.e**(-2*logV[e45])
     R = logV(e123)*e123
-    rotation_cost = abs((R*~R)[0])
+    rotation_cost = abs((R*~R)[()])
     translation_cost = scalefac*abs((logV - logV[e45]*e45 - logV(e123))|eo)
     return rotation_cost + scale_cost + translation_cost
 

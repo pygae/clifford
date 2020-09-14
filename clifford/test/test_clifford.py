@@ -60,7 +60,7 @@ class TestClifford:
             1 / a
         for i in range(10):
             a = randomMV(layout, grades=[0, 1])
-            denominator = float(a(1)**2-a(0)**2)
+            denominator = (a(1)**2)[()]-(a[()]**2)
             if abs(denominator) > 1.e-5:
                 a_inv = (-a(0)/denominator) + ((1./denominator) * a(1))
                 assert abs((a * a_inv)-1.) < 1.e-11
@@ -196,6 +196,59 @@ class TestClifford:
 
         assert 1 + e1 == e1 + np.float64(1)
 
+    def _random_value_array(self, layout, Nrows, Ncolumns):
+        value_array = np.zeros((Nrows, Ncolumns, layout.gaDims))
+        for i in range(Nrows):
+            for j in range(Ncolumns):
+                value_array[i, j, :] = layout.randomMV().value
+        return value_array
+
+    def test_2d_mv_array(self, g3):
+        layout, blades = g3, g3.blades
+        Nrows = 2
+        Ncolumns = 3
+        value_array_a = self._random_value_array(g3, Nrows, Ncolumns)
+        value_array_b = self._random_value_array(g3, Nrows, Ncolumns)
+
+        mv_array_a = MVArray.from_value_array(layout, value_array_a)
+        assert mv_array_a.shape == (Nrows, Ncolumns)
+        mv_array_b = MVArray.from_value_array(layout, value_array_b)
+        assert mv_array_b.shape == (Nrows, Ncolumns)
+
+        # check properties of the array are preserved (no need to check both a and b)
+        np.testing.assert_array_equal(mv_array_a.value, value_array_a)
+        assert mv_array_a.value.dtype == value_array_a.dtype
+        assert type(mv_array_a.value) == type(value_array_a)
+
+        # Check addition
+        mv_array_sum = mv_array_a + mv_array_b
+        array_sum = value_array_a + value_array_b
+        np.testing.assert_array_equal(mv_array_sum.value, array_sum)
+
+        # Check elementwise gp
+        mv_array_gp = mv_array_a * mv_array_b
+        value_array_gp = np.zeros((Nrows, Ncolumns, layout.gaDims))
+        for i in range(Nrows):
+            for j in range(Ncolumns):
+                value_array_gp[i, j, :] = layout.gmt_func(value_array_a[i, j, :], value_array_b[i, j, :])
+        np.testing.assert_array_equal(mv_array_gp.value, value_array_gp)
+
+        # Check elementwise op
+        mv_array_op = mv_array_a ^ mv_array_b
+        value_array_op = np.zeros((Nrows, Ncolumns, layout.gaDims))
+        for i in range(Nrows):
+            for j in range(Ncolumns):
+                value_array_op[i, j, :] = layout.omt_func(value_array_a[i, j, :], value_array_b[i, j, :])
+        np.testing.assert_array_equal(mv_array_op.value, value_array_op)
+
+        # Check elementwise ip
+        mv_array_ip = mv_array_a | mv_array_b
+        value_array_ip = np.zeros((Nrows, Ncolumns, layout.gaDims))
+        for i in range(Nrows):
+            for j in range(Ncolumns):
+                value_array_ip[i, j, :] = layout.imt_func(value_array_a[i, j, :], value_array_b[i, j, :])
+        np.testing.assert_array_equal(mv_array_ip.value, value_array_ip)
+
     def test_array_control(self, g3):
         '''
         test methods to take control addition from numpy arrays
@@ -242,11 +295,11 @@ class TestClifford:
 
         normed_array = test_array.normal()
         other_array = np.array([t.normal().value for t in test_array])
-        np.testing.assert_almost_equal(normed_array.value, other_array)
+        np.testing.assert_array_equal(normed_array.value, other_array)
 
         dual_array = test_array.dual()
         other_array_2 = np.array([t.dual().value for t in test_array])
-        np.testing.assert_almost_equal(dual_array.value, other_array_2)
+        np.testing.assert_array_equal(dual_array.value, other_array_2)
 
     def test_comparison_operators(self, g3):
         layout, blades = g3, g3.blades
@@ -326,6 +379,7 @@ class TestClifford:
         e1 = blades['e1'].astype(dtype)
         e2 = blades['e2'].astype(dtype)
         assert func(e1, np.int8(1)).value.dtype == dtype
+        assert func(np.int8(1), e1).value.dtype == dtype
         assert func(e1, e2).value.dtype == dtype
 
     @pytest.mark.parametrize('func', [
@@ -333,6 +387,9 @@ class TestClifford:
         operator.pos,
         operator.neg,
         MultiVector.gradeInvol,
+        MultiVector.dual,
+        MultiVector.right_complement,
+        MultiVector.left_complement,
     ])
     def test_unary_op_preserves_dtype(self, func, g3):
         """ test that simple unary ops on blades do not promote types """
@@ -487,11 +544,11 @@ class TestBasicConformal41:
         e4 = layout.blades['e4']
         e5 = layout.blades['e5']
 
-        assert (e1 * e1)[0] == 1
-        assert (e2 * e2)[0] == 1
-        assert (e3 * e3)[0] == 1
-        assert (e4 * e4)[0] == 1
-        assert (e5 * e5)[0] == -1
+        assert (e1 * e1)[()] == 1
+        assert (e2 * e2)[()] == 1
+        assert (e3 * e3)[()] == 1
+        assert (e4 * e4)[()] == 1
+        assert (e5 * e5)[()] == -1
 
     def test_vee(self, g3c):
         layout = g3c
