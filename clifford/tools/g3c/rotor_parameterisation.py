@@ -16,11 +16,6 @@ unit_scalar_mv = 1.0 + 0.0*e1
 imt_func = layout.imt_func
 gmt_func = layout.gmt_func
 adjoint_func = layout.adjoint_func
-e4_val = e4.value
-ninf_val = einf.value
-I5_val = I5.value
-no_val = no.value
-I3_val = I3.value
 
 
 def dorst_sinh(A):
@@ -28,7 +23,7 @@ def dorst_sinh(A):
     sinh of a bivector as given in square root and logarithm of rotors
     by Dorst and Valkenburg
     """
-    A2 = (A * A)[0]
+    A2 = (A * A)[()]
     if A2 > 0:
         root_A2 = np.sqrt(A2)
         return (np.sinh(root_A2) / root_A2) * A
@@ -41,10 +36,9 @@ def dorst_sinh(A):
 
 def dorst_atanh2(s, c):
     """
-    Atanh2 of a bivector as given in square root and logarithm of rotors
-    by Dorst and Valkenburg
+    Atanh2 of a bivector as given in :cite:`log-of-rotors`
     """
-    s2 = (s * s)[0]
+    s2 = (s * s)[()]
     if s2 > 0:
         root_s2 = np.sqrt(s2)
         return (np.arcsinh(root_s2) / root_s2) * s
@@ -66,8 +60,8 @@ def decompose_bivector(F):
     if F2 == 0:
         return +F, 0*e1
     c2 = 0.5 * F2(4)
-    c1_2 = (c1 * c1)[0]
-    c2_2 = (c2 * c2)[0]
+    c1_2 = (c1 * c1)[()]
+    c2_2 = (c2 * c2)[()]
     lambs = np.roots([1, -c1_2, c2_2])
     F1 = (c1 * c2 - lambs[0] * c1) / (lambs[1] - lambs[0])
     F2 = (c1 * c2 - lambs[1] * c1) / (lambs[0] - lambs[1])
@@ -77,18 +71,18 @@ def decompose_bivector(F):
 def general_logarithm(R):
     """
     Takes a general conformal rotor and returns the log
-    From square root and loagrithm of rotors by Leo Dorst
-    and Robert Valkenburg
+
+    From :cite:`log-of-rotors`.
     """
-    F = 2 * (R(4) - R[0]) * R(2)
+    F = 2 * (R(4) - R[()]) * R(2)
     S1, S2 = decompose_bivector(F)
 
     def dorst_cosh(S):
-        s2 = (S * S)[0]
+        s2 = (S * S)[()]
         if abs(s2) < 0.000001:
-            return (R ** 2)[0]
+            return (R ** 2)[()]
         else:
-            return -((R ** 2)(2) * (S / s2))[0]
+            return -((R ** 2)(2) * (S / s2))[()]
 
     C1 = dorst_cosh(S2)
     C2 = dorst_cosh(S1)
@@ -172,13 +166,13 @@ def val_exp(B_val):
     """
     Fast implementation of the translation and rotation specific exp function
     """
-    t_val = imt_func(B_val, no_val)
+    t_val = imt_func(B_val, no.value)
 
     phiP_val = B_val - mult_with_ninf(t_val)
     phi = np.sqrt(-float(gmt_func(phiP_val, phiP_val)[0]))
     P_val = phiP_val / phi
 
-    P_n_val = gmt_func(P_val, I3_val)
+    P_n_val = gmt_func(P_val, I3.value)
     t_nor_val = gmt_func(imt_func(t_val, P_n_val), P_n_val)
     t_par_val = t_val - t_nor_val
 
@@ -202,8 +196,8 @@ def ga_exp(B):
 def interpolate_TR_rotors(R_n_plus_1, R_n, interpolation_fraction):
     """
     Interpolates TR type rotors
-    Mesh Vertex Pose and Position Interpolation using Geometric Algebra.
-    Rich Wareham and Joan Lasenby
+
+    From :cite:`wareham-interpolation`.
     """
     if interpolation_fraction < np.finfo(float).eps:
         return R_n
@@ -216,11 +210,7 @@ def interpolate_TR_rotors(R_n_plus_1, R_n, interpolation_fraction):
 def interpolate_rotors(R_n_plus_1, R_n, interpolation_fraction):
     """
     Interpolates all conformal type rotors
-    Mesh Vertex Pose and Position Interpolation using Geometric Algebra
-    Rich Wareham and Joan Lasenby
-    and
-    Square Root and Logarithm of Rotors
-    Leo Dorst and Robert Valkenburg
+    From :cite:`wareham-interpolation` and :cite:`log-of-rotors`.
     """
     if interpolation_fraction < np.finfo(float).eps:
         return R_n
@@ -233,10 +223,10 @@ def interpolate_rotors(R_n_plus_1, R_n, interpolation_fraction):
 def extractRotorComponents(R):
     """
     Extracts the translation and rotation information from a TR rotor
-    Mesh Vertex Pose and Position Interpolation using Geometric Algebra.
-    Rich Wareham and Joan Lasenby
+
+    From :cite:`wareham-interpolation`.
     """
-    phi = np.arccos(float(R[0]))             # scalar
+    phi = np.arccos(R[()])             # scalar
     phi2 = phi * phi                  # scalar
     # Notice: np.sinc(pi * x)/(pi x)
     phi_sinc = np.sinc(phi/np.pi)             # scalar
@@ -250,10 +240,10 @@ def ga_log(R):
     """
     R must be a TR rotor. grades in [0, 2, 4]
 
-    Presented by R. Wareham (Applications of CGA)
+    Presented in :cite:`wareham-applications`.
 
-
-    WARNING: DOES NOT COMMUTE log(A * B) != log(A) + log(B)
+    .. warning::
+        Does not commute, ``log(A * B) != log(A) + log(B)``
     """
     phiP, t_normal_n, t_perpendicular_n = extractRotorComponents(R)
     return phiP + t_normal_n + t_perpendicular_n
@@ -268,7 +258,7 @@ def val_vec_repr_to_bivector(x):
     t_val[1] = x[0]
     t_val[2] = x[1]
     t_val[3] = x[2]
-    B_val = gmt_func(t_val, ninf_val)
+    B_val = gmt_func(t_val, ninf.value)
     B_val[6] += x[3]
     B_val[7] += x[4]
     B_val[10] += x[5]

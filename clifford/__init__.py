@@ -81,7 +81,7 @@ from typing import List, Tuple, Set
 
 # Major library imports.
 import numpy as np
-import numba
+import numba as _numba  # to avoid clashing with clifford.numba
 import sparse
 try:
     from numba.np import numpy_support as _numpy_support
@@ -117,7 +117,8 @@ def linear_operator_as_matrix(func, input_blades, output_blades):
     ndimout = len(output_blades)
     mat = np.zeros((ndimout, ndimin))
     for i, b in enumerate(input_blades):
-        mat[:, i] = np.array([func(b)[j] for j in output_blades])
+        b_result = func(b)
+        mat[:, i] = np.array([b_result[j] for j in output_blades])
     return mat
 
 
@@ -146,7 +147,7 @@ def get_mult_function(mt: sparse.COO, gradeList,
         return _get_mult_function_runtime_sparse(mt)
 
 
-def _get_mult_function_result_type(a: numba.types.Type, b: numba.types.Type, mt: np.dtype):
+def _get_mult_function_result_type(a: _numba.types.Type, b: _numba.types.Type, mt: np.dtype):
     a_dt = _numpy_support.as_dtype(getattr(a, 'dtype', a))
     b_dt = _numpy_support.as_dtype(getattr(b, 'dtype', b))
     return np.result_type(a_dt, mt, b_dt)
@@ -272,7 +273,7 @@ def grade_obj(objin, threshold=0.0000001):
     '''
     Returns the modal grade of a multivector
     '''
-    return grade_obj_func(objin.value, np.asarray(objin.layout.gradeList), threshold)
+    return grade_obj_func(objin.value, objin.layout._basis_blade_order.grades, threshold)
 
 
 def grades_present(objin: 'MultiVector', threshold=0.0000001) -> Set[int]:
@@ -324,6 +325,9 @@ from ._conformal_layout import ConformalLayout  # noqa: E402
 from ._layout_helpers import BasisVectorIds, BasisBladeOrder  # noqa: F401
 from ._mvarray import MVArray, array  # noqa: F401
 from ._frame import Frame  # noqa: F401
+
+# this registers the extension type
+from . import numba  # noqa: F401
 from ._blademap import BladeMap  # noqa: F401
 
 
@@ -403,7 +407,7 @@ def randomMV(
             grades = [grades]
         newValue = np.zeros((layout.gaDims,))
         for i in range(layout.gaDims):
-            if layout.gradeList[i] in grades:
+            if layout._basis_blade_order.grades[i] in grades:
                 newValue[i] = uniform(min, max)
         mv = mvClass(layout, newValue)
 

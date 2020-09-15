@@ -80,7 +80,7 @@ def val_fit_line(point_list):
         best_obj = point_list[0, :]
         for i in range(1, 2):
             best_obj = omt_func(best_obj, point_list[i, :])
-        return val_normalised(omt_func(best_obj, ninf_val))
+        return val_normalised(omt_func(best_obj, ninf.value))
     accumulator_matrix = np.zeros((32, 32))
     for i in range(point_list.shape[0]):
         P_i_l = get_left_gmt_matrix(point_list[i, :])
@@ -95,7 +95,7 @@ def val_fit_line(point_list):
         if e_vals[i] < min_eval and e_vals[i] > 0:
             min_eval = e_vals[i]
             min_eval_index = i
-    best_line = mask3@omt_func(dual_func(e_vecs[:, min_eval_index]), ninf_val)
+    best_line = mask3@omt_func(dual_func(e_vecs[:, min_eval_index]), ninf.value)
     return val_normalised(best_line)
 
 
@@ -155,7 +155,7 @@ def val_fit_plane(point_list):
         best_obj = point_list[0, :]
         for i in range(1, 3):
             best_obj = omt_func(best_obj, point_list[i, :])
-        return val_normalised(omt_func(best_obj, ninf_val))
+        return val_normalised(omt_func(best_obj, ninf.value))
     accumulator_matrix = np.zeros((32, 32))
     for i in range(point_list.shape[0]):
         P_i_l = get_left_gmt_matrix(point_list[i, :])

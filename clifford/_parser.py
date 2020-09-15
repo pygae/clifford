@@ -105,11 +105,11 @@ def parse_multivector(layout: Layout, mv_string: str) -> MultiVector:
             coeff = data
 
         elif t == 'blade' and last_t == 'wedge':
-            mv_out[data] += coeff
+            mv_out.value[data] += coeff
         elif t == 'blade' and last_t == 'sign':
-            mv_out[data] += sign
+            mv_out.value[data] += sign
         elif t == 'blade' and last_t is None:
-            mv_out[data] += 1
+            mv_out.value[data] += 1
 
         elif t == 'wedge' and last_t == 'coeff':
             pass

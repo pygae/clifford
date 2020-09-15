@@ -1,7 +1,11 @@
+import functools
+import operator
+from typing import Tuple
+
 import numpy as np
 
-
 from clifford.io import write_ga_file, read_ga_file  # noqa: F401
+from ._layout import Layout
 from ._multivector import MultiVector
 
 dual_array = np.vectorize(MultiVector.dual)
@@ -9,34 +13,67 @@ normal_array = np.vectorize(MultiVector.normal)
 call_array = np.vectorize(MultiVector.__call__)
 
 
-class MVArray(np.ndarray):
-    '''
-    MultiVector Array
-    '''
+def _interrogate_nested_mvs(input_array) -> Tuple[Tuple[int, ...], Layout, np.dtype]:
+    """
+    Calculates the shape of the nested input_array, and gets the associated layout.
+    Stops descending when it encounters a MultiVector.
+    """
+    if not isinstance(input_array, MultiVector):
+        nested_shape, layout, dtype = _interrogate_nested_mvs(input_array[0])
+        return (len(input_array), *nested_shape), layout, dtype
+    else:
+        return (), input_array.layout, input_array.value.dtype
 
+
+def _index_nested_iterable(input_iterable, index):
+    """
+    Given a nested iterable, input_iterable, return the element given by the
+    1d index iterable
+    """
+    return functools.reduce(operator.getitem, index, input_iterable)
+
+
+@functools.lru_cache(None)
+def _get_vectorized_value_func(dtype):
+    return np.vectorize(lambda x: x.value, otypes=[dtype], signature='()->(n)')
+
+
+class MVArray(np.ndarray):
+    """
+    MultiVector Array
+    """
     def __new__(cls, input_array):
-        obj = np.empty(len(input_array), dtype=object)
-        obj[:] = input_array
-        obj = obj.view(cls)
-        return obj
+
+        input_shape, layout, dtype = _interrogate_nested_mvs(input_array)
+        # copying this across elementwise is necessary to prevent numpy recursing into the multivector coefficients
+        obj = np.empty(input_shape, dtype=object)
+        for index in np.ndindex(input_shape):
+            obj[index] = _index_nested_iterable(input_array, index)
+
+        self = obj.view(cls)
+        return self
 
     def __array_finalize__(self, obj):
         if obj is None:
             return
+
+    def _get_first_element(self):
+        return self[(0,) * self.ndim]
 
     @property
     def value(self):
         """
         Return an np array of the values of multivectors
         """
-        return np.array([mv.value for mv in self])
+        value_dtype = self._get_first_element().value.dtype
+        return _get_vectorized_value_func(value_dtype)(self)
 
     @staticmethod
     def from_value_array(layout, value_array):
         """
         Constructs an array of mvs from a value array
         """
-        v_new_mv = np.vectorize(lambda v: MultiVector(layout, v), otypes=[MVArray], signature='(n)->()')
+        v_new_mv = np.vectorize(lambda v: layout.MultiVector(v), otypes=[object], signature='(n)->()')
         return MVArray(v_new_mv(value_array))
 
     def save(self, filename, compression=True, transpose=False,
@@ -44,14 +81,16 @@ class MVArray(np.ndarray):
         """
         Saves the array to a ga file
         """
-        write_ga_file(filename, self.value, self[0].layout.metric, self[0].layout.basis_names,
+        first_element = self._get_first_element()
+        write_ga_file(filename, self.value, first_element.layout.metric,
+                      first_element.layout.basis_names,
                       compression=compression, transpose=transpose,
                       sparse=sparse, support=support, compression_opts=compression_opts)
 
     def sum(self):
-        '''
+        """
         sum elements of this MVArray
-        '''
+        """
         out = self[0]
         for k in self[1:]:
             out += k

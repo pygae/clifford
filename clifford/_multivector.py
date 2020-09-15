@@ -1,12 +1,14 @@
 import numbers
 import math
 from typing import List, Set, Tuple, Union
+import warnings
 
 import numpy as np
 
 import clifford as cf
 from . import general_exp
 from . import _settings
+from ._layout_helpers import layout_short_name
 
 
 class MultiVector(object):
@@ -379,8 +381,14 @@ class MultiVector(object):
     # sequence special methods
     def __len__(self) -> int:
         """Returns length of value array.
-        """
 
+        .. deprecated:: 1.4.0
+            Use ``self.layout.gaDims`` or ``len(self.value)`` instead.
+        """
+        warnings.warn(
+            "Treating MultiVector objects like a sequence is deprecated. "
+            "To access the coefficients as a sequence, use the `.value` attribute.",
+            DeprecationWarning, stacklevel=2)
         return self.layout.gaDims
 
     def __getitem__(self, key: Union['MultiVector', tuple, int]) -> numbers.Number:
@@ -389,7 +397,10 @@ class MultiVector(object):
 
         If key is a blade tuple (e.g. ``(0, 1)`` or ``(1, 3)``), or a blade,
         (e.g. ``e12``),  then return the (real) value of that blade's coefficient.
-        Otherwise, treat key as an index into the list of coefficients.
+
+        .. deprecated:: 1.4.0
+            If an integer is passed, it is treated as an index into ``self.value``.
+            Use ``self.value[i]`` directly.
         """
         if isinstance(key, MultiVector):
             inds, = np.nonzero(key.value)
@@ -399,7 +410,12 @@ class MultiVector(object):
         elif isinstance(key, tuple):
             sign, idx = self.layout._sign_and_index_from_tuple(key)
             return sign*self.value[idx]
-        return self.value[key]
+        else:
+            warnings.warn(
+                "Treating MultiVector objects like a sequence is deprecated. "
+                "To access the coefficients as a sequence, use the `.value` attribute.",
+                DeprecationWarning, stacklevel=2)
+            return self.value[key]
 
     def __setitem__(self, key:  Union[tuple, int], value: numbers.Number) -> None:
         """
@@ -407,12 +423,19 @@ class MultiVector(object):
 
         If key is a blade tuple (e.g. (0, 1) or (1, 3)), then set
         the (real) value of that blade's coeficient.
-        Otherwise treat key as an index into the list of coefficients.
+
+        .. deprecated:: 1.4.0
+            If an integer is passed, it is treated as an index into ``self.value``.
+            Use ``self.value[i]`` directly.
         """
         if isinstance(key, tuple):
             sign, idx = self.layout._sign_and_index_from_tuple(key)
             self.value[idx] = sign*value
         else:
+            warnings.warn(
+                "Treating MultiVector objects like a sequence is deprecated. "
+                "To access the coefficients as a sequence, use the `.value` attribute.",
+                DeprecationWarning, stacklevel=2)
             self.value[key] = value
 
     # grade projection
@@ -441,13 +464,10 @@ class MultiVector(object):
         if len(others) != 0:
             return sum([self.__call__(k) for k in (other,)+others])
 
-        if grade not in self.layout.gradeList:
-            raise ValueError("algebra does not have grade %s" % grade)
-
         if not np.issubdtype(type(grade), np.integer):
             raise ValueError("grade must be an integer")
 
-        mask = np.equal(grade, self.layout.gradeList)
+        mask = self.layout.grade_mask(grade)
 
         newValue = np.multiply(mask, self.value)
 
@@ -461,7 +481,7 @@ class MultiVector(object):
         s = ''
         p = _settings._print_precision
 
-        for grade, name, coeff in zip(self.layout.gradeList, self.layout.names, self.value):
+        for grade, name, coeff in zip(self.layout._basis_blade_order.grades, self.layout.names, self.value):
             # if we have nothing yet, don't use + and - as operators but
             # use - as an unary prefix if necessary
             if s:
@@ -507,11 +527,12 @@ class MultiVector(object):
         else:
             dtype_str = None
 
-        if hasattr(self.layout, '__name__') and '__module__' in self.layout.__dict__:
-            fmt = "{l.__module__}.{l.__name__}.MultiVector({v!r}{d})"
+        l_name = layout_short_name(self.layout)
+        args = dict(v=list(self.value), d=dtype_str)
+        if l_name is not None:
+            return "{l}.MultiVector({v!r}{d})".format(l=l_name, **args)
         else:
-            fmt = "{l!r}.MultiVector({v!r}{d})"
-        return fmt.format(l=self.layout, v=list(self.value), d=dtype_str)
+            return "{l!r}.MultiVector({v!r}{d})".format(l=self.layout, **args)
 
     def _repr_pretty_(self, p, cycle):
         if cycle:
@@ -521,8 +542,9 @@ class MultiVector(object):
             p.text(str(self))
             return
 
-        if hasattr(self.layout, '__name__') and '__module__' in self.layout.__dict__:
-            prefix = "{l.__module__}.{l.__name__}.MultiVector(".format(l=self.layout)
+        l_name = layout_short_name(self.layout)
+        if l_name is not None:
+            prefix = "{}.MultiVector(".format(l_name)
             include_layout = False
         else:
             include_layout = True
@@ -613,7 +635,7 @@ class MultiVector(object):
         """
 
         indices = list(range(self.layout.gaDims))
-        indices.remove(self.layout.gradeList.index(0))
+        del indices[self.layout._basis_blade_order.bitmap_to_index[0]]
 
         for i in indices:
             if abs(self.value[i]) < _settings._eps:
@@ -633,11 +655,11 @@ class MultiVector(object):
 
     def isVersor(self) -> bool:
         """Returns true if multivector is a versor.
-        From Leo Dorsts GA for computer science section 21.5, definition from 7.6.4
+        From :cite:`ga4cs` section 21.5, definition from 7.6.4
         """
         Vhat = self.gradeInvol()
         Vrev = ~self
-        Vinv = Vrev/(self*Vrev)[0]
+        Vinv = Vrev/(self*Vrev)[()]
 
         # Test if the versor inverse (~V)/(V * ~V) is truly the inverse of the
         # multivector V
@@ -666,22 +688,19 @@ class MultiVector(object):
         """
         if eps is None:
             eps = _settings._eps
-        nonzero = abs(self.value) > eps
-        return {
-            grade_i
-            for grade_i, nonzero_i in zip(self.layout.gradeList, nonzero)
-            if nonzero_i
-        }
+        nonzero_grades = self.layout._basis_blade_order.grades[abs(self.value) > eps]
+
+        return set(nonzero_grades)
 
     @property
     def blades_list(self) -> List['MultiVector']:
         '''
         ordered list of blades present in this MV
         '''
-        blades_list = self.layout.blades_list
-        value = self.value
+        b = [v*b for v, b in zip(self.value, self.layout.blades_list)]
 
-        b = [value[0]] + [value[k]*blades_list[k] for k in range(1, len(self))]
+        # note that by doing Mv != 0 instead of coef != 0 we add float eps to
+        # our comparison
         return [k for k in b if k != 0]
 
     def normal(self) -> 'MultiVector':
@@ -697,6 +716,9 @@ class MultiVector(object):
 
         return self / abs(self)
 
+    def hitzer_inverse(self):
+        return self.layout._hitzer_inverse(self)
+
     def leftLaInv(self) -> 'MultiVector':
         """Return left-inverse using a computational linear algebra method
         proposed by Christian Perwass.
@@ -710,14 +732,17 @@ class MultiVector(object):
         ----------
         fallback : bool, optional
             If `None`, perform no checks on whether normal inv is appropriate.
-            If `True`, fallback to a linalg approach if necessary.
+            If `True`, fallback to a Hitzer and Sangwine's method :cite:`Hitzer_Sangwine_2017` if possible and a linalg approach if not.
             If `False`, raise an error if normal inv is not appropriate.
         """
         Madjoint = ~self
         MadjointM = (Madjoint * self)
         if fallback is not None and not MadjointM.isScalar():
             if fallback:
-                return self.leftLaInv()
+                try:
+                    return self.hitzer_inverse()
+                except NotImplementedError:
+                    return self.leftLaInv()
             else:
                 raise ValueError("no inverse exists for this multivector")
 
@@ -782,12 +807,7 @@ class MultiVector(object):
             M^* = \sum_{i=0}^{\text{dims}}
                   {(-1)^i \left<M\right>_i}
         """
-
-        signs = np.power(-1, self.layout.gradeList)
-
-        newValue = signs * self.value
-
-        return self._newMV(newValue)
+        return self.layout._grade_invol(self)
 
     @property
     def even(self) -> 'MultiVector':
@@ -834,7 +854,7 @@ class MultiVector(object):
         """
         Factorises a blade into basis vectors and an overall scale.
 
-        Uses Leo Dorsts algorithm from 21.6 of GA for Computer Science
+        Uses the algorithm from :cite:`ga4cs`, section 21.6.
         """
         if not self.isBlade():
             raise ValueError("self is not a blade")

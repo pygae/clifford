@@ -8,7 +8,7 @@ The two public classes are:
 
 """
 
-from typing import TypeVar, Generic, Sequence, Tuple, List
+from typing import TypeVar, Generic, Sequence, Tuple, List, Optional
 import numpy as np
 import functools
 import operator
@@ -252,3 +252,10 @@ class _OrderedIntegerBasisVectorIds(BasisVectorIds[int]):
             return __class__, (self._n,)
         else:
             return __class__, (self._n, self._first_index)
+
+
+def layout_short_name(layout) -> Optional[str]:
+    """ helper to get the short name of a layout """
+    if hasattr(layout, '__name__') and '__module__' in layout.__dict__:
+        return "{l.__module__}.{l.__name__}".format(l=layout)
+    return None

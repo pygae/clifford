@@ -7,9 +7,6 @@ from .rotor_parameterisation import general_logarithm
 imt_func = layout.imt_func
 gmt_func = layout.gmt_func
 adjoint_func = layout.adjoint_func
-e4_val = e4.value
-e5_val = e5.value
-ninf_val = einf.value
 
 
 sparse_cost_imt = layout.imt_func_generator(grades_a=[0, 2, 4], grades_b=[1])
@@ -31,7 +28,7 @@ def check_p_cost(P, Q):
     """
     For leo dorsts check product cost
     """
-    return (P|check_p(Q))[0]
+    return (P|check_p(Q))[()]
 
 
 def point_to_line_cluster_distance(point, line_cluster):
@@ -61,8 +58,8 @@ def midpoint_and_error_of_line_cluster_eig(line_cluster):
     """
     line_cluster_array = np.array([l.value for l in line_cluster], dtype=np.float64)
     mat2solve = val_truncated_get_line_reflection_matrix(line_cluster_array, 128)
-    start = imt_func(no_val, sum(l.value for l in line_cluster))
-    start = gmt_func(gmt_func(start, ninf_val), start)[1:6]
+    start = imt_func(no.value, sum(l.value for l in line_cluster))
+    start = gmt_func(gmt_func(start, ninf.value), start)[1:6]
 
     point_val = np.zeros(32)
     point_val[1:6] = np.matmul(mat2solve, start)
@@ -98,7 +95,8 @@ def midpoint_and_error_of_line_cluster(line_cluster):
     """
     Gets an approximate center point of a line cluster
     as well as an estimate of the error
-    Hadfield and Lasenby AGACSE2018
+
+    From :cite:`rotor-between`.
     """
     line_cluster_array = np.array([l.value for l in line_cluster])
     cp_val = val_midpoint_of_line_cluster(line_cluster_array)
@@ -109,7 +107,8 @@ def midpoint_and_error_of_line_cluster_grad(line_cluster):
     """
     Gets an approximate center point of a line cluster
     as well as an estimate of the error
-    Hadfield and Lasenby AGACSE2018
+
+    From :cite:`rotor-between`.
     """
     line_cluster_array = np.array([l.value for l in line_cluster])
     cp_val = val_midpoint_of_line_cluster_grad(line_cluster_array)
@@ -135,7 +134,7 @@ def midline_and_error_of_plane_cluster(plane_cluster):
     ref_line = line_list[0]
     line_sum = 0.0 * e1
     for l in line_list:
-        if (ref_line | l)[0] > 0:
+        if (ref_line | l)[()] > 0:
             line_sum += l
         else:
             line_sum -= l
@@ -153,7 +152,7 @@ def val_rotor_cost_sparse(R_val):
     """
     rotation_val = R_val.copy()
     rotation_val[0] -= 1
-    translation_val = sparse_cost_imt(R_val, e4_val)
+    translation_val = sparse_cost_imt(R_val, e4.value)
     a = abs(float(sparse_cost_gmt(rotation_val, adjoint_func(rotation_val))[0]))
     b = abs(float(gmt_func(translation_val, adjoint_func(translation_val))[0]))
     return a + b
@@ -191,7 +190,7 @@ def alt_rotor_cost(V):
     scale_cost = np.abs(-2*logV[e45])
     scalefac = np.e**(-2*logV[e45])
     R = logV(e123)*e123
-    rotation_cost = abs((R*~R)[0])
+    rotation_cost = abs((R*~R)[()])
     translation_cost = scalefac*abs((logV - logV[e45]*e45 - logV(e123))|eo)
     return rotation_cost + scale_cost + translation_cost
 

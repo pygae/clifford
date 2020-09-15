@@ -60,8 +60,7 @@ def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
 def gmt_element(bitmap_a, bitmap_b, sig_array):
     """
     Element of the geometric multiplication table given blades a, b.
-    The implementation used here is described in chapter 19 of
-    Leo Dorst's book, Geometric Algebra For Computer Science
+    The implementation used here is described in :cite:`ga4cs` chapter 19.
     """
     output_sign = canonical_reordering_sign(bitmap_a, bitmap_b, sig_array)
     output_bitmap = bitmap_a^bitmap_b
@@ -269,8 +268,6 @@ class Layout(object):
         normalized signature, with all values ``+1`` or ``-1``
     bladeTupList :
         list of blades
-    gradeList :
-        corresponding list of the grades of each blade
     gaDims :
         2**dims
     names :
@@ -335,24 +332,19 @@ class Layout(object):
         self._basis_vector_ids = ids
         self._basis_blade_order = order
 
-        self.gradeList = list(self._basis_blade_order.grades)
-        self.gaDims = len(self.gradeList)
+        self.gaDims = len(order.grades)
 
         self._metric = None
 
         if names is None or isinstance(names, str):
             if isinstance(names, str):
-                e = str(names)
+                e = names
             else:
                 e = 'e'
-            self.names = []
-
-            for i in range(self.gaDims):
-                if self.gradeList[i] >= 1:
-                    self.names.append(e + ''.join(
-                        map(str, self.bladeTupList[i])))
-                else:
-                    self.names.append('')
+            self.names = [
+                e + ''.join(map(str, tup)) if tup else ''
+                for tup in self.bladeTupList
+            ]
 
         elif len(names) == self.gaDims:
             self.names = names
@@ -372,6 +364,10 @@ class Layout(object):
         self.dual_func
         self.vee_func
         self.inv_func
+
+    @property
+    def gradeList(self):
+        return list(self._basis_blade_order.grades)
 
     @_cached_property
     def gmt(self):
@@ -451,16 +447,32 @@ class Layout(object):
         else:
             # Equivalent to but faster than
             #   Iinv = self.pseudoScalar.inv().value
-            Iinv = np.zeros(self.gaDims)
             II_scalar = self.gmt[-1, 0, -1]
+            inv_II_scalar = 1 / II_scalar
+            if II_scalar in (1, -1):
+                Iinv = np.zeros(self.gaDims, dtype=int)
+            else:
+                Iinv = np.zeros(self.gaDims, dtype=type(inv_II_scalar))
             # set the pseudo-scalar part
-            Iinv[-1] = 1 / II_scalar
+            Iinv[-1] = inv_II_scalar
 
             gmt_func = self.gmt_func
             @_numba_utils.njit
             def dual_func(Xval):
                 return gmt_func(Xval, Iinv)
             return dual_func
+
+    @_cached_property
+    def _grade_invol(self):
+        """
+        Generates the grade involution function
+        """
+        signs = np.power(-1, self._basis_blade_order.grades)
+        @_numba_utils.njit
+        def grade_inv_func(mv):
+            newValue = signs * mv.value
+            return self.MultiVector(newValue)
+        return grade_inv_func
 
     @_cached_property
     def vee_func(self):
@@ -519,25 +531,25 @@ class Layout(object):
 
     def gmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(
-            self.gmt, self.gradeList,
+            self.gmt, self._basis_blade_order.grades,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
     def imt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(
-            self.imt, self.gradeList,
+            self.imt, self._basis_blade_order.grades,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
     def omt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(
-            self.omt, self.gradeList,
+            self.omt, self._basis_blade_order.grades,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
     def lcmt_func_generator(self, grades_a=None, grades_b=None, filter_mask=None):
         return get_mult_function(
-            self.lcmt, self.gradeList,
+            self.lcmt, self._basis_blade_order.grades,
             grades_a=grades_a, grades_b=grades_b, filter_mask=filter_mask
         )
 
@@ -546,7 +558,7 @@ class Layout(object):
         Returns the matrix M_g that performs grade projection via left multiplication
         eg. ``M_g@A.value = A(g).value``
         """
-        diag_mask = 1.0 * (np.array(self.gradeList) == grade)
+        diag_mask = 1.0 * (self._basis_blade_order.grades == grade)
         return np.diag(diag_mask)
 
     def _gen_complement_func(self, omt):
@@ -566,27 +578,71 @@ class Layout(object):
 
         @_numba_utils.njit
         def comp_func(Xval):
-            Yval = np.zeros(dims)
+            Yval = np.zeros(dims, dtype=Xval.dtype)
             for i, s in enumerate(signlist):
                 Yval[i] = Xval[dims-1-i]*s
             return Yval
         return comp_func
 
     @_cached_property
+    def _hitzer_inverse(self):
+        """
+        Performs the inversion operation as described in the paper :cite:`Hitzer_Sangwine_2017`
+        """
+        tot = np.sum(self.sig != 0)
+        @_numba_utils.njit
+        def hitzer_inverse(operand):
+            if tot == 0:
+                numerator = operand.layout.scalar
+            elif tot == 1:
+                # Equation 4.3
+                mv_invol = operand.gradeInvol()
+                numerator = mv_invol
+            elif tot == 2:
+                # Equation 5.5
+                mv_conj = operand.conjugate()
+                numerator = mv_conj
+            elif tot == 3:
+                # Equation 6.5  without the rearrangement from 6.4
+                mv_conj = operand.conjugate()
+                mv_mul_mv_conj = operand * mv_conj
+                numerator = (mv_conj * ~mv_mul_mv_conj)
+            elif tot == 4:
+                # Equation 7.7
+                mv_conj = operand.conjugate()
+                mv_mul_mv_conj = operand * mv_conj
+                numerator = mv_conj * (mv_mul_mv_conj - 2 * mv_mul_mv_conj(3, 4))
+            elif tot == 5:
+                # Equation 8.22 without the rearrangement from 8.21
+                mv_conj = operand.conjugate()
+                mv_mul_mv_conj = operand * mv_conj
+                combo_op = mv_conj * ~mv_mul_mv_conj
+                mv_combo_op = operand * combo_op
+                numerator = combo_op * (mv_combo_op - 2 * mv_combo_op(1, 4))
+            else:
+                raise NotImplementedError(
+                    'Closed form inverses for algebras with more than 5 dimensions are not implemented')
+            denominator = (operand * numerator).value[0]
+            if denominator == 0:
+                raise ValueError('Multivector has no inverse')
+            return numerator / denominator
+        return hitzer_inverse
+
+    @_cached_property
     def gmt_func(self):
-        return get_mult_function(self.gmt, self.gradeList)
+        return get_mult_function(self.gmt, self._basis_blade_order.grades)
 
     @_cached_property
     def imt_func(self):
-        return get_mult_function(self.imt, self.gradeList)
+        return get_mult_function(self.imt, self._basis_blade_order.grades)
 
     @_cached_property
     def omt_func(self):
-        return get_mult_function(self.omt, self.gradeList)
+        return get_mult_function(self.omt, self._basis_blade_order.grades)
 
     @_cached_property
     def lcmt_func(self):
-        return get_mult_function(self.lcmt, self.gradeList)
+        return get_mult_function(self.lcmt, self._basis_blade_order.grades)
 
     @_cached_property
     def left_complement_func(self):
@@ -601,7 +657,7 @@ class Layout(object):
         '''
         This function returns a fast jitted adjoint function
         '''
-        grades = np.array(self.gradeList)
+        grades = self._basis_blade_order.grades
         signs = np.power(-1, grades*(grades-1)//2)
         @_numba_utils.njit
         def adjoint_func(value):
@@ -622,7 +678,7 @@ class Layout(object):
         n_dims = mult_table.shape[1]
 
         identity = np.zeros((n_dims,))
-        identity[self.gradeList.index(0)] = 1
+        identity[self._basis_blade_order.bitmap_to_index[0]] = 1
 
         @_numba_utils.njit
         def leftLaInvJIT(value):
@@ -658,15 +714,11 @@ class Layout(object):
         return cf.MVArray.from_value_array(self, data_array)
 
     def grade_mask(self, grade: int) -> np.ndarray:
-        return np.equal(grade, self.gradeList)
+        return grade == self._basis_blade_order.grades
 
     @property
     def rotor_mask(self) -> np.ndarray:
-        return sum(
-            self.grade_mask(i)
-            for i in range(self.dims + 1)
-            if not i % 2
-        )
+        return self._basis_blade_order.grades % 2 == 0
 
     @property
     def metric(self) -> np.ndarray:
@@ -675,7 +727,7 @@ class Layout(object):
             self._metric = np.zeros((len(basis_vectors), len(basis_vectors)))
             for i, v in enumerate(basis_vectors):
                 for j, v2 in enumerate(basis_vectors):
-                    self._metric[i, j] = (v | v2)[0]
+                    self._metric[i, j] = (v | v2)[()]
             return self._metric.copy()
         else:
             return self._metric.copy()
@@ -770,7 +822,7 @@ class Layout(object):
         '''
         return [
             self._basis_blade(i)
-            for i, i_grade in enumerate(self.gradeList)
+            for i, i_grade in enumerate(self._basis_blade_order.grades)
             if i_grade == grade
         ]
 
@@ -800,7 +852,7 @@ class Layout(object):
         """
         return {
             name: self._basis_blade(i, mvClass)
-            for i, (name, grade) in enumerate(zip(self.names, self.gradeList))
+            for i, (name, grade) in enumerate(zip(self.names, self._basis_blade_order.grades))
             if grades is None or grade in grades
         }
 

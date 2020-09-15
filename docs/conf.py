@@ -54,6 +54,7 @@ extensions = [
     #'numpydoc',
     'sphinx.ext.viewcode',
     'sphinxcontrib.prettyspecialmethods',
+    'sphinxcontrib.bibtex',
 
     #'sphinx.ext.mathjax',
 ]
