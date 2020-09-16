@@ -2,6 +2,7 @@ import functools
 from typing import List, Tuple, Optional, Dict, Container
 import warnings
 
+import numba
 import numpy as np
 import sparse
 
@@ -457,7 +458,7 @@ class Layout(object):
             Iinv[-1] = inv_II_scalar
 
             gmt_func = self.gmt_func
-            @_numba_utils.njit
+            @numba.jit
             def dual_func(Xval):
                 return gmt_func(Xval, Iinv)
             return dual_func
@@ -468,7 +469,7 @@ class Layout(object):
         Generates the grade involution function
         """
         signs = np.power(-1, self._basis_blade_order.grades)
-        @_numba_utils.njit
+        @numba.jit
         def grade_inv_func(mv):
             newValue = signs * mv.value
             return self.MultiVector(newValue)
@@ -485,7 +486,7 @@ class Layout(object):
         rc_func = self.right_complement_func
         lc_func = self.left_complement_func
         omt_func = self.omt_func
-        @_numba_utils.njit
+        @numba.jit
         def vee(aval, bval):
             return lc_func(omt_func(rc_func(aval), rc_func(bval)))
         return vee
@@ -576,7 +577,7 @@ class Layout(object):
         for n in range(dims):
             signlist[n] = (-1)**(omt_ps_part[n, dims-1-n] < 0.001)
 
-        @_numba_utils.njit
+        @numba.jit
         def comp_func(Xval):
             Yval = np.zeros(dims, dtype=Xval.dtype)
             for i, s in enumerate(signlist):
@@ -590,7 +591,7 @@ class Layout(object):
         Performs the inversion operation as described in the paper :cite:`Hitzer_Sangwine_2017`
         """
         tot = np.sum(self.sig != 0)
-        @_numba_utils.njit
+        @numba.jit
         def hitzer_inverse(operand):
             if tot == 0:
                 numerator = operand.layout.scalar
@@ -659,7 +660,7 @@ class Layout(object):
         '''
         grades = self._basis_blade_order.grades
         signs = np.power(-1, grades*(grades-1)//2)
-        @_numba_utils.njit
+        @numba.jit
         def adjoint_func(value):
             return signs * value  # elementwise multiplication
         return adjoint_func
@@ -680,7 +681,7 @@ class Layout(object):
         identity = np.zeros((n_dims,))
         identity[self._basis_blade_order.bitmap_to_index[0]] = 1
 
-        @_numba_utils.njit
+        @numba.jit
         def leftLaInvJIT(value):
             intermed = _numba_val_get_left_gmt_matrix(value, k_list, l_list, m_list, mult_table_vals, n_dims)
             if abs(np.linalg.det(intermed)) < _settings._eps:

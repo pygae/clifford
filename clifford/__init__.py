@@ -167,7 +167,7 @@ def _get_mult_function(mt: sparse.COO):
     k_list, l_list, m_list = mt.coords
     mult_table_vals = mt.data
 
-    @_numba_utils.generated_jit(nopython=True)
+    @_numba_utils.generated_jit
     def mv_mult(value, other_value):
         # this casting will be done at jit-time
         ret_dtype = _get_mult_function_result_type(value, other_value, mult_table_vals.dtype)
@@ -198,7 +198,7 @@ def _get_mult_function_runtime_sparse(mt: sparse.COO):
     k_list, l_list, m_list = mt.coords
     mult_table_vals = mt.data
 
-    @_numba_utils.generated_jit(nopython=True)
+    @_numba_utils.generated_jit
     def mv_mult(value, other_value):
         # this casting will be done at jit-time
         ret_dtype = _get_mult_function_result_type(value, other_value, mult_table_vals.dtype)
@@ -220,7 +220,7 @@ def _get_mult_function_runtime_sparse(mt: sparse.COO):
     return mv_mult
 
 
-@_numba_utils.njit
+@_numba.jit
 def grade_obj_func(objin_val, gradeList, threshold):
     """ returns the modal grade of a multivector """
     modal_value_count = np.zeros(objin_val.shape)
