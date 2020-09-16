@@ -39,7 +39,7 @@ class _cached_property:
         return val
 
 
-@_numba_utils.njit
+@_numba_utils.njit(cache=True)
 def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
     """
     Computes the sign for the product of bitmap_a and bitmap_b
@@ -56,7 +56,7 @@ def canonical_reordering_sign(bitmap_a, bitmap_b, metric):
     return output_sign
 
 
-@_numba_utils.njit
+@_numba_utils.njit(cache=True)
 def gmt_element(bitmap_a, bitmap_b, sig_array):
     """
     Element of the geometric multiplication table given blades a, b.
@@ -67,7 +67,7 @@ def gmt_element(bitmap_a, bitmap_b, sig_array):
     return output_bitmap, output_sign
 
 
-@_numba_utils.njit
+@_numba_utils.njit(cache=True)
 def imt_check(grade_v, grade_i, grade_j):
     """
     A check used in imt table generation
@@ -77,7 +77,7 @@ def imt_check(grade_v, grade_i, grade_j):
     return (grade_v == abs(grade_i - grade_j)) and (grade_i != 0) and (grade_j != 0)
 
 
-@_numba_utils.njit
+@_numba_utils.njit(cache=True)
 def omt_check(grade_v, grade_i, grade_j):
     """
     A check used in omt table generation
@@ -86,7 +86,7 @@ def omt_check(grade_v, grade_i, grade_j):
     return grade_v == (grade_i + grade_j)
 
 
-@_numba_utils.njit
+@_numba_utils.njit(cache=True)
 def lcmt_check(grade_v, grade_i, grade_j):
     """
     A check used in lcmt table generation
