@@ -139,6 +139,9 @@ def array(obj):
     '''
     an array method like :func:`numpy.array`, but returns a :class:`.MVArray`.
 
+    .. versionchanged:: 1.4
+        Now produces 0d arrays when ``obj`` is a single :class:`MultiVector`
+
     Parameters
     -------------
     obj : MultiVector, list
@@ -152,8 +155,4 @@ def array(obj):
     >>> np.array([1, 2, 3])*cf.array(g3.e12)
     MVArray([(1^e12), (2^e12), (3^e12)], dtype=object)
     '''
-    if isinstance(obj, MultiVector):
-        # they passed a single MV so make a list of it.
-        return MVArray([obj])
-    else:
-        return MVArray(obj)
+    return MVArray(obj)

@@ -60,8 +60,8 @@ class MultiVector(object):
                     self.layout.gaDims)
 
     def __array__(self) -> 'cf.MVArray':
-        # we are a scalar, and the only appropriate dtype is an object array
-        return cf.MVArray([self])
+        # ensure that coercion gives our array subclass
+        return cf.array(self)
 
     def _checkOther(self, other, coerce=True) -> Tuple['MultiVector', bool]:
         """Ensure that the other argument has the same Layout or coerce value if
