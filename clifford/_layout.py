@@ -560,8 +560,9 @@ class Layout(object):
 
         # Since we're working with basis blades, we can use the table directly.
         # We only care about the pseudo-scalar part of the wedge.
+        omt_ps_part = omt[:, -1, :]
         for n in range(dims):
-            signlist[n] = (-1)**(omt[n, -1, dims-1-n] < 0.001)
+            signlist[n] = (-1)**(omt_ps_part[n, dims-1-n] < 0.001)
 
         @_numba_utils.njit
         def comp_func(Xval):
