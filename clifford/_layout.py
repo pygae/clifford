@@ -353,18 +353,6 @@ class Layout(object):
                 "names list of length %i needs to be of length %i" %
                 (len(names), self.gaDims))
 
-        # preload these lazy properties. Not doing this would likely be faster.
-        self.gmt_func
-        self.imt_func
-        self.omt_func
-        self.lcmt_func
-        self.adjoint_func
-        self.left_complement_func
-        self.right_complement_func
-        self.dual_func
-        self.vee_func
-        self.inv_func
-
     @property
     def gradeList(self):
         return list(self._basis_blade_order.grades)
