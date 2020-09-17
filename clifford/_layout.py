@@ -95,7 +95,7 @@ def lcmt_check(grade_v, grade_i, grade_j):
     return grade_v == (grade_j - grade_i)
 
 
-@_numba_utils.njit(parallel=NUMBA_PARALLEL, nogil=True)
+@_numba_utils.njit(parallel=NUMBA_PARALLEL, nogil=True, cache=True)
 def _numba_construct_gmt(
     index_to_bitmap, bitmap_to_index, signature
 ):
