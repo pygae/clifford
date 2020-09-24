@@ -1,9 +1,6 @@
 import numpy as np
 from numba import generated_jit
-import warnings
-
-# Make the test fail on a failed cache warning
-warnings.simplefilter("error")
+import pytest
 
 
 @generated_jit(cache=True)
@@ -15,6 +12,8 @@ def foo(x):
     return impl
 
 
+# Make the test fail on a failed cache warning
+@pytest.mark.filterwarnings("error")
 def test_function_cache():
-    from clifford.g3c import e3
+    from clifford.g3 import e3
     np.testing.assert_array_equal((1.0*e3).value, foo(1.0))
