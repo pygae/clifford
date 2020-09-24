@@ -14,11 +14,13 @@ try:
     import numba.np.numpy_support as _numpy_support
     from numba.core.imputils import impl_ret_borrowed, lower_constant
     from numba.core import cgutils, types
+    from numba.core.typing.typeof import typeof_impl
 except ImportError:
     # module locations prior to numba 0.49.0
     import numba.numpy_support as _numpy_support
     from numba.targets.imputils import impl_ret_borrowed, lower_constant
     from numba import cgutils, types
+    from numba.typing.typeof import typeof_impl
 
 from .._multivector import MultiVector
 
@@ -26,23 +28,24 @@ from ._layout import LayoutType
 from ._overload_call import overload_call
 
 __all__ = ['MultiVectorType']
+_typeof_ndarray = typeof_impl.dispatch(np.ndarray)
 
 
 class MultiVectorType(types.Type):
     def __init__(self, layout: LayoutType, dtype: types.DType):
         self.layout_type = layout
-        self._scalar_type = dtype
+        self._array_type = dtype
         super().__init__(name='MultiVector({!r}, {!r})'.format(
-            self.layout_type, self._scalar_type
+            self.layout_type, self._array_type
         ))
 
     @property
     def key(self):
-        return self.layout_type, self._scalar_type
+        return self.layout_type, self._array_type
 
     @property
     def value_type(self):
-        return self._scalar_type[:]
+        return self._array_type
 
 
 # The docs say we should use register a function to determine the numba type
@@ -64,7 +67,7 @@ def _numba_type_(self):
     except KeyError:
         # Computing and hashing `dtype_type` is slow, so we do not use it as a
         # hash key. The raw numpy dtype is much faster to use as a key.
-        dtype_type = _numpy_support.from_dtype(dt)
+        dtype_type = _typeof_ndarray(self.value, None)
         ret = cache[dt] = MultiVectorType(layout_type, dtype_type)
         return ret
 
@@ -85,7 +88,7 @@ class MultiVectorModel(numba.extending.models.StructModel):
 def type_MultiVector(context):
     def typer(layout, value):
         if isinstance(layout, LayoutType) and isinstance(value, types.Array):
-            return MultiVectorType(layout, value.dtype)
+            return MultiVectorType(layout, _typeof_ndarray(value, None))
     return typer
 
 
