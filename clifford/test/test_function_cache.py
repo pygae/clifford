@@ -8,7 +8,7 @@ warnings.simplefilter("error")
 
 @generated_jit(cache=True)
 def foo(x):
-    from clifford.g3c import e3
+    from clifford.g3 import e3
 
     def impl(x):
         return (x * e3).value
