@@ -34,7 +34,7 @@ _typeof_ndarray = typeof_impl.dispatch(np.ndarray)
 class MultiVectorType(types.Type):
     def __init__(self, layout: LayoutType, dtype: types.DType):
         self.layout_type = layout
-        self._array_type = dtype
+        self.value_type = dtype
         super().__init__(name='MultiVector({!r}, {!r})'.format(
             self.layout_type, self._array_type
         ))
@@ -42,10 +42,6 @@ class MultiVectorType(types.Type):
     @property
     def key(self):
         return self.layout_type, self._array_type
-
-    @property
-    def value_type(self):
-        return self._array_type
 
 
 # The docs say we should use register a function to determine the numba type
