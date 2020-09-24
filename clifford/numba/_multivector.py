@@ -36,12 +36,12 @@ class MultiVectorType(types.Type):
         self.layout_type = layout
         self.value_type = dtype
         super().__init__(name='MultiVector({!r}, {!r})'.format(
-            self.layout_type, self._array_type
+            self.layout_type, self.value_type
         ))
 
     @property
     def key(self):
-        return self.layout_type, self._array_type
+        return self.layout_type, self.value_type
 
 
 # The docs say we should use register a function to determine the numba type
