@@ -153,7 +153,7 @@ def ga_add(a, b):
         return impl
     elif isinstance(a, types.abstract.Number) and isinstance(b, MultiVectorType):
         scalar_index = b.layout_type.obj._basis_blade_order.bitmap_to_index[0]
-        ret_type = np.result_type(_numpy_support.as_dtype(a), _numpy_support.as_dtype(b.value_type.dtype))
+        ret_type = np.result_type(_numpy_support.as_dtype(a), b.value_type)
         def impl(a, b):
             op = b.value.astype(ret_type)
             op[scalar_index] += a
@@ -161,7 +161,7 @@ def ga_add(a, b):
         return impl
     elif isinstance(a, MultiVectorType) and isinstance(b, types.abstract.Number):
         scalar_index = a.layout_type.obj._basis_blade_order.bitmap_to_index[0]
-        ret_type = np.result_type(_numpy_support.as_dtype(a.value_type.dtype), _numpy_support.as_dtype(b))
+        ret_type = np.result_type(a.value_type, _numpy_support.as_dtype(b))
         def impl(a, b):
             op = a.value.astype(ret_type)
             op[scalar_index] += b
@@ -179,7 +179,7 @@ def ga_sub(a, b):
         return impl
     elif isinstance(a, types.abstract.Number) and isinstance(b, MultiVectorType):
         scalar_index = b.layout_type.obj._basis_blade_order.bitmap_to_index[0]
-        ret_type = np.result_type(_numpy_support.as_dtype(a), _numpy_support.as_dtype(b.value_type.dtype))
+        ret_type = np.result_type(_numpy_support.as_dtype(a), b.value_type)
         def impl(a, b):
             op = -b.value.astype(ret_type)
             op[scalar_index] += a
@@ -187,7 +187,7 @@ def ga_sub(a, b):
         return impl
     elif isinstance(a, MultiVectorType) and isinstance(b, types.abstract.Number):
         scalar_index = a.layout_type.obj._basis_blade_order.bitmap_to_index[0]
-        ret_type = np.result_type(_numpy_support.as_dtype(a.value_type.dtype), _numpy_support.as_dtype(b))
+        ret_type = np.result_type(a.value_type, _numpy_support.as_dtype(b))
         def impl(a, b):
             op = a.value.astype(ret_type)
             op[scalar_index] -= b
@@ -242,12 +242,12 @@ def ga_or(a, b):
             return a.layout.MultiVector(imt_func(a.value, b.value))
         return impl
     elif isinstance(a, types.abstract.Number) and isinstance(b, MultiVectorType):
-        ret_type = np.result_type(_numpy_support.as_dtype(a), _numpy_support.as_dtype(b.value_type.dtype))
+        ret_type = np.result_type(_numpy_support.as_dtype(a), b.value_type)
         def impl(a, b):
             return b.layout.MultiVector(np.zeros_like(b.value, dtype=ret_type))
         return impl
     elif isinstance(a, MultiVectorType) and isinstance(b, types.abstract.Number):
-        ret_type = np.result_type(_numpy_support.as_dtype(a.value_type.dtype), _numpy_support.as_dtype(b))
+        ret_type = np.result_type(a.value_type, _numpy_support.as_dtype(b))
         def impl(a, b):
             return a.layout.MultiVector(np.zeros_like(a.value, dtype=ret_type))
         return impl
