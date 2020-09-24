@@ -88,7 +88,7 @@ class MultiVectorModel(numba.extending.models.StructModel):
 def type_MultiVector(context):
     def typer(layout, value):
         if isinstance(layout, LayoutType) and isinstance(value, types.Array):
-            return MultiVectorType(layout, _typeof_ndarray(value, None))
+            return MultiVectorType(layout, value)
     return typer
 
 
