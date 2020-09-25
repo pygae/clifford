@@ -63,7 +63,7 @@ def _numba_type_(self):
     except KeyError:
         # Computing and hashing `dtype_type` is slow, so we do not use it as a
         # hash key. The raw numpy dtype is much faster to use as a key.
-        dtype_type = _typeof_ndarray(self.value, None)
+        dtype_type = _numpy_support.from_dtype(dt)[::1]  # c-order
         ret = cache[dt] = MultiVectorType(layout_type, dtype_type)
         return ret
 
