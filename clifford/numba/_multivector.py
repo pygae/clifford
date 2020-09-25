@@ -14,13 +14,11 @@ try:
     import numba.np.numpy_support as _numpy_support
     from numba.core.imputils import impl_ret_borrowed, lower_constant
     from numba.core import cgutils, types
-    from numba.core.typing.typeof import typeof_impl
 except ImportError:
     # module locations prior to numba 0.49.0
     import numba.numpy_support as _numpy_support
     from numba.targets.imputils import impl_ret_borrowed, lower_constant
     from numba import cgutils, types
-    from numba.typing.typeof import typeof_impl
 
 from .._multivector import MultiVector
 
@@ -28,7 +26,6 @@ from ._layout import LayoutType
 from ._overload_call import overload_call
 
 __all__ = ['MultiVectorType']
-_typeof_ndarray = typeof_impl.dispatch(np.ndarray)
 
 
 class MultiVectorType(types.Type):
