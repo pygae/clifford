@@ -56,16 +56,15 @@ def _numba_type_(self):
 
     cache = layout_type._cache
     dt = self.value.dtype
-    C_contig = self.value.flags.C_CONTIGUOUS
 
     # now use the dtype to key that cache.
     try:
-        return cache[(dt, C_contig)]
+        return cache[dt]
     except KeyError:
         # Computing and hashing `dtype_type` is slow, so we do not use it as a
         # hash key. The raw numpy dtype is much faster to use as a key.
         dtype_type = _typeof_ndarray(self.value, None)
-        ret = cache[(dt, C_contig)] = MultiVectorType(layout_type, dtype_type)
+        ret = cache[dt] = MultiVectorType(layout_type, dtype_type)
         return ret
 
 MultiVector._numba_type_ = _numba_type_

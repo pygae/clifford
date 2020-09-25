@@ -172,3 +172,17 @@ def test_pickling():
     e1._numba_type_  # int
     (e1 * 1.0)._numba_type_  # float
     assert pickle.loads(pickle.dumps(lt)) is lt
+
+
+def test_F_order():
+    import numpy as np
+
+    @numba.njit
+    def mul_mv(a):
+        return a*e3
+
+    mva = layout.MultiVector(np.ones(8, order='F'))
+    mvb = layout.MultiVector(np.ones(8, order='C'))
+    resa = mul_mv(mva)
+    resb = mul_mv(mvb)
+    assert resa == resb
