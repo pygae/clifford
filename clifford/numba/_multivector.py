@@ -54,6 +54,9 @@ def _numba_type_(self):
     cache = layout_type._cache
     dt = self.value.dtype
 
+    if not self.value.flags.c_contiguous:
+        raise ValueError('Clifford currently only supports JITing functions of MultiVectors with C_CONTIGUOUS value arrays.')
+
     # now use the dtype to key that cache.
     try:
         return cache[dt]
