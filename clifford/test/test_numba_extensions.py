@@ -183,7 +183,7 @@ def test_A_order():
 
     mva = layout.MultiVector(np.ones(layout.gaDims))
     mva.value = mva.value[::-1]
-    assert not mva.value.c_contiguous
+    assert not mva.value.flags.c_contiguous
 
     mvc = layout.MultiVector(np.ones(layout.gaDims))
     resa = mul_mv(mva)
