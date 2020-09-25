@@ -182,6 +182,8 @@ def test_A_order():
         return mv*e3
 
     mva = layout.MultiVector(np.ones(8)[::-1])
+    assert not mva.value.c_contiguous
+
     mvc = layout.MultiVector(np.ones(8, order='C'))
     resa = mul_mv(mva)
     resc = mul_mv(mvc)
