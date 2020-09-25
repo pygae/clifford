@@ -1,5 +1,5 @@
 import numpy as np
-from numba import generated_jit
+from clifford._numba_utils import generated_jit
 import pytest
 
 
