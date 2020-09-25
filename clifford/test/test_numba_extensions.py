@@ -186,6 +186,9 @@ def test_A_order():
     assert not mva.value.flags.c_contiguous
 
     mvc = layout.MultiVector(np.ones(layout.gaDims))
-    resa = mul_mv(mva)
-    resc = mul_mv(mvc)
-    assert resa == resc
+    
+    with pytest.raises(ValueError):
+        mul_mv(mva)
+    
+    # C-order is fine
+    mul_mv(mvc)
