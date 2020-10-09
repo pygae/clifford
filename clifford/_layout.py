@@ -690,6 +690,29 @@ class Layout(object):
 
         return leftLaInvJIT
 
+    @_cached_property
+    def pinv_func(self):
+        """
+        Get a function that returns left-pseudoinverse using a computational
+        linear algebra method proposed by Christian Perwass. Identical to
+        `inv_func` except the inverse has been replaced by a pseudo inverse.
+        """
+        mult_table = self.gmt
+        k_list, l_list, m_list = mult_table.coords
+        mult_table_vals = mult_table.data
+        n_dims = mult_table.shape[1]
+
+        identity = np.zeros((n_dims,))
+        identity[self._basis_blade_order.bitmap_to_index[0]] = 1
+
+        @_numba_utils.njit
+        def leftLaPInvJIT(value):
+            intermed = _numba_val_get_left_gmt_matrix(value, k_list, l_list, m_list, mult_table_vals, n_dims)
+            sol = np.linalg.pinv(intermed) @ identity
+            return sol
+
+        return leftLaPInvJIT
+
     def get_left_gmt_matrix(self, x):
         """
         This produces the matrix X that performs left multiplication with x

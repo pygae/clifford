@@ -184,6 +184,17 @@ class TestClifford:
             e12[1 + e12]
         assert e12[(2, 1)] == -1
 
+    def test_pinv(self, g3):
+        layout, blades = g3, g3.blades
+        e2 = blades['e2']
+        e3 = blades['e3']
+        x = 0.5*(1-e3)  # Singular
+        y = 2*e2 + 5*e3 # invertible
+        with pytest.raises(ValueError):
+            x.leftLaInv()
+        assert x == x.pinv()
+        assert y.pinv() == y.leftLaInv()
+
     def test_add_float64(self, g3):
         '''
         test array_wrap method to take control addition from numpy array

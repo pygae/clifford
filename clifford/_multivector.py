@@ -773,6 +773,9 @@ class MultiVector(object):
     leftInv = leftLaInv
     rightInv = leftLaInv
 
+    def pinv(self) -> 'MultiVector':
+        return self._newMV(self.layout.pinv_func(self.value))
+
     def dual(self, I=None) -> 'MultiVector':
         r"""The dual of the multivector against the given subspace I, :math:`\tilde M = MI^{-1}`
 
