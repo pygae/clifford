@@ -188,8 +188,8 @@ class TestClifford:
         layout, blades = g3, g3.blades
         e2 = blades['e2']
         e3 = blades['e3']
-        x = 0.5*(1-e3)  # Singular
-        y = 2*e2 + 5*e3 # invertible
+        x = 0.5*(1-e3)   # Singular
+        y = 2*e2 + 5*e3  # invertible
         with pytest.raises(ValueError):
             x.leftLaInv()
         assert x == x.pinv()
