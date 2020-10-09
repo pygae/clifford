@@ -774,6 +774,10 @@ class MultiVector(object):
     rightInv = leftLaInv
 
     def pinv(self) -> 'MultiVector':
+        """Returns the pseudoinverse using a computational
+        linear algebra method proposed by Christian Perwass. Identical to
+        `inv` when an inverse exists.
+        """
         return self._newMV(self.layout.pinv_func(self.value))
 
     def dual(self, I=None) -> 'MultiVector':
