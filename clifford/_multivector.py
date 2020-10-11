@@ -131,9 +131,12 @@ class MultiVector(object):
 
         return self.layout.MultiVector(newValue)
 
-    def _rvee(self, other) -> 'MultiVector':
-        """Right-hand vee product, :math:`A \vee B`, see :meth:`~MultiVector.vee` """
+    def __and__(self, other) -> 'MultiVector':
+        """ ``self & other``, an alias for :meth:`~MultiVector.vee` """
+        return self.vee(other)
 
+    def __rand__(self, other) -> 'MultiVector':
+        """Right-hand vee product, ``other & self``, see :meth:`~MultiVector.vee` """
         other, mv = self._checkOther(other, coerce=True)
 
         if mv:
@@ -141,22 +144,13 @@ class MultiVector(object):
         else:
             if isinstance(other, np.ndarray):
                 obj = self.__array__()
-                return other&obj
-            newValue = other&self.value
+                return other & obj
+            newValue = other & self.value
 
         return self._newMV(newValue)
 
-    def __and__(self, other) -> 'MultiVector':
-        """ ``self & other``, an alias for :meth:`~MultiVector.vee` """
-        return self.vee(other)
-
-    def __rand__(self, other) -> 'MultiVector':
-        """ ``other & other``, an alias for :meth:`~MultiVector._rvee` """
-        return self._rvee(other)
-
     def __mul__(self, other) -> 'MultiVector':
         """ ``self * other``, the geometric product :math:`MN` """
-
         other, mv = self._checkOther(other, coerce=False)
 
         if mv:
