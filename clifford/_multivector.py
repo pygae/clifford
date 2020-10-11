@@ -118,36 +118,11 @@ class MultiVector(object):
         functions instead, as these work in degenerate metrics like PGA too,
         and are equivalent but faster in other metrics.
         """
-        other, mv = self._checkOther(other, coerce=True)
-
-        if mv:
-            newValue = self.layout.vee_func(self.value, other.value)
-        else:
-            if isinstance(other, np.ndarray):
-                obj = self.__array__()
-                return obj&other
-
-            newValue = self.value&other
-
-        return self.layout.MultiVector(newValue)
+        return self.layout.MultiVector(value=self.layout.vee_func(self.value, other.value))
 
     def __and__(self, other) -> 'MultiVector':
         """ ``self & other``, an alias for :meth:`~MultiVector.vee` """
         return self.vee(other)
-
-    def __rand__(self, other) -> 'MultiVector':
-        """Right-hand vee product, ``other & self``, see :meth:`~MultiVector.vee` """
-        other, mv = self._checkOther(other, coerce=True)
-
-        if mv:
-            newValue = self.layout.vee_func(other.value, self.value)
-        else:
-            if isinstance(other, np.ndarray):
-                obj = self.__array__()
-                return other & obj
-            newValue = other & self.value
-
-        return self._newMV(newValue)
 
     def __mul__(self, other) -> 'MultiVector':
         """ ``self * other``, the geometric product :math:`MN` """
