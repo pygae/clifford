@@ -51,20 +51,25 @@ class MultiVectorType(types.Type):
 def _numba_type_(self):
     layout_type = self.layout._numba_type_
 
-    cache = layout_type._cache
+    relevant_cache = layout_type._c_cache
     dt = self.value.dtype
 
     if not self.value.flags.c_contiguous:
-        raise ValueError("Only clifford.MultiVector objects with contiguous coefficients can be passed to JITted functions")
+        if self.value.flags.f_contiguous:
+            relevant_cache = layout_type._f_cache
+        elif self.value.flags.aligned:
+            relevant_cache = layout_type._a_cache
+        else:
+            raise ValueError("Not sure what to write here")
 
     # now use the dtype to key that cache.
     try:
-        return cache[dt]
+        return relevant_cache[dt]
     except KeyError:
         # Computing and hashing `value_type` is slow, so we do not use it as a
         # hash key. The raw numpy dtype is much faster to use as a key.
         value_type = _numpy_support.from_dtype(dt)[::1]  # c-order
-        ret = cache[dt] = MultiVectorType(layout_type, value_type)
+        ret = relevant_cache[dt] = MultiVectorType(layout_type, value_type)
         return ret
 
 MultiVector._numba_type_ = _numba_type_
