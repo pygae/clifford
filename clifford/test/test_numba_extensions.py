@@ -181,14 +181,15 @@ def test_A_order():
     def mul_mv(mv):
         return mv*e3
 
+    # A-order
     mva = layout.MultiVector(np.ones(layout.gaDims))
     mva.value = mva.value[::-1]
     assert not mva.value.flags.c_contiguous
+    res_mva = mul_mv(mva)
 
+    # C-order
     mvc = layout.MultiVector(np.ones(layout.gaDims))
+    assert mvc.value.flags.c_contiguous
+    res_mvc = mul_mv(mvc)
 
-    with pytest.raises(ValueError):
-        mul_mv(mva)
-
-    # C-order is fine
-    mul_mv(mvc)
+    assert res_mva == res_mvc
