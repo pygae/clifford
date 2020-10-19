@@ -20,7 +20,7 @@ class TestInitialisation:
     ])
     def test_speed(self, n, benchmark):
         def generate_algebra():
-            layout = Cl(n)
+            layout = Cl(n)[0]
             layout.gmt_func
             layout.imt_func
             layout.omt_func
