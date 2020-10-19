@@ -57,10 +57,8 @@ def _numba_type_(self):
     if not self.value.flags.c_contiguous:
         if self.value.flags.f_contiguous:
             relevant_cache = layout_type._f_cache
-        elif self.value.flags.aligned:
-            relevant_cache = layout_type._a_cache
         else:
-            raise ValueError("Not sure what to write here")
+            relevant_cache = layout_type._a_cache
 
     # now use the dtype to key that cache.
     try:
@@ -68,7 +66,12 @@ def _numba_type_(self):
     except KeyError:
         # Computing and hashing `value_type` is slow, so we do not use it as a
         # hash key. The raw numpy dtype is much faster to use as a key.
-        value_type = _numpy_support.from_dtype(dt)[:]
+        if self.value.flags.c_contiguous:
+            value_type = _numpy_support.from_dtype(dt)[::1]
+        elif self.value.flags.f_contiguous:
+            value_type = _numpy_support.from_dtype(dt)[::1, ]
+        else:
+            value_type = _numpy_support.from_dtype(dt)[:]
         ret = relevant_cache[dt] = MultiVectorType(layout_type, value_type)
         return ret
 
