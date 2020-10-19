@@ -101,6 +101,18 @@ class MultiVector(object):
     def exp(self) -> 'MultiVector':
         return general_exp(self)
 
+    def cos(self):
+        op = 0 * self
+        for n in range(20):
+            op += ((-1) ** (n) / math.gamma(2 * n + 1)) * self ** (2 * n)
+        return op
+
+    def sin(self):
+        op = 0 * self
+        for n in range(20):
+            op += ((-1) ** (n) / math.gamma(2 * n + 2)) * self ** (2 * n + 1)
+        return op
+
     def vee(self, other) -> 'MultiVector':
         r"""
         Vee product :math:`A \vee B`.
