@@ -25,7 +25,6 @@ class LayoutType(types.Dummy):
         self.obj = layout
         # cache of multivector types for this layout
         self._c_cache = {}
-        self._f_cache = {}
         self._a_cache = {}
         layout_name = layout_short_name(layout)
         if layout_name is not None:
@@ -39,7 +38,6 @@ class LayoutType(types.Dummy):
         # contains a self-reference.
         d = self.__dict__.copy()
         d['_c_cache'] = {}
-        d['_f_cache'] = {}
         d['_a_cache'] = {}
         return d
 

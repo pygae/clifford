@@ -49,16 +49,17 @@ class MultiVectorType(types.Type):
 
 @property
 def _numba_type_(self):
+    # If the array is not 1D we can't do anything with it
+    if self.value.ndim != 1:
+        return None
+
     layout_type = self.layout._numba_type_
 
     relevant_cache = layout_type._c_cache
     dt = self.value.dtype
 
     if not self.value.flags.c_contiguous:
-        if self.value.flags.f_contiguous:
-            relevant_cache = layout_type._f_cache
-        else:
-            relevant_cache = layout_type._a_cache
+        relevant_cache = layout_type._a_cache
 
     # now use the dtype to key that cache.
     try:
@@ -68,8 +69,6 @@ def _numba_type_(self):
         # hash key. The raw numpy dtype is much faster to use as a key.
         if self.value.flags.c_contiguous:
             value_type = _numpy_support.from_dtype(dt)[::1]
-        elif self.value.flags.f_contiguous:
-            value_type = _numpy_support.from_dtype(dt)[::1, ]
         else:
             value_type = _numpy_support.from_dtype(dt)[:]
         ret = relevant_cache[dt] = MultiVectorType(layout_type, value_type)
