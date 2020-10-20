@@ -102,16 +102,46 @@ class MultiVector(object):
         return general_exp(self)
 
     def cos(self):
+        """
+        A taylor series expansion for cos
+        """
         op = 0 * self
         for n in range(20):
             op += ((-1) ** (n) / math.gamma(2 * n + 1)) * self ** (2 * n)
         return op
 
     def sin(self):
+        """
+        A taylor series expansion for sin
+        """
         op = 0 * self
         for n in range(20):
             op += ((-1) ** (n) / math.gamma(2 * n + 2)) * self ** (2 * n + 1)
         return op
+
+    def tan(self):
+        return self.sin()/self.cos()
+
+    def sinh(self):
+        """
+        A taylor series expansion for sinh
+        """
+        op = 0 * self
+        for n in range(20):
+            op += (1 / math.gamma(2 * n + 2)) * self ** (2 * n + 1)
+        return op
+
+    def cosh(self):
+        """
+        A taylor series expansion for cosh
+        """
+        op = 0 * self
+        for n in range(20):
+            op += (1 / math.gamma(2 * n + 1)) * self ** (2 * n)
+        return op
+
+    def tanh(self):
+        return self.sinh() / self.cosh()
 
     def vee(self, other) -> 'MultiVector':
         r"""
