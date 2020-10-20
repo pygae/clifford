@@ -44,7 +44,7 @@ Syntax Summary
 
 | Syntax  | Operation |
 |:-:|:-:|
-| \| |  Symetric inner product |
+| \| |  Symmetric inner product |
 | << |  Left contraction |
 |  ^ | Outer product  |
 | *  |  Geometric product |
