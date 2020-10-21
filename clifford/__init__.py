@@ -78,6 +78,7 @@ import os
 import itertools
 import warnings
 from typing import List, Tuple, Set
+import math
 
 # Major library imports.
 import numpy as np
@@ -268,6 +269,62 @@ def general_exp(x, max_order=15):
         result = result*result
         scale >>= 1
     return result
+
+
+def general_sin(X, max_order=20):
+    """
+    A taylor series expansion for sin
+    """
+    op = 0 * X
+    for n in range(max_order):
+        op += ((-1) ** (n) / math.gamma(2 * n + 2)) * X ** (2 * n + 1)
+    return op
+
+
+def general_cos(X, max_order=20):
+    """
+    A taylor series expansion for cos
+    """
+    op = 0 * X
+    for n in range(max_order):
+        op += ((-1) ** (n) / math.gamma(2 * n + 1)) * X ** (2 * n)
+    return op
+
+
+def general_tan(X, max_order=20):
+    """
+    The tan function as the ratio of sin and cos
+    Note. It would probably be better to implement this as its own taylor series.
+    """
+    return general_sin(X, max_order) / general_cos(X, max_order)
+
+
+def general_sinh(X, max_order=20):
+    """
+    A taylor series expansion for sinh
+    """
+    op = 0 * X
+    for n in range(max_order):
+        op += (1 / math.gamma(2 * n + 2)) * X ** (2 * n + 1)
+    return op
+
+
+def general_cosh(X, max_order=20):
+    """
+    A taylor series expansion for cosh
+    """
+    op = 0 * X
+    for n in range(max_order):
+        op += (1 / math.gamma(2 * n + 1)) * X ** (2 * n)
+    return op
+
+
+def general_tanh(X, max_order=20):
+    """
+    The tanh function as the ratio of sinh and cosh
+    Note. It would probably be better to implement this as its own taylor series.
+    """
+    return general_sinh(X, max_order) / general_cosh(X, max_order)
 
 
 def grade_obj(objin, threshold=0.0000001):

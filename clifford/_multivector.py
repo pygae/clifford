@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 
 import clifford as cf
-from . import general_exp
+from . import general_exp, general_sin, general_cos, general_tan, general_sinh, general_cosh, general_tanh
 from . import _settings
 from ._layout_helpers import layout_short_name
 
@@ -102,54 +102,22 @@ class MultiVector(object):
         return general_exp(self)
 
     def cos(self):
-        """
-        A taylor series expansion for cos
-        """
-        op = 0 * self
-        for n in range(20):
-            op += ((-1) ** (n) / math.gamma(2 * n + 1)) * self ** (2 * n)
-        return op
+        return general_cos(self)
 
     def sin(self):
-        """
-        A taylor series expansion for sin
-        """
-        op = 0 * self
-        for n in range(20):
-            op += ((-1) ** (n) / math.gamma(2 * n + 2)) * self ** (2 * n + 1)
-        return op
+        return general_sin(self)
 
     def tan(self):
-        """
-        The tan function as the ratio of sin and cos
-        Note. It may be better to implement this as its own taylor series.
-        """
-        return self.sin()/self.cos()
+        return general_tan(self)
 
     def sinh(self):
-        """
-        A taylor series expansion for sinh
-        """
-        op = 0 * self
-        for n in range(20):
-            op += (1 / math.gamma(2 * n + 2)) * self ** (2 * n + 1)
-        return op
+        return general_sinh(self)
 
     def cosh(self):
-        """
-        A taylor series expansion for cosh
-        """
-        op = 0 * self
-        for n in range(20):
-            op += (1 / math.gamma(2 * n + 1)) * self ** (2 * n)
-        return op
+        return general_cosh(self)
 
     def tanh(self):
-        """
-        The tanh function as the ratio of sinh and cosh
-        Note. It may be better to implement this as its own taylor series.
-        """
-        return self.sinh() / self.cosh()
+        return general_tanh(self)
 
     def vee(self, other) -> 'MultiVector':
         r"""
