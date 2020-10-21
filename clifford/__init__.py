@@ -232,13 +232,14 @@ def grade_obj_func(objin_val, gradeList, threshold):
     return np.argmax(modal_value_count)
 
 
+@_numba_utils.njit
 def general_exp(x, max_order=15):
     """
     This implements the series expansion of e**mv where mv is a multivector
     The parameter order is the maximum order of the taylor series to use
     """
 
-    result = 1.0
+    result = 1.0 + 0.0*x
     if max_order == 0:
         return result
 
@@ -258,13 +259,13 @@ def general_exp(x, max_order=15):
     for i in range(1, max_order):
         if np.any(np.abs(tmp.value) > _settings._eps):
             tmp = tmp*scaled * (1.0 / i)
-            result += tmp
+            result = result + tmp
         else:
             break
 
     # undo scaling
     while scale > 1:
-        result *= result
+        result = result*result
         scale >>= 1
     return result
 
