@@ -120,6 +120,10 @@ class MultiVector(object):
         return op
 
     def tan(self):
+        """
+        The tan function as the ratio of sin and cos
+        Note. It may be better to implement this as its own taylor series.
+        """
         return self.sin()/self.cos()
 
     def sinh(self):
@@ -141,6 +145,10 @@ class MultiVector(object):
         return op
 
     def tanh(self):
+        """
+        The tanh function as the ratio of sinh and cosh
+        Note. It may be better to implement this as its own taylor series.
+        """
         return self.sinh() / self.cosh()
 
     def vee(self, other) -> 'MultiVector':
