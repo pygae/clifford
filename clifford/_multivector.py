@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 
 import clifford as cf
-from . import general_exp, general_sin, general_cos, general_tan, general_sinh, general_cosh, general_tanh
+from .taylor_expansions import general_exp, general_sin, general_cos, general_tan, general_sinh, general_cosh, general_tanh
 from . import _settings
 from ._layout_helpers import layout_short_name
 
