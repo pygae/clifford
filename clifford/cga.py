@@ -302,7 +302,7 @@ class Round(CGAThing):
         radius of the round (a float)
         '''
         dual_sphere = self.dual
-        dual_sphere / (-dual_sphere | self.cga.einf)
+        dual_sphere /= (-dual_sphere | self.cga.einf)
         return math.sqrt(abs(dual_sphere * dual_sphere))
 
     @property
