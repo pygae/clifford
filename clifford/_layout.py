@@ -572,6 +572,31 @@ class Layout(object):
             return Yval
         return comp_func
 
+
+    @_cached_property
+    def _shirokov_inverse(self):
+        """
+        Performs the inversion operation as described in the paper :cite:`Shirokov_2020`
+        """
+        n = len(self.sig)
+        exponent = (n + 1) // 2
+        N = 2 ** exponent
+        @_numba_utils.njit
+        def shirokov_inverse(U):
+            Uk1 = U
+            Uk = Uk1
+            Ck = 0.0
+            for k in range(1, N):
+                Uk = Uk1
+                Ck = (N / k) * Uk.value[0]
+                Uk1 = U * (Uk - Ck)
+            adjU = Ck - Uk
+            detU = -Uk1.value[0]
+            if detU == 0:
+                raise ValueError('Multivector has no inverse')
+            return adjU / detU
+        return shirokov_inverse
+
     @_cached_property
     def _hitzer_inverse(self):
         """
