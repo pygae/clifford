@@ -250,6 +250,20 @@ def ga_or(a, b):
         return impl
 
 
+@numba.extending.overload(operator.pow)
+def ga_pow(a, b):
+    if isinstance(a, MultiVectorType) and isinstance(b, types.Integer):
+        gmt_func = a.layout_type.obj.gmt_func
+        def impl(a, b):
+            if b == 0:
+                return 1 + 0*a
+            op = a.value
+            for i in range(1, b):
+                op = gmt_func(op, a.value)
+            return a.layout.MultiVector(op)
+        return impl
+
+
 @numba.extending.overload(operator.truediv)
 def ga_truediv(a, b):
     if isinstance(a, MultiVectorType) and isinstance(b, types.abstract.Number):
