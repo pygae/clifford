@@ -81,7 +81,6 @@ def test_from_points_construction(cga, method):
     assert method(cga, e1, e2, e3).mv == method(cga, e1, e2, cga.up(e3)).mv
 
 
-@pytest.mark.xfail(raises=AssertionError, reason='gh-184')
 def test_round_from_center_radius_init(cga):
     blades = cga.layout.blades
     e1 = blades['e1']
@@ -92,7 +91,6 @@ def test_round_from_center_radius_init(cga):
     npt.assert_almost_equal(c.radius, 5)
 
 
-@pytest.mark.xfail(raises=AssertionError, reason='gh-184')
 def test_round_from_center_radius_method(cga):
     blades = cga.layout.blades
     e1 = blades['e1']
