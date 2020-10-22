@@ -9,7 +9,7 @@ class TestScalarProperties:
     @pytest.fixture()
     def element(self):
         alg, blades = Cl(0, 0, 0)
-        return blades['']
+        return alg.scalar
 
     def test_sin(self, element):
         for x in np.linspace(0, 2*np.pi, 100):
@@ -40,7 +40,7 @@ class TestDualNumberProperties:
     @pytest.fixture()
     def element(self):
         alg, blades = Cl(0, 0, 1)
-        return blades[''], blades['e1']
+        return alg.scalar, blades['e1']
 
     def test_sin(self, element):
         for x in np.linspace(0, 2*np.pi, 10):
