@@ -1,7 +1,6 @@
 
 from .. import Cl
 import numpy as np
-import cmath
 import pytest
 
 
@@ -52,13 +51,13 @@ class TestComplexNumberProperties:
         alg, blades = Cl(0, 0, 0)
         return alg.MultiVector(0*1j + alg.scalar.value), alg.MultiVector(1j*alg.scalar.value)
 
-    @pytest.mark.parametrize('np_func,cmath_func', [(np.sin, cmath.sin),
-                                                    (np.cos, cmath.cos),
-                                                    (np.tan, cmath.tan),
-                                                    (np.sinh, cmath.sinh),
-                                                    (np.cosh, cmath.cosh),
-                                                    (np.tanh, cmath.tanh)])
-    def test_trig_Cl010(self, Cl010element, np_func, cmath_func):
+    @pytest.mark.parametrize('np_func', [np.sin,
+                                         np.cos,
+                                         np.tan,
+                                         np.sinh,
+                                         np.cosh,
+                                         np.tanh])
+    def test_trig_Cl010(self, Cl010element, np_func):
         """
         This tests the a clifford algebra isomorphic to the complex numbers
         """
@@ -67,15 +66,15 @@ class TestComplexNumberProperties:
                 complex_mv = x * Cl010element[0] + y * Cl010element[1]
                 complex_value = x + 1j * y
                 result = np_func(complex_mv)
-                assert abs(result.value[0] + 1j * result.value[1] - cmath_func(complex_value)) < 1E-10
+                assert abs(result.value[0] + 1j * result.value[1] - np_func(complex_value)) < 1E-10
 
-    @pytest.mark.parametrize('np_func,cmath_func', [(np.sin, cmath.sin),
-                                                    (np.cos, cmath.cos),
-                                                    (np.tan, cmath.tan),
-                                                    (np.sinh, cmath.sinh),
-                                                    (np.cosh, cmath.cosh),
-                                                    (np.tanh, cmath.tanh)])
-    def test_trig_CxCl000(self, Cl000element, np_func, cmath_func):
+    @pytest.mark.parametrize('np_func', [np.sin,
+                                         np.cos,
+                                         np.tan,
+                                         np.sinh,
+                                         np.cosh,
+                                         np.tanh])
+    def test_trig_CxCl000(self, Cl000element, np_func):
         """
         This tests the complexified clifford algebra of only the scalars
         """
@@ -84,4 +83,4 @@ class TestComplexNumberProperties:
                 complex_mv = x * Cl000element[0] + y * Cl000element[1]
                 complex_value = x + 1j * y
                 result = np_func(complex_mv)
-                assert abs(result.value[0] - cmath_func(complex_value)) < 1E-10
+                assert abs(result.value[0] - np_func(complex_value)) < 1E-10
