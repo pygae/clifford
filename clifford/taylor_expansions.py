@@ -50,9 +50,12 @@ def general_sin(X, max_order=30):
     """
     A taylor series expansion for sin
     """
-    op = 0 * X
-    for n in range(max_order):
-        op = op + ((-1) ** (n) / math.gamma(2 * n + 2)) * X ** (2 * n + 1)
+    op = +X
+    X2 = X*X
+    X2np1 = X
+    for n in range(1, max_order):
+        X2np1 = X2np1 * X2
+        op = op + ((-1) ** (n) / math.gamma(2 * n + 2)) * X2np1
     return op
 
 
@@ -61,9 +64,12 @@ def general_cos(X, max_order=30):
     """
     A taylor series expansion for cos
     """
-    op = 0 * X
-    for n in range(max_order):
-        op = op + ((-1) ** (n) / math.gamma(2 * n + 1)) * X ** (2 * n)
+    op = 1 + 0*X
+    X2 = X * X
+    X2n = 1 + 0*X
+    for n in range(1, max_order):
+        X2n = X2n*X2
+        op = op + ((-1) ** (n) / math.gamma(2 * n + 1)) * X2n
     return op
 
 
@@ -80,9 +86,12 @@ def general_sinh(X, max_order=30):
     """
     A taylor series expansion for sinh
     """
-    op = 0 * X
-    for n in range(max_order):
-        op = op + (1 / math.gamma(2 * n + 2)) * X ** (2 * n + 1)
+    op = +X
+    X2 = X * X
+    X2np1 = X
+    for n in range(1, max_order):
+        X2np1 = X2np1 * X2
+        op = op + (1 / math.gamma(2 * n + 2)) * X2np1
     return op
 
 
@@ -91,9 +100,12 @@ def general_cosh(X, max_order=30):
     """
     A taylor series expansion for cosh
     """
-    op = 0 * X
-    for n in range(max_order):
-        op = op + (1 / math.gamma(2 * n + 1)) * X ** (2 * n)
+    op = 1 + 0 * X
+    X2 = X * X
+    X2n = 1 + 0 * X
+    for n in range(1, max_order):
+        X2n = X2n * X2
+        op = op + (1 / math.gamma(2 * n + 1)) * X2n
     return op
 
 
