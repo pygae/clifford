@@ -43,9 +43,14 @@ class TestDualNumberProperties:
 
 class TestComplexNumberProperties:
     @pytest.fixture()
-    def element(self):
+    def Cl010element(self):
         alg, blades = Cl(0, 1, 0)
         return alg.scalar, blades['e1']
+
+    @pytest.fixture()
+    def Cl000element(self):
+        alg, blades = Cl(0, 0, 0)
+        return alg.MultiVector(0*1j + alg.scalar.value), alg.MultiVector(1j*alg.scalar.value)
 
     @pytest.mark.parametrize('np_func,cmath_func', [(np.sin, cmath.sin),
                                                     (np.cos, cmath.cos),
@@ -53,10 +58,30 @@ class TestComplexNumberProperties:
                                                     (np.sinh, cmath.sinh),
                                                     (np.cosh, cmath.cosh),
                                                     (np.tanh, cmath.tanh)])
-    def test_trig(self, element, np_func, cmath_func):
+    def test_trig_Cl010(self, Cl010element, np_func, cmath_func):
+        """
+        This tests the a clifford algebra isomorphic to the complex numbers
+        """
         for x in np.linspace(0, 2 * np.pi, 10):
             for y in np.linspace(0, 2 * np.pi, 10):
-                complex_mv = x * element[0] + y * element[1]
+                complex_mv = x * Cl010element[0] + y * Cl010element[1]
                 complex_value = x + 1j * y
                 result = np_func(complex_mv)
                 assert abs(result.value[0] + 1j * result.value[1] - cmath_func(complex_value)) < 1E-10
+
+    @pytest.mark.parametrize('np_func,cmath_func', [(np.sin, cmath.sin),
+                                                    (np.cos, cmath.cos),
+                                                    (np.tan, cmath.tan),
+                                                    (np.sinh, cmath.sinh),
+                                                    (np.cosh, cmath.cosh),
+                                                    (np.tanh, cmath.tanh)])
+    def test_trig_CxCl000(self, Cl000element, np_func, cmath_func):
+        """
+        This tests the complexified clifford algebra of only the scalars
+        """
+        for x in np.linspace(0, 2 * np.pi, 10):
+            for y in np.linspace(0, 2 * np.pi, 10):
+                complex_mv = x * Cl000element[0] + y * Cl000element[1]
+                complex_value = x + 1j * y
+                result = np_func(complex_mv)
+                assert abs(result.value[0] - cmath_func(complex_value)) < 1E-10
