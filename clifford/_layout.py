@@ -576,7 +576,7 @@ class Layout(object):
     @_cached_property
     def _shirokov_inverse(self):
         """
-        Performs the inversion operation as described in the paper :cite:`Shirokov_2020`
+        Performs the inversion operation as described in Theorem 4, page 16 of the paper :cite:`shirokov2020inverse`
         """
         n = len(self.sig)
         exponent = (n + 1) // 2
