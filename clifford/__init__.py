@@ -271,7 +271,7 @@ def general_exp(x, max_order=15):
     return result
 
 
-def general_sin(X, max_order=20):
+def general_sin(X, max_order=30):
     """
     A taylor series expansion for sin
     """
@@ -281,7 +281,7 @@ def general_sin(X, max_order=20):
     return op
 
 
-def general_cos(X, max_order=20):
+def general_cos(X, max_order=30):
     """
     A taylor series expansion for cos
     """
@@ -291,7 +291,7 @@ def general_cos(X, max_order=20):
     return op
 
 
-def general_tan(X, max_order=20):
+def general_tan(X, max_order=30):
     """
     The tan function as the ratio of sin and cos
     Note. It would probably be better to implement this as its own taylor series.
@@ -299,7 +299,7 @@ def general_tan(X, max_order=20):
     return general_sin(X, max_order) / general_cos(X, max_order)
 
 
-def general_sinh(X, max_order=20):
+def general_sinh(X, max_order=30):
     """
     A taylor series expansion for sinh
     """
@@ -309,7 +309,7 @@ def general_sinh(X, max_order=20):
     return op
 
 
-def general_cosh(X, max_order=20):
+def general_cosh(X, max_order=30):
     """
     A taylor series expansion for cosh
     """
@@ -319,7 +319,7 @@ def general_cosh(X, max_order=20):
     return op
 
 
-def general_tanh(X, max_order=20):
+def general_tanh(X, max_order=30):
     """
     The tanh function as the ratio of sinh and cosh
     Note. It would probably be better to implement this as its own taylor series.
