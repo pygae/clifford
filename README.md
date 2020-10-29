@@ -37,7 +37,7 @@ Install using `pip`:
 ```
 pip3 install clifford
 ```
-[Detailed instructions](https://slides.com/hugohadfield/installing-python-and-clifford)
+[Detailed instructions](https://clifford.readthedocs.io/en/latest/installation.html)
 
 Quickstart
 ----------
