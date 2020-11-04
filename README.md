@@ -27,7 +27,7 @@ Scalars, vectors, and higher-grade entities can be mixed freely and consistently
 
 Quick Installation
 ------------
-Requires Python version >=3.7
+Requires Python version >=3.5
 
 Install using `conda`:
 ```
