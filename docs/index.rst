@@ -33,7 +33,7 @@ Scalars, vectors, and higher-grade entities can be mixed freely and consistently
     :maxdepth: 3
     :hidden:
 
-    Installation
+    installation
     api/index
     predefined-algebras
     changelog
