@@ -87,9 +87,9 @@ To obtain BibTex citation information for a _specific_ release (recommended):
 If you want to cite all releases, use:
 ```tex
 @software{python_clifford,
-  author       = {Alex Arsenovic and
-                  Hugo Hadfield and
+  author       = {Hugo Hadfield and
                   Eric Wieser and
+                  Alex Arsenovic and
                   Robert Kern and
                   {The Pygae Team}},
   title        = {pygae/clifford},
