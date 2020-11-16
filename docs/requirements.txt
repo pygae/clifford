@@ -6,6 +6,7 @@ nbsphinx
 ipywidgets
 sphinx>=2.4
 sphinx_rtd_theme
+sphinxcontrib-prettyspecialmethods
 sphinxcontrib-bibtex
 
 # needed to avoid https://github.com/sphinx-doc/sphinx/issues/8198
