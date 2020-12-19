@@ -19,7 +19,19 @@ class TestInitialisation:
         for x in range(7, 9)
     ])
     def test_speed(self, n, benchmark):
-        benchmark(Cl, n)
+        def generate_algebra():
+            layout = Cl(n)[0]
+            layout.gmt_func
+            layout.imt_func
+            layout.omt_func
+            layout.lcmt_func
+            layout.adjoint_func
+            layout.left_complement_func
+            layout.right_complement_func
+            layout.dual_func
+            layout.vee_func
+            layout.inv_func
+        benchmark(generate_algebra)
 
     @too_slow_without_jit
     @pytest.mark.veryslow

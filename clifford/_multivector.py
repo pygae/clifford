@@ -60,8 +60,8 @@ class MultiVector(object):
                     self.layout.gaDims)
 
     def __array__(self) -> 'cf.MVArray':
-        # we are a scalar, and the only appropriate dtype is an object array
-        return cf.MVArray([self])
+        # ensure that coercion gives our array subclass
+        return cf.array(self)
 
     def _checkOther(self, other, coerce=True) -> Tuple['MultiVector', bool]:
         """Ensure that the other argument has the same Layout or coerce value if
@@ -126,7 +126,6 @@ class MultiVector(object):
 
     def __mul__(self, other) -> 'MultiVector':
         """ ``self * other``, the geometric product :math:`MN` """
-
         other, mv = self._checkOther(other, coerce=False)
 
         if mv:
@@ -496,10 +495,14 @@ class MultiVector(object):
             else:
                 if coeff < 0:
                     sep = seps[1]
-                    abs_coeff = -round(coeff, p)
+                    sign = -1
                 else:
                     sep = seps[0]
-                    abs_coeff = round(coeff, p)
+                    sign = 1
+                if np.issubdtype(self.value.dtype, np.inexact):
+                    abs_coeff = sign*np.round(coeff, p)
+                else:
+                    abs_coeff = sign*coeff
 
                 if grade == 0:
                     # scalar

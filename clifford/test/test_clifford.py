@@ -137,7 +137,7 @@ class TestClifford:
 
         B = layout.MultiVector(valB)
         expB = layout.MultiVector(valexpB)
-        np.testing.assert_almost_equal(np.exp(B)[0].value, expB.value)
+        np.testing.assert_almost_equal(np.exp(B).value, expB.value)
 
     def test_inv_g4(self, g4):
         '''
@@ -248,6 +248,20 @@ class TestClifford:
             for j in range(Ncolumns):
                 value_array_ip[i, j, :] = layout.imt_func(value_array_a[i, j, :], value_array_b[i, j, :])
         np.testing.assert_array_equal(mv_array_ip.value, value_array_ip)
+
+    def test_array_0d(self, g3):
+        layout, blades = g3, g3.blades
+        e1 = blades['e1']
+
+        arr = np.asanyarray(e1)
+        assert isinstance(arr, MVArray)
+        assert arr.shape == ()
+        assert arr[()] is e1
+
+        arr = clifford.array(e1)
+        assert isinstance(arr, MVArray)
+        assert arr.shape == ()
+        assert arr[()] is e1
 
     def test_array_control(self, g3):
         '''
