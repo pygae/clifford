@@ -53,7 +53,7 @@ from functools import reduce
 
 from math import sqrt
 from numpy import eye, array, sign, zeros, sin, arccos
-from .. import Cl, gp, Frame
+from .. import Cl, gp, Frame,Layout
 from .. import eps as global_eps
 
 from warnings import warn
@@ -126,6 +126,10 @@ def mat2Frame(A, layout=None, is_complex=None):
     ------------
     A : ndarray
         MxN matrix representing vectors
+    layout: None, Layout, list 
+        if none we generate an algebra of Gn, if layout we take the 
+        vector basis from that, and if its a list   we will assume its 
+        a vector basis. 
     '''
 
     # TODO: could simplify this by just implementing the real case and then
@@ -147,8 +151,12 @@ def mat2Frame(A, layout=None, is_complex=None):
 
     if layout is None:
         layout, blades = Cl(M)
-
-    e_ = layout.basis_vectors_lst[:M]
+        e_ = layout.basis_vectors_lst[:M]
+    elif isinstance(layout, Layout):
+        e_ = layout.basis_vectors_lst[:M]
+    elif len(layout)==N:
+        e_ = layout
+    
 
     a = [0 ^ e_[0]] * N
 
