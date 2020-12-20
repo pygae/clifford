@@ -354,6 +354,23 @@ def Cl(p=0, q=0, r=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
 
     The notation :math:`Cl_{p,q,r}` means that the algebra is :math:`p+q+r`-dimensional, with the first :math:`p` vectors with positive signature, the next :math:`q` vectors negative, and the final :math:`r` vectors with null signature.
 
+    Parameters 
+    =============
+    p: number 
+        number of positive signature basis vectors  
+    q: number 
+        number of negative signature basis vectors
+    r: number 
+        number of zero signature basis vectors
+    sig : array, None
+        sorted blade tuples.  if given,  p,q,r are ignored
+    names: list 
+        list of names given to the basis blades
+    firstIdx: number
+        start counting basis blades at this number
+    
+    
+
     Returns
     =======
     layout : Layout

@@ -31,7 +31,7 @@ Determining Rotors From Frame Pairs or Orthogonal Matrices
 -----------------------------------------------------------
 
 Given two frames that are related by a orthogonal transform, we seek a rotor
-which enacts the transform. Details of the mathematics and psuedo-code used the
+which enacts the transform. Details of the mathematics and pseudo-code used the
 create the algorithms below can be found at Allan Cortzen's website.
 
  http://ctz.dk/geometric-algebra/frames-to-versor-algorithm/
@@ -111,7 +111,7 @@ def omoh(A, B):
     return lam
 
 
-def mat2Frame(A, layout=None, is_complex=None):
+def mat2Frame(A, I=None, is_complex=None):
     '''
     Translates a  (possibly complex) matrix into a real vector frame
 
@@ -126,7 +126,7 @@ def mat2Frame(A, layout=None, is_complex=None):
     ------------
     A : ndarray
         MxN matrix representing vectors
-    layout: None, Layout, list 
+    I: None, pseudoscalar of the frame
         if none we generate an algebra of Gn, if layout we take the 
         vector basis from that, and if its a list   we will assume its 
         a vector basis. 
@@ -149,13 +149,10 @@ def mat2Frame(A, layout=None, is_complex=None):
         N = N * 2
         M = M * 2
 
-    if layout is None:
+    if I is None:
         layout, blades = Cl(M)
-        e_ = layout.basis_vectors_lst[:M]
-    elif isinstance(layout, Layout):
-        e_ = layout.basis_vectors_lst[:M]
-    elif len(layout)==N:
-        e_ = layout
+        I = layout.pseudoScalar
+    e_ = I.basis()
     
 
     a = [0 ^ e_[0]] * N
@@ -177,20 +174,38 @@ def mat2Frame(A, layout=None, is_complex=None):
                 a[n_ + 1] = (a[n_ + 1]) \
                     + ((-A[m, n].imag) ^ e_[m_]) \
                     + ((A[m, n].real) ^ e_[m_ + 1])
-    return a, layout
+    return a, I
 
 
-def frame2Mat(B, A=None, is_complex=None):
+def frame2Mat(B, A=None, I=None, is_complex=None):
+    '''
+    convert a list of vectors to a matrix
+    
+    B : list 
+        a list of vectors that have been transformed
+    A : None, list of vectors
+        a list of vectors in their initial state. if none we assume 
+        orthonormal basis given by B.pseudoScalar, or I 
+    I : Multivector, None
+        pseudoscalar of the space. if  None, we use B.pseudoScalar
+    is_complex: Bool
+        do you want a complex matrix?  
+        
+    '''
     if is_complex is not None:
         raise NotImplementedError()
+    
+     
+    if I is None:
+        I = B[0].pseudoScalar
     if A is None:
         # assume we have orthonormal initial frame
-        A = B[0].layout.basis_vectors_lst
+        A = I.basis()
 
     # you need float() due to bug in clifford
-    M = [float(b | a) for b in B for a in A]
+    M = [float(b | a) for a in A for b in B ]
     M = array(M).reshape(len(B), len(B))
-
+    return M,I
 
 def orthoFrames2Versor_dist(A, B, eps=None):
     '''
@@ -404,7 +419,7 @@ def orthoFrames2Versor(B, A=None, delta=1e-3, eps=None, det=None,
     return R, r_list
 
 
-def orthoMat2Versor(A, eps=None, layout=None, is_complex=None):
+def orthoMat2Versor(A, eps=None, I=None, is_complex=None):
     '''
     Translates an orthogonal (or unitary) matrix to a Versor
 
@@ -417,12 +432,12 @@ def orthoMat2Versor(A, eps=None, layout=None, is_complex=None):
     ------------
 
     '''
-    B, layout = mat2Frame(A, layout=layout, is_complex=is_complex)
+    B, layout = mat2Frame(A, I=I, is_complex=is_complex)
     N = len(B)
 
     # if (A.dot(A.conj().T) -eye(N/2)).max()>eps:
     #     warn('A doesnt appear to be a rotation. ')
-    A, layout = mat2Frame(eye(N), layout=layout, is_complex=False)
+    A, dum = mat2Frame(eye(N), I=I, is_complex=False)
     return orthoFrames2Versor(A=A, B=B, eps=eps)
 
 
