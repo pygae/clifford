@@ -99,7 +99,8 @@ def cos(X, max_order=30):
 def tan(X, max_order=30):
     """
     The tan function as the ratio of sin and cos
-    Note. It would probably be better to implement this as its own taylor series.
+    Note. It would probably be better to implement this as its own taylor series. This function
+    is not JITed as currently we do not overload the truediv operator for multivectors.
     """
     return sin(X, max_order) / cos(X, max_order)
 
@@ -135,6 +136,7 @@ def cosh(X, max_order=30):
 def tanh(X, max_order=30):
     """
     The tanh function as the ratio of sinh and cosh
-    Note. It would probably be better to implement this as its own taylor series.
+    Note. It would probably be better to implement this as its own taylor series. This function
+    is not JITed as currently we do not overload the truediv operator for multivectors.
     """
     return sinh(X, max_order) / cosh(X, max_order)
