@@ -6,9 +6,14 @@ import warnings
 import numpy as np
 
 import clifford as cf
-from .taylor_expansions import general_exp, general_sin, general_cos, general_tan, general_sinh, general_cosh, general_tanh
+import clifford.taylor_expansions as taylor_expansions
 from . import _settings
 from ._layout_helpers import layout_short_name
+
+
+def general_exp(x, **kwargs):
+   warnings.warn("cf.general_exp is deprecated. Use `mv.exp()` or `np.exp(mv)` on multivectors, or `cf.taylor_expansions.exp(x)` on arbitrary objects", DeprecationWarning)
+   return taylor_expansions.exp(x, **kwargs)
 
 
 class MultiVector(object):
@@ -99,25 +104,25 @@ class MultiVector(object):
     # binary
 
     def exp(self) -> 'MultiVector':
-        return general_exp(self)
+        return taylor_expansions.exp(self)
 
     def cos(self):
-        return general_cos(self)
+        return taylor_expansions.cos(self)
 
     def sin(self):
-        return general_sin(self)
+        return taylor_expansions.sin(self)
 
     def tan(self):
-        return general_tan(self)
+        return taylor_expansions.tan(self)
 
     def sinh(self):
-        return general_sinh(self)
+        return taylor_expansions.sinh(self)
 
     def cosh(self):
-        return general_cosh(self)
+        return taylor_expansions.cosh(self)
 
     def tanh(self):
-        return general_tanh(self)
+        return taylor_expansions.tanh(self)
 
     def vee(self, other) -> 'MultiVector':
         r"""

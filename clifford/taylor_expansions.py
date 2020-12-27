@@ -1,6 +1,10 @@
+"""
+This file implements various Taylor expansions for useful functions of multivectors.
+For some algebra signatures there may exist closed forms of these functions which would likely be faster
+and more accurate. Nonetheless having pre-written taylor expansions for the general case is useful.
+"""
 
 import math
-
 import numpy as np
 
 from . import _numba_utils
@@ -8,7 +12,7 @@ from . import _settings
 
 
 @_numba_utils.njit
-def general_exp(x, max_order=15):
+def exp(x, max_order=15):
     """
     This implements the series expansion of e**mv where mv is a multivector
     The parameter order is the maximum order of the taylor series to use
@@ -46,7 +50,7 @@ def general_exp(x, max_order=15):
 
 
 @_numba_utils.njit
-def general_sin(X, max_order=30):
+def sin(X, max_order=30):
     """
     A taylor series expansion for sin
     """
@@ -60,7 +64,7 @@ def general_sin(X, max_order=30):
 
 
 @_numba_utils.njit
-def general_cos(X, max_order=30):
+def cos(X, max_order=30):
     """
     A taylor series expansion for cos
     """
@@ -73,16 +77,16 @@ def general_cos(X, max_order=30):
     return op
 
 
-def general_tan(X, max_order=30):
+def tan(X, max_order=30):
     """
     The tan function as the ratio of sin and cos
     Note. It would probably be better to implement this as its own taylor series.
     """
-    return general_sin(X, max_order) / general_cos(X, max_order)
+    return sin(X, max_order) / cos(X, max_order)
 
 
 @_numba_utils.njit
-def general_sinh(X, max_order=30):
+def sinh(X, max_order=30):
     """
     A taylor series expansion for sinh
     """
@@ -96,7 +100,7 @@ def general_sinh(X, max_order=30):
 
 
 @_numba_utils.njit
-def general_cosh(X, max_order=30):
+def cosh(X, max_order=30):
     """
     A taylor series expansion for cosh
     """
@@ -109,9 +113,9 @@ def general_cosh(X, max_order=30):
     return op
 
 
-def general_tanh(X, max_order=30):
+def tanh(X, max_order=30):
     """
     The tanh function as the ratio of sinh and cosh
     Note. It would probably be better to implement this as its own taylor series.
     """
-    return general_sinh(X, max_order) / general_cosh(X, max_order)
+    return sinh(X, max_order) / cosh(X, max_order)
