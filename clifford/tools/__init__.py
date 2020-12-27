@@ -31,13 +31,12 @@ Determining Rotors From Frame Pairs or Orthogonal Matrices
 -----------------------------------------------------------
 
 Given two frames that are related by a orthogonal transform, we seek a rotor
-which enacts the transform. Details of the mathematics and psuedo-code used the
-create the algorithms below can be found at Allan Cortzen's website.
-
- http://ctz.dk/geometric-algebra/frames-to-versor-algorithm/
+which enacts the transform. Details of the mathematics and pseudo-code used the
+create the algorithms below can be found at Allan Cortzen's website,
+:cite:`ctz-frames`.
 
 There are also some helper functions which can be used to translate matrices
-into GA frames, so an orthogonal (or complex unitary ) matrix can be directly
+into GA frames, so an orthogonal (or complex unitary) matrix can be directly
 translated into a Versor.
 
 .. autosummary::
@@ -46,54 +45,55 @@ translated into a Versor.
     orthoFrames2Versor
     orthoMat2Versor
     mat2Frame
+    omoh
 
 """
 
 from functools import reduce
 
+from typing import Union, Optional, List, Tuple
 from math import sqrt
 from numpy import eye, array, sign, zeros, sin, arccos
-from .. import Cl, gp, Frame
+import numpy as np
+from .. import Cl, gp, Frame, MultiVector, Layout
 from .. import eps as global_eps
 
 from warnings import warn
 
 
-def omoh(A, B):
-    '''
-    Determines homogenzation scaling for two Frames related by a Rotor
+def omoh(A: Union[Frame, List[MultiVector]], B: Union[Frame, List[MultiVector]]) -> np.ndarray:
+    r'''
+    Determines homogenization scaling for two :class:`~clifford.Frame`\ s related by a Rotor
 
-    This is used as part of the frames2Versor algorithm, when the
-    frames are given in CGA. It is requried because the model assumes,
+    This is used as part of the :func:`~clifford.tools.orthoFrames2Versor` algorithm,
+    when the frames are given in CGA. It is required because the model assumes,
+    ``B = R*A*~R``, but if data is given in the original space, only
+    ``lambda*B' == homo(B)`` is observable.
 
-        `B = R*A*~R`
-    but if data is given in the original space, only
-
-        `lambda*B' == homo(B)`
-
-    is observable. We need  to determine lambda before the Cartan-based
-    algorithm can be used. The name of this function is inverses of
-    `homo`, which is the method used to homogenize
+    We need to determine lambda before the Cartan-based algorithm can be used.
+    The name of this function is the reverse of
+    :meth:`~clifford.ConformalLayout.homo`, which is the method used to
+    homogenize.
 
     Parameters
     --------------
     A : list of vectors, or clifford.Frame
-        the set of  vectors before the transform
+        the set of vectors before the transform
     B : list of vectors, or clifford.Frame
-        the set of  vectors after the transform, and homogenzation.
-        ie B=(B/B|einf)
+        the set of vectors after the transform, and homogenzation.
+        ie ``B=B/(B|einf)``
 
 
     Returns
     ---------
-    out : list of floats
-        weights on `B`, which produce inhomogenous versions  of `B`. If
+    out : array of floats
+        weights on `B`, which produce inhomogenous versions of `B`. If
         you multiply the input `B` by `lam`, it will fulfill `B = R*A*~R`
 
     Examples
     ----------
-    lam = ohom(A,B):
-    B_ohom = Frame([B[k]*lam[k] for k in range(len(B)])
+    >>> lam = ohom(A, B)
+    >>> B_ohom = Frame([B[k]*lam[k] for k in range(len(B)])
     '''
     if len(A) != len(B) or len(A) < 3:
         raise ValueError('input must be >=3 long and len(a)==len(b)')
@@ -111,14 +111,17 @@ def omoh(A, B):
     return lam
 
 
-def mat2Frame(A, layout=None, is_complex=None):
+def mat2Frame(A: np.ndarray,
+              layout: Optional[Layout] = None,
+              is_complex: bool = None) -> Tuple[List[MultiVector], Layout]:
     '''
-    Translates a  (possibly complex) matrix into a real vector frame
+    Translates a (possibly complex) matrix into a real vector frame
 
-    The rows and columns are interpreted as follows
-        * M,N = shape(A)
-        * M = dimension of space
-        * N = number of vectors
+    The rows and columns of `A` are interpreted as follows
+
+     * ``M, N = A.shape``
+     * ``M``: dimension of space
+     * ``N``: number of vectors
 
     If A is complex M and N are doubled.
 
@@ -126,6 +129,13 @@ def mat2Frame(A, layout=None, is_complex=None):
     ------------
     A : ndarray
         MxN matrix representing vectors
+
+    Returns
+    -------
+    a : list of clifford.MultiVector
+        The resulting vectors
+    layout : clifford.Layout
+        The layout of the vectors in ``a``.
     '''
 
     # TODO: could simplify this by just implementing the real case and then
@@ -188,19 +198,16 @@ def orthoFrames2Versor_dist(A, B, eps=None):
     '''
     Determines versor for two frames related by an orthogonal transform
 
-    The frames themselves do not have to be othorgonal.
+    The frames themselves do not have to be orthogonal.
 
-    Based on [1,2]. This works  in Euclidean spaces and, under special
-    circumstances in other signatures. see [1] for limitaions/details
-
-    [1] http://ctz.dk/geometric-algebra/frames-to-versor-algorithm/
-
-    [2] Reconstructing Rotations and Rigid Body Motions from Exact Point
-    Correspondences Through Reflections, Daniel Fontijne and Leo Dorst
+    Based on :cite:`ctz-frames,fontijne-reconstructing`.
+    This works in Euclidean spaces and, under special
+    circumstances in other signatures. See :cite:`ctz-frames` for
+    limitations/details.
 
     '''
     # TODO: should we test to see if A and B are related by rotation?
-    # TODO: implement  reflect/rotate based on distance (as in[1])
+    # TODO: implement reflect/rotate based on distance (as in:cite:`ctz-frames`)
 
     # keep copy of original frames
     A = A[:]
@@ -241,23 +248,27 @@ def orthoFrames2Versor_dist(A, B, eps=None):
     return R, r_list
 
 
-def orthoFrames2Versor(B, A=None, delta=1e-3, eps=None, det=None,
-                       remove_scaling=False):
+def orthoFrames2Versor(B, A=None, delta: float = 1e-3,
+                       eps: Optional[float] = None,
+                       det=None,
+                       remove_scaling: bool = False):
     '''
     Determines versor for two frames related by an orthogonal transform
 
-    Based on [1,2]. This works  in Euclidean spaces and, under special
-    circumstances in other signatures. see [1] for limitaions/details
+    Based on :cite:`ctz-frames,fontijne-reconstructing`.
+    This works in Euclidean spaces and, under special
+    circumstances in other signatures. See :cite:`ctz-frames` for
+    limitations/details.
 
     Parameters
     -----------
     B : list of vectors, or clifford.Frame
         the set of  vectors after the transform, and homogenzation.
-        ie B=(B/B|einf)
+        ie ``B = (B/B|einf)``
 
     A : list of vectors, or clifford.Frame
         the set of  vectors before the transform. If `None` we assume A is
-        the basis given B.layout.basis_vectors_lst
+        the basis given by ``B.layout.basis_vectors_lst``.
 
     delta : float
         Tolerance for reflection/rotation determination. If the normalized
@@ -265,33 +276,27 @@ def orthoFrames2Versor(B, A=None, delta=1e-3, eps=None, det=None,
         reflection, otherwise use rotation.
 
     eps: float
-        Tolerance on spinor determination. if pseudoscalar of A  differs
+        Tolerance on spinor determination. if pseudoscalar of A differs
         in magnitude from pseudoscalar of B by eps, then we have spinor.
         If `None`, use the `clifford.eps()` global eps.
     det : [+1,-1,None]
-        The sign of the determinant of the versor, if known. If  it is
+        The sign of the determinant of the versor, if known. If it is
         known a-priori that the versor is a rotation vs a reflection, this
         fact might be needed to correctly append an additional reflection
-        which leaves transformed points invariant. See 4.6.3 [2].
-    remove_scaling : Bool
+        which leaves transformed points invariant. See 4.6.3 of
+        :cite:`fontijne-reconstructing`.
+    remove_scaling : bool
         Remove the effects of homogenzation from frame B. This is needed
         if you are working in CGA, but the input data is given in the
-        original space. See `omoh` method  for more. See 4.6.2 of [2]
+        original space. See :func:`~clifford.tools.omoh` for more. See 4.6.2 of
+        :cite:`fontijne-reconstructing`.
 
     Returns
     ---------
-    R :  clifford.Multivector
+    R : clifford.MultiVector
         the Versor.
-    rs : list of clifford.Multivectors
+    rs : list of clifford.MultiVector
         ordered list of found reflectors/rotors.
-
-
-    References
-    ------------
-    [1] http://ctz.dk/geometric-algebra/frames-to-versor-algorithm/
-
-    [2] Reconstructing Rotations and Rigid Body Motions from Exact Point
-    Correspondences Through Reflections, Daniel Fontijne and Leo Dorst
 
     '''
 
@@ -312,7 +317,7 @@ def orthoFrames2Versor(B, A=None, delta=1e-3, eps=None, det=None,
 
     # Determine if we have a spinor
     spinor = False
-    # store peudoscalar of frame B, in case known det (see end)
+    # store pseudoscalar of frame B, in case known det (see end)
     try:
         B = Frame(B)
         B_En = B.En
@@ -342,7 +347,7 @@ def orthoFrames2Versor(B, A=None, delta=1e-3, eps=None, det=None,
 
     # Find the Versor
 
-    # store each reflector/rotor  in a list,  make full versor at the
+    # store each reflector/rotor in a list, make full versor at the
     # end of the loop
     r_list = []
 
@@ -365,7 +370,7 @@ def orthoFrames2Versor(B, A=None, delta=1e-3, eps=None, det=None,
 
         else:
             #  rotation part
-            # if k==N:                # see paper for explaination
+            # if k==N:                # see paper for explanation
             #     break
 
             R = b * (a + b)
@@ -379,7 +384,7 @@ def orthoFrames2Versor(B, A=None, delta=1e-3, eps=None, det=None,
     R = reduce(gp, r_list[::-1])
 
     # if det is known a priori check to see if it's correct, if not add
-    # an extra reflection which leaves all points in B invarianct
+    # an extra reflection which leaves all points in B invariant
     if det is not None:
         I = R.pseudoScalar
         our_det = (R * I * ~R * I.inv())(0)
@@ -404,7 +409,6 @@ def orthoMat2Versor(A, eps=None, layout=None, is_complex=None):
     orthonormal frame by an orthogonal transform. Given this relation,
     this function will find the versor which enacts this transform.
 
-
     Parameters
     ------------
 
@@ -418,15 +422,17 @@ def orthoMat2Versor(A, eps=None, layout=None, is_complex=None):
     return orthoFrames2Versor(A=A, B=B, eps=eps)
 
 
-def rotor_decomp(V, x):
+def rotor_decomp(V: MultiVector, x: MultiVector) -> Tuple[MultiVector, MultiVector]:
     '''
     Rotor decomposition of rotor V
 
-    Given a rotor V, and a vector x, this will decompose V into  a
-    series of two rotations, U  and H, where U leaves x
+    Given a rotor V, and a vector x, this will decompose V into a
+    series of two rotations, U and H, where U leaves x
     invariant and H contains x.
 
-    Limited to 4D for now
+    Limited to 4D for now.
+
+    See :cite:`hestenes-space-time`, Appendix B, Theorem 4.
 
     Parameters
     ---------------
@@ -441,10 +447,6 @@ def rotor_decomp(V, x):
         rotor which contains x
     U : clifford.Multivector
         rotor which leaves x invariant
-
-    References
-    ----------------
-    [1] : Space Time Algebra, D. Hestenes. AppendixB, Theroem 4
 
     '''
     H2 = V * x * ~V * x.inv()  # inv needed to handle signatures
