@@ -58,6 +58,8 @@ extensions = [
     #'sphinx.ext.mathjax',
 ]
 
+bibtex_bibfiles = ['refs.bib']
+
 nbsphinx_execute = 'always'
 nbsphinx_allow_errors = True
 nbsphinx_kernel_name = 'python'
