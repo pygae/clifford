@@ -1,9 +1,28 @@
 """
+.. currentmodule:: clifford.taylor_expansions
+
+=================================================
+taylor_expansions (:mod:`clifford.taylor_expansions`)
+=================================================
+
+.. versionadded:: 1.3.2
+
 This file implements various Taylor expansions for useful functions of multivectors.
 For some algebra signatures there may exist closed forms of these functions which would likely be faster
 and more accurate. Nonetheless having pre-written taylor expansions for the general case is useful.
-"""
 
+Implemented functions
+----------------
+
+.. autofunction:: exp
+.. autofunction:: sin
+.. autofunction:: cos
+.. autofunction:: tan
+.. autofunction:: sinh
+.. autofunction:: cosh
+.. autofunction:: tanh
+
+"""
 import math
 import numpy as np
 
