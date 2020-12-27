@@ -101,22 +101,22 @@ class MultiVector(object):
     def exp(self) -> 'MultiVector':
         return taylor_expansions.exp(self)
 
-    def cos(self):
+    def cos(self) -> 'MultiVector':
         return taylor_expansions.cos(self)
 
-    def sin(self):
+    def sin(self) -> 'MultiVector':
         return taylor_expansions.sin(self)
 
-    def tan(self):
+    def tan(self) -> 'MultiVector':
         return taylor_expansions.tan(self)
 
-    def sinh(self):
+    def sinh(self) -> 'MultiVector':
         return taylor_expansions.sinh(self)
 
-    def cosh(self):
+    def cosh(self) -> 'MultiVector':
         return taylor_expansions.cosh(self)
 
-    def tanh(self):
+    def tanh(self) -> 'MultiVector':
         return taylor_expansions.tanh(self)
 
     def vee(self, other) -> 'MultiVector':
