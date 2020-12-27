@@ -255,6 +255,8 @@ def ga_pow(a, b):
     if isinstance(a, MultiVectorType) and isinstance(b, types.Integer):
         gmt_func = a.layout_type.obj.gmt_func
         def impl(a, b):
+            if b < 0:
+                raise NotImplementedError('Negative powers are currently not implemented')
             if b == 0:
                 return 1 + 0*a
             op = a.value
