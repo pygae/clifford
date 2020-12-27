@@ -93,9 +93,9 @@ from clifford.io import write_ga_file, read_ga_file  # noqa: F401
 
 from ._version import __version__  # noqa: F401
 from . import _numba_utils
-from . import _settings
 
 from ._settings import pretty, ugly, eps, print_precision  # noqa: F401
+import clifford.taylor_expansions as taylor_expansions
 
 # For backwards-compatibility. New code should import directly from `clifford.operator`
 from .operator import gp, op, ip  # noqa: F401
@@ -106,6 +106,11 @@ except KeyError:
     NUMBA_PARALLEL = True
 else:
     NUMBA_PARALLEL = not bool(NUMBA_DISABLE_PARALLEL)
+
+
+def general_exp(x, **kwargs):
+    warnings.warn("cf.general_exp is deprecated. Use `mv.exp()` or `np.exp(mv)` on multivectors, or `cf.taylor_expansions.exp(x)` on arbitrary objects", DeprecationWarning, stacklevel=2)
+    return taylor_expansions.exp(x, **kwargs)
 
 
 def linear_operator_as_matrix(func, input_blades, output_blades):

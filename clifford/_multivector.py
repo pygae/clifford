@@ -11,11 +11,6 @@ from . import _settings
 from ._layout_helpers import layout_short_name
 
 
-def general_exp(x, **kwargs):
-   warnings.warn("cf.general_exp is deprecated. Use `mv.exp()` or `np.exp(mv)` on multivectors, or `cf.taylor_expansions.exp(x)` on arbitrary objects", DeprecationWarning)
-   return taylor_expansions.exp(x, **kwargs)
-
-
 class MultiVector(object):
     """An element of the algebra
 
@@ -324,7 +319,7 @@ class MultiVector(object):
         # else.
 
         # pow(x, y) == exp(y * log(x))
-        newMV = general_exp(math.log(other) * self)
+        newMV = taylor_expansions.exp(math.log(other) * self)
 
         return newMV
 
