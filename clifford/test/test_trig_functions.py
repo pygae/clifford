@@ -1,5 +1,5 @@
 
-from .. import Cl
+from clifford import Cl
 import numpy as np
 import pytest
 
