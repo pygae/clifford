@@ -572,7 +572,6 @@ class Layout(object):
             return Yval
         return comp_func
 
-
     @_cached_property
     def _shirokov_inverse(self):
         """
