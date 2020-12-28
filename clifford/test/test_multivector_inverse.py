@@ -7,15 +7,14 @@ from . import rng  # noqa: F401
 
 class TestClosedForm:
 
-    @pytest.mark.parametrize('r', range(2))
-    @pytest.mark.parametrize('p, q', [
-        (p, total_dims - p)
-        for total_dims in [1, 2, 3, 4, 5]
-        for p in range(total_dims + 1)
+    @pytest.mark.parametrize('p, q, r', [
+        (p, p_add_q - p, r)
+        for p_add_q in [1, 2, 3, 4, 5]
+        for p in range(p_add_q + 1)
+        for r in range(2)
+        if r + p_add_q <= 5  # beyond this the hitzer_inverse is not supported
     ])
     def test_hitzer_inverse(self, p, q, r):
-        if p + q + r > 5:
-            pytest.xfail("Algebras with more than 5 dimensions fail for the hitzer inverse")
         Ntests = 100
         layout, blades = cf.Cl(p, q, r)
         for i in range(Ntests):
