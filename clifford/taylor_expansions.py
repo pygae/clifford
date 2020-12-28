@@ -1,11 +1,11 @@
 """
 .. currentmodule:: clifford.taylor_expansions
 
-=================================================
+=====================================================
 taylor_expansions (:mod:`clifford.taylor_expansions`)
-=================================================
+=====================================================
 
-.. versionadded:: 1.4.1
+.. versionadded:: 1.4.0
 
 This file implements various Taylor expansions for useful functions of multivectors.
 For some algebra signatures there may exist closed forms of these functions which would likely be faster
@@ -21,7 +21,7 @@ and more accurate. Nonetheless, having pre-written taylor expansions for the gen
     >>> from clifford.g3 import *
     >>> import numpy as np
     >>> np.sin(np.pi*e12/4)
-    >>> # Produces (0.86867^e12)
+    (0.86867^e12)
 
 Implemented functions
 ----------------
