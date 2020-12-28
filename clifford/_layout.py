@@ -583,18 +583,14 @@ class Layout(object):
         N = 2 ** exponent
         @_numba_utils.njit
         def shirokov_inverse(U):
-            Uk1 = U
-            Uk = Uk1
-            Ck = 0.0
+            Uk = U * 1.0  # cast to float
             for k in range(1, N):
-                Uk = Uk1
                 Ck = (N / k) * Uk.value[0]
-                Uk1 = U * (Uk - Ck)
-            adjU = Ck - Uk
-            detU = -Uk1.value[0]
-            if detU == 0:
+                adjU = (Uk - Ck)
+                Uk = U * adjU
+            if Uk.value[0] == 0:
                 raise ValueError('Multivector has no inverse')
-            return adjU / detU
+            return adjU / Uk.value[0]
         return shirokov_inverse
 
     @_cached_property
