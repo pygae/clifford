@@ -734,7 +734,7 @@ class Layout(object):
     @property
     def pseudoScalar(self) -> MultiVector:
         '''
-        the psuedoScalar
+        The pseudoscalar, :math:`I`.
         '''
         return self.blades_list[-1]
 
