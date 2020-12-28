@@ -9,7 +9,19 @@ taylor_expansions (:mod:`clifford.taylor_expansions`)
 
 This file implements various Taylor expansions for useful functions of multivectors.
 For some algebra signatures there may exist closed forms of these functions which would likely be faster
-and more accurate. Nonetheless having pre-written taylor expansions for the general case is useful.
+and more accurate. Nonetheless, having pre-written taylor expansions for the general case is useful.
+
+.. note::
+    Many of these functions are also exposed as :class:`~clifford.MultiVector` methods,
+    such as :meth:`clifford.MultiVector.sin`. This means that ``mv.sin()`` or even ``np.sin(mv)`` can be used
+    as a convenient interface to functions in this module, without having to import it directly.
+
+    For example::
+
+    >>> from clifford.g3 import *
+    >>> import numpy as np
+    >>> np.sin(np.pi*e12/4)
+    >>> # Produces (0.86867^e12)
 
 Implemented functions
 ----------------
@@ -33,8 +45,8 @@ from . import _settings
 @_numba_utils.njit
 def exp(x, max_order=15):
     """
-    This implements the series expansion of e**mv where mv is a multivector
-    The parameter order is the maximum order of the taylor series to use
+    This implements the series expansion of :math:`\exp x` where :math:`x` is a multivector
+    The parameter `max_order` is the maximum order of the taylor series to use
     """
 
     result = 1.0 + 0.0*x
@@ -72,6 +84,7 @@ def exp(x, max_order=15):
 def sin(X, max_order=30):
     """
     A taylor series expansion for sin
+    The parameter `max_order` is the maximum order of the taylor series to use
     """
     op = +X
     X2 = X*X
@@ -86,6 +99,7 @@ def sin(X, max_order=30):
 def cos(X, max_order=30):
     """
     A taylor series expansion for cos
+    The parameter `max_order` is the maximum order of the taylor series to use
     """
     op = 1 + 0*X
     X2 = X * X
@@ -99,8 +113,11 @@ def cos(X, max_order=30):
 def tan(X, max_order=30):
     """
     The tan function as the ratio of sin and cos
-    Note. It would probably be better to implement this as its own taylor series. This function
-    is not JITed as currently we do not overload the truediv operator for multivectors.
+    The parameter `max_order` is the maximum order of the taylor series to use
+
+    .. note::
+        It would probably be better to implement this as its own taylor series. This function
+        is not JITed as currently we do not overload the truediv operator for multivectors.
     """
     return sin(X, max_order) / cos(X, max_order)
 
@@ -109,6 +126,7 @@ def tan(X, max_order=30):
 def sinh(X, max_order=30):
     """
     A taylor series expansion for sinh
+    The parameter `max_order` is the maximum order of the taylor series to use
     """
     op = +X
     X2 = X * X
@@ -123,6 +141,7 @@ def sinh(X, max_order=30):
 def cosh(X, max_order=30):
     """
     A taylor series expansion for cosh
+    The parameter `max_order` is the maximum order of the taylor series to use
     """
     op = 1 + 0 * X
     X2 = X * X
@@ -136,7 +155,10 @@ def cosh(X, max_order=30):
 def tanh(X, max_order=30):
     """
     The tanh function as the ratio of sinh and cosh
-    Note. It would probably be better to implement this as its own taylor series. This function
-    is not JITed as currently we do not overload the truediv operator for multivectors.
+    The parameter `max_order` is the maximum order of the taylor series to use
+
+    .. note::
+        It would probably be better to implement this as its own taylor series. This function
+        is not JITed as currently we do not overload the truediv operator for multivectors.
     """
     return sinh(X, max_order) / cosh(X, max_order)
