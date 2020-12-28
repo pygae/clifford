@@ -17,7 +17,7 @@ class TestScalarProperties:
                                          np.cosh,
                                          np.tanh])
     def test_trig(self, element, np_func):
-        for x in np.linspace(0, 2*np.pi, 100):
+        for x in np.linspace(-2 * np.pi, 2 * np.pi, 13):
             assert abs(np_func(x*element).value[0] - np_func(x)) < 1E-10
 
 
@@ -34,7 +34,7 @@ class TestDualNumberProperties:
                                                   (np.cosh, np.sinh),
                                                   (np.tanh, lambda x: (1 - np.tanh(x)**2))])
     def test_derivatives(self, element, func, deriv_func):
-        for x in np.linspace(0, 2*np.pi, 10):
+        for x in np.linspace(-2 * np.pi, 2 * np.pi, 13):
             result = func(x * element[0] + element[1])
             assert abs(result.value[0] - func(x)) < 1E-10
             assert abs(result.value[1] - deriv_func(x)) < 1E-10
@@ -61,8 +61,8 @@ class TestComplexNumberProperties:
         """
         This tests the a clifford algebra isomorphic to the complex numbers
         """
-        for x in np.linspace(0, 2 * np.pi, 10):
-            for y in np.linspace(0, 2 * np.pi, 10):
+        for x in np.linspace(-2 * np.pi, 2 * np.pi, 13):
+            for y in np.linspace(-2 * np.pi, 2 * np.pi, 13):
                 complex_mv = x * Cl010element[0] + y * Cl010element[1]
                 complex_value = x + 1j * y
                 result = np_func(complex_mv)
@@ -78,8 +78,8 @@ class TestComplexNumberProperties:
         """
         This tests the complexified clifford algebra of only the scalars
         """
-        for x in np.linspace(0, 2 * np.pi, 10):
-            for y in np.linspace(0, 2 * np.pi, 10):
+        for x in np.linspace(-2 * np.pi, 2 * np.pi, 13):
+            for y in np.linspace(-2 * np.pi, 2 * np.pi, 13):
                 complex_mv = x * Cl000element[0] + y * Cl000element[1]
                 complex_value = x + 1j * y
                 result = np_func(complex_mv)

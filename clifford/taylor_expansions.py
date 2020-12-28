@@ -5,7 +5,7 @@
 taylor_expansions (:mod:`clifford.taylor_expansions`)
 =================================================
 
-.. versionadded:: 1.3.2
+.. versionadded:: 1.4.1
 
 This file implements various Taylor expansions for useful functions of multivectors.
 For some algebra signatures there may exist closed forms of these functions which would likely be faster
