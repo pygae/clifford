@@ -466,7 +466,7 @@ class MultiVector(object):
         if not np.issubdtype(type(grade), np.integer):
             raise ValueError("grade must be an integer")
 
-        mask = self.layout.grade_mask(grade)
+        mask = 1*self.layout.grade_mask(grade)
 
         newValue = np.multiply(mask, self.value)
 
