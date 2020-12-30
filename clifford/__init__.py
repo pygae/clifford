@@ -356,11 +356,11 @@ def Cl(p=0, q=0, r=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
 
     Parameters 
     =============
-    p: number 
+    p : int
         number of positive signature basis vectors  
-    q: number 
+    q : int
         number of negative signature basis vectors
-    r: number 
+    r : int
         number of zero signature basis vectors
     sig : array, None
         sorted blade tuples.  if given,  p,q,r are ignored
