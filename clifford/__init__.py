@@ -362,12 +362,8 @@ def Cl(p=0, q=0, r=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
         number of negative signature basis vectors
     r : int
         number of zero signature basis vectors
-    sig : array, None
-        sorted blade tuples.  if given,  p,q,r are ignored
-    names: list 
-        list of names given to the basis blades
-    firstIdx: number
-        start counting basis blades at this number
+    sig, names, firstIdx
+        See the docs for :class:`clifford.Layout`. If ``sig`` is passed, then `p`, `q`, and `r` are ignored.
     
     
 
