@@ -17,9 +17,9 @@ too_slow_without_jit = pytest.mark.skipif(
 )
 
 
-#@unittest.skip("reason unknown")
+# @unittest.skip("reason unknown")
 class ToolsTests(unittest.TestCase):
-    @unittest.skip("reason unknown") 
+    @unittest.skip("reason unknown")
     def checkit(self, p, q):
         # p, q =4,0
         N = p + q
@@ -29,9 +29,9 @@ class ToolsTests(unittest.TestCase):
         # create frame
         A = layout.randomV(n=N)
         # create Rotor
-        R = 5.*layout.randomRotor()
+        R = 5. * layout.randomRotor()
         # create rotated frame
-        B = [R*a*~R for a in A]
+        B = [R * a * ~R for a in A]
 
         # find versor from both frames
         R_found, rs = of2v(A, B)
@@ -40,9 +40,9 @@ class ToolsTests(unittest.TestCase):
         self.assertTrue(R == R_found or R == -R_found)
 
         # Determined Versor implements desired transformation
-        self.assertTrue([R_found*a*~R_found for a in A] == B)
-    
-    @unittest.skip("reason unknown") 
+        self.assertTrue([R_found * a * ~R_found for a in A] == B)
+
+    @unittest.skip("reason unknown")
     def testOrthoFrames2VersorEuclidean(self):
         for p, q in [(2, 0), (3, 0), (4, 0)]:
             self.checkit(p=p, q=q)
@@ -58,15 +58,15 @@ class ToolsTests(unittest.TestCase):
             self.checkit(p=p, q=q)
 
     def testframe2Mat(self):
-        for N in [2,3,4]:
-            l,b = Cl(N)
-            X = np.random.rand((N**2)).reshape(N,N)
+        for N in [2, 3, 4]:
+            l, b = Cl(N)
+            X = np.random.rand((N**2)).reshape(N, N)
             I = l.pseudoScalar
-            B,I = tools.mat2Frame(X,I=I)
-            X_,I= tools.frame2Mat(B=B,I=I)
+            B, I = tools.mat2Frame(X, I=I)
+            X_, I = tools.frame2Mat(B=B, I=I)
             testing.assert_almost_equal(X, X_)
-        
-        
+
+
 class G3ToolsTests(unittest.TestCase):
 
     def test_quaternion_conversions(self):
@@ -116,9 +116,10 @@ class G3ToolsTests(unittest.TestCase):
             euc_vector_n = random_unit_vector()
             theta = angle_between_vectors(euc_vector_m, euc_vector_n)
 
-            rot_rotor = generate_rotation_rotor(theta, euc_vector_m, euc_vector_n)
+            rot_rotor = generate_rotation_rotor(
+                theta, euc_vector_m, euc_vector_n)
             v1 = euc_vector_m
-            v2 = rot_rotor*euc_vector_m*~rot_rotor
+            v2 = rot_rotor * euc_vector_m * ~rot_rotor
             theta_return = angle_between_vectors(v1, v2)
 
             testing.assert_almost_equal(theta_return, theta)
@@ -136,7 +137,7 @@ class G3ToolsTests(unittest.TestCase):
         u_list = [random_euc_mv() for i in range(50)]
         for i in range(100):
             r = random_rotation_rotor()
-            v_list = [r*u*~r for u in u_list]
+            v_list = [r * u * ~r for u in u_list]
             r_2 = rotor_align_vecs(u_list, v_list)
             print(r_2)
             print(r)
@@ -206,7 +207,8 @@ class PointProcessingTests(unittest.TestCase):
         from clifford.tools.g3c import random_conformal_point, project_points_to_plane
         from clifford.tools.point_processing import GADelaunay
         point_list = [random_conformal_point() for i in range(100)]
-        point_list_flat = project_points_to_plane(point_list, (up(0)^up(e1)^up(e2)^einf).normal())
+        point_list_flat = project_points_to_plane(
+            point_list, (up(0) ^ up(e1) ^ up(e2) ^ einf).normal())
         hull = GADelaunay(point_list_flat, hull_dims=2)
         facets = hull.conformal_facets()
 

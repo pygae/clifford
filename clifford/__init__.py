@@ -354,18 +354,16 @@ def Cl(p=0, q=0, r=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
 
     The notation :math:`Cl_{p,q,r}` means that the algebra is :math:`p+q+r`-dimensional, with the first :math:`p` vectors with positive signature, the next :math:`q` vectors negative, and the final :math:`r` vectors with null signature.
 
-    Parameters 
+    Parameters
     =============
     p : int
-        number of positive signature basis vectors  
+        number of positive signature basis vectors
     q : int
         number of negative signature basis vectors
     r : int
         number of zero signature basis vectors
     sig, names, firstIdx
         See the docs for :class:`clifford.Layout`. If ``sig`` is passed, then `p`, `q`, and `r` are ignored.
-    
-    
 
     Returns
     =======
