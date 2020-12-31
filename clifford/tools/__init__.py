@@ -46,7 +46,9 @@ translated into a Versor.
     orthoFrames2Versor
     orthoMat2Versor
     mat2Frame
+    frame2Mat
     omoh
+    rotor_decomp
 
 """
 
