@@ -35,7 +35,6 @@ which enacts the transform. Details of the mathematics and pseudo-code used to
 create the algorithms below can be found at Allan Cortzen's website,
 :cite:`ctz-frames`.
 
-
 There are also some helper functions which can be used to translate matrices
 into GA frames, so an orthogonal (or complex unitary) matrix can be directly
 translated into a Versor.
@@ -57,7 +56,6 @@ from functools import reduce
 from typing import Union, Optional, List, Tuple
 from math import sqrt
 from numpy import eye, array, sign, zeros, sin, arccos
-
 import numpy as np
 from .. import Cl, gp, Frame, MultiVector
 from .. import eps as global_eps
@@ -140,14 +138,12 @@ def mat2Frame(A: np.ndarray,
         vector basis from that, and if its a list   we will assume its
         a vector basis.
 
-
     Returns
     -------
     a : list of clifford.MultiVector
         The resulting vectors
     I : clifford.MultiVector
         The blade holding the vectors in ``a``.
-
     '''
 
     # TODO: could simplify this by just implementing the real case and then
@@ -237,8 +233,7 @@ def orthoFrames2Versor_dist(A, B, eps=None):
 
     '''
     # TODO: should we test to see if A and B are related by rotation?
-    # TODO: implement reflect/rotate based on distance (as
-    # in:cite:`ctz-frames`)
+    # TODO: implement reflect/rotate based on distance (as in:cite:`ctz-frames`)
 
     # keep copy of original frames
     A = A[:]
@@ -453,8 +448,7 @@ def orthoMat2Versor(A, eps=None, I=None, is_complex=None):
     return orthoFrames2Versor(A=A, B=B, eps=eps)
 
 
-def rotor_decomp(
-        V: MultiVector, x: MultiVector) -> Tuple[MultiVector, MultiVector]:
+def rotor_decomp(V: MultiVector, x: MultiVector) -> Tuple[MultiVector, MultiVector]:
     '''
     Rotor decomposition of rotor V
 
@@ -488,7 +482,7 @@ def rotor_decomp(
 
 
 def sinc(x):
-    return sin(x) / x
+    return sin(x)/x
 
 
 def log_rotor(V):
@@ -502,4 +496,4 @@ def log_rotor(V):
         return log(float(V(0)))
     # numpy's trig correctly chooses hyperbolic or not with Complex args
     theta = arccos(complex(V(0)))
-    return V(2) / sinc(theta).real
+    return V(2)/sinc(theta).real
