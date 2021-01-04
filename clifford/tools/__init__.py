@@ -133,7 +133,7 @@ def mat2Frame(A: np.ndarray,
     A : ndarray
         MxN matrix representing vectors
 
-    I: None, pseudoscalar of the frame
+    I : MultiVector
         if none we generate an algebra of Gn, if layout we take the
         vector basis from that, and if its a list   we will assume its
         a vector basis.
