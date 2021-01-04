@@ -192,8 +192,11 @@ def mat2Frame(A: np.ndarray,
 
 def frame2Mat(B, A=None, I=None, is_complex=None):
     '''
+
     convert a list of vectors to a matrix
 
+    Parameters
+    ------------
     B : list
         a list of vectors that have been transformed
     A : None, list of vectors
@@ -437,6 +440,14 @@ def orthoMat2Versor(A, eps=None, I=None, is_complex=None):
 
     Parameters
     ------------
+    A : matrix
+        matrix to be transformed
+    eps : number
+        tolerance
+    I : MultiVector
+        GA  of A
+    is_complex : boolean
+        is A complex?
 
     '''
     B, layout = mat2Frame(A, I=I, is_complex=is_complex)
