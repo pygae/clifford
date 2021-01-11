@@ -577,11 +577,11 @@ class Layout(object):
         """
         Performs the inversion operation as described in the paper :cite:`Hitzer_Sangwine_2017`
         """
-        tot = np.sum(self.sig != 0)
+        tot = len(self.sig)
         @_numba_utils.njit
         def hitzer_inverse(operand):
             if tot == 0:
-                numerator = operand.layout.scalar
+                numerator = 1 + 0*operand
             elif tot == 1:
                 # Equation 4.3
                 mv_invol = operand.gradeInvol()

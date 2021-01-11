@@ -93,9 +93,9 @@ from clifford.io import write_ga_file, read_ga_file  # noqa: F401
 
 from ._version import __version__  # noqa: F401
 from . import _numba_utils
-from . import _settings
 
 from ._settings import pretty, ugly, eps, print_precision  # noqa: F401
+import clifford.taylor_expansions as taylor_expansions
 
 # For backwards-compatibility. New code should import directly from `clifford.operator`
 from .operator import gp, op, ip  # noqa: F401
@@ -106,6 +106,11 @@ except KeyError:
     NUMBA_PARALLEL = True
 else:
     NUMBA_PARALLEL = not bool(NUMBA_DISABLE_PARALLEL)
+
+
+def general_exp(x, **kwargs):
+    warnings.warn("cf.general_exp is deprecated. Use `mv.exp()` or `np.exp(mv)` on multivectors, or `cf.taylor_expansions.exp(x)` on arbitrary objects", DeprecationWarning, stacklevel=2)
+    return taylor_expansions.exp(x, **kwargs)
 
 
 def linear_operator_as_matrix(func, input_blades, output_blades):
@@ -230,43 +235,6 @@ def grade_obj_func(objin_val, gradeList, threshold):
             modal_value_count[g] += 1
         n += 1
     return np.argmax(modal_value_count)
-
-
-def general_exp(x, max_order=15):
-    """
-    This implements the series expansion of e**mv where mv is a multivector
-    The parameter order is the maximum order of the taylor series to use
-    """
-
-    result = 1.0
-    if max_order == 0:
-        return result
-
-    # scale by power of 2 so that its norm is < 1
-    max_val = int(np.max(np.abs(x.value)))
-    scale = 1
-    if max_val > 1:
-        max_val <<= 1
-    while max_val:
-        max_val >>= 1
-        scale <<= 1
-
-    scaled = x * (1.0 / scale)
-
-    # taylor approximation
-    tmp = 1.0 + 0.0*x
-    for i in range(1, max_order):
-        if np.any(np.abs(tmp.value) > _settings._eps):
-            tmp = tmp*scaled * (1.0 / i)
-            result += tmp
-        else:
-            break
-
-    # undo scaling
-    while scale > 1:
-        result *= result
-        scale >>= 1
-    return result
 
 
 def grade_obj(objin, threshold=0.0000001):

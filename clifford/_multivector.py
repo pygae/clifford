@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 
 import clifford as cf
-from . import general_exp
+import clifford.taylor_expansions as taylor_expansions
 from . import _settings
 from ._layout_helpers import layout_short_name
 
@@ -99,7 +99,25 @@ class MultiVector(object):
     # binary
 
     def exp(self) -> 'MultiVector':
-        return general_exp(self)
+        return taylor_expansions.exp(self)
+
+    def cos(self) -> 'MultiVector':
+        return taylor_expansions.cos(self)
+
+    def sin(self) -> 'MultiVector':
+        return taylor_expansions.sin(self)
+
+    def tan(self) -> 'MultiVector':
+        return taylor_expansions.tan(self)
+
+    def sinh(self) -> 'MultiVector':
+        return taylor_expansions.sinh(self)
+
+    def cosh(self) -> 'MultiVector':
+        return taylor_expansions.cosh(self)
+
+    def tanh(self) -> 'MultiVector':
+        return taylor_expansions.tanh(self)
 
     def vee(self, other) -> 'MultiVector':
         r"""
@@ -301,7 +319,7 @@ class MultiVector(object):
         # else.
 
         # pow(x, y) == exp(y * log(x))
-        newMV = general_exp(math.log(other) * self)
+        newMV = taylor_expansions.exp(math.log(other) * self)
 
         return newMV
 
