@@ -46,6 +46,7 @@ translated into a Versor.
     orthoMat2Versor
     mat2Frame
     frame2Mat
+    func2Mat
     omoh
     rotor_decomp
 
@@ -222,6 +223,24 @@ def frame2Mat(B, A=None, I=None, is_complex=None):
     M = array(M).reshape(len(B), len(B))
     return M, I
 
+def func2Mat(f,I):
+    '''
+    Convert a function to a matrix by acting on standard basis
+
+    Parameters
+    ---------------
+    f : function
+        function that maps vectors to vectors
+    I : MultiVector
+        psuedoscalar of basis
+
+    See Also
+    ---------
+    frame2Mat
+    '''
+    A = I.basis()
+    B = [f(a) for a in A]
+    return frame2Mat(B=B, A=A,I=I)
 
 def orthoFrames2Versor_dist(A, B, eps=None):
     '''
