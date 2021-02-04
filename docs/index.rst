@@ -52,6 +52,7 @@ Scalars, vectors, and higher-grade entities can be mixed freely and consistently
     tutorials/PerformanceCliffordTutorial
     tutorials/cga/index
     tutorials/linear-transformations
+    tutorials/MatrixRepresentationsOfGeometricFunctions
     tutorials/apollonius-cga-augmented
 
 .. toctree::
