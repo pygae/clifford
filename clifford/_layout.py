@@ -748,6 +748,15 @@ class Layout(object):
         '''
         return cf.randomMV(layout=self, n=n, **kwargs)
 
+    def randomIntMV(self, n=1, **kwargs) -> MultiVector:
+        '''
+        Convenience method to create a random multivector wiht integer
+        values for components. Nice for reading,
+
+        see `clifford.randomIntMV` for details
+        '''
+        return cf.randomIntMV(layout=self, n=n, **kwargs)
+
     def randomV(self, n=1, **kwargs) -> MultiVector:
         '''
         generate n random 1-vector s

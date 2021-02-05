@@ -203,7 +203,7 @@ def frame2Mat(B, A=None, I=None, is_complex=None):
     A : None, list of vectors
         a list of vectors in their initial state. if none we assume
         orthonormal basis given by B.pseudoScalar, or I
-    I : Multivector, None
+    I : MultiVector, None
         pseudoscalar of the space. if  None, we use B.pseudoScalar
     is_complex: Bool
         do you want a complex matrix?
