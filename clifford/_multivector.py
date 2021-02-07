@@ -839,6 +839,38 @@ class MultiVector(object):
         """
         return (~self).gradeInvol()
 
+    def randomMV(self,*args, **kw):
+        '''
+        create a random MV within space of self
+
+        This is a wrapper for `randomMV`
+
+        See Also
+        ---------
+        Layout.randomMV
+        randomMV
+        '''
+        if not self.isBlade():
+            raise ValueError('I must be a blade')
+        return cf.randomMV(layout=self.layout, *args, **kw)(self)
+
+    def randomV(self,*args, **kw):
+        '''
+        create a random MV within space of self
+
+        This is a wrapper for `Layout.randomMV`
+
+        See Also
+        ---------
+        Layout.randomMV
+        '''
+        if not self.isBlade():
+            raise ValueError('I must be a blade')
+        kw.update(grades=[1])
+        return cf.randomMV(layout=self.layout,  *args, **kw)(self)
+
+
+
     # Subspace operations
     def project(self, other) -> 'MultiVector':
         r"""Projects the multivector onto the subspace represented by this blade.
