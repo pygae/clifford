@@ -346,7 +346,7 @@ def basis_vectors(layout):
 
 def randomMV(
         layout, min=-2.0, max=2.0, grades=None, mvClass=MultiVector,
-        uniform=None, n=1, normed=False):
+        uniform=None, n=1, normed=False, rng=None):
     """n Random MultiVectors with given layout.
 
     Coefficients are between min and max, and if grades is a list of integers,
@@ -366,7 +366,9 @@ def randomMV(
                          normed=normed) for k in range(n)]
 
     if uniform is None:
-        uniform = np.random.uniform
+        if rng is None:
+            rng = np.random.default_rng()
+        uniform = rng.uniform
 
     if grades is None:
         mv = mvClass(layout, uniform(min, max, (layout.gaDims,)))
