@@ -11,6 +11,7 @@ import clifford as cf
 
 from clifford import Cl, conformalize
 
+from . import default_test_seed as test_seed
 
 # using fixtures here results in them only being created if needed
 @pytest.fixture(scope='module')
@@ -50,15 +51,17 @@ class TestCliffordComplex:
         return {3: g3, 4: g4, 5: g5, 'g3c': g3c, (3, 0, 1): pga}[request.param]
 
     def test_addition(self, algebra):
-        A = algebra.randomMV()
-        B = algebra.randomMV()
+        rng = np.random.default_rng(test_seed)
+        A = algebra.randomMV(rng=rng)
+        B = algebra.randomMV(rng=rng)
         res = (A + 1j*B).value
         res2 = A.value + 1j*B.value
         np.testing.assert_array_equal(res, res2)
 
     def test_subtraction(self, algebra):
-        A = algebra.randomMV()
-        B = algebra.randomMV()
+        rng = np.random.default_rng(test_seed)
+        A = algebra.randomMV(rng=rng)
+        B = algebra.randomMV(rng=rng)
         res = (A - 1j*B).value
         res2 = A.value - 1j*B.value
         np.testing.assert_array_equal(res, res2)
@@ -66,31 +69,35 @@ class TestCliffordComplex:
     @pytest.mark.parametrize('p', [cf.operator.gp, cf.operator.op, cf.operator.ip,
                                    cf.MultiVector.lc, cf.MultiVector.vee])
     def test_prod(self, algebra, p):
-        A = algebra.randomMV()
-        B = algebra.randomMV()
-        C = algebra.randomMV()
-        D = algebra.randomMV()
+        rng = np.random.default_rng(test_seed)
+        A = algebra.randomMV(rng=rng)
+        B = algebra.randomMV(rng=rng)
+        C = algebra.randomMV(rng=rng)
+        D = algebra.randomMV(rng=rng)
         res = (p(A + 1j*B, C + 1j*D)).value
         res2 = p(A, C).value + 1j*p(B, C).value + 1j*p(A, D).value - p(B, D).value
         np.testing.assert_allclose(res, res2)
 
     def test_reverse(self, algebra):
-        A = algebra.randomMV()
-        B = algebra.randomMV()
+        rng = np.random.default_rng(test_seed)
+        A = algebra.randomMV(rng=rng)
+        B = algebra.randomMV(rng=rng)
         res = (~(A + 1j*B)).value
         res2 = (~A).value + 1j*(~B).value
         np.testing.assert_array_equal(res, res2)
 
     def test_grade_selection(self, algebra):
-        A = algebra.randomMV()
-        B = algebra.randomMV()
+        rng = np.random.default_rng(test_seed)
+        A = algebra.randomMV(rng=rng)
+        B = algebra.randomMV(rng=rng)
         res = ((A + 1j*B)(2)).value
         res2 = A(2).value + 1j*B(2).value
         np.testing.assert_array_equal(res, res2)
 
     def test_dual(self, algebra):
-        A = algebra.randomMV()
-        B = algebra.randomMV()
+        rng = np.random.default_rng(test_seed)
+        A = algebra.randomMV(rng=rng)
+        B = algebra.randomMV(rng=rng)
         res = (A + 1j*B).dual().value
         res2 = A.dual().value + 1j*B.dual().value
         np.testing.assert_array_equal(res, res2)
@@ -98,8 +105,9 @@ class TestCliffordComplex:
     def test_inverse(self, algebra):
         if 0 in algebra.sig:
             pytest.xfail("The inverse in degenerate metrics is known to fail")
-        A = algebra.randomMV()
-        B = algebra.randomMV()
+        rng = np.random.default_rng(test_seed)
+        A = algebra.randomMV(rng=rng)
+        B = algebra.randomMV(rng=rng)
         original = (A + 1j*B)
         res = algebra.scalar + 0j
         res2 = original*original.inv()

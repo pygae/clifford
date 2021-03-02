@@ -813,42 +813,45 @@ def get_nearest_plane_point(plane):
     return up(get_plane_normal(plane)*get_plane_origin_distance(plane))
 
 
-def disturb_object(mv_object, maximum_translation=0.01, maximum_angle=0.01):
+def disturb_object(mv_object, maximum_translation=0.01, maximum_angle=0.01, rng=None):
     """ Disturbs an object by a random rotor """
-    r = random_rotation_translation_rotor(maximum_translation=maximum_translation, maximum_angle=maximum_angle)
+    r = random_rotation_translation_rotor(maximum_translation=maximum_translation,
+                                          maximum_angle=maximum_angle, rng=rng)
     return (r*mv_object*~r).normal()
 
 
-def generate_n_clusters(object_generator, n_clusters, n_objects_per_cluster):
+def generate_n_clusters(object_generator, n_clusters, n_objects_per_cluster, rng=None):
     """ Creates n_clusters of random objects """
     object_clusters = []
     for i in range(n_clusters):
         cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
-                                                         max_cluster_trans=0.5, max_cluster_rot=np.pi / 16)
+                                                         max_cluster_trans=0.5, max_cluster_rot=np.pi / 16, rng=rng)
         object_clusters.append(cluster_objects)
     all_objects = [item for sublist in object_clusters for item in sublist]
     return all_objects, object_clusters
 
 
-def generate_random_object_cluster(n_objects, object_generator, max_cluster_trans=1.0, max_cluster_rot=np.pi/8):
+def generate_random_object_cluster(n_objects, object_generator, max_cluster_trans=1.0,
+                                   max_cluster_rot=np.pi/8, rng=None):
     """ Creates a cluster of random objects """
     ref_obj = object_generator()
     cluster_objects = []
     for i in range(n_objects):
-        r = random_rotation_translation_rotor(maximum_translation=max_cluster_trans, maximum_angle=max_cluster_rot)
+        r = random_rotation_translation_rotor(maximum_translation=max_cluster_trans,
+                                              maximum_angle=max_cluster_rot, rng=rng)
         new_obj = apply_rotor(ref_obj, r)
         cluster_objects.append(new_obj)
     return cluster_objects
 
 
-def random_translation_rotor(maximum_translation=10.0):
+def random_translation_rotor(maximum_translation=10.0, rng=None):
     """ generate a random translation rotor """
-    return generate_translation_rotor(random_euc_mv(maximum_translation))
+    return generate_translation_rotor(random_euc_mv(maximum_translation, rng=rng))
 
 
-def random_rotation_translation_rotor(maximum_translation=10.0, maximum_angle=np.pi):
+def random_rotation_translation_rotor(maximum_translation=10.0, maximum_angle=np.pi, rng=None):
     """ generate a random combined rotation and translation rotor """
-    return (random_translation_rotor(maximum_translation)*random_rotation_rotor(maximum_angle)).normal()
+    return (random_translation_rotor(maximum_translation, rng=rng)*random_rotation_rotor(maximum_angle, rng=rng)).normal()
 
 
 @numba.njit
@@ -857,11 +860,11 @@ def project_val(val, grade):
     return layout.MultiVector(val)(grade).value
 
 
-def random_conformal_point(l_max=10):
+def random_conformal_point(l_max=10, rng=None):
     """
     Creates a random conformal point
     """
-    return up(random_euc_mv(l_max=l_max))
+    return up(random_euc_mv(l_max=l_max, rng=rng))
 
 
 def generate_dilation_rotor(scale):
@@ -1578,14 +1581,14 @@ def val_rotor_rotor_between_planes(P1_val, P2_val):
     ).value
 
 
-def random_bivector():
+def random_bivector(rng=None):
     r"""
     Creates a random bivector on the form described by R. Wareham in
     Mesh Vertex Pose and Position Interpolation using Geometric Algebra.
     $$ B =  ab + c*n_{\inf}$$ where $a, b, c \in \mathcal(R)^3$
     """
-    a = random_euc_mv()
-    c = random_euc_mv()
+    a = random_euc_mv(rng=rng)
+    c = random_euc_mv(rng=rng)
     return a * I3 + c * ninf
 
 
@@ -1594,11 +1597,11 @@ def standard_point_pair_at_origin():
     return (up(-0.5*e1)^up(0.5*e1)).normal()
 
 
-def random_point_pair_at_origin():
+def random_point_pair_at_origin(rng=None):
     """
     Creates a random point pair bivector object at the origin
     """
-    mv_a = random_euc_mv()
+    mv_a = random_euc_mv(rng=rng)
     plane_a = (mv_a*I3).normal()
 
     mv_b = plane_a*mv_a*plane_a
@@ -1606,12 +1609,12 @@ def random_point_pair_at_origin():
     return pp
 
 
-def random_point_pair():
+def random_point_pair(rng=None):
     """
     Creates a random point pair bivector object
     """
-    mv_a = random_euc_mv()
-    mv_b = random_euc_mv()
+    mv_a = random_euc_mv(rng=rng)
+    mv_b = random_euc_mv(rng=rng)
     pp = (up(mv_a) ^ up(mv_b)).normal()
     return pp
 
@@ -1621,30 +1624,30 @@ def standard_line_at_origin():
     return (standard_point_pair_at_origin()^einf).normal()
 
 
-def random_line_at_origin():
+def random_line_at_origin(rng=None):
     """
     Creates a random line at the origin
     """
-    pp = (random_point_pair_at_origin()^einf).normal()
+    pp = (random_point_pair_at_origin(rng=rng)^einf).normal()
     return pp
 
 
-def random_line():
+def random_line(rng=None):
     """
     Creates a random line
     """
-    mv_a = random_euc_mv()
-    mv_b = random_euc_mv()
+    mv_a = random_euc_mv(rng=rng)
+    mv_b = random_euc_mv(rng=rng)
     line_a = ((up(mv_a) ^ up(mv_b) ^ ninf)).normal()
     return line_a
 
 
-def random_circle_at_origin():
+def random_circle_at_origin(rng=None):
     """
     Creates a random circle at the origin
     """
-    mv_a = random_euc_mv()
-    mv_r = random_euc_mv()
+    mv_a = random_euc_mv(rng=rng)
+    mv_r = random_euc_mv(rng=rng)
     r = generate_rotation_rotor(np.pi/2, mv_a, mv_r)
     mv_b = r*mv_a*~r
     mv_c = r * mv_b * ~r
@@ -1652,51 +1655,53 @@ def random_circle_at_origin():
     return pp
 
 
-def random_circle():
+def random_circle(rng=None):
     """
     Creates a random circle
     """
-    mv_a = val_random_euc_mv()
-    mv_b = val_random_euc_mv()
-    mv_c = val_random_euc_mv()
-    return layout.MultiVector(val_normalised(omt_func(omt_func(val_up(mv_a), val_up(mv_b)), val_up(mv_c))))
+    if rng is None:
+        rng = np.random.default_rng()
+    A = random_conformal_point(rng=rng)
+    B = random_conformal_point(rng=rng)
+    C = random_conformal_point(rng=rng)
+    return (A^B^C).normal()
 
 
-def random_sphere_at_origin():
+def random_sphere_at_origin(rng=None):
     """
     Creates a random sphere at the origin
     """
-    C = random_circle_at_origin()
+    C = random_circle_at_origin(rng=rng)
     sphere = circle_to_sphere(C)
     return sphere
 
 
-def random_sphere():
+def random_sphere(rng=None):
     """
     Creates a random sphere
     """
-    mv_a = random_euc_mv()
-    mv_b = random_euc_mv()
-    mv_c = random_euc_mv()
-    mv_d = random_euc_mv()
+    mv_a = random_euc_mv(rng=rng)
+    mv_b = random_euc_mv(rng=rng)
+    mv_c = random_euc_mv(rng=rng)
+    mv_d = random_euc_mv(rng=rng)
     sphere = ((up(mv_a) ^ up(mv_b) ^ up(mv_c) ^ up(mv_d))).normal()
     return sphere
 
 
-def random_plane_at_origin():
+def random_plane_at_origin(rng=None):
     """
     Creates a random plane at the origin
     """
-    c = random_circle_at_origin()
+    c = random_circle_at_origin(rng=rng)
     plane = (c ^ einf).normal()
     return plane
 
 
-def random_plane():
+def random_plane(rng=None):
     """
     Creates a random plane
     """
-    c = random_circle()
+    c = random_circle(rng=rng)
     plane = (c ^ ninf).normal()
     return plane
 

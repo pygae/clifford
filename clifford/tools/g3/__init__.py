@@ -139,9 +139,11 @@ def rotation_matrix_to_rotor(M):
     return quaternion_to_rotor(Q)
 
 
-def random_unit_vector():
+def random_unit_vector(rng=None):
     """ Creates a random unit vector """
-    return (np_to_euc_mv(np.random.randn(3))).normal()
+    if rng is None:
+        rng = np.random.default_rng()
+    return (np_to_euc_mv(rng.standard_normal(3))).normal()
 
 
 @numba.njit
@@ -155,9 +157,11 @@ def val_random_euc_mv(l_max=10):
     return output
 
 
-def random_euc_mv(l_max=10):
+def random_euc_mv(l_max=10, rng=None):
     """ Creates a random vector normally distributed with length l_max """
-    return np_to_euc_mv(l_max*np.random.randn(3))
+    if rng is None:
+        rng = np.random.default_rng()
+    return np_to_euc_mv(l_max*rng.standard_normal(3))
 
 
 def generate_rotation_rotor(theta, euc_vector_m, euc_vector_n):
@@ -172,9 +176,11 @@ def generate_rotation_rotor(theta, euc_vector_m, euc_vector_n):
     return rotor
 
 
-def random_rotation_rotor(max_angle=np.pi):
+def random_rotation_rotor(max_angle=np.pi, rng=None):
     """ Creates a random rotation rotor """
-    return generate_rotation_rotor(max_angle * np.random.rand(), random_unit_vector(), random_unit_vector())
+    if rng is None:
+        rng = np.random.default_rng()
+    return generate_rotation_rotor(max_angle * rng.random(), random_unit_vector(rng=rng), random_unit_vector(rng=rng))
 
 
 def angle_between_vectors(v1, v2):

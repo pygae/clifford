@@ -9,6 +9,7 @@ from clifford import Cl
 from clifford.tools import orthoFrames2Versor as of2v
 from clifford._numba_utils import DISABLE_JIT
 
+from . import default_test_seed as test_seed
 
 too_slow_without_jit = pytest.mark.skipif(
     DISABLE_JIT, reason="test is too slow without JIT"
@@ -25,9 +26,10 @@ class ToolsTests(unittest.TestCase):
         layout, blades = Cl(p, q)
 
         # create frame
-        A = layout.randomV(n=N)
+        rng = np.random.default_rng(test_seed)
+        A = layout.randomV(n=N, rng=rng)
         # create Rotor
-        R = 5.*layout.randomRotor()
+        R = 5.*layout.randomRotor(rng=rng)
         # create rotated frame
         B = [R*a*~R for a in A]
 
@@ -64,8 +66,9 @@ class G3ToolsTests(unittest.TestCase):
         from clifford.g3c import layout
         from clifford.tools.g3 import rotor_to_quaternion, quaternion_to_rotor
         from clifford.tools.g3c import random_rotation_rotor
+        rng = np.random.default_rng(test_seed)
         for i in range(1000):
-            rotor = random_rotation_rotor()
+            rotor = random_rotation_rotor(rng=rng)
             quaternion = rotor_to_quaternion(rotor)
             rotor_return = quaternion_to_rotor(quaternion)
             testing.assert_almost_equal(rotor.value, rotor_return.value)
@@ -78,15 +81,16 @@ class G3ToolsTests(unittest.TestCase):
         from clifford.g3c import layout, up, down
         from clifford.tools.g3 import rotation_matrix_to_rotor, rotor_to_rotation_matrix
         from clifford.tools.g3c import random_rotation_rotor, random_conformal_point, apply_rotor
+        rng = np.random.default_rng(test_seed)
         for i in range(1000):
-            rotor = random_rotation_rotor()
+            rotor = random_rotation_rotor(rng=rng)
             # Check that we can map up and back
             Rmat = rotor_to_rotation_matrix(rotor)
             rotor_return = rotation_matrix_to_rotor(Rmat)
 
             # Check that the rotations do the same thing
             for k in range(10):
-                A = random_conformal_point()
+                A = random_conformal_point(rng=rng)
                 B = down(apply_rotor(A, rotor)).value[1:4]
                 C = Rmat @ down(A).value[1:4]
                 np.testing.assert_almost_equal(B, C)
@@ -99,9 +103,10 @@ class G3ToolsTests(unittest.TestCase):
         Checks rotation rotor generation
         """
         from clifford.tools.g3 import generate_rotation_rotor, random_unit_vector, angle_between_vectors
+        rng = np.random.default_rng(test_seed)
         for i in range(1000):
-            euc_vector_m = random_unit_vector()
-            euc_vector_n = random_unit_vector()
+            euc_vector_m = random_unit_vector(rng=rng)
+            euc_vector_n = random_unit_vector(rng=rng)
             theta = angle_between_vectors(euc_vector_m, euc_vector_n)
 
             rot_rotor = generate_rotation_rotor(theta, euc_vector_m, euc_vector_n)
@@ -121,9 +126,10 @@ class G3ToolsTests(unittest.TestCase):
         e1 = layout.blades['e1']
         e2 = layout.blades['e2']
         from clifford.tools.g3 import random_euc_mv, random_rotation_rotor, rotor_align_vecs
-        u_list = [random_euc_mv() for i in range(50)]
+        rng = np.random.default_rng(test_seed)
+        u_list = [random_euc_mv(rng=rng) for i in range(50)]
         for i in range(100):
-            r = random_rotation_rotor()
+            r = random_rotation_rotor(rng=rng)
             v_list = [r*u*~r for u in u_list]
             r_2 = rotor_align_vecs(u_list, v_list)
             print(r_2)
@@ -135,7 +141,8 @@ class PointProcessingTests(unittest.TestCase):
     def test_convex_hull_vertices(self):
         from clifford.tools.g3c import random_conformal_point
         from clifford.tools.point_processing import GAConvexHull
-        point_list = [random_conformal_point() for i in range(100)]
+        rng = np.random.default_rng(test_seed)
+        point_list = [random_conformal_point(rng=rng) for i in range(100)]
         hull = GAConvexHull(point_list, hull_dims=3)
         conf_vertices = [hull.GApoints[i] for i in hull.vertices]
 
@@ -148,7 +155,8 @@ class PointProcessingTests(unittest.TestCase):
     def test_convex_hull_conformal_rounds(self):
         from clifford.tools.g3c import random_conformal_point
         from clifford.tools.point_processing import GAConvexHull
-        point_list = [random_conformal_point() for i in range(100)]
+        rng = np.random.default_rng(test_seed)
+        point_list = [random_conformal_point(rng=rng) for i in range(100)]
         hull = GAConvexHull(point_list, hull_dims=3)
         rounds = hull.conformal_rounds()
 
@@ -162,7 +170,8 @@ class PointProcessingTests(unittest.TestCase):
         from clifford.tools.g3c import random_conformal_point
         from clifford.tools.point_processing import GAConvexHull
 
-        point_list = [random_conformal_point() for i in range(100)]
+        rng = np.random.default_rng(test_seed)
+        point_list = [random_conformal_point(rng=rng) for i in range(100)]
         hull = GAConvexHull(point_list, hull_dims=3)
         flats = hull.conformal_flats()
 
@@ -175,7 +184,8 @@ class PointProcessingTests(unittest.TestCase):
     def test_convex_hull_facets(self):
         from clifford.tools.g3c import random_conformal_point
         from clifford.tools.point_processing import GAConvexHull
-        point_list = [random_conformal_point() for i in range(100)]
+        rng = np.random.default_rng(test_seed)
+        point_list = [random_conformal_point(rng=rng) for i in range(100)]
         hull = GAConvexHull(point_list, hull_dims=3)
         facets = hull.conformal_facets()
 
@@ -193,7 +203,8 @@ class PointProcessingTests(unittest.TestCase):
         einf = layout.einf
         from clifford.tools.g3c import random_conformal_point, project_points_to_plane
         from clifford.tools.point_processing import GADelaunay
-        point_list = [random_conformal_point() for i in range(100)]
+        rng = np.random.default_rng(test_seed)
+        point_list = [random_conformal_point(rng=rng) for i in range(100)]
         point_list_flat = project_points_to_plane(point_list, (up(0)^up(e1)^up(e2)^einf).normal())
         hull = GADelaunay(point_list_flat, hull_dims=2)
         facets = hull.conformal_facets()

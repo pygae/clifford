@@ -2,6 +2,7 @@
 # even if we do not run these tests.
 import numba
 import numpy as np
+from . import default_test_seed as test_seed
 
 
 def setup_module():
@@ -56,7 +57,7 @@ class TestBasicDPGA:
     def test_up_down(self):
         from clifford.dpga import up, down
 
-        rng = np.random.RandomState()  # can pass a seed here later
+        rng = np.random.RandomState(test_seed)
         for i in range(10 if numba.config.DISABLE_JIT else 1000):
             p = rng.standard_normal(3)
             dpga_pnt = up(p)
@@ -67,7 +68,7 @@ class TestBasicDPGA:
         from clifford.dpga import w0, w1, w2, w3, w0s
         from clifford.dpga import up
 
-        rng = np.random.RandomState()   # can pass a seed here later
+        rng = np.random.RandomState(test_seed)
         for i in range(10 if numba.config.DISABLE_JIT else 100):
             tvec = rng.standard_normal(3)
             wt = tvec[0]*w1 + tvec[1]*w2 + tvec[2]*w3
@@ -94,7 +95,7 @@ class TestBasicDPGA:
         from clifford.dpga import w0, w1, w2, w3, w1s, w2s, w3s
         from clifford.dpga import up, down
 
-        rng = np.random.RandomState()  # can pass a seed here later
+        rng = np.random.RandomState(test_seed)
         for i in range(10 if numba.config.DISABLE_JIT else 100):
             mvec = rng.standard_normal(3)
             nvec = rng.standard_normal(3)
@@ -128,7 +129,7 @@ class TestBasicDPGA:
         from clifford.dpga import e12, e13, e23, e1b2b, e1b3b, e2b3b
         from clifford.dpga import up, down
 
-        rng = np.random.RandomState()  # can pass a seed here later
+        rng = np.random.RandomState(test_seed)
         for i in range(5 if numba.config.DISABLE_JIT else 100):
             p1vec = rng.standard_normal(3)
             p2vec = rng.standard_normal(3)
@@ -181,7 +182,7 @@ class TestBasicDPGA:
         from clifford.dpga import e12, e13, e23, e1b2b, e1b3b, e2b3b
         from clifford.dpga import up, dual_point
 
-        rng = np.random.RandomState()  # can pass a seed here later
+        rng = np.random.RandomState(test_seed)
         # Make a cone which passes through the origin
         # This is the construction from Transverse Approach paper
         quadric_coefs = [0.0, 1.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

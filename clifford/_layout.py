@@ -754,7 +754,7 @@ class Layout(object):
         '''
         return cf.randomMV(layout=self, n=n, grades=[1], **kwargs)
 
-    def randomRotor(self) -> MultiVector:
+    def randomRotor(self, **kwargs) -> MultiVector:
         '''
         generate a random Rotor.
 
@@ -763,7 +763,7 @@ class Layout(object):
 
         '''
         n = self.dims if self.dims % 2 == 0 else self.dims - 1
-        R = functools.reduce(cf.gp, self.randomV(n, normed=True))
+        R = functools.reduce(cf.gp, self.randomV(n, normed=True, **kwargs))
         return R
 
     # Helpers to get hold of basis blades of various specifications.

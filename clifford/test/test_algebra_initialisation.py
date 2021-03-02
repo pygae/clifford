@@ -4,6 +4,8 @@ import pytest
 from clifford import Cl, conformalize, _powerset
 from clifford._numba_utils import DISABLE_JIT
 
+from . import default_test_seed as test_seed
+
 too_slow_without_jit = pytest.mark.skipif(
     DISABLE_JIT, reason="test is too slow without JIT"
 )
@@ -43,8 +45,9 @@ class TestInitialisation:
     def test_sparse_multiply(self, algebra):
         layout = algebra[0]
         # Make two random multivectors
-        a = layout.randomMV()
-        b = layout.randomMV()
+        rng = np.random.default_rng(test_seed)
+        a = layout.randomMV(rng=rng)
+        b = layout.randomMV(rng=rng)
 
         # Choose the grades we care about.
         # We skip the cases of:

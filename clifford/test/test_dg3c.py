@@ -11,6 +11,8 @@ import numpy as np
 
 from clifford._numba_utils import DISABLE_JIT
 
+from . import default_test_seed as test_seed
+
 too_slow_without_jit = pytest.mark.skipif(
     DISABLE_JIT, reason="test is too slow without JIT"
 )
@@ -48,9 +50,9 @@ class TestBasic:
         """
         from clifford.dg3c import up, down
 
-        rng = np.random.RandomState()
+        rng = np.random.default_rng(test_seed)
         for i in range(1 if DISABLE_JIT else 100):
-            pnt_vector = rng.randn(3)
+            pnt_vector = rng.standard_normal(3)
             pnt = up(pnt_vector)
             res = down(100*pnt)
             np.testing.assert_allclose(res, pnt_vector)
@@ -65,8 +67,8 @@ class TestBasic:
         """
         from clifford.dg3c import up_cga1, down_cga1
 
-        rng = np.random.RandomState()
-        pnt_vector = rng.randn(3)
+        rng = np.random.default_rng(test_seed)
+        pnt_vector = rng.standard_normal(3)
         for i in range(10 if DISABLE_JIT else 100):
             pnt = up_cga1(pnt_vector)
             res = down_cga1(100*pnt)
@@ -120,10 +122,10 @@ class TestGeometricPrimitives:
         from clifford.dg3c import up, up_cga1, up_cga2
         from clifford.dg3c import einf1, einf2, IC1, IC2
 
-        rng = np.random.RandomState()
+        rng = np.random.default_rng(test_seed)
         # Make a dcga line
-        pnt_vec_a = rng.randn(3)
-        pnt_vec_b = rng.randn(3)
+        pnt_vec_a = rng.standard_normal(3)
+        pnt_vec_b = rng.standard_normal(3)
         Lcga1 = IC1*(up_cga1(pnt_vec_a) ^ up_cga1(pnt_vec_b) ^ einf1)
         Lcga2 = IC2*(up_cga2(pnt_vec_a) ^ up_cga2(pnt_vec_b) ^ einf2)
         Ldcga = Lcga1 ^ Lcga2
@@ -140,10 +142,10 @@ class TestGeometricPrimitives:
         from clifford.dg3c import eo, e1, e2, e3, einf1, e6, e7, e8, einf2
         from clifford.dg3c import IC1, IC2
 
-        rng = np.random.RandomState()
+        rng = np.random.default_rng(test_seed)
         # Make a dcga line
-        pnt_vec = rng.randn(3)
-        direction_vec = rng.randn(3)
+        pnt_vec = rng.standard_normal(3)
+        direction_vec = rng.standard_normal(3)
         Lcga1 = IC1 * (up_cga1(pnt_vec) ^ up_cga1(pnt_vec + direction_vec) ^ einf1)
         Lcga2 = IC2 * (up_cga2(pnt_vec) ^ up_cga2(pnt_vec + direction_vec) ^ einf2)
         Ldcga = Lcga1 ^ Lcga2
