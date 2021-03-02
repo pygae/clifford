@@ -172,7 +172,7 @@ import math
 import numba
 import numpy as np
 from clifford.tools.g3 import quaternion_to_rotor, random_euc_mv, \
-    random_rotation_rotor, generate_rotation_rotor, val_random_euc_mv
+    random_rotation_rotor, generate_rotation_rotor
 from clifford.g3c import *
 import clifford as cf
 from clifford import NUMBA_PARALLEL, MVArray

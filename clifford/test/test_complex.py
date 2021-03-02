@@ -13,6 +13,7 @@ from clifford import Cl, conformalize
 
 from . import default_test_seed as test_seed
 
+
 # using fixtures here results in them only being created if needed
 @pytest.fixture(scope='module')
 def g2():
