@@ -764,7 +764,7 @@ class MultiVector(object):
         if fallback is not None and not MadjointM.isScalar():
             if fallback:
                 try:
-                    return self.shirokov_inverse()
+                    return self.hitzer_inverse()
                 except NotImplementedError:
                     return self.leftLaInv()
             else:
