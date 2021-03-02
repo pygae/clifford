@@ -52,7 +52,6 @@ pip uninstall -y setuptools
 conda install setuptools
 
 conda update -q conda
-conda update numpy
 conda create -q -n test-environment python="${PYTHON_VERSION:-3}" $*
 source activate test-environment
 pip install --upgrade pip

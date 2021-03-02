@@ -11,13 +11,13 @@ x-clifford-templates:
       - |
         if [[ "${CONDA}" == "true" ]]; then
           PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-linux}" source travis_install_conda.sh \
-            numpy \
             scipy \
             pip \
             IPython \
             h5py;
           conda install -c conda-forge sparse;
           conda install -c numba "numba>=0.45.1";
+          conda install "numpy>=1.17.0"
         else
           pip install IPython;
         fi
