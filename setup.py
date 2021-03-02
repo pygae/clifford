@@ -23,7 +23,7 @@ setup(
     url='http://clifford.readthedocs.io',
     packages=find_packages(),
     install_requires=[
-        'numpy',
+        'numpy > 1.17',
         'scipy',
         'numba > 0.46',
         'h5py',
