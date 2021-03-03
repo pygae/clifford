@@ -822,6 +822,7 @@ def disturb_object(mv_object, maximum_translation=0.01, maximum_angle=0.01, *, r
 
 def generate_n_clusters(object_generator, n_clusters, n_objects_per_cluster, *, rng=None):
     """ Creates n_clusters of random objects """
+    rng = np.random.default_rng(rng)
     object_clusters = []
     for i in range(n_clusters):
         cluster_objects = generate_random_object_cluster(n_objects_per_cluster, object_generator,
@@ -834,6 +835,7 @@ def generate_n_clusters(object_generator, n_clusters, n_objects_per_cluster, *, 
 def generate_random_object_cluster(n_objects, object_generator, max_cluster_trans=1.0,
                                    max_cluster_rot=np.pi/8, *, rng=None):
     """ Creates a cluster of random objects """
+    rng = np.random.default_rng(rng)
     ref_obj = object_generator()
     cluster_objects = []
     for i in range(n_objects):
@@ -851,6 +853,7 @@ def random_translation_rotor(maximum_translation=10.0, *, rng=None):
 
 def random_rotation_translation_rotor(maximum_translation=10.0, maximum_angle=np.pi, *, rng=None):
     """ generate a random combined rotation and translation rotor """
+    rng = np.random.default_rng(rng)
     return (random_translation_rotor(maximum_translation, rng=rng)*random_rotation_rotor(maximum_angle, rng=rng)).normal()
 
 
@@ -1587,6 +1590,7 @@ def random_bivector(*, rng=None):
     Mesh Vertex Pose and Position Interpolation using Geometric Algebra.
     $$ B =  ab + c*n_{\inf}$$ where $a, b, c \in \mathcal(R)^3$
     """
+    rng = np.random.default_rng(rng)
     a = random_euc_mv(rng=rng)
     c = random_euc_mv(rng=rng)
     return a * I3 + c * ninf
@@ -1613,6 +1617,7 @@ def random_point_pair(*, rng=None):
     """
     Creates a random point pair bivector object
     """
+    rng = np.random.default_rng(rng)
     mv_a = random_euc_mv(rng=rng)
     mv_b = random_euc_mv(rng=rng)
     pp = (up(mv_a) ^ up(mv_b)).normal()
@@ -1636,6 +1641,7 @@ def random_line(*, rng=None):
     """
     Creates a random line
     """
+    rng = np.random.default_rng(rng)
     mv_a = random_euc_mv(rng=rng)
     mv_b = random_euc_mv(rng=rng)
     line_a = ((up(mv_a) ^ up(mv_b) ^ ninf)).normal()
@@ -1646,6 +1652,7 @@ def random_circle_at_origin(*, rng=None):
     """
     Creates a random circle at the origin
     """
+    rng = np.random.default_rng(rng)
     mv_a = random_euc_mv(rng=rng)
     mv_r = random_euc_mv(rng=rng)
     r = generate_rotation_rotor(np.pi/2, mv_a, mv_r)
@@ -1679,6 +1686,7 @@ def random_sphere(*, rng=None):
     """
     Creates a random sphere
     """
+    rng = np.random.default_rng(rng)
     mv_a = random_euc_mv(rng=rng)
     mv_b = random_euc_mv(rng=rng)
     mv_c = random_euc_mv(rng=rng)
