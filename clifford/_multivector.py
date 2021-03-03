@@ -756,7 +756,7 @@ class MultiVector(object):
         ----------
         fallback : bool, optional
             If `None`, perform no checks on whether normal inv is appropriate.
-            If `True`, fallback to a Shirokov's method :cite:`shirokov2020inverse` if possible and a linalg approach if not.
+            If `True`, fallback to a Hitzer and Sangwine's method :cite:`Hitzer_Sangwine_2017` if possible and a linalg approach if not.
             If `False`, raise an error if normal inv is not appropriate.
         """
         Madjoint = ~self
