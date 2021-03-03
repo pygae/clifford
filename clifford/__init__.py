@@ -366,8 +366,7 @@ def randomMV(
                          normed=normed) for k in range(n)]
 
     if uniform is None:
-        if rng is None:
-            rng = np.random.default_rng()
+        rng = np.random.default_rng(rng)
         uniform = rng.uniform
 
     if grades is None:

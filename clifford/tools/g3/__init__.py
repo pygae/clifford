@@ -141,8 +141,7 @@ def rotation_matrix_to_rotor(M):
 
 def random_unit_vector(rng=None):
     """ Creates a random unit vector """
-    if rng is None:
-        rng = np.random.default_rng()
+    rng = np.random.default_rng(rng)
     return (np_to_euc_mv(rng.standard_normal(3))).normal()
 
 
@@ -159,8 +158,7 @@ def val_random_euc_mv(l_max=10):
 
 def random_euc_mv(l_max=10, rng=None):
     """ Creates a random vector normally distributed with length l_max """
-    if rng is None:
-        rng = np.random.default_rng()
+    rng = np.random.default_rng(rng)
     return np_to_euc_mv(l_max*rng.standard_normal(3))
 
 
@@ -178,8 +176,7 @@ def generate_rotation_rotor(theta, euc_vector_m, euc_vector_n):
 
 def random_rotation_rotor(max_angle=np.pi, rng=None):
     """ Creates a random rotation rotor """
-    if rng is None:
-        rng = np.random.default_rng()
+    rng = np.random.default_rng(rng)
     return generate_rotation_rotor(max_angle * rng.random(), random_unit_vector(rng=rng), random_unit_vector(rng=rng))
 
 

@@ -1659,8 +1659,7 @@ def random_circle(*, rng=None):
     """
     Creates a random circle
     """
-    if rng is None:
-        rng = np.random.default_rng()
+    rng = np.random.default_rng(rng)
     A = random_conformal_point(rng=rng)
     B = random_conformal_point(rng=rng)
     C = random_conformal_point(rng=rng)
