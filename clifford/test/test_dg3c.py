@@ -11,7 +11,7 @@ import numpy as np
 
 from clifford._numba_utils import DISABLE_JIT
 
-from . import rng
+from . import rng  # noqa: F401
 
 too_slow_without_jit = pytest.mark.skipif(
     DISABLE_JIT, reason="test is too slow without JIT"
@@ -44,7 +44,7 @@ class TestBasic:
             [0., 0., 0., 0., 0., 0., 0., 0., 1., 0.],
             [0., 0., 0., 0., 0., 0., 0., 0., 0., -1.]]))
 
-    def test_up_down(self, rng):
+    def test_up_down(self, rng):  # noqa: F811
         """
         Test that we can map points up and down into the dpga
         """
@@ -60,7 +60,7 @@ class TestBasic:
         with pytest.raises(ValueError):
             up([1, 2, 3, 4])
 
-    def test_up_down_cga1(self, rng):
+    def test_up_down_cga1(self, rng):  # noqa: F811
         """
         Test that we can map points up and down from cga1
         """
@@ -116,7 +116,7 @@ class TestGeometricPrimitives:
         # The cyclides are an IPNS
         assert E|eo == 0
 
-    def test_line(self, rng):
+    def test_line(self, rng):  # noqa: F811
         from clifford.dg3c import up, up_cga1, up_cga2
         from clifford.dg3c import einf1, einf2, IC1, IC2
 
@@ -133,7 +133,7 @@ class TestGeometricPrimitives:
         assert Ldcga | up(0.5*pnt_vec_a + 0.5*pnt_vec_b) == 0
 
     @too_slow_without_jit
-    def test_translation(self, rng):
+    def test_translation(self, rng):  # noqa: F811
         from clifford.dg3c import up, up_cga1, up_cga2
         from clifford.dg3c import cyclide_ops
         from clifford.dg3c import eo, e1, e2, e3, einf1, e6, e7, e8, einf2

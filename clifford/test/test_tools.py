@@ -1,14 +1,13 @@
 
 import pytest
 import numpy as np
-from numpy import exp, float64, testing
-import numba
+from numpy import testing
 
 from clifford import Cl
 from clifford.tools import orthoFrames2Versor as of2v
 from clifford._numba_utils import DISABLE_JIT
 
-from . import rng
+from . import rng  # noqa: F401
 
 too_slow_without_jit = pytest.mark.skipif(
     DISABLE_JIT, reason="test is too slow without JIT"
@@ -18,7 +17,7 @@ too_slow_without_jit = pytest.mark.skipif(
 @pytest.mark.skip(reason="unknown")
 class TestTools:
 
-    def checkit(self, p, q, rng):
+    def checkit(self, p, q, rng):  # noqa: F811
         # p, q =4,0
         N = p + q
         # eps(1e-4)
@@ -57,11 +56,10 @@ class TestTools:
 
 class TestG3Tools:
 
-    def test_quaternion_conversions(self, rng):
+    def test_quaternion_conversions(self, rng):  # noqa: F811
         """
         Bidirectional rotor - quaternion test. This needs work but is a reasonable start
         """
-        from clifford.g3c import layout
         from clifford.tools.g3 import rotor_to_quaternion, quaternion_to_rotor
         from clifford.tools.g3c import random_rotation_rotor
         for i in range(1000):
@@ -71,11 +69,11 @@ class TestG3Tools:
             testing.assert_almost_equal(rotor.value, rotor_return.value)
 
     @too_slow_without_jit
-    def test_rotation_matrix_conversions(self, rng):
+    def test_rotation_matrix_conversions(self, rng):   # noqa: F811
         """
         Bidirectional rotor - rotation matrix test. This needs work but is a reasonable start
         """
-        from clifford.g3c import layout, up, down
+        from clifford.g3c import down
         from clifford.tools.g3 import rotation_matrix_to_rotor, rotor_to_rotation_matrix
         from clifford.tools.g3c import random_rotation_rotor, random_conformal_point, apply_rotor
         for i in range(1000):
@@ -94,7 +92,7 @@ class TestG3Tools:
                 C = down(apply_rotor(A, rotor_return)).value[1:4]
                 np.testing.assert_almost_equal(B, C)
 
-    def test_generate_rotation_rotor_and_angle(self, rng):
+    def test_generate_rotation_rotor_and_angle(self, rng):  # noqa: F811
         """
         Checks rotation rotor generation
         """
@@ -113,7 +111,7 @@ class TestG3Tools:
             testing.assert_almost_equal(euc_vector_n.value, v2.value)
 
     @pytest.mark.skip(reason="unknown")
-    def test_find_rotor_aligning_vectors(self, rng):
+    def test_find_rotor_aligning_vectors(self, rng):  # noqa: F811
         """
         Currently fails, needs to be dug into
         """
@@ -132,7 +130,7 @@ class TestG3Tools:
 
 
 class TestPointProcessing:
-    def test_convex_hull_vertices(self, rng):
+    def test_convex_hull_vertices(self, rng):  # noqa: F811
         from clifford.tools.g3c import random_conformal_point
         from clifford.tools.point_processing import GAConvexHull
         point_list = [random_conformal_point(rng=rng) for i in range(100)]
@@ -145,7 +143,7 @@ class TestPointProcessing:
         # gs.add_objects(conf_vertices, static=True, color=int('00FF0000', 16))
         # draw(gs, scale=0.05)
 
-    def test_convex_hull_conformal_rounds(self, rng):
+    def test_convex_hull_conformal_rounds(self, rng):  # noqa: F811
         from clifford.tools.g3c import random_conformal_point
         from clifford.tools.point_processing import GAConvexHull
         point_list = [random_conformal_point(rng=rng) for i in range(100)]
@@ -158,7 +156,7 @@ class TestPointProcessing:
         # gs.add_objects(rounds, color=int('00FF0000', 16))
         # draw(gs, scale=0.05)
 
-    def test_convex_hull_conformal_flats(self, rng):
+    def test_convex_hull_conformal_flats(self, rng):  # noqa: F811
         from clifford.tools.g3c import random_conformal_point
         from clifford.tools.point_processing import GAConvexHull
 
@@ -172,7 +170,7 @@ class TestPointProcessing:
         # gs.add_objects(flats, color=int('00FF0000', 16))
         # draw(gs, scale=0.05)
 
-    def test_convex_hull_facets(self, rng):
+    def test_convex_hull_facets(self, rng):  # noqa: F811
         from clifford.tools.g3c import random_conformal_point
         from clifford.tools.point_processing import GAConvexHull
         point_list = [random_conformal_point(rng=rng) for i in range(100)]
@@ -186,7 +184,7 @@ class TestPointProcessing:
         #     gs.add_facet(f, color=int('AAFF0000', 16))
         # draw(gs, scale=0.05)
 
-    def test_GADelaunay_facets(self, rng):
+    def test_GADelaunay_facets(self, rng):  # noqa: F811
         from clifford.g3c import up, blades, layout
         e1 = blades['e1']
         e2 = blades['e2']

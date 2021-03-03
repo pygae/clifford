@@ -2,7 +2,7 @@
 # even if we do not run these tests.
 import numba
 import numpy as np
-from . import rng
+from . import rng  # noqa: F401
 
 
 def setup_module():
@@ -54,7 +54,7 @@ class TestBasicDPGA:
         for wi, wis in zip(wlist, wslist):
             assert wi*wis == 1 - wis*wi
 
-    def test_up_down(self, rng):
+    def test_up_down(self, rng):  # noqa: F811
         from clifford.dpga import up, down
 
         for i in range(10 if numba.config.DISABLE_JIT else 1000):
@@ -63,7 +63,7 @@ class TestBasicDPGA:
             pnt_down = down(np.random.rand()*dpga_pnt)
             np.testing.assert_allclose(pnt_down, p)
 
-    def test_translate(self, rng):
+    def test_translate(self, rng):  # noqa: F811
         from clifford.dpga import w0, w1, w2, w3, w0s
         from clifford.dpga import up
 
@@ -89,7 +89,7 @@ class TestBasicDPGA:
             assert up(pnt_vec) + wt == desired_result
             assert res == desired_result
 
-    def test_rotate(self, rng):
+    def test_rotate(self, rng):  # noqa: F811
         from clifford.dpga import w0, w1, w2, w3, w1s, w2s, w3s
         from clifford.dpga import up, down
 
@@ -121,7 +121,7 @@ class TestBasicDPGA:
             lres = np.linalg.norm(down(Rt * pnt * ~Rt))
             np.testing.assert_allclose(l, lres, atol=1E-6)
 
-    def test_line(self, rng):
+    def test_line(self, rng):  # noqa: F811
         from clifford.dpga import w0, w1, w2, w3, w0s
         from clifford.dpga import e12, e13, e23, e1b2b, e1b3b, e2b3b
         from clifford.dpga import up, down
@@ -173,7 +173,7 @@ class TestBasicDPGA:
                                        rtol=1E-3, atol=1E-4)
             np.testing.assert_allclose((Rline*~Rline).value, (1 + 0*w1).value, rtol=1E-4, atol=1E-4)
 
-    def test_quadric(self, rng):
+    def test_quadric(self, rng):  # noqa: F811
         from clifford.dpga import w0, w1, w2, w3, w0s, w1s, w2s, w3s
         from clifford.dpga import e12, e13, e23, e1b2b, e1b3b, e2b3b
         from clifford.dpga import up, dual_point

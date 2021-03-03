@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 import clifford as cf
-from . import rng
+from . import rng  # noqa: F401
 
 
 class TestClosedForm:
@@ -12,7 +12,7 @@ class TestClosedForm:
         for total_dims in [1, 2, 3, 4, 5]
         for p in range(total_dims + 1)
     ])
-    def test_hitzer_inverse(self, p, q, rng):
+    def test_hitzer_inverse(self, p, q, rng):  # noqa: F811
         Ntests = 100
         layout, blades = cf.Cl(p, q)
         for i in range(Ntests):

@@ -12,7 +12,7 @@ from clifford import Cl, randomMV, Frame, \
 
 import clifford
 
-from . import rng
+from . import rng  # noqa: F401
 
 
 def equivalent_up_to_scale(a, b):
@@ -55,7 +55,7 @@ class TestClifford:
     def algebra(self, request, g3, g4, g5):
         return {3: g3, 4: g4, 5: g5}[request.param]
 
-    def test_inverse(self, algebra, rng):
+    def test_inverse(self, algebra, rng):  # noqa: F811
         layout, blades = algebra, algebra.blades
         a = 1. + blades['e1']
         with pytest.raises(ValueError):
@@ -87,13 +87,13 @@ class TestClifford:
         assert ret == 1
         assert ret.value.dtype == e1.value.dtype
 
-    def test_grade_masks(self, algebra, rng):
+    def test_grade_masks(self, algebra, rng):  # noqa: F811
         layout, blades = algebra, algebra.blades
         A = layout.randomMV(rng=rng)
         for i in range(layout.dims + 1):
             np.testing.assert_almost_equal(A(i).value, A.value*layout.grade_mask(i))
 
-    def test_rotor_mask(self, algebra, rng):
+    def test_rotor_mask(self, algebra, rng):  # noqa: F811
         layout, blades = algebra, algebra.blades
         rotor_m = layout.rotor_mask
         rotor_m_t = np.zeros(layout.gaDims)
@@ -198,14 +198,14 @@ class TestClifford:
 
         assert 1 + e1 == e1 + np.float64(1)
 
-    def _random_value_array(self, layout, Nrows, Ncolumns, rng):
+    def _random_value_array(self, layout, Nrows, Ncolumns, rng):  # noqa: F811
         value_array = np.zeros((Nrows, Ncolumns, layout.gaDims))
         for i in range(Nrows):
             for j in range(Ncolumns):
                 value_array[i, j, :] = layout.randomMV(rng=rng).value
         return value_array
 
-    def test_2d_mv_array(self, g3, rng):
+    def test_2d_mv_array(self, g3, rng):  # noqa: F811
         layout, blades = g3, g3.blades
         Nrows = 2
         Ncolumns = 3
@@ -265,7 +265,7 @@ class TestClifford:
         assert arr.shape == ()
         assert arr[()] is e1
 
-    def test_array_control(self, g3, rng):
+    def test_array_control(self, g3, rng):  # noqa: F811
         '''
         test methods to take control addition from numpy arrays
         '''
@@ -301,7 +301,7 @@ class TestClifford:
             output2 = MVArray([((e1 / n)*e3)/e12 for n in number_array])
             np.testing.assert_almost_equal(output, output2)
 
-    def test_array_overload(self, algebra, rng):
+    def test_array_overload(self, algebra, rng):  # noqa: F811
         '''
         test overload operations
         '''
@@ -718,20 +718,20 @@ class TestBasicAlgebra:
     def algebra(self, request, g3, g4, g3c):
         return [g3, g4, g3c][request.param]
 
-    def test_grade_obj(self, algebra, rng):
+    def test_grade_obj(self, algebra, rng):  # noqa: F811
         layout = algebra
         for i in range(len(layout.sig)+1):
             mv = layout.randomMV(rng=rng)(i)
             assert i == grade_obj(mv)
 
-    def test_left_multiplication_matrix(self, algebra, rng):
+    def test_left_multiplication_matrix(self, algebra, rng):  # noqa: F811
         layout = algebra
         for i in range(1000):
             mv = layout.randomMV(rng=rng)
             mv2 = layout.randomMV(rng=rng)
             np.testing.assert_almost_equal(np.matmul(layout.get_left_gmt_matrix(mv), mv2.value), (mv*mv2).value)
 
-    def test_right_multiplication_matrix(self, algebra, rng):
+    def test_right_multiplication_matrix(self, algebra, rng):  # noqa: F811
         layout = algebra
         for i in range(1000):
             a = layout.randomMV(rng=rng)
@@ -813,7 +813,7 @@ class TestFrame:
     @pytest.mark.parametrize(('p', 'q'), [
         (2, 0), (3, 0), (4, 0)
     ])
-    def test_frame_inv(self, p, q, rng):
+    def test_frame_inv(self, p, q, rng):  # noqa: F811
         layout, blades = Cl(p, q)
         A = Frame(layout.randomV(p + q, rng=rng))
         self.check_inv(A)
@@ -821,7 +821,7 @@ class TestFrame:
     @pytest.mark.parametrize(('p', 'q'), [
         (2, 0), (3, 0), (4, 0)
     ])
-    def test_innermorphic(self, p, q, rng):
+    def test_innermorphic(self, p, q, rng):  # noqa: F811
         layout, blades = Cl(p, q)
         A = Frame(layout.randomV(p+q, rng=rng))
         R = layout.randomRotor(rng=rng)

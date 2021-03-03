@@ -1,8 +1,6 @@
 
 from clifford import Cl
-import unittest
 import math
-import numpy as np
 
 
 class TestPGA:
