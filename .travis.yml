@@ -17,10 +17,6 @@ x-clifford-templates:
             IPython \
             h5py;
           conda install -c conda-forge sparse;
-          if [[ "$TRAVIS_PYTHON_VERSION" == "3.5" ]]; then
-            # parso 0.8.0 does not work on 3.5
-            conda install -c conda-forge "parso<0.8.0"
-          fi
           conda install -c numba "numba>=0.45.1";
         else
           pip install IPython;
@@ -117,16 +113,9 @@ matrix:
       stage: Test
       <<: *test_job
 
-    # conda jobs
+    # conda job
     - os: linux
       python: '3.8'
-      env:
-        - CONDA=true
-      stage: Test
-      <<: *test_job
-
-    - os: linux
-      python: '3.5'
       env:
         - CONDA=true
       stage: Test
