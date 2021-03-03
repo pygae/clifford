@@ -1,7 +1,12 @@
 import os
 import pytest
+import numpy as np
 
-default_test_seed = 1  # the default seed to start pseudo-random tests
+
+@pytest.fixture
+def rng():
+    default_test_seed = 1  # the default seed to start pseudo-random tests
+    return np.random.default_rng(default_test_seed)
 
 
 def run_all_tests(*args):

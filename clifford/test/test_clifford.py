@@ -12,7 +12,7 @@ from clifford import Cl, randomMV, Frame, \
 
 import clifford
 
-from . import default_test_seed as test_seed
+from . import rng
 
 
 def equivalent_up_to_scale(a, b):
@@ -55,12 +55,11 @@ class TestClifford:
     def algebra(self, request, g3, g4, g5):
         return {3: g3, 4: g4, 5: g5}[request.param]
 
-    def test_inverse(self, algebra):
+    def test_inverse(self, algebra, rng):
         layout, blades = algebra, algebra.blades
         a = 1. + blades['e1']
         with pytest.raises(ValueError):
             1 / a
-        rng = np.random.default_rng(test_seed)
         for i in range(10):
             a = randomMV(layout, grades=[0, 1], rng=rng)
             denominator = (a(1)**2)[()]-(a[()]**2)
@@ -88,18 +87,16 @@ class TestClifford:
         assert ret == 1
         assert ret.value.dtype == e1.value.dtype
 
-    def test_grade_masks(self, algebra):
+    def test_grade_masks(self, algebra, rng):
         layout, blades = algebra, algebra.blades
-        rng = np.random.default_rng(test_seed)
         A = layout.randomMV(rng=rng)
         for i in range(layout.dims + 1):
             np.testing.assert_almost_equal(A(i).value, A.value*layout.grade_mask(i))
 
-    def test_rotor_mask(self, algebra):
+    def test_rotor_mask(self, algebra, rng):
         layout, blades = algebra, algebra.blades
         rotor_m = layout.rotor_mask
         rotor_m_t = np.zeros(layout.gaDims)
-        rng = np.random.default_rng(test_seed)
         for _ in range(10):
             rotor_m_t += 100*np.abs(layout.randomRotor(rng=rng).value)
         np.testing.assert_almost_equal(rotor_m_t > 0, rotor_m)
@@ -208,11 +205,10 @@ class TestClifford:
                 value_array[i, j, :] = layout.randomMV(rng=rng).value
         return value_array
 
-    def test_2d_mv_array(self, g3):
+    def test_2d_mv_array(self, g3, rng):
         layout, blades = g3, g3.blades
         Nrows = 2
         Ncolumns = 3
-        rng = np.random.default_rng(test_seed)
         value_array_a = self._random_value_array(g3, Nrows, Ncolumns, rng)
         value_array_b = self._random_value_array(g3, Nrows, Ncolumns, rng)
 
@@ -269,7 +265,7 @@ class TestClifford:
         assert arr.shape == ()
         assert arr[()] is e1
 
-    def test_array_control(self, g3):
+    def test_array_control(self, g3, rng):
         '''
         test methods to take control addition from numpy arrays
         '''
@@ -278,10 +274,7 @@ class TestClifford:
         e3 = blades['e3']
         e12 = blades['e12']
 
-        rng = np.random.default_rng(test_seed)
-
         for i in range(100):
-
             number_array = rng.random(4)
 
             output = e12+(e1*number_array)
@@ -308,12 +301,11 @@ class TestClifford:
             output2 = MVArray([((e1 / n)*e3)/e12 for n in number_array])
             np.testing.assert_almost_equal(output, output2)
 
-    def test_array_overload(self, algebra):
+    def test_array_overload(self, algebra, rng):
         '''
         test overload operations
         '''
         layout, blades = algebra, algebra.blades
-        rng = np.random.default_rng(test_seed)
         test_array = MVArray([layout.randomMV(rng=rng) for i in range(100)])
 
         normed_array = test_array.normal()
@@ -726,24 +718,21 @@ class TestBasicAlgebra:
     def algebra(self, request, g3, g4, g3c):
         return [g3, g4, g3c][request.param]
 
-    def test_grade_obj(self, algebra):
+    def test_grade_obj(self, algebra, rng):
         layout = algebra
-        rng = np.random.default_rng(test_seed)
         for i in range(len(layout.sig)+1):
             mv = layout.randomMV(rng=rng)(i)
             assert i == grade_obj(mv)
 
-    def test_left_multiplication_matrix(self, algebra):
+    def test_left_multiplication_matrix(self, algebra, rng):
         layout = algebra
-        rng = np.random.default_rng(test_seed)
         for i in range(1000):
             mv = layout.randomMV(rng=rng)
             mv2 = layout.randomMV(rng=rng)
             np.testing.assert_almost_equal(np.matmul(layout.get_left_gmt_matrix(mv), mv2.value), (mv*mv2).value)
 
-    def test_right_multiplication_matrix(self, algebra):
+    def test_right_multiplication_matrix(self, algebra, rng):
         layout = algebra
-        rng = np.random.default_rng(test_seed)
         for i in range(1000):
             a = layout.randomMV(rng=rng)
             b = layout.randomMV(rng=rng)
@@ -824,19 +813,16 @@ class TestFrame:
     @pytest.mark.parametrize(('p', 'q'), [
         (2, 0), (3, 0), (4, 0)
     ])
-    def test_frame_inv(self, p, q):
+    def test_frame_inv(self, p, q, rng):
         layout, blades = Cl(p, q)
-        rng = np.random.default_rng(test_seed)
         A = Frame(layout.randomV(p + q, rng=rng))
         self.check_inv(A)
 
     @pytest.mark.parametrize(('p', 'q'), [
         (2, 0), (3, 0), (4, 0)
     ])
-    def test_innermorphic(self, p, q):
+    def test_innermorphic(self, p, q, rng):
         layout, blades = Cl(p, q)
-        rng = np.random.default_rng(test_seed)
-
         A = Frame(layout.randomV(p+q, rng=rng))
         R = layout.randomRotor(rng=rng)
         B = Frame([R*a*~R for a in A])
