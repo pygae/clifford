@@ -813,14 +813,14 @@ def get_nearest_plane_point(plane):
     return up(get_plane_normal(plane)*get_plane_origin_distance(plane))
 
 
-def disturb_object(mv_object, maximum_translation=0.01, maximum_angle=0.01, rng=None):
+def disturb_object(mv_object, maximum_translation=0.01, maximum_angle=0.01, *, rng=None):
     """ Disturbs an object by a random rotor """
     r = random_rotation_translation_rotor(maximum_translation=maximum_translation,
                                           maximum_angle=maximum_angle, rng=rng)
     return (r*mv_object*~r).normal()
 
 
-def generate_n_clusters(object_generator, n_clusters, n_objects_per_cluster, rng=None):
+def generate_n_clusters(object_generator, n_clusters, n_objects_per_cluster, *, rng=None):
     """ Creates n_clusters of random objects """
     object_clusters = []
     for i in range(n_clusters):
@@ -832,7 +832,7 @@ def generate_n_clusters(object_generator, n_clusters, n_objects_per_cluster, rng
 
 
 def generate_random_object_cluster(n_objects, object_generator, max_cluster_trans=1.0,
-                                   max_cluster_rot=np.pi/8, rng=None):
+                                   max_cluster_rot=np.pi/8, *, rng=None):
     """ Creates a cluster of random objects """
     ref_obj = object_generator()
     cluster_objects = []
@@ -844,12 +844,12 @@ def generate_random_object_cluster(n_objects, object_generator, max_cluster_tran
     return cluster_objects
 
 
-def random_translation_rotor(maximum_translation=10.0, rng=None):
+def random_translation_rotor(maximum_translation=10.0, *, rng=None):
     """ generate a random translation rotor """
     return generate_translation_rotor(random_euc_mv(maximum_translation, rng=rng))
 
 
-def random_rotation_translation_rotor(maximum_translation=10.0, maximum_angle=np.pi, rng=None):
+def random_rotation_translation_rotor(maximum_translation=10.0, maximum_angle=np.pi, *, rng=None):
     """ generate a random combined rotation and translation rotor """
     return (random_translation_rotor(maximum_translation, rng=rng)*random_rotation_rotor(maximum_angle, rng=rng)).normal()
 
@@ -860,7 +860,7 @@ def project_val(val, grade):
     return layout.MultiVector(val)(grade).value
 
 
-def random_conformal_point(l_max=10, rng=None):
+def random_conformal_point(l_max=10, *, rng=None):
     """
     Creates a random conformal point
     """
@@ -1581,7 +1581,7 @@ def val_rotor_rotor_between_planes(P1_val, P2_val):
     ).value
 
 
-def random_bivector(rng=None):
+def random_bivector(*, rng=None):
     r"""
     Creates a random bivector on the form described by R. Wareham in
     Mesh Vertex Pose and Position Interpolation using Geometric Algebra.
@@ -1597,7 +1597,7 @@ def standard_point_pair_at_origin():
     return (up(-0.5*e1)^up(0.5*e1)).normal()
 
 
-def random_point_pair_at_origin(rng=None):
+def random_point_pair_at_origin(*, rng=None):
     """
     Creates a random point pair bivector object at the origin
     """
@@ -1609,7 +1609,7 @@ def random_point_pair_at_origin(rng=None):
     return pp
 
 
-def random_point_pair(rng=None):
+def random_point_pair(*, rng=None):
     """
     Creates a random point pair bivector object
     """
@@ -1624,7 +1624,7 @@ def standard_line_at_origin():
     return (standard_point_pair_at_origin()^einf).normal()
 
 
-def random_line_at_origin(rng=None):
+def random_line_at_origin(*, rng=None):
     """
     Creates a random line at the origin
     """
@@ -1632,7 +1632,7 @@ def random_line_at_origin(rng=None):
     return pp
 
 
-def random_line(rng=None):
+def random_line(*, rng=None):
     """
     Creates a random line
     """
@@ -1642,7 +1642,7 @@ def random_line(rng=None):
     return line_a
 
 
-def random_circle_at_origin(rng=None):
+def random_circle_at_origin(*, rng=None):
     """
     Creates a random circle at the origin
     """
@@ -1655,7 +1655,7 @@ def random_circle_at_origin(rng=None):
     return pp
 
 
-def random_circle(rng=None):
+def random_circle(*, rng=None):
     """
     Creates a random circle
     """
@@ -1667,7 +1667,7 @@ def random_circle(rng=None):
     return (A^B^C).normal()
 
 
-def random_sphere_at_origin(rng=None):
+def random_sphere_at_origin(*, rng=None):
     """
     Creates a random sphere at the origin
     """
@@ -1676,7 +1676,7 @@ def random_sphere_at_origin(rng=None):
     return sphere
 
 
-def random_sphere(rng=None):
+def random_sphere(*, rng=None):
     """
     Creates a random sphere
     """
@@ -1688,7 +1688,7 @@ def random_sphere(rng=None):
     return sphere
 
 
-def random_plane_at_origin(rng=None):
+def random_plane_at_origin(*, rng=None):
     """
     Creates a random plane at the origin
     """
@@ -1697,7 +1697,7 @@ def random_plane_at_origin(rng=None):
     return plane
 
 
-def random_plane(rng=None):
+def random_plane(*, rng=None):
     """
     Creates a random plane
     """
