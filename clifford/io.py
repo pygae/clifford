@@ -136,5 +136,9 @@ def read_ga_file(file_name):
         else:
             support = None
         metric = f['metric'][:]
-        basis_names = f['basis_names'][:]
+        if hasattr(h5py.Dataset, 'asstr'):
+            basis_names = f['basis_names'].asstr()[:]
+        else:
+            # h5py < 3
+            basis_names = f['basis_names'][:]
     return data_array, metric, basis_names, support

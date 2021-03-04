@@ -25,6 +25,20 @@ Scalars, vectors, and higher-grade entities can be mixed freely and consistently
 ![Visual explanation of blades](https://raw.githubusercontent.com/pygae/clifford/master/docs/_static/blades.png)
 
 
+Quick Installation
+------------------
+Requires Python version >=3.5
+
+Install using `conda`:
+```
+conda install clifford -c conda-forge
+```
+Install using `pip`:
+```
+pip3 install clifford
+```
+[Detailed instructions](https://clifford.readthedocs.io/en/latest/installation.html)
+
 Quickstart
 ----------
 
@@ -44,7 +58,7 @@ Syntax Summary
 
 | Syntax  | Operation |
 |:-:|:-:|
-| \| |  Symetric inner product |
+| \| |  Symmetric inner product |
 | << |  Left contraction |
 |  ^ | Outer product  |
 | *  |  Geometric product |
@@ -73,9 +87,9 @@ To obtain BibTex citation information for a _specific_ release (recommended):
 If you want to cite all releases, use:
 ```tex
 @software{python_clifford,
-  author       = {Alex Arsenovic and
-                  Hugo Hadfield and
+  author       = {Hugo Hadfield and
                   Eric Wieser and
+                  Alex Arsenovic and
                   Robert Kern and
                   {The Pygae Team}},
   title        = {pygae/clifford},

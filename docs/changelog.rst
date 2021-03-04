@@ -12,6 +12,13 @@ Changes in 1.4.x
  * Where possible, ``MultiVector``\ s preserve their data type in the dual, and
    the right and left complements.
 
+ * A new :mod:`clifford.taylor_expansions` is added to implement taylor series of various
+   multivector functions, starting with common trigonometric functions. These functions are
+   additionally exposed via methods on the MultiVector class itself.
+
+ * Random functions now accept an ``rng`` keyword argument that accepts the object returned
+   by :func:`numpy.random.default_rng`, for deterministic randomness.
+
 Changes in 1.3.x
 ++++++++++++++++
 
