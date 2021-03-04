@@ -55,10 +55,10 @@ def _numba_type_(self):
 
     layout_type = self.layout._numba_type_
 
-    relevant_cache = layout_type._c_cache
     dt = self.value.dtype
-
-    if not self.value.flags.c_contiguous:
+    if self.value.flags.c_contiguous:
+        relevant_cache = layout_type._c_cache
+    else:
         relevant_cache = layout_type._a_cache
 
     # now use the dtype to key that cache.
