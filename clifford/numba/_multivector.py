@@ -31,18 +31,14 @@ __all__ = ['MultiVectorType']
 class MultiVectorType(types.Type):
     def __init__(self, layout: LayoutType, dtype: types.DType):
         self.layout_type = layout
-        self._scalar_type = dtype
+        self.value_type = dtype
         super().__init__(name='MultiVector({!r}, {!r})'.format(
-            self.layout_type, self._scalar_type
+            self.layout_type, self.value_type
         ))
 
     @property
     def key(self):
-        return self.layout_type, self._scalar_type
-
-    @property
-    def value_type(self):
-        return self._scalar_type[:]
+        return self.layout_type, self.value_type
 
 
 # The docs say we should use register a function to determine the numba type
@@ -53,19 +49,29 @@ class MultiVectorType(types.Type):
 
 @property
 def _numba_type_(self):
+    # If the array is not 1D we can't do anything with it
+    if self.value.ndim != 1:
+        return None
+
     layout_type = self.layout._numba_type_
 
-    cache = layout_type._cache
     dt = self.value.dtype
+    if self.value.flags.c_contiguous:
+        relevant_cache = layout_type._c_cache
+    else:
+        relevant_cache = layout_type._a_cache
 
     # now use the dtype to key that cache.
     try:
-        return cache[dt]
+        return relevant_cache[dt]
     except KeyError:
-        # Computing and hashing `dtype_type` is slow, so we do not use it as a
+        # Computing and hashing `value_type` is slow, so we do not use it as a
         # hash key. The raw numpy dtype is much faster to use as a key.
-        dtype_type = _numpy_support.from_dtype(dt)
-        ret = cache[dt] = MultiVectorType(layout_type, dtype_type)
+        if self.value.flags.c_contiguous:
+            value_type = _numpy_support.from_dtype(dt)[::1]
+        else:
+            value_type = _numpy_support.from_dtype(dt)[:]
+        ret = relevant_cache[dt] = MultiVectorType(layout_type, value_type)
         return ret
 
 MultiVector._numba_type_ = _numba_type_
@@ -85,7 +91,7 @@ class MultiVectorModel(numba.extending.models.StructModel):
 def type_MultiVector(context):
     def typer(layout, value):
         if isinstance(layout, LayoutType) and isinstance(value, types.Array):
-            return MultiVectorType(layout, value.dtype)
+            return MultiVectorType(layout, value)
     return typer
 
 
