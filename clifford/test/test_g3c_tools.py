@@ -754,7 +754,7 @@ class TestG3CTools:
 class TestRotorEstimation:
 
     def run_rotor_estimation(self, object_generator, estimation_function,
-                             n_runs=20, n_objects_per_run=10, rng=None):
+                             n_runs=20, n_objects_per_run=10, rng=None):  # noqa: F811
 
         error_count = 0
         for i in range(n_runs):
@@ -939,7 +939,8 @@ class TestSceneSimplification:
 @too_slow_without_jit
 class TestObjectClustering:
 
-    def run_n_clusters(self, object_generator, n_clusters, n_objects_per_cluster, n_shotgunning, rng=None):
+    def run_n_clusters(self, object_generator, n_clusters,
+                       n_objects_per_cluster, n_shotgunning, rng=None):  # noqa: F811
 
         all_objects, object_clusters = generate_n_clusters(object_generator, n_clusters, n_objects_per_cluster, rng=rng)
         [new_labels, centroids, start_labels, start_centroids] = n_clusters_objects(n_clusters, all_objects,
