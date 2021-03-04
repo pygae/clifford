@@ -23,7 +23,9 @@ from .._multivector import MultiVector
 class LayoutType(types.Dummy):
     def __init__(self, layout):
         self.obj = layout
-        # cache of multivector types for this layout
+        # Caches of multivector types for this layout, in numba C and A order.
+        # Having two caches is faster than a cache keyed by a tuple of `(order, dt)`,
+        # and every millisecond counts in `MultiVector._numba_type_`.
         self._c_cache = {}
         self._a_cache = {}
         layout_name = layout_short_name(layout)
