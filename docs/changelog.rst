@@ -12,6 +12,10 @@ Changes in 1.4.x
  * Where possible, ``MultiVector``\ s preserve their data type in the dual, and
    the right and left complements.
 
+ * A new multivector inverse method is available, :meth:`clifford.MultiVector.shirokov_inverse`,
+   which is the arbitrary signature algorithm described
+   in Theorem 4, page 16 of Dmitry Shirokov's ICCA 2020 paper :cite:`shirokov2020inverse`.
+
  * A new :mod:`clifford.taylor_expansions` is added to implement taylor series of various
    multivector functions, starting with common trigonometric functions. These functions are
    additionally exposed via methods on the MultiVector class itself.
