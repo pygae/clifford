@@ -92,8 +92,8 @@ def omoh(A: Union[Frame, List[MultiVector]], B: Union[Frame, List[MultiVector]])
 
     Examples
     ----------
-    >>> lam = ohom(A, B)
-    >>> B_ohom = Frame([B[k]*lam[k] for k in range(len(B)])
+    >>> lam = omoh(A, B)  # doctest: +SKIP
+    >>> B_ohom = Frame([B[k]*lam[k] for k in range(len(B)])  # doctest: +SKIP
     '''
     if len(A) != len(B) or len(A) < 3:
         raise ValueError('input must be >=3 long and len(a)==len(b)')
