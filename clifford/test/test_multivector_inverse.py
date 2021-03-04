@@ -14,7 +14,7 @@ class TestClosedForm:
         for r in range(2)
         if r + p_add_q <= 5  # beyond this the hitzer_inverse is not supported
     ])
-    def test_hitzer_inverse(self, p, q, r):
+    def test_hitzer_inverse(self, p, q, r, rng):  # noqa: F811
         Ntests = 100
         layout, blades = cf.Cl(p, q, r)
         for i in range(Ntests):
@@ -31,11 +31,11 @@ class TestClosedForm:
         for total_dims in [1, 2, 3, 4, 5, 6, 7, 8]
         for p in range(total_dims + 1)
     ])
-    def test_shirokov_inverse(self, p, q, r):
+    def test_shirokov_inverse(self, p, q, r, rng):  # noqa: F811
         Ntests = 100
         layout, blades = cf.Cl(p, q, r)
         for i in range(Ntests):
-            mv = layout.randomMV()
+            mv = layout.randomMV(rng=rng)
             mv_inv = mv.shirokov_inverse()
             np.testing.assert_allclose((mv * mv_inv).value,
                                        layout.scalar.value,
