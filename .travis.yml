@@ -11,7 +11,7 @@ x-clifford-templates:
       - |
         if [[ "${CONDA}" == "true" ]]; then
           PYTHON_VERSION="$TRAVIS_PYTHON_VERSION" CONDA_INSTALLER_OS="${TRAVIS_OS_NAME:-linux}" source travis_install_conda.sh \
-            numpy \
+            "numpy>=1.17.0" \
             scipy \
             pip \
             IPython \
