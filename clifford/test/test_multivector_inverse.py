@@ -27,7 +27,7 @@ class TestClosedForm:
 
     @pytest.mark.parametrize('r', range(2))
     @pytest.mark.parametrize('p, q', [
-        (p, total_dims - p)
+        pytest.param(p, total_dims - p, marks=[pytest.mark.slow] if total_dims >= 6 else [])
         for total_dims in [1, 2, 3, 4, 5, 6, 7, 8]
         for p in range(total_dims + 1)
     ])
