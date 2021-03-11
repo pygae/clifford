@@ -56,7 +56,7 @@ from functools import reduce
 
 from typing import Union, Optional, List, Tuple
 from math import sqrt
-from numpy import eye, array, sign, zeros, sin, arccos
+from numpy import eye, array, sign, zeros, sin, arccos,log
 import numpy as np
 from .. import Cl, gp, Frame, MultiVector
 from .. import eps as global_eps
