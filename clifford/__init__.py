@@ -97,6 +97,8 @@ from . import _numba_utils
 from ._settings import pretty, ugly, eps, print_precision  # noqa: F401
 import clifford.taylor_expansions as taylor_expansions
 
+from .invariant_decomposition import bivector_split, rotor_split, exp, log
+
 # For backwards-compatibility. New code should import directly from `clifford.operator`
 from .operator import gp, op, ip  # noqa: F401
 
