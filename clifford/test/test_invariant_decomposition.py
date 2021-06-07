@@ -7,7 +7,9 @@ from clifford import Layout, BasisVectorIds
 from clifford.invariant_decomposition import bivector_split, rotor_split, exp, log
 
 
-# Test some known splits in various algebras.
+# Test some known splits in various algebras. The target bivector is `B`,
+# the expected split is `Bs`, the expected eigenvalues li = Bi**2 are
+# given in `ls`. Lastly, the expected logarithm is `logB`.
 def sta_split():
     alg = Layout([1, 1, 1, -1], ids=BasisVectorIds(['x', 'y', 'z', 't']))
     ex, ey, ez, et = alg.basis_vectors_lst
@@ -43,7 +45,7 @@ def r6_split():
             'Bs': [7*e5*e6, 5*e3*e4, 2*e1*e2],
             'ls': [-49.0, -25.0, -4.0],
             # The log is by no means unique, and this example illustrates it.
-            # With the conventions chosen now this is the answer, which is a
+            # With the conventions of this implementation this is the answer, which is a
             # total of 4 pi away from the input B.
             'logR': 2*e1*e2 + (5 - np.pi)*e3*e4 + (7 - 3*np.pi)*e5*e6}
 
@@ -79,7 +81,7 @@ class TestInvariantDecomposition:
                 assert Ri*Rj-Rj*Ri == 0
 
         # Reconstruct R from the rotor_split.
-        Rre = reduce(lambda tot, x: tot * x, Rs)
+        Rre = reduce(lambda tot, x: tot * x, Rs, 1)
         assert np.allclose(R.value, Rre.value)
 
         logR = log(R)
