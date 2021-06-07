@@ -4,7 +4,8 @@ import pytest
 import numpy as np
 
 from clifford import Layout, BasisVectorIds
-from clifford import bivector_split, rotor_split, exp, log
+from clifford.invariant_decomposition import bivector_split, rotor_split, exp, log
+
 
 # Test some known splits in various algebras.
 def sta_split():
@@ -15,6 +16,7 @@ def sta_split():
             'ls': [16.0, -4.0],
             'logR': 2 * ex * ey + 4 * ez * et}
 
+
 def pga3d_split():
     alg = Layout([1, 1, 1, 0], ids=BasisVectorIds(['x', 'y', 'z', 'w']))
     ex, ey, ez, ew = alg.basis_vectors_lst
@@ -22,6 +24,7 @@ def pga3d_split():
             'Bs': [2 * ex * ey, 4 * ez * ew],
             'ls': [-4.0, 0.0],
             'logR': 2 * ex * ey + 4 * ez * ew}
+
 
 def r22_split():
     alg = Layout([1, 1, -1, -1])
@@ -31,6 +34,7 @@ def r22_split():
                    0.25 * ((1+1j)*e1*e2 + (1-1j)*e1*e4 + (-1+1j)*e2*e3 + (-1-1j)*e3*e4)],
             'ls': [0.5j, -0.5j],
             'logR': 0.5 * (e1*e2 + e1*e4 - e2*e3 - e3*e4)}
+
 
 def r6_split():
     alg = Layout([1, 1, 1, 1, 1, 1])
