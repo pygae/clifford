@@ -1,10 +1,14 @@
 from functools import reduce
+import itertools
 
 import pytest
 import numpy as np
 
 from clifford import Layout, BasisVectorIds
 from clifford.invariant_decomposition import bivector_split, rotor_split, exp, log
+
+import clifford as cf
+from . import rng  # noqa: F401
 
 
 # Test some known splits in various algebras. The target bivector is `B`,
@@ -86,3 +90,30 @@ class TestInvariantDecomposition:
 
         logR = log(R)
         assert logR == known_split['logR']
+
+    @pytest.mark.parametrize('r', range(2))
+    @pytest.mark.parametrize('p, q', [
+        pytest.param(p, total_dims - p, marks=[pytest.mark.slow] if total_dims >= 6 else [])
+        for total_dims in [1, 2, 3, 4, 5, 6, 7, 8]
+        for p in range(total_dims + 1)
+    ])
+    def test_unknown_splits(self, p, q, r, rng):  # noqa: F811
+        Ntests = 10
+        layout, blades = cf.Cl(p, q, r)
+        for i in range(Ntests):
+            B = layout.randomMV(rng=rng)(2)
+            Bs, ls = bivector_split(B, roots=True)
+
+            # Assert that the bivectors sum to the original
+            np.testing.assert_allclose(sum(Bs).value,
+                                       B.value,
+                                       rtol=1E-6,
+                                       atol=1E-6)
+
+            # Assert that the bivectors are commutative
+            for x, y in itertools.combinations(Bs, 2):
+                np.testing.assert_allclose((x*y).value,
+                                           (y*x).value,
+                                           rtol=1E-6,
+                                           atol=1E-6)
+
