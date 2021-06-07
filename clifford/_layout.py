@@ -17,7 +17,6 @@ from . import (
 )
 from . import _numba_utils
 from .io import read_ga_file
-from . import _settings
 from ._multivector import MultiVector
 from ._layout_helpers import (
     BasisBladeOrder, BasisVectorIds, canonical_reordering_sign_euclidean

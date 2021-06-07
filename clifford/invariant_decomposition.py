@@ -45,6 +45,7 @@ def single_split(Wm, li):
     N = sum(W / li**j for j, W in enumerate(Wm[1::2]))
     return N*D.inv()
 
+
 def _bivector_split(Wm, return_all=True):
     """Internal helper function to perform the decomposition, given a set of Wm.
 
@@ -76,6 +77,7 @@ def _bivector_split(Wm, return_all=True):
         Bs.append(single_split(Wm, li))
     return (Bs, ls)
 
+
 def bivector_split(B, k=None, roots=False):
     """Bivector split of the bivector B based on the method of M. Roelfs,
     Spectroscopic and Geometric Algebra Methods for Lattice Gauge Theory, Chapter 6.
@@ -96,6 +98,7 @@ def bivector_split(B, k=None, roots=False):
     Bs = Bs + [B - sum(Bs)]
     return (Bs, ls) if roots else Bs
 
+
 def rotor_split(R, k=None, roots=False):
     dim = R.layout.dims
     if k is None:
@@ -110,6 +113,7 @@ def rotor_split(R, k=None, roots=False):
     Rs = Rs + [R/P]
     return (Rs, ls) if roots else Rs
 
+
 def exp(B):
     Bs, ls = bivector_split(B, roots=True)
     R = 1
@@ -123,6 +127,7 @@ def exp(B):
             beta_i = np.sqrt(li)
             R *= np.cosh(beta_i) + (np.sinh(beta_i) / beta_i) * Bi
     return R
+
 
 def log(R):
     Rs, ls = rotor_split(R, roots=True)
