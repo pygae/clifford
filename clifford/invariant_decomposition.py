@@ -104,10 +104,11 @@ def rotor_split(R, k=None, roots=False):
     Wm = [R(2 * m) for m in range(0, k + 1)]
     Ts, ls = _bivector_split(Wm, return_all=False)
 
-    # Rs = [(1 + ti).normal() for ti in Ts]
-    Rs = [(R(0) + R(0) * ti).normal() for ti in Ts]
-    P = reduce(lambda tot, x: tot*x, Rs)
-    return Rs + [R/P]
+    Rs = [(R(0) + R(0) * ti) for ti in Ts]
+    Rs = [Ri.normal() if np.isreal((Ri*(~Ri)).value[0]) else Ri / np.sqrt((Ri*(~Ri)).value[0]) for Ri in Rs]
+    P = reduce(lambda tot, x: tot*x, Rs, 1)
+    Rs = Rs + [R/P]
+    return (Rs, ls) if roots else Rs
 
 def exp(B):
     Bs, ls = bivector_split(B, roots=True)
