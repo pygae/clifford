@@ -124,5 +124,15 @@ def exp(B):
             R *= np.cosh(beta_i) + (np.sinh(beta_i) / beta_i) * Bi
     return R
 
-def log():
-    pass
+def log(R):
+    Rs, ls = rotor_split(R, roots=True)
+    logR = 0
+    for Ri, li in zip(Rs, ls):
+        if np.isreal(li) and li < 0:
+            logR += np.arccos(Ri.value[0]) * Ri(2).normal()
+        elif np.isreal(li) and np.abs(li) < _eps:
+            logR += Ri(2)
+        else:
+            norm = np.sqrt((Ri(2)**2).value[0])
+            logR += np.arccosh(Ri.value[0]) * Ri(2) / norm
+    return logR
