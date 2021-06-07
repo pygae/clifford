@@ -32,7 +32,7 @@ class TestClosedForm:
         for p in range(total_dims + 1)
     ])
     def test_shirokov_inverse(self, p, q, r, rng):  # noqa: F811
-        Ntests = 100
+        Ntests = 5
         layout, blades = cf.Cl(p, q, r)
         if p + q + r > 7:
             # This is perhaps a little extreme but algorithm really does struggle
