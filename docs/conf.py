@@ -72,7 +72,7 @@ nbsphinx_timeout = 60
 # This is processed by Jinja2 and inserted before each notebook
 nbsphinx_prolog = r"""
 {% set docname = 'docs/' + env.doc2path(env.docname, base=None) %}
-{% set git_ref = 'master' if '.' not in env.config.current_version else 'v' + env.config.release %}
+{% set git_ref = 'master' if not READTHEDOCS or '.' not in current_version else 'v' + env.config.release %}
 .. raw:: html
 
     <div class="admonition note">
