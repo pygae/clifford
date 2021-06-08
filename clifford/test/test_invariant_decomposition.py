@@ -104,16 +104,18 @@ class TestInvariantDecomposition:
         for i in range(Ntests):
             B = layout.randomMV(rng=rng)(2)
             Bs, ls = bivector_split(B, roots=True)
-
             for Bi, li in zip(Bs, ls):
-                # To be simple you must square to a scalar.
+                # To be simple, you must square to a scalar.
                 Bisq = Bi**2
-                np.testing.assert_allclose(Bisq.value, Bisq(0).value,
-                                       rtol=1E-6,
-                                       atol=1E-6)
-                np.testing.assert_allclose(Bisq.value[0], li,
-                                       rtol=1E-6,
-                                       atol=1E-6)
+                print(Bisq, li)
+                np.testing.assert_allclose(Bisq.value,
+                                           Bisq(0).value,
+                                           rtol=1E-6,
+                                           atol=1E-6)
+                np.testing.assert_allclose(Bisq.value[0],
+                                           li,
+                                           rtol=1E-6,
+                                           atol=1E-6)
 
             # Assert that the bivectors sum to the original
             np.testing.assert_allclose(sum(Bs).value,

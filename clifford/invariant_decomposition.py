@@ -7,11 +7,12 @@ invariant_decomposition (:mod:`clifford.invariant_decomposition`)
 
 .. versionadded:: 1.4.0
 
+
 This file implements the invariant decomposition (aka bivector split) of bivectors into
 mutually commuting orthogonal simple bivectors, based on the method of
 M. Roelfs, Spectroscopic and Geometric Algebra Methods for Lattice Gauge Theory, Chapter 6.
 
-The invariant decomposition also enables closed form exponentials and logarithms, and the factorization of
+The invariant decomposition enables closed form exponentials and logarithms, and the factorization of
 rotors into simple rotors.
 
 Example usage::
@@ -21,12 +22,19 @@ Example usage::
 [1^e12, 2^e34]
 
 Implemented functions
-----------------
+---------------------
 
 .. autofunction:: bivector_split
 .. autofunction:: rotor_split
 .. autofunction:: exp
 .. autofunction:: log
+
+
+Helper functions
+----------------
+
+.. autofunction:: _bivector_split
+.. autofunction:: single_split
 
 """
 import math
@@ -71,11 +79,9 @@ def _bivector_split(Wm, return_all=True):
     # Sort to have the value closest to zero last.
     ls_sorted = sorted(ls, key=lambda li: -np.abs(li))
     # Exclude the smallest value if asked.
-    ls_sorted = ls_sorted if return_all else ls_sorted[:-1]
-
-    for li in ls_sorted:
+    for li in (ls_sorted if return_all else ls_sorted[:-1]):
         Bs.append(single_split(Wm, li))
-    return (Bs, ls)
+    return (Bs, ls_sorted)
 
 
 def bivector_split(B, k=None, roots=False):
