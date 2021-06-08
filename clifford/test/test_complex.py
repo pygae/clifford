@@ -36,6 +36,11 @@ def g5():
 
 
 @pytest.fixture(scope='module')
+def g7():
+    return Cl(7)[0]
+
+
+@pytest.fixture(scope='module')
 def g3c():
     return conformalize(Cl(3)[0])[0]
 
@@ -47,9 +52,9 @@ def pga():
 
 
 class TestCliffordComplex:
-    @pytest.fixture(params=[3, 4, 5, 'g3c', (3, 0, 1)], ids='Cl({})'.format)
-    def algebra(self, request, g3, g4, g5, g3c, pga):
-        return {3: g3, 4: g4, 5: g5, 'g3c': g3c, (3, 0, 1): pga}[request.param]
+    @pytest.fixture(params=[3, 4, 5, 7, 'g3c', (3, 0, 1)], ids='Cl({})'.format)
+    def algebra(self, request, g3, g4, g5, g7, g3c, pga):
+        return {3: g3, 4: g4, 5: g5, 7: g7, 'g3c': g3c, (3, 0, 1): pga}[request.param]
 
     def test_addition(self, algebra, rng):  # noqa: F811
         A = algebra.randomMV(rng=rng)
