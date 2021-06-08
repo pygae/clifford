@@ -107,7 +107,6 @@ class TestInvariantDecomposition:
             for Bi, li in zip(Bs, ls):
                 # To be simple, you must square to a scalar.
                 Bisq = Bi**2
-                print(Bisq, li)
                 np.testing.assert_allclose(Bisq.value,
                                            Bisq(0).value,
                                            rtol=1E-6,
