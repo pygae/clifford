@@ -3,13 +3,7 @@ import pytest
 
 import clifford as cf
 from . import rng  # noqa: F401
-
-from clifford._numba_utils import DISABLE_JIT
-
-
-too_slow_without_jit = pytest.mark.skipif(
-    DISABLE_JIT, reason="test is too slow without JIT"
-)
+from . import too_slow_without_jit
 
 
 class TestClosedForm:

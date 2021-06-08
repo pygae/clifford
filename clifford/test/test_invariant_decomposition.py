@@ -9,6 +9,7 @@ from clifford.invariant_decomposition import bivector_split, rotor_split, exp, l
 
 import clifford as cf
 from . import rng  # noqa: F401
+from . import too_slow_without_jit
 
 
 # Test some known splits in various algebras. The target bivector is `B`,
@@ -94,7 +95,7 @@ class TestInvariantDecomposition:
 
     @pytest.mark.parametrize('r', range(2))
     @pytest.mark.parametrize('p, q', [
-        pytest.param(p, total_dims - p, marks=[pytest.mark.slow] if total_dims >= 6 else [])
+        pytest.param(p, total_dims - p, marks=[pytest.mark.slow, too_slow_without_jit] if total_dims >= 6 else [])
         for total_dims in [1, 2, 3, 4, 5, 6, 7, 8]
         for p in range(total_dims + 1)
     ])
