@@ -122,7 +122,7 @@ def rotor_split(R, k=None, roots=False):
 
 def exp(B):
     Bs, ls = bivector_split(B, roots=True)
-    R = 1
+    R = B.layout.scalar
     for Bi, li in zip(Bs, ls):
         if np.isreal(li) and li < 0:
             beta_i = np.sqrt(-li)
@@ -137,7 +137,7 @@ def exp(B):
 
 def log(R):
     Rs, ls = rotor_split(R, roots=True)
-    logR = 0
+    logR = R.layout.MultiVector()
     for Ri, li in zip(Rs, ls):
         if np.isreal(li) and li < 0:
             logR += np.arccos(Ri.value[0]) * Ri(2).normal()

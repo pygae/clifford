@@ -63,34 +63,34 @@ class TestInvariantDecomposition:
         Bs, ls = bivector_split(B, roots=True)
         # Test the bivector split
         for calculated, known in zip(Bs, known_split['Bs']):
-            np.testing.assert_allclose(calculated.value, known.value, atol=1E-6, rtol=1E-6)
+            np.testing.assert_allclose(calculated.value, known.value, atol=1E-5, rtol=1E-5)
         np.testing.assert_allclose(ls, known_split['ls'])
 
         # Test the exp function
         R = exp(B)
         Rraw = reduce(lambda tot, x: tot * x, [Bi.exp() for Bi in Bs])
-        np.testing.assert_allclose(Rraw.value, R.value, atol=1E-6, rtol=1E-6)
+        np.testing.assert_allclose(Rraw.value, R.value, atol=1E-5, rtol=1E-5)
 
         for Bi in Bs:
             # Test if the simple bivectors are exponentiated correctly.
-            np.testing.assert_allclose(Bi.exp().value, exp(Bi).value, atol=1E-6, rtol=1E-6)
+            np.testing.assert_allclose(Bi.exp().value, exp(Bi).value, atol=1E-5, rtol=1E-5)
 
         # Split R into simple rotors.
         Rs = rotor_split(R)
         # Test simpleness of the Ri
         for Ri in Rs:
-            np.testing.assert_allclose(Ri.value, (Ri(0) + Ri(2)).value, atol=1E-6, rtol=1E-6)
+            np.testing.assert_allclose(Ri.value, (Ri(0) + Ri(2)).value, atol=1E-5, rtol=1E-5)
         # Test commutativity
         for i, Ri in enumerate(Rs):
             for Rj in Rs[i:]:
-                np.testing.assert_allclose((Ri*Rj).value, (Rj*Ri).value, atol=1E-6, rtol=1E-6)
+                np.testing.assert_allclose((Ri*Rj).value, (Rj*Ri).value, atol=1E-5, rtol=1E-5)
 
         # Reconstruct R from the rotor_split.
         Rre = reduce(lambda tot, x: tot * x, Rs, B.layout.scalar)
-        np.testing.assert_allclose(R.value, Rre.value, atol=1E-6, rtol=1E-6)
+        np.testing.assert_allclose(R.value, Rre.value, atol=1E-5, rtol=1E-5)
 
         logR = log(R)
-        np.testing.assert_allclose(logR.value, known_split['logR'].value, atol=1E-6, rtol=1E-6)
+        np.testing.assert_allclose(logR.value, known_split['logR'].value, atol=1E-5, rtol=1E-5)
 
     @pytest.mark.parametrize('r', range(2))
     @pytest.mark.parametrize('p, q', [
@@ -107,25 +107,16 @@ class TestInvariantDecomposition:
             for Bi, li in zip(Bs, ls):
                 # To be simple, you must square to a scalar.
                 Bisq = Bi**2
-                np.testing.assert_allclose(Bisq.value,
-                                           Bisq(0).value,
-                                           rtol=1E-6,
-                                           atol=1E-6)
-                np.testing.assert_allclose(Bisq.value[0],
-                                           li,
-                                           rtol=1E-6,
-                                           atol=1E-6)
+                np.testing.assert_allclose(Bisq.value, Bisq(0).value,
+                                           rtol=1E-5, atol=1E-5)
+                np.testing.assert_allclose(Bisq.value[0], li,
+                                           rtol=1E-5, atol=1E-5)
 
             # Assert that the bivectors sum to the original
-            np.testing.assert_allclose(sum(Bs).value,
-                                       B.value,
-                                       rtol=1E-6,
-                                       atol=1E-6)
+            np.testing.assert_allclose(sum(Bs).value, B.value,
+                                       rtol=1E-5, atol=1E-5)
 
             # Assert that the bivectors are commutative
             for x, y in itertools.combinations(Bs, 2):
-                np.testing.assert_allclose((x*y).value,
-                                           (y*x).value,
-                                           rtol=1E-6,
-                                           atol=1E-6)
-
+                np.testing.assert_allclose((x*y).value, (y*x).value,
+                                           rtol=1E-5, atol=1E-5)
