@@ -69,7 +69,7 @@ nbsphinx_execute_arguments = [
 napoleon_include_init_with_doc= False
 nbsphinx_timeout = 60
 
-# This is processed by Jinja2 and inserted before each notebook
+# This is processed by Jinja2, and inserted before each notebook
 nbsphinx_prolog = r"""
 {% set docname = 'docs/' + env.doc2path(env.docname, base=None) %}
 {% set git_ref = 'master' if not READTHEDOCS else 
