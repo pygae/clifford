@@ -62,34 +62,35 @@ class TestInvariantDecomposition:
         B = known_split['B']
         Bs, ls = bivector_split(B, roots=True)
         # Test the bivector split
-        assert Bs == known_split['Bs']
-        assert np.allclose(ls, known_split['ls'])
+        for calculated, known in zip(Bs, known_split['Bs']):
+            np.testing.assert_allclose(calculated.value, known.value, atol=1E-6, rtol=1E-6)
+        np.testing.assert_allclose(ls, known_split['ls'])
 
         # Test the exp function
         R = exp(B)
         Rraw = reduce(lambda tot, x: tot * x, [Bi.exp() for Bi in Bs])
-        assert np.allclose(Rraw.value, R.value)
+        np.testing.assert_allclose(Rraw.value, R.value, atol=1E-6, rtol=1E-6)
 
         for Bi in Bs:
             # Test if the simple bivectors are exponentiated correctly.
-            assert np.allclose(Bi.exp().value, exp(Bi).value)
+            np.testing.assert_allclose(Bi.exp().value, exp(Bi).value, atol=1E-6, rtol=1E-6)
 
         # Split R into simple rotors.
         Rs = rotor_split(R)
         # Test simpleness of the Ri
         for Ri in Rs:
-            assert Ri == Ri(0) + Ri(2)
+            np.testing.assert_allclose(Ri.value, (Ri(0) + Ri(2)).value, atol=1E-6, rtol=1E-6)
         # Test commutativity
         for i, Ri in enumerate(Rs):
             for Rj in Rs[i:]:
-                assert Ri*Rj-Rj*Ri == 0
+                np.testing.assert_allclose((Ri*Rj).value, (Rj*Ri).value, atol=1E-6, rtol=1E-6)
 
         # Reconstruct R from the rotor_split.
-        Rre = reduce(lambda tot, x: tot * x, Rs, 1)
-        assert np.allclose(R.value, Rre.value)
+        Rre = reduce(lambda tot, x: tot * x, Rs, B.layout.scalar)
+        np.testing.assert_allclose(R.value, Rre.value, atol=1E-6, rtol=1E-6)
 
         logR = log(R)
-        assert logR == known_split['logR']
+        np.testing.assert_allclose(logR.value, known_split['logR'].value, atol=1E-6, rtol=1E-6)
 
     @pytest.mark.parametrize('r', range(2))
     @pytest.mark.parametrize('p, q', [
