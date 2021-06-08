@@ -673,7 +673,7 @@ class Layout(object):
             intermed = _numba_val_get_left_gmt_matrix(value, k_list, l_list, m_list, mult_table_vals, n_dims)
             if abs(np.linalg.det(intermed)) < _settings._eps:
                 raise ValueError("multivector has no left-inverse")
-            sol = np.linalg.solve(intermed, identity)
+            sol = np.linalg.solve(intermed, identity.astype(intermed.dtype))
             return sol
 
         return leftLaInvJIT
