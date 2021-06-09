@@ -109,7 +109,8 @@ jobs:
           PYTEST_ARGS+=(--doctest-modules --ignore clifford/test);
         fi;
 
-        pytest \
+        # `python -m` ensures we dispatch to conda if appropriate
+        python -m pytest \
           "${PYTEST_ARGS[@]}" \
           --color=yes \
           -o junit_family=legacy \
