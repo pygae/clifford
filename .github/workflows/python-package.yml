@@ -74,7 +74,7 @@ jobs:
         # make sure in conda we do not overwrite dependencies with pip
         python setup.py develop --no-deps;
         # test dependencies
-        pip install --upgrade pytest pytest-cov pytest-benchmark;
+        python -m pip install --upgrade pytest pytest-cov pytest-benchmark;
     - name: Sanity check (conda)
       if: matrix.conda 
       run: |
