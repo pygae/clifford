@@ -62,7 +62,7 @@ jobs:
     - name: Install dependencies (conda)
       if: matrix.conda
       run: |
-        echo $CONDA/bin >> $GITHUB_PATH
+        echo $CONDA/bin >> $GITHUB_PATH;
         conda install \
           "numpy>=1.17.0" \
           scipy \
@@ -71,12 +71,17 @@ jobs:
           h5py;
         conda install -c conda-forge sparse;
         conda install -c numba "numba>=0.45.1";
-        conda activate base;
         # make sure in conda we do not overwrite dependencies with pip
         python setup.py develop --no-deps;
         # test dependencies
         pip install --upgrade pytest pytest-cov pytest-benchmark;
-    
+    - name: Sanity check (conda)
+      if: matrix.conda 
+      run: |
+        which python
+        which pip
+        which pytest
+        conda list
     - name: Install dependencies (pip)
       if: "!matrix.conda"
       run: |
