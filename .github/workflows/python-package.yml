@@ -40,8 +40,7 @@ jobs:
           # fastest jobs first
           - python-version: 3.8
             name: NUMBA_DISABLE_JIT
-            env:
-              NUMBA_DISABLE_JIT: 1
+            disable_jit: 1
           - python-version: 3.8
             mode: doctests
           # really slow job next, so it runs in parallel with the others
@@ -68,6 +67,7 @@ jobs:
     - name: Test with pytest
       env:
         MODE: ${{ matrix.mode }}
+        NUMBA_DISABLE_JIT: ${{ matrix.disable_jit }}
       run: |
         PYTEST_ARGS=();
         if [[ "${MODE}" == "bench" ]]; then
@@ -86,9 +86,13 @@ jobs:
 
         pytest \
           "${PYTEST_ARGS[@]}" \
+          --color=yes
           --junitxml=junit/test-results.xml \
           --durations=25 \
           --cov=clifford \
           --cov-branch;
-
+    - name: Publish Test Report
+      uses: mikepenz/action-junit-report@v2
+      with:
+        report_paths: 'junit/test-results.xml'
     - uses: codecov/codecov-action@v1
