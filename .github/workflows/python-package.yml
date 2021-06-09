@@ -39,6 +39,7 @@ jobs:
         include:
           # fastest jobs first
           - python-version: 3.8
+            name: NUMBA_DISABLE_JIT
             env:
               NUMBA_DISABLE_JIT: 1
           - python-version: 3.8
@@ -61,8 +62,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install --upgrade pytest pytest-cov pytest-benchmark
         pip install . --prefer-binary
+        # test dependencies
+        pip install --upgrade pytest pytest-cov pytest-benchmark IPython
     - name: Test with pytest
       env:
         MODE: ${{ matrix.mode }}
