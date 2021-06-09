@@ -32,6 +32,10 @@ jobs:
         flake8 clifford --show-source --statistics
 
   build:
+    defaults:
+      run:
+        # conda needs this apparently
+        shell: bash -l {0}
     needs: lint
     runs-on: ubuntu-latest
     strategy:
