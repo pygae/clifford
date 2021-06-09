@@ -50,20 +50,20 @@ jobs:
           - python-version: 3.8
             name: doctests
             mode: doctests
-#           # really slow job next, so it runs in parallel with the others
-#           - python-version: 3.8
-#             name: slow tests
-#             mode: very_slow
-#           - python-version: 3.5
-#             name: default
-#           - python-version: 3.8
-#             name: default
-#           - python-version: 3.8
-#             name: conda
-#             conda: true
-#           - python-version: 3.8
-#             name: benchmarks
-#             mode: bench
+          # really slow job next, so it runs in parallel with the others
+          - python-version: 3.8
+            name: slow tests
+            mode: very_slow
+          - python-version: 3.5
+            name: default
+          - python-version: 3.8
+            name: default
+          - python-version: 3.8
+            name: conda
+            conda: true
+          - python-version: 3.8
+            name: benchmarks
+            mode: bench
 
     name: "build | ${{ matrix.name }} | Python ${{matrix.python-version}}"
     steps:
