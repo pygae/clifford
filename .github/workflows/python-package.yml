@@ -31,10 +31,10 @@ jobs:
       run: |
         flake8 clifford --show-source --statistics
 
-  build:
+  test:
     defaults:
       run:
-        # conda needs this apparently
+        # conda needs this to activate environments properly
         shell: bash -l {0}
     needs: lint
     runs-on: ubuntu-latest
@@ -67,6 +67,8 @@ jobs:
     name: "build | ${{ matrix.name }} | Python ${{matrix.python-version}}"
     steps:
     - uses: actions/checkout@v2
+    
+    # python / pip
     - name: Set up Python ${{ matrix.python-version }}
       if: "!matrix.conda"
       uses: actions/setup-python@v2
@@ -79,6 +81,8 @@ jobs:
         pip install . --prefer-binary;
         # test dependencies
         pip install --upgrade pytest pytest-cov pytest-benchmark IPython
+        
+    # conda
     - name: Set up Python ${{ matrix.python-version }} (conda)
       if: matrix.conda
       uses: conda-incubator/setup-miniconda@v2
@@ -97,20 +101,11 @@ jobs:
           h5py;
         conda install -c conda-forge sparse;
         conda install -c numba "numba>=0.45.1";
-        which python
-        which pip
-        conda list
         # make sure in conda we do not overwrite dependencies with pip
         python setup.py develop --no-deps;
         # test dependencies
         python -m pip install --upgrade pytest pytest-cov pytest-benchmark;
-    - name: Sanity check (conda)
-      if: matrix.conda 
-      run: |
-        which python
-        which pip
-        which pytest
-        conda list
+
     - name: Test with pytest
       env:
         MODE: ${{ matrix.mode }}
@@ -146,3 +141,22 @@ jobs:
       with:
         report_paths: 'junit/test-results.xml'
     - uses: codecov/codecov-action@v1
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    name: deploy
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: "Install"
+      run: |
+        python -m pip install --upgrade pip;
+        python -m build --sdist --wheel --outdir dist/
+#     - uses: pypa/gh-action-pypi-publish@v1.4.2
+#       user: arsenovic
+#       password: ieUd3c2DjrZQE+3FlqmU5FQObNWIDiL9E9G6aLs0ksEKAi5Z1t7fefXic1XHsHOZZYteycef/lZkUYg3ijwfZg2xzELeTdLef29GgUrxYuGL4MJ706UFj450Xlv9l1oH5D32OEKT2EwfxMqdrw39+N8zD5ehVyQbYM6Z3lwtCvg=
+      
