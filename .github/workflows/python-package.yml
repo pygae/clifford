@@ -86,13 +86,14 @@ jobs:
 
         pytest \
           "${PYTEST_ARGS[@]}" \
-          --color=yes
+          --color=yes \
           --junitxml=junit/test-results.xml \
           --durations=25 \
           --cov=clifford \
           --cov-branch;
     - name: Publish Test Report
       uses: mikepenz/action-junit-report@v2
+      if: ${{ always() }}
       with:
         report_paths: 'junit/test-results.xml'
     - uses: codecov/codecov-action@v1
