@@ -39,25 +39,46 @@ jobs:
         include:
           # fastest jobs first
           - python-version: 3.8
-            name: NUMBA_DISABLE_JIT
+            name: without JIT
             disable_jit: 1
           - python-version: 3.8
+            name: doctests
             mode: doctests
           # really slow job next, so it runs in parallel with the others
           - python-version: 3.8
+            name: slow tests
             mode: very_slow
           - python-version: 3.5
+            name: default
           - python-version: 3.8
+            name: default
           - python-version: 3.8
+            name: conda
             conda: true
           - python-version: 3.8
+            name: benchmarks
             mode: bench
 
+    name: "build | ${{ matrix.name }} | Python ${{matrix.python-version}}"
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
+      if: "!matrix.conda"
       uses: actions/setup-python@v2
       with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      if: "!matrix.conda"
+      run: |
+        python -m pip install --upgrade pip;
+        pip install . --prefer-binary;
+        # test dependencies
+        pip install --upgrade pytest pytest-cov pytest-benchmark IPython
+    - name: Set up Python ${{ matrix.python-version }} (conda)
+      if: matrix.conda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies (conda)
       if: matrix.conda
@@ -82,13 +103,6 @@ jobs:
         which pip
         which pytest
         conda list
-    - name: Install dependencies (pip)
-      if: "!matrix.conda"
-      run: |
-        python -m pip install --upgrade pip;
-        pip install . --prefer-binary;
-        # test dependencies
-        pip install --upgrade pytest pytest-cov pytest-benchmark IPython
     - name: Test with pytest
       env:
         MODE: ${{ matrix.mode }}
