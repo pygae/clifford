@@ -62,6 +62,7 @@ jobs:
     - name: Install dependencies (conda)
       if: matrix.conda
       run: |
+        echo $CONDA/bin >> $GITHUB_PATH
         conda install \
           "numpy>=1.17.0" \
           scipy \
