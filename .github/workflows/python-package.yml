@@ -48,7 +48,8 @@ jobs:
             mode: very_slow
           - python-version: 3.5
           - python-version: 3.8
-          # TODO: conda job
+          - python-version: 3.8
+            conda: true
           - python-version: 3.8
             mode: bench
 
@@ -58,7 +59,24 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
+    - name: Install dependencies (conda)
+      if: matrix.conda
+      run: |
+        conda install \
+          "numpy>=1.17.0" \
+          scipy \
+          pip \
+          IPython \
+          h5py;
+        conda install -c conda-forge sparse;
+        conda install -c numba "numba>=0.45.1";
+        # make sure in conda we do not overwrite dependencies with pip
+        python setup.py develop --no-deps
+        # test dependencies
+        pip install --upgrade pytest pytest-cov pytest-benchmark
+    
+    - name: Install dependencies (pip)
+      if: "!matrix.conda"
       run: |
         python -m pip install --upgrade pip
         pip install . --prefer-binary
@@ -87,6 +105,7 @@ jobs:
         pytest \
           "${PYTEST_ARGS[@]}" \
           --color=yes \
+          -o junit_family=legacy \
           --junitxml=junit/test-results.xml \
           --durations=25 \
           --cov=clifford \
