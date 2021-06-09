@@ -1,0 +1,91 @@
+name: Python package
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.8]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        pip install flake8
+        pip install .
+    - name: Setup flake8 annotations
+      uses: rbialon/flake8-annotations@v1
+    - name: Run flake8
+      run: |
+        flake8 clifford --show-source --statistics
+
+  build:
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # fastest jobs first
+          - python-version: 3.8
+            env:
+              NUMBA_DISABLE_JIT: 1
+          - python-version: 3.8
+            mode: doctests
+          # really slow job next, so it runs in parallel with the others
+          - python-version: 3.8
+            mode: very_slow
+          - python-version: 3.5
+          - python-version: 3.8
+          # TODO: conda job
+          - python-version: 3.8
+            mode: bench
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install flake8 pytest
+        pip install . --prefer-binary
+    - name: Test with pytest
+      env:
+        MODE: ${{ matrix.mode }}
+      run: |
+        PYTEST_ARGS=();
+        if [[ "${MODE}" == "bench" ]]; then
+          PYTEST_ARGS+=(--benchmark-only);
+        else
+          PYTEST_ARGS+=(--benchmark-skip);
+        fi;
+        if [[ "${MODE}" == "very_slow" ]]; then
+          PYTEST_ARGS+=(-m "veryslow");
+        else
+          PYTEST_ARGS+=(-m "not veryslow");
+        fi;
+        if [[ "${MODE}" == "doctests" ]]; then
+          PYTEST_ARGS+=(--doctest-modules --ignore clifford/test);
+        fi;
+
+        pytest \
+          "${PYTEST_ARGS[@]}" \
+          --junitxml=junit/test-results.xml \
+          --durations=25 \
+          --cov=clifford \
+          --cov-branch;
+
+    - uses: codecov/codecov-action@v1
