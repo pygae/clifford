@@ -9,8 +9,7 @@ invariant_decomposition (:mod:`clifford.invariant_decomposition`)
 
 
 This file implements the invariant decomposition (aka bivector split) of bivectors into
-mutually commuting orthogonal simple bivectors, based on the method of
-M. Roelfs, Spectroscopic and Geometric Algebra Methods for Lattice Gauge Theory, Chapter 6.
+mutually commuting orthogonal simple bivectors, based on the method of :cite:`roelfs2021thesis`, chapter 6.
 
 The invariant decomposition enables closed form exponentials and logarithms, and the factorization of
 rotors into simple rotors.
@@ -85,8 +84,7 @@ def _bivector_split(Wm, return_all=True):
 
 
 def bivector_split(B, k=None, roots=False):
-    """Bivector split of the bivector B based on the method of M. Roelfs,
-    Spectroscopic and Geometric Algebra Methods for Lattice Gauge Theory, Chapter 6.
+    """Bivector split of the bivector B based on the method of :cite:`roelfs2021thesis`, chapter 6.
 
 
     Parameters
