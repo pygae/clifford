@@ -28,8 +28,8 @@ def pga3d_split():
     alg = Layout([1, 1, 1, 0], ids=BasisVectorIds(['x', 'y', 'z', 'w']))
     ex, ey, ez, ew = alg.basis_vectors_lst
     return {'B': 2 * ex * ey + 4 * ez * ew,
-            'Bs': [2 * ex * ey, 4 * ez * ew],
-            'ls': [-4.0, 0.0],
+            'Bs': [4 * ez * ew, 2 * ex * ey],
+            'ls': [0.0, -4.0],
             'logR': 2 * ex * ey + 4 * ez * ew}
 
 
@@ -47,12 +47,21 @@ def r6_split():
     alg = Layout([1, 1, 1, 1, 1, 1])
     e1, e2, e3, e4, e5, e6 = alg.basis_vectors_lst
     return {'B': 2*e1*e2 + 5*e3*e4 + 7*e5*e6,
-            'Bs': [7*e5*e6, 5*e3*e4, 2*e1*e2],
-            'ls': [-49.0, -25.0, -4.0],
+            'Bs': [2*e1*e2, 5*e3*e4, 7*e5*e6],
+            'ls': [-4.0, -25.0, -49.0],
             # The log is by no means unique, and this example illustrates it.
             # With the conventions of this implementation this is the answer, which is a
             # total of 4 pi away from the input B.
-            'logR': 2*e1*e2 + (5 - np.pi)*e3*e4 + (7 - 3*np.pi)*e5*e6}
+            'logR': (2 - np.pi)*e1*e2 + (5 - np.pi)*e3*e4 + (7 - 2*np.pi)*e5*e6}
+
+def r4_split():
+    alg = Layout([1, 1, 1, 1])
+    e1, e2, e3, e4 = alg.basis_vectors_lst
+    delta = 1
+    return {'B': 2*e1*e2 + (2+delta)*e3*e4,
+            'Bs': [(2+delta)*e3*e4, 2*e1*e2],
+            'ls': [-(2+delta)**2, -4.0],
+            'logR': (2-np.pi)*e1*e2 + (2+delta-np.pi)*e3*e4}
 
 
 class TestInvariantDecomposition:
