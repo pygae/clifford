@@ -44,12 +44,20 @@ import numpy as np
 from ._settings import _eps
 
 
-def single_split(Wm, li):
-    """Helper function to compute the split for a given set of W_m and eigenvalue lambda_i.
-
+def single_split_even(Wm, li, r):
+    """Helper function to compute a single split for a given set of W_m and
+    eigenvalue lambda_i, when the total number of terms in the split is even.
     """
-    D = sum(W / li**j for j, W in enumerate(Wm[::2]))
-    N = sum(W / li**j for j, W in enumerate(Wm[1::2]))
+    N = sum(W * li**(r - j) for j, W in enumerate(Wm[::2]))
+    D = sum(W * li**(r - j) for j, W in enumerate(Wm[1::2], start=1))
+    return N*D.inv()
+
+def single_split_odd(Wm, li, r):
+    """Helper function to compute a single split for a given set of W_m and
+    eigenvalue lambda_i, when the total number of terms in the split is odd.
+    """
+    N = sum(W * li ** (r - j) for j, W in enumerate(Wm[1::2]))
+    D = sum(W * li ** (r - j) for j, W in enumerate(Wm[::2]))
     return N*D.inv()
 
 
@@ -71,15 +79,19 @@ def _bivector_split(Wm, return_all=True):
             Wm = Wm[:-1]
 
     k = (len(Wm) - 1)
+    r = k // 2
     Wm_sq = np.array([(W ** 2).value[0] * (-1) ** (k - m) for m, W in enumerate(Wm)])
     ls = np.roots(Wm_sq)
 
     Bs = []
     # Sort to have the value closest to zero last.
-    ls_sorted = sorted(ls, key=lambda li: -np.abs(li))
+    ls_sorted = sorted(ls, key=lambda li: -li)
     # Exclude the smallest value if asked.
     for li in (ls_sorted if return_all else ls_sorted[:-1]):
-        Bs.append(single_split(Wm, li))
+        if k % 2 == 0:
+            Bs.append(single_split_even(Wm, li, r))
+        else:
+            Bs.append(single_split_odd(Wm, li, r))
     return (Bs, ls_sorted)
 
 
@@ -111,8 +123,8 @@ def rotor_split(R, k=None, roots=False):
     Wm = [R(2 * m) for m in range(0, k + 1)]
     Ts, ls = _bivector_split(Wm, return_all=False)
 
-    Rs = [(R(0) + R(0) * ti) for ti in Ts]
-    Rs = [Ri.normal() if np.isreal((Ri*(~Ri)).value[0]) else Ri / np.sqrt((Ri*(~Ri)).value[0]) for Ri in Rs]
+    Rs = [(1 + ti) for ti in Ts]
+    Rs = [Ri.normal() if np.isreal((Ri*~Ri).value[0]) else Ri / np.sqrt((Ri*~Ri).value[0]) for Ri in Rs]
     P = reduce(lambda tot, x: tot*x, Rs, 1)
     Rs = Rs + [R/P]
     return (Rs, ls) if roots else Rs
