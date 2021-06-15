@@ -149,9 +149,10 @@ def log(R):
     Rs, ls = rotor_split(R, roots=True)
     logR = R.layout.MultiVector()
     for Ri, li in zip(Rs, ls):
-        if np.isreal(li) and li < 0:
-            logR += np.arccos(Ri.value[0]) * Ri(2).normal()
-        elif np.isreal(li) and np.abs(li) < _eps:
+        if li < 0:
+            norm = np.sqrt(- (Ri(2) ** 2).value[0])
+            logR += np.arccos(Ri.value[0]) * Ri(2) / norm
+        elif np.abs(li) < _eps:
             logR += Ri(2)
         else:
             norm = np.sqrt((Ri(2)**2).value[0])
