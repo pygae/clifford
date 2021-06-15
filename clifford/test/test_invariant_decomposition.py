@@ -130,3 +130,14 @@ class TestInvariantDecomposition:
             for x, y in itertools.combinations(Bs, 2):
                 np.testing.assert_allclose((x*y).value, (y*x).value,
                                            rtol=1E-5, atol=1E-5)
+
+            R = exp(B)
+            # Assert that the rotor split multiplies into the original.
+            Rs, ls = rotor_split(R, roots=True)
+            Rre = reduce(lambda tot, x: tot*x, Rs, 1)
+            np.testing.assert_allclose(R.value, Rre.value,
+                                       rtol=1E-5, atol=1E-5)
+            # Assert that the exp(log(R)) is the original rotor R.
+            logR = log(R)
+            np.testing.assert_allclose(R.value, exp(logR).value,
+                                       rtol=1E-5, atol=1E-5)
