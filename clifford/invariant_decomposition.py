@@ -42,28 +42,52 @@ from functools import reduce
 import numpy as np
 
 from ._settings import _eps
+from . import _numba_utils
+
+
+@_numba_utils.njit(cache=True)
+def _single_split_even_values(Wm_array, li, r):
+    ND = np.zeros((2, Wm_array[0, :].shape[0]), dtype=np.complex_)
+    for i in range(0, Wm_array.shape[0]//2+1):
+        ND[0, :] += Wm_array[2*i, :] * li**(r - i)
+    for i in range(0, Wm_array.shape[0]//2):
+        ND[1, :] += Wm_array[2*i+1, :] * li**(r - i - 1)
+    return ND
+
+
+@_numba_utils.njit(cache=True)
+def _single_split_odd_values(Wm_array, li, r):
+    ND = np.zeros((2, Wm_array[0, :].shape[0]), dtype=np.complex_)
+    for i in range(0, Wm_array.shape[0]//2):
+        ND[0, :] += Wm_array[2 * i + 1, :] * li ** (r - i)
+        ND[1, :] += Wm_array[2*i, :] * li**(r - i)
+    return ND
 
 
 def single_split_even(Wm, li, r):
     """Helper function to compute a single split for a given set of W_m and
     eigenvalue lambda_i, when the total number of terms in the split is even.
     """
-    N = sum(W * li**(r - j) for j, W in enumerate(Wm[::2]))
-    D = sum(W * li**(r - j) for j, W in enumerate(Wm[1::2], start=1))
-    return N*D.inv()
+    Wm_array = np.array([W.value for W in Wm])
+    ND = _single_split_even_values(Wm_array, li, r)
+    N = Wm[0].layout.MultiVector(ND[0, :])
+    D = Wm[0].layout.MultiVector(ND[1, :])
+    return N*D.leftLaInv()
+
 
 def single_split_odd(Wm, li, r):
     """Helper function to compute a single split for a given set of W_m and
     eigenvalue lambda_i, when the total number of terms in the split is odd.
     """
-    N = sum(W * li ** (r - j) for j, W in enumerate(Wm[1::2]))
-    D = sum(W * li ** (r - j) for j, W in enumerate(Wm[::2]))
-    return N*D.inv()
+    Wm_array = np.array([W.value for W in Wm])
+    ND = _single_split_odd_values(Wm_array, li, r)
+    N = Wm[0].layout.MultiVector(ND[0, :])
+    D = Wm[0].layout.MultiVector(ND[1, :])
+    return N*D.leftLaInv()
 
 
 def _bivector_split(Wm, return_all=True):
     """Internal helper function to perform the decomposition, given a set of Wm.
-
     Parameters
     ----------
     return_all : bool, optional
@@ -72,7 +96,7 @@ def _bivector_split(Wm, return_all=True):
     """
     # The effective value of k is determined by the largest non-zero W.
     # remove the highest grade zeros to prevent meaningless lambda_i = 0 values.
-    for W in reversed(Wm):
+    for W in Wm[::-1]:
         if np.linalg.norm(W.value) > _eps:
             break
         else:
@@ -125,8 +149,8 @@ def rotor_split(R, k=None, roots=False):
 
     Rs = [(1 + ti) for ti in Ts]
     Rs = [Ri.normal() if np.isreal((Ri*~Ri).value[0]) else Ri / np.sqrt((Ri*~Ri).value[0]) for Ri in Rs]
-    P = reduce(lambda tot, x: tot*x, Rs, 1)
-    Rs = Rs + [R/P]
+    P = reduce(lambda tot, x: tot*x, Rs, 1.0 + 0.0*R)
+    Rs = Rs + [R*P.leftLaInv()]
     return (Rs, ls) if roots else Rs
 
 
