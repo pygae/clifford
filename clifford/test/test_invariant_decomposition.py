@@ -132,12 +132,18 @@ class TestInvariantDecomposition:
                                            rtol=1E-5, atol=1E-5)
 
             R = exp(B)
+
+            # Make the absolute tolerance of the rotor tests dependent on total dimension
+            default_atol = 1E-5
+            if p + q + r > 7:
+                default_atol = 1E-2
+
             # Assert that the rotor split multiplies into the original.
             Rs, ls = rotor_split(R, roots=True)
             Rre = reduce(lambda tot, x: tot*x, Rs, 1)
             np.testing.assert_allclose(R.value, Rre.value,
-                                       rtol=1E-5, atol=1E-5)
+                                       rtol=1E-5, atol=default_atol)
             # Assert that the exp(log(R)) is the original rotor R.
             logR = log(R)
             np.testing.assert_allclose(R.value, exp(logR).value,
-                                       rtol=1E-5, atol=1E-5)
+                                       rtol=1E-5, atol=default_atol)
