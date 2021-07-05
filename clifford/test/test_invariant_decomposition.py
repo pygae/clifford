@@ -54,6 +54,7 @@ def r6_split():
             # total of 4 pi away from the input B.
             'logR': (2 - np.pi)*e1*e2 + (5 - np.pi)*e3*e4 + (7 - 2*np.pi)*e5*e6}
 
+
 def r4_split():
     alg = Layout([1, 1, 1, 1])
     e1, e2, e3, e4 = alg.basis_vectors_lst
