@@ -6,6 +6,18 @@ Changelog
 Changes in 1.4.x
 ++++++++++++++++
 
+ * :class:`MultiVector` is now supported directly within ``@numba.njit``\ ed code. As an example:
+   ```
+   from clifford.g3c import *
+
+   @numba.njit
+   def jit_up(x):
+       return eo + x + 0.5*abs(x)**2*einf
+
+   assert up(e1) == jit_up
+   ```
+   See :mod:`clifford.numba` for details.
+
  * Projection using :meth:`Multivector.__call__` no longer raises :exc:`ValueError`
    for grades not present in the algebra, and instead just returns zero.
 
@@ -18,10 +30,26 @@ Changes in 1.4.x
 
  * A new :mod:`clifford.taylor_expansions` is added to implement taylor series of various
    multivector functions, starting with common trigonometric functions. These functions are
-   additionally exposed via methods on the MultiVector class itself.
+   additionally exposed via methods on :class:`MultiVector` like :meth:`Multivector.cos`.
 
  * Random functions now accept an ``rng`` keyword argument that accepts the object returned
    by :func:`numpy.random.default_rng`, for deterministic randomness.
+
+Bugs fixed
+----------
+* ``mv(grade)`` (aka :meth:`Multivector.__call__`) now returns ``0`` instead of throwing an
+  exception if ``grade`` is out of range.
+
+
+Compatibility notes
+-------------------
+* :func:`clifford.general_exp` is deprecated in favor of :meth:`clifford.taylor_expansions.exp`,
+  although typically :meth:`clifford.MultiVector.exp` is a better choice
+* Transparently treating a :class:`MultiVector` as a flat array of coefficients is deprecated,
+  and so ``mv[0]`` and ``len(mv)`` both emit :exc:`DeprecationWarning`s. If the underlying
+  storage order is of interest, use ``mv.value[0]`` and ``len(mv)``respectively. To obtain the
+  scalar part of a :class:`MultiVector`, use ``mv[()]`` instead of ``mv[0]``.
+
 
 Changes in 1.3.x
 ++++++++++++++++
