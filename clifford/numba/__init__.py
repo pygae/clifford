@@ -5,6 +5,8 @@ r"""
 numba extension support (:mod:`clifford.numba`)
 ===============================================
 
+.. versionadded:: 1.4.0
+
 This module provides :mod:`numba` extension types :class:`MultiVectorType` and
 :class:`LayoutType` corresponding to :class:`~clifford.MultiVector` and
 :class:`~clifford.Layout`.
@@ -14,7 +16,7 @@ are needed only directly when writing numba overloads via
 :func:`numba.extending.overload` and similar.
 
 As a simple example, the following code defines a vectorized ``up()`` function
-for :doc:`CGA <tutorials/cga/index>` ::
+for :doc:`CGA </tutorials/cga/index>` ::
 
     from clifford.g3c import *
 

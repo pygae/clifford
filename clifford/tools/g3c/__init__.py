@@ -7,8 +7,10 @@ Tools for 3DCGA (g3c)
 Generation Methods
 --------------------
 
-Many of these functions accept an ``rng`` arguments, which if provided should
-be the result of calling :func:`numpy.random.default_rng` or similar.
+.. versionchanged:: 1.4.0
+
+    Many of these functions accept an ``rng`` arguments, which if provided
+    should be the result of calling :func:`numpy.random.default_rng` or similar.
 
 .. autosummary::
     :toctree: generated/

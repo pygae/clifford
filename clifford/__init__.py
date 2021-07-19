@@ -11,7 +11,7 @@ Provides two core classes, :class:`Layout` and :class:`MultiVector`, along with 
 Constructing algebras
 =====================
 
-Note that typically the :doc:`predefined-algebras` are sufficient, and there is no need to build an algebra from scratch.
+Note that typically the :doc:`/predefined-algebras` are sufficient, and there is no need to build an algebra from scratch.
 
 .. autosummary::
     :toctree:

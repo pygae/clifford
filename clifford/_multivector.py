@@ -463,6 +463,10 @@ class MultiVector(object):
 
         ``M(N)`` calls :meth:`project` as ``N.project(M)``.
 
+        .. versionchanged:: 1.4.0
+            Grades larger than the dimension of the multivector now return 0
+            instead of erroring.
+
         Examples
         --------
         >>> from clifford.g2 import *
@@ -742,6 +746,8 @@ class MultiVector(object):
         Obtain the inverse :math:`M^{-1}` via the algorithm in the paper
         :cite:`Hitzer_Sangwine_2017`.
 
+        .. versionadded:: 1.4.0
+
         Raises
         ------
         NotImplementedError :
@@ -752,6 +758,8 @@ class MultiVector(object):
     def shirokov_inverse(self):
         """Obtain the inverse :math:`M^{-1}` via the algorithm in Theorem 4,
         page 16 of Dmitry Shirokov's ICCA 2020 paper :cite:`shirokov2020inverse`.
+
+        .. versionadded:: 1.4.0
         """
         return self.layout._shirokov_inverse(self)
 
@@ -809,13 +817,17 @@ class MultiVector(object):
         This tries a handful of approaches in order:
 
         * If :math:`M \tilde M = |M|^2`, then this uses
-          :meth:`MultiVector.normalInv`.
+          :meth:`~MultiVector.normalInv`.
         * If :math:`M` is of sufficiently low dimension, this uses
-          :meth:`MultiVector.hitzer_inverse`.
-        * Otherwise, this uses :meth:`MultiVector.leftLaInv`.
+          :meth:`~MultiVector.hitzer_inverse`.
+        * Otherwise, this uses :meth:`~MultiVector.leftLaInv`.
 
-        Note that :meth:`MultiVector.shirokov_inverse` is not used as its
+        Note that :meth:`~MultiVector.shirokov_inverse` is not used as its
         numeric stability is unknown.
+
+        .. versionchanged:: 1.4.0
+            Now additionally tries :meth:`~MultiVector.hitzer_inverse` before
+            falling back to :meth:`~MultiVector.leftLaInv`.
         """
         return self._pick_inv(fallback=True)
 

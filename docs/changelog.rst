@@ -21,14 +21,14 @@ Changes in 1.4.x
   additionally exposed via methods on :class:`MultiVector` like :meth:`MultiVector.cos`.
 * Random functions now accept an ``rng`` keyword argument that accepts the object returned
   by :func:`numpy.random.default_rng`, for deterministic randomness.
+* Projection using :meth:`MultiVector.__call__` as ``mv(grade)`` no longer raises :exc:`ValueError`
+  for grades not present in the algebra, and instead just returns zero.
 * Some JIT-ed code is now cached when :mod:`clifford` is imported for the very first time,
   speeding up subsequent imports.
 * Improved citations in the documentation.
 
 Bugs fixed
 ----------
-* Projection using :meth:`MultiVector.__call__` as ``mv(grade)`` no longer raises :exc:`ValueError`
-  for grades not present in the algebra, and instead just returns zero.
 * Where possible, ``MultiVector``\ s preserve their data type in the dual, and
   the right and left complements.
 * :class:`MVArray` no longer errantly promotes 0-dimensional arrays to 1-dimensional arrays.
