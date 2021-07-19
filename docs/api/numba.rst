@@ -1,1 +1,1 @@
-.. automodule:: clifford.tools
+.. automodule:: clifford.numba
