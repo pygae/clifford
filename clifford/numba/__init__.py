@@ -37,8 +37,8 @@ The following list of operations are supported in a jitted context:
 
 * A limited version of the constructor ``MultiVector(layout, value)``, and
   the alias :meth:`layout.MultiVector`.
-* :meth:`MultiVector.value`
-* :meth:`MultiVector.layout`
+* :attr:`MultiVector.value`
+* :attr:`MultiVector.layout`
 * Arithmetic:
 
   * :meth:`MultiVector.__add__`
@@ -64,7 +64,7 @@ Performance considerations
 While the resulted jitted code is typically faster, there are two main
 performance issues to consider. The first is the startup time of ``@jit``\ ing.
 This can be quite substantial, although can be somewhat alleviated by using
-the ``cache=True`` argument to :func:`numba.njit`
+the ``cache=True`` argument to :func:`numba.jit`.
 The second is the time taken for numba to find the appropriate dispatch loop
 given the Python types of its arguments, which adds overhead to every call.
 
