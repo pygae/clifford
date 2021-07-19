@@ -77,7 +77,7 @@ Miscellaneous functions
 import os
 import itertools
 import warnings
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Dict
 
 # Major library imports.
 import numpy as np
@@ -422,7 +422,7 @@ def randomMV(
     return mv
 
 
-def conformalize(layout, added_sig=[1, -1], *, mvClass=MultiVector, **kwargs):
+def conformalize(layout: Layout, added_sig=[1, -1], *, mvClass=MultiVector, **kwargs):
     '''
     Conformalize a Geometric Algebra
 
@@ -441,7 +441,7 @@ def conformalize(layout, added_sig=[1, -1], *, mvClass=MultiVector, **kwargs):
     added_sig: list-like
         list of +1, -1  denoted the added signatures
     **kwargs :
-        passed to Cl() used to generate conformal layout
+        extra arguments to pass on into the :class:`Layout` constructor.
 
     Returns
     ---------
