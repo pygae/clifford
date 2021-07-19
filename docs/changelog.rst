@@ -29,6 +29,8 @@ Changes in 1.4.x
    additionally exposed via methods on :class:`MultiVector` like :meth:`Multivector.cos`.
  * Random functions now accept an ``rng`` keyword argument that accepts the object returned
    by :func:`numpy.random.default_rng`, for deterministic randomness.
+ * Some JIT-ed code is now cached when :module:`clifford` is imported for the very first time,
+   speeding up subsequent imports.
  * Improved citations in the documentation.
 
 Bugs fixed
@@ -39,7 +41,7 @@ Bugs fixed
    the right and left complements.
  * :class:`MVArray` no longer errantly promotes 0d arrays to 1D arrays.
  * :meth:`Multivector`s with :class:`complex` coefficients are now printed correctly.
-
+ * :meth:`cga.Round.radius` is no longer always 1.
 
 Compatibility notes
 -------------------

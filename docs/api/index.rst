@@ -11,3 +11,4 @@ API
     operator
     transformations
     taylor_expansions
+    numba

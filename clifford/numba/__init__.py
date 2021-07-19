@@ -1,4 +1,4 @@
-"""
+r"""
 .. currentmodule:: clifford.numba
 
 ===============================================
@@ -24,6 +24,7 @@ The following list of operations are supported in a jitted context:
 * :meth:`MultiVector.value`
 * :meth:`MultiVector.layout`
 * Arithmetic:
+
   * :meth:`MultiVector.__add__`
   * :meth:`MultiVector.__sub__`
   * :meth:`MultiVector.__mul__`
@@ -34,6 +35,7 @@ The following list of operations are supported in a jitted context:
   * :meth:`MultiVector.__invert__`
   * :meth:`MultiVector.__pos__`
   * :meth:`MultiVector.__neg__`
+
 * :meth:`MultiVector.__call__`
 * :meth:`MultiVector.mag2`
 * :meth:`MultiVector.__abs__`
@@ -44,7 +46,7 @@ The following list of operations are supported in a jitted context:
 Performance considerations
 --------------------------
 While the resulted jitted code is typically faster, there are two main
-performance issues to consider. The first is the startup time of ``@jit``ing.
+performance issues to consider. The first is the startup time of ``@jit``\ ing.
 This can be quite substantial, although can be somewhat alleviated by using
 the ``cache=True`` argument to :func:`numba.njit`
 The second is the time taken for numba to find the appropriate dispatch loop
