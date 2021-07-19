@@ -11,7 +11,7 @@ Provides two core classes, :class:`Layout` and :class:`MultiVector`, along with 
 Constructing algebras
 =====================
 
-Note that typically the :doc:`predefined-algebras` are sufficient, and there is no need to build an algebra from scratch.
+Note that typically the :doc:`/predefined-algebras` are sufficient, and there is no need to build an algebra from scratch.
 
 .. autosummary::
     :toctree:
@@ -79,7 +79,7 @@ Miscellaneous functions
 import os
 import itertools
 import warnings
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Dict
 
 # Major library imports.
 import numpy as np
@@ -95,9 +95,9 @@ from clifford.io import write_ga_file, read_ga_file  # noqa: F401
 
 from ._version import __version__  # noqa: F401
 from . import _numba_utils
-from . import _settings
 
 from ._settings import pretty, ugly, eps, print_precision  # noqa: F401
+import clifford.taylor_expansions as taylor_expansions
 
 # For backwards-compatibility. New code should import directly from `clifford.operator`
 from .operator import gp, op, ip  # noqa: F401
@@ -108,6 +108,11 @@ except KeyError:
     NUMBA_PARALLEL = True
 else:
     NUMBA_PARALLEL = not bool(NUMBA_DISABLE_PARALLEL)
+
+
+def general_exp(x, **kwargs):
+    warnings.warn("cf.general_exp is deprecated. Use `mv.exp()` or `np.exp(mv)` on multivectors, or `cf.taylor_expansions.exp(x)` on arbitrary objects", DeprecationWarning, stacklevel=2)
+    return taylor_expansions.exp(x, **kwargs)
 
 
 def linear_operator_as_matrix(func, input_blades, output_blades):
@@ -234,43 +239,6 @@ def grade_obj_func(objin_val, gradeList, threshold):
     return np.argmax(modal_value_count)
 
 
-def general_exp(x, max_order=15):
-    """
-    This implements the series expansion of e**mv where mv is a multivector
-    The parameter order is the maximum order of the taylor series to use
-    """
-
-    result = 1.0
-    if max_order == 0:
-        return result
-
-    # scale by power of 2 so that its norm is < 1
-    max_val = int(np.max(np.abs(x.value)))
-    scale = 1
-    if max_val > 1:
-        max_val <<= 1
-    while max_val:
-        max_val >>= 1
-        scale <<= 1
-
-    scaled = x * (1.0 / scale)
-
-    # taylor approximation
-    tmp = 1.0 + 0.0*x
-    for i in range(1, max_order):
-        if np.any(np.abs(tmp.value) > _settings._eps):
-            tmp = tmp*scaled * (1.0 / i)
-            result += tmp
-        else:
-            break
-
-    # undo scaling
-    while scale > 1:
-        result *= result
-        scale >>= 1
-    return result
-
-
 def grade_obj(objin, threshold=0.0000001):
     '''
     Returns the modal grade of a multivector
@@ -290,7 +258,8 @@ def grades_present(objin: 'MultiVector', threshold=0.0000001) -> Set[int]:
 # todo: work out how to let numba use the COO objects directly
 @_numba_utils.njit
 def _numba_val_get_left_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
-    intermed = np.zeros((ndims, ndims))
+    # TODO: consider `dtype=result_type(x.dtype, mult_table_vals.dtype)`
+    intermed = np.zeros((ndims, ndims), dtype=x.dtype)
     test_ind = 0
     for k in k_list:
         j = l_list[test_ind]
@@ -351,21 +320,25 @@ def elements(dims: int, firstIdx=0) -> List[Tuple[int, ...]]:
     return list(_powerset(range(firstIdx, firstIdx + dims)))
 
 
-def Cl(p=0, q=0, r=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
+def Cl(p: int = 0, q: int = 0, r: int = 0, sig=None, names=None, firstIdx=1,
+        mvClass=MultiVector) -> Tuple[Layout, Dict[str, MultiVector]]:
     r"""Returns a :class:`Layout` and basis blade :class:`MultiVector`\ s for the geometric algebra :math:`Cl_{p,q,r}`.
 
     The notation :math:`Cl_{p,q,r}` means that the algebra is :math:`p+q+r`-dimensional, with the first :math:`p` vectors with positive signature, the next :math:`q` vectors negative, and the final :math:`r` vectors with null signature.
 
     Parameters
-    =============
+    ----------
     p : int
-        number of positive signature basis vectors
+        number of positive-signature basis vectors
     q : int
-        number of negative signature basis vectors
+        number of negative-signature basis vectors
     r : int
-        number of zero signature basis vectors
-    sig, names, firstIdx
-        See the docs for :class:`clifford.Layout`. If ``sig`` is passed, then `p`, `q`, and `r` are ignored.
+        number of zero-signature basis vectors
+    sig
+        See the docs for :class:`clifford.Layout`. If ``sig`` is passed, then
+        `p`, `q`, and `r` are ignored.
+    names, firstIdx
+        See the docs for :class:`clifford.Layout`.
 
     Returns
     =======
@@ -390,8 +363,8 @@ def basis_vectors(layout):
 
 
 def randomMV(
-        layout, min=-2.0, max=2.0, grades=None, mvClass=MultiVector,
-        uniform=None, n=1, normed=False):
+        layout: Layout, min=-2.0, max=2.0, grades=None, mvClass=MultiVector,
+        uniform=None, n=1, normed: bool = False, rng=None):
     """n Random MultiVectors with given layout.
 
     Coefficients are between min and max, and if grades is a list of integers,
@@ -401,21 +374,22 @@ def randomMV(
     ------------
     layout : Layout
         the layout
-    min : Number
-        minimum of random range
-    max : Number
-        maximum
-    grades : int, list
-        number or list of grades to generate
-    mvClass : class
-        the class of MultiVector
-    uniform : function
-        a function like np.randome.uniform , but not limited to
+    min, max : Number
+        range of values from which to uniformly sample coefficients
+    grades : int, List[int]
+        grades which should have non-zero coefficients. If ``None``, defaults to
+        all grades. A single integer is treated as a list of one integers.
+    uniform : Callable[[Number, Number, Tuple[int, ...]], np.ndarray]
+        A function like `np.random.uniform`. Defaults to ``rng.uniform``.
     n : int
-        number of samples to generate
+        The number of samples to generate. If ``n > 1``, this function
+        returns a list instead of a single multivector
     normed : bool
-        should results be normalized?
-
+        If true, call :meth:`MultiVector.normal` on each multivector. Note
+        that this does not result in a uniform sampling of directions.
+    rng :
+        The random number state to use. Typical use would be to construct a
+        generator with :func:`numpy.random.default_rng`.
 
     Examples
     --------
@@ -433,7 +407,8 @@ def randomMV(
                          normed=normed) for k in range(n)]
 
     if uniform is None:
-        uniform = np.random.uniform
+        rng = np.random.default_rng(rng)
+        uniform = rng.uniform
 
     if grades is None:
         mv = mvClass(layout, uniform(min, max, (layout.gaDims,)))
@@ -467,7 +442,7 @@ def randomIntMV(layout, min=-10, max=10, uniform=np.random.randint,
     '''
     return randomMV(layout=layout, min=min,max=max,uniform=uniform, *args, **kw)
 
-def conformalize(layout, added_sig=[1, -1], *, mvClass=MultiVector, **kwargs):
+def conformalize(layout: Layout, added_sig=[1, -1], *, mvClass=MultiVector, **kwargs):
     '''
     Conformalize a Geometric Algebra
 
@@ -486,7 +461,7 @@ def conformalize(layout, added_sig=[1, -1], *, mvClass=MultiVector, **kwargs):
     added_sig: list-like
         list of +1, -1  denoted the added signatures
     **kwargs :
-        passed to Cl() used to generate conformal layout
+        extra arguments to pass on into the :class:`Layout` constructor.
 
     Returns
     ---------

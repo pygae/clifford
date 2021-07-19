@@ -96,8 +96,8 @@ def omoh(A: Union[Frame, List[MultiVector]],
 
     Examples
     ----------
-    >>> lam = ohom(A, B)
-    >>> B_ohom = Frame([B[k]*lam[k] for k in range(len(B)])
+    >>> lam = omoh(A, B)  # doctest: +SKIP
+    >>> B_ohom = Frame([B[k]*lam[k] for k in range(len(B)])  # doctest: +SKIP
     '''
     if len(A) != len(B) or len(A) < 3:
         raise ValueError('input must be >=3 long and len(a)==len(b)')
@@ -499,9 +499,9 @@ def rotor_decomp(V: MultiVector, x: MultiVector) -> Tuple[MultiVector, MultiVect
 
     Returns
     -------
-    H : clifford.Multivector
+    H : clifford.MultiVector
         rotor which contains x
-    U : clifford.Multivector
+    U : clifford.MultiVector
         rotor which leaves x invariant
 
     '''

@@ -23,8 +23,11 @@ from .._multivector import MultiVector
 class LayoutType(types.Dummy):
     def __init__(self, layout):
         self.obj = layout
-        # cache of multivector types for this layout
-        self._cache = {}
+        # Caches of multivector types for this layout, in numba C and A order.
+        # Having two caches is faster than a cache keyed by a tuple of `(order, dt)`,
+        # and every millisecond counts in `MultiVector._numba_type_`.
+        self._c_cache = {}
+        self._a_cache = {}
         layout_name = layout_short_name(layout)
         if layout_name is not None:
             name = "LayoutType({})".format(layout_name)
@@ -36,7 +39,8 @@ class LayoutType(types.Dummy):
         # the cache causes issues with numba's pickle modifications, as it
         # contains a self-reference.
         d = self.__dict__.copy()
-        d['_cache'] = {}
+        d['_c_cache'] = {}
+        d['_a_cache'] = {}
         return d
 
 

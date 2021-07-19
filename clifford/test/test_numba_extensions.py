@@ -172,3 +172,24 @@ def test_pickling():
     e1._numba_type_  # int
     (e1 * 1.0)._numba_type_  # float
     assert pickle.loads(pickle.dumps(lt)) is lt
+
+
+def test_A_order():
+    import numpy as np
+
+    @numba.njit
+    def mul_mv(mv):
+        return mv*e3
+
+    # A-order
+    mva = layout.MultiVector(np.ones(layout.gaDims))
+    mva.value = mva.value[::-1]
+    assert not mva.value.flags.c_contiguous
+    res_mva = mul_mv(mva)
+
+    # C-order
+    mvc = layout.MultiVector(np.ones(layout.gaDims))
+    assert mvc.value.flags.c_contiguous
+    res_mvc = mul_mv(mvc)
+
+    assert res_mva == res_mvc

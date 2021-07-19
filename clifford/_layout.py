@@ -573,15 +573,31 @@ class Layout(object):
         return comp_func
 
     @_cached_property
+    def _shirokov_inverse(self):
+        """ See `MultiVector.shirokov_inverse` for documentation """
+        n = len(self.sig)
+        exponent = (n + 1) // 2
+        N = 2 ** exponent
+        @_numba_utils.njit
+        def shirokov_inverse(U):
+            Uk = U * 1.0  # cast to float
+            for k in range(1, N):
+                Ck = (N / k) * Uk.value[0]
+                adjU = (Uk - Ck)
+                Uk = U * adjU
+            if Uk.value[0] == 0:
+                raise ValueError('Multivector has no inverse')
+            return adjU / Uk.value[0]
+        return shirokov_inverse
+
+    @_cached_property
     def _hitzer_inverse(self):
-        """
-        Performs the inversion operation as described in the paper :cite:`Hitzer_Sangwine_2017`
-        """
-        tot = np.sum(self.sig != 0)
+        """ See `MultiVector.hitzer_inverse` for documentation """
+        tot = len(self.sig)
         @_numba_utils.njit
         def hitzer_inverse(operand):
             if tot == 0:
-                numerator = operand.layout.scalar
+                numerator = 1 + 0*operand
             elif tot == 1:
                 # Equation 4.3
                 mv_invol = operand.gradeInvol()
@@ -673,7 +689,7 @@ class Layout(object):
             intermed = _numba_val_get_left_gmt_matrix(value, k_list, l_list, m_list, mult_table_vals, n_dims)
             if abs(np.linalg.det(intermed)) < _settings._eps:
                 raise ValueError("multivector has no left-inverse")
-            sol = np.linalg.solve(intermed, identity)
+            sol = np.linalg.solve(intermed, identity.astype(intermed.dtype))
             return sol
 
         return leftLaInvJIT
@@ -763,7 +779,7 @@ class Layout(object):
         '''
         return cf.randomMV(layout=self, n=n, grades=[1], **kwargs)
 
-    def randomRotor(self) -> MultiVector:
+    def randomRotor(self, **kwargs) -> MultiVector:
         '''
         generate a random Rotor.
 
@@ -772,7 +788,7 @@ class Layout(object):
 
         '''
         n = self.dims if self.dims % 2 == 0 else self.dims - 1
-        R = functools.reduce(cf.gp, self.randomV(n, normed=True))
+        R = functools.reduce(cf.gp, self.randomV(n, normed=True, **kwargs))
         return R
 
     # Helpers to get hold of basis blades of various specifications.
