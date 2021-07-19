@@ -12,11 +12,11 @@ Changes in 1.4.x
 * New algorithms for the multivector inverse :meth:`MultiVector.inv`:
 
   * Inverting a non-blade multivector in algebras where :math:`p = q \le 5` now falls back on the
-    approach described in :cite:`Hitzer_Sangwine_2017` isntead of using a linear algebra approach.
+    approach described in :cite:`Hitzer_Sangwine_2017` instead of using a linear algebra approach.
     This algorithm can be used directly via :meth:`MultiVector.hitzer_inverse`.
   * An additional method is available, :meth:`MultiVector.shirokov_inverse`,
     which is the arbitrary signature algorithm described in :cite:`shirokov2020inverse`.
-* A new :mod:`clifford.taylor_expansions` module for taylor series of various
+* A new :mod:`clifford.taylor_expansions` module for Taylor series of various
   multivector functions, starting with common trigonometric functions. These functions are
   additionally exposed via methods on :class:`MultiVector` like :meth:`MultiVector.cos`.
 * Random functions now accept an ``rng`` keyword argument that accepts the object returned
@@ -31,7 +31,7 @@ Bugs fixed
   for grades not present in the algebra, and instead just returns zero.
 * Where possible, ``MultiVector``\ s preserve their data type in the dual, and
   the right and left complements.
-* :class:`MVArray` no longer errantly promotes 0d arrays to 1D arrays.
+* :class:`MVArray` no longer errantly promotes 0-dimensional arrays to 1-dimensional arrays.
 * :class:`MultiVector`\ s with :class:`complex` coefficients are now printed correctly.
 * :meth:`cga.Round.radius` is no longer always 1.
 

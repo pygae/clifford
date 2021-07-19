@@ -319,7 +319,7 @@ def elements(dims: int, firstIdx=0) -> List[Tuple[int, ...]]:
 
 
 def Cl(p: int = 0, q: int = 0, r: int = 0, sig=None, names=None, firstIdx=1,
-        mvClass=MultiVector):
+        mvClass=MultiVector) -> Tuple[Layout, Dict[str, MultiVector]]:
     r"""Returns a :class:`Layout` and basis blade :class:`MultiVector`\ s for the geometric algebra :math:`Cl_{p,q,r}`.
 
     The notation :math:`Cl_{p,q,r}` means that the algebra is :math:`p+q+r`-dimensional, with the first :math:`p` vectors with positive signature, the next :math:`q` vectors negative, and the final :math:`r` vectors with null signature.
@@ -332,9 +332,11 @@ def Cl(p: int = 0, q: int = 0, r: int = 0, sig=None, names=None, firstIdx=1,
         number of negative-signature basis vectors
     r : int
         number of zero-signature basis vectors
-    sig, names, firstIdx
+    sig
         See the docs for :class:`clifford.Layout`. If ``sig`` is passed, then
         `p`, `q`, and `r` are ignored.
+    names, firstIdx
+        See the docs for :class:`clifford.Layout`.
 
     Returns
     =======
@@ -375,10 +377,8 @@ def randomMV(
     grades : int, List[int]
         grades which should have non-zero coefficients. If ``None``, defaults to
         all grades. A single integer is treated as a list of one integers.
-    mvClass : type
-        the class of MultiVector
     uniform : Callable[[Number, Number, Tuple[int, ...]], np.ndarray]
-        a function like `np.random.uniform`
+        A function like `np.random.uniform`. Defaults to ``rng.uniform``.
     n : int
         The number of samples to generate. If ``n > 1``, this function
         returns a list instead of a single multivector
