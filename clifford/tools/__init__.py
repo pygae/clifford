@@ -31,7 +31,7 @@ Determining Rotors From Frame Pairs or Orthogonal Matrices
 -----------------------------------------------------------
 
 Given two frames that are related by a orthogonal transform, we seek a rotor
-which enacts the transform. Details of the mathematics and pseudo-code used the
+which enacts the transform. Details of the mathematics and pseudo-code used to
 create the algorithms below can be found at Allan Cortzen's website,
 :cite:`ctz-frames`.
 
@@ -443,9 +443,9 @@ def rotor_decomp(V: MultiVector, x: MultiVector) -> Tuple[MultiVector, MultiVect
 
     Returns
     -------
-    H : clifford.Multivector
+    H : clifford.MultiVector
         rotor which contains x
-    U : clifford.Multivector
+    U : clifford.MultiVector
         rotor which leaves x invariant
 
     '''

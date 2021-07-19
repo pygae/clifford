@@ -574,9 +574,7 @@ class Layout(object):
 
     @_cached_property
     def _shirokov_inverse(self):
-        """
-        Performs the inversion operation as described in Theorem 4, page 16 of the paper :cite:`shirokov2020inverse`
-        """
+        """ See `MultiVector.shirokov_inverse` for documentation """
         n = len(self.sig)
         exponent = (n + 1) // 2
         N = 2 ** exponent
@@ -594,9 +592,7 @@ class Layout(object):
 
     @_cached_property
     def _hitzer_inverse(self):
-        """
-        Performs the inversion operation as described in the paper :cite:`Hitzer_Sangwine_2017`
-        """
+        """ See `MultiVector.hitzer_inverse` for documentation """
         tot = len(self.sig)
         @_numba_utils.njit
         def hitzer_inverse(operand):
