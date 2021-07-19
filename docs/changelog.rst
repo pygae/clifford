@@ -18,14 +18,18 @@ Changes in 1.4.x
 
    See :mod:`clifford.numba` for details.
 
- * A new multivector inverse method is available, :meth:`clifford.MultiVector.shirokov_inverse`,
-   which is the arbitrary signature algorithm described
-   in Theorem 4, page 16 of Dmitry Shirokov's ICCA 2020 paper :cite:`shirokov2020inverse`.
+ * New algorithms for the multivector inverse :meth:`MultiVector.inv`:
+   * Inverting a non-blade multivector in algebras where $p = q \le 5$ falls back on the
+     approach described in :cite:`Hitzer_Sangwine_2017` isntead of using a linear algebra approach.
+     This algorithm can be used directly via :meth:`MultiVector.hitzer_inverse`.
+   * An additional method is available, :meth:`clifford.MultiVector.shirokov_inverse`,
+     which is the arbitrary signature algorithm described in :cite:`shirokov2020inverse`.
  * A new :mod:`clifford.taylor_expansions` module for taylor series of various
    multivector functions, starting with common trigonometric functions. These functions are
    additionally exposed via methods on :class:`MultiVector` like :meth:`Multivector.cos`.
  * Random functions now accept an ``rng`` keyword argument that accepts the object returned
    by :func:`numpy.random.default_rng`, for deterministic randomness.
+ * Improved citations in the documentation.
 
 Bugs fixed
 ----------
@@ -33,6 +37,8 @@ Bugs fixed
    for grades not present in the algebra, and instead just returns zero.
  * Where possible, ``MultiVector``\ s preserve their data type in the dual, and
    the right and left complements.
+ * :class:`MVArray` no longer errantly promotes 0d arrays to 1D arrays.
+ * :meth:`Multivector`s with :class:`complex` coefficients are now printed correctly.
 
 
 Compatibility notes
@@ -40,9 +46,12 @@ Compatibility notes
 * :func:`clifford.general_exp` is deprecated in favor of :meth:`clifford.taylor_expansions.exp`,
   although typically :meth:`clifford.MultiVector.exp` is a better choice
 * Transparently treating a :class:`MultiVector` as a flat array of coefficients is deprecated,
-  and so ``mv[0]`` and ``len(mv)`` both emit :exc:`DeprecationWarning`s. If the underlying
-  storage order is of interest, use ``mv.value[0]`` and ``len(mv)``respectively. To obtain the
+  and so ``mv[i]`` and ``len(mv)`` both emit :exc:`DeprecationWarning`s. If the underlying
+  storage order is of interest, use ``mv.value[i]`` and ``len(mv)``respectively. To obtain the
   scalar part of a :class:`MultiVector`, use ``mv[()]`` instead of ``mv[0]``.
+* ``Layout.gradeList`` has been removed. If still needed, it can be recovered as an :type:`ndarray`
+  isntead of a :class:`list` via the private attribute ``layout._basis_blade_order.grades``
+  (:attr:`BasisBladeOrder.grades`).
 
 
 Changes in 1.3.x

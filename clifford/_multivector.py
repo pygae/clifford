@@ -738,10 +738,25 @@ class MultiVector(object):
         return self / abs(self)
 
     def hitzer_inverse(self):
+        """
+        Obtain the inverse :math:`M^{-1}` via the algorithm in the paper
+        :cite:`Hitzer_Sangwine_2017`.
+
+        Raises
+        ------
+        NotImplementedError :
+            on algebras with more than 5 non-null dimensions
+        """
         return self.layout._hitzer_inverse(self)
 
     def shirokov_inverse(self):
+        """Obtain the inverse :math:`M^{-1}` via the algorithm in Theorem 4,
+        page 16 of Dmitry Shirokov's ICCA 2020 paper :cite:`shirokov2020inverse`.
+        """
         return self.layout._shirokov_inverse(self)
+
+    hitzer_inverse.__doc__ = Layout._hitzer_inverse.__doc__
+    shirokov_inverse.__doc__ = Layout._shirokov_inverse.__doc__
 
     def leftLaInv(self) -> 'MultiVector':
         """Return left-inverse using a computational linear algebra method
@@ -792,6 +807,19 @@ class MultiVector(object):
         return self._pick_inv(fallback=False if check else None)
 
     def inv(self) -> 'MultiVector':
+        """Obtain the inverse :math:`M^{-1}`.
+
+        This tries a handful of approaches in order:
+
+        * If :math:`M \tilde M = |M|^2`, then this uses
+          :meth:`MultiVector.normalInv`.
+        * If :math:`M` is of sufficiently low dimension, this uses
+          :meth:`MultiVector.hitzer_inverse`.
+        * Otherwise, this uses :meth:`MultiVector.leftLaInv`.
+
+        Note that :meth:`MultiVector.shirokov_inverse` is not used as its
+        numeric stability is unknown.
+        """
         return self._pick_inv(fallback=True)
 
     leftInv = leftLaInv
