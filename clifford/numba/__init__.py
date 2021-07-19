@@ -13,6 +13,20 @@ You do not need to import this module to take advantage of these types; they
 are needed only directly when writing numba overloads via
 :func:`numba.extending.overload` and similar.
 
+As a simple example, the following code defines a vectorized ``up()`` function
+for :doc:`CGA <tutorials/cga/index>` ::
+
+    from clifford.g3c import *
+
+    @numba.njit
+    def jit_up(x):
+        return eo + x + 0.5*abs(x)**2*einf
+
+    assert up(e1) == jit_up(e1)
+
+Note that a rough equivalent to this particular function is provided elsewhere
+as :func:`clifford.tools.g3c.fast_up`.
+
 .. currentmodule:: clifford
 
 Supported operations

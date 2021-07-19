@@ -804,7 +804,7 @@ class MultiVector(object):
         return self._pick_inv(fallback=False if check else None)
 
     def inv(self) -> 'MultiVector':
-        """Obtain the inverse :math:`M^{-1}`.
+        r"""Obtain the inverse :math:`M^{-1}`.
 
         This tries a handful of approaches in order:
 

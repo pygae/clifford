@@ -6,19 +6,11 @@ Changelog
 Changes in 1.4.x
 ++++++++++++++++
 
-* :class:`MultiVector` is now supported directly within ``@numba.njit``\ ed code. As an example::
-
-      from clifford.g3c import *
-
-      @numba.njit
-      def jit_up(x):
-          return eo + x + 0.5*abs(x)**2*einf
-
-      assert up(e1) == jit_up
-
-  See :mod:`clifford.numba` for details.
+* :class:`MultiVector` is now supported directly within ``@numba.njit``\ ed code.
+  See the documentation for this feature in the :mod:`clifford.numba` module for more details.
 
 * New algorithms for the multivector inverse :meth:`MultiVector.inv`:
+
   * Inverting a non-blade multivector in algebras where :math:`p = q \le 5` now falls back on the
     approach described in :cite:`Hitzer_Sangwine_2017` isntead of using a linear algebra approach.
     This algorithm can be used directly via :meth:`MultiVector.hitzer_inverse`.
@@ -26,7 +18,7 @@ Changes in 1.4.x
     which is the arbitrary signature algorithm described in :cite:`shirokov2020inverse`.
 * A new :mod:`clifford.taylor_expansions` module for taylor series of various
   multivector functions, starting with common trigonometric functions. These functions are
-  additionally exposed via methods on :class:`MultiVector` like :meth:`Multivector.cos`.
+  additionally exposed via methods on :class:`MultiVector` like :meth:`MultiVector.cos`.
 * Random functions now accept an ``rng`` keyword argument that accepts the object returned
   by :func:`numpy.random.default_rng`, for deterministic randomness.
 * Some JIT-ed code is now cached when :mod:`clifford` is imported for the very first time,
@@ -35,12 +27,12 @@ Changes in 1.4.x
 
 Bugs fixed
 ----------
-* Projection using :meth:`Multivector.__call__` as ``mv(grade)`` no longer raises :exc:`ValueError`
+* Projection using :meth:`MultiVector.__call__` as ``mv(grade)`` no longer raises :exc:`ValueError`
   for grades not present in the algebra, and instead just returns zero.
 * Where possible, ``MultiVector``\ s preserve their data type in the dual, and
   the right and left complements.
 * :class:`MVArray` no longer errantly promotes 0d arrays to 1D arrays.
-* :meth:`Multivector`\ s with :class:`complex` coefficients are now printed correctly.
+* :class:`MultiVector`\ s with :class:`complex` coefficients are now printed correctly.
 * :meth:`cga.Round.radius` is no longer always 1.
 
 Compatibility notes

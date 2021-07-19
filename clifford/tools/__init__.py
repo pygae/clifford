@@ -443,9 +443,9 @@ def rotor_decomp(V: MultiVector, x: MultiVector) -> Tuple[MultiVector, MultiVect
 
     Returns
     -------
-    H : clifford.Multivector
+    H : clifford.MultiVector
         rotor which contains x
-    U : clifford.Multivector
+    U : clifford.MultiVector
         rotor which leaves x invariant
 
     '''
