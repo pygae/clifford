@@ -755,9 +755,6 @@ class MultiVector(object):
         """
         return self.layout._shirokov_inverse(self)
 
-    hitzer_inverse.__doc__ = Layout._hitzer_inverse.__doc__
-    shirokov_inverse.__doc__ = Layout._shirokov_inverse.__doc__
-
     def leftLaInv(self) -> 'MultiVector':
         """Return left-inverse using a computational linear algebra method
         proposed by Christian Perwass.
