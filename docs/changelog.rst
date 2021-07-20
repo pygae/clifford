@@ -6,9 +6,9 @@ Changelog
 Changes in 1.4.x
 ++++++++++++++++
 
+* Python 3.9 is officially supported.
 * :class:`MultiVector` is now supported directly within ``@numba.njit``\ ed code.
   See the documentation for this feature in the :mod:`clifford.numba` module for more details.
-
 * New algorithms for the multivector inverse :meth:`MultiVector.inv`:
 
   * Inverting a non-blade multivector in algebras where :math:`p = q \le 5` now falls back on the
@@ -37,6 +37,8 @@ Bugs fixed
 
 Compatibility notes
 -------------------
+* This will be the last release to support Python 3.5 and 3.6, as the former reached its end-of-life
+  during our last release cycle, and the latter is expected to before our next release.
 * :func:`clifford.general_exp` is deprecated in favor of :meth:`clifford.taylor_expansions.exp`,
   although typically :meth:`clifford.MultiVector.exp` is a better choice
 * Transparently treating a :class:`MultiVector` as a flat array of coefficients is deprecated,
@@ -46,8 +48,6 @@ Compatibility notes
 * ``Layout.gradeList`` has been removed. If still needed, it can be recovered as an :class:`ndarray`
   isntead of a :class:`list` via the private attribute ``layout._basis_blade_order.grades``
   (:attr:`BasisBladeOrder.grades`).
-* This will be the last release to support Python 3.5, which reached its end-of-life during our
-  last release cycle.
 
 Changes in 1.3.x
 ++++++++++++++++
