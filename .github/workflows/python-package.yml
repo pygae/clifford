@@ -59,6 +59,8 @@ jobs:
             name: default
           - python-version: 3.8
             name: default
+          - python-version: 3.9
+            name: default
           - python-version: 3.8
             name: conda
             conda: true
