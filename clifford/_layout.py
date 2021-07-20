@@ -881,3 +881,19 @@ class Layout(object):
         convenience func to ``MultiVector(layout)``
         '''
         return MultiVector(self, *args, **kwargs)
+
+    if _numba_utils.DISABLE_JIT:
+        def __reduce__(self):
+            data = super().__reduce__()
+            state = data[2]
+
+            # Workaround for gh-404 - remove all cached properties that look
+            # like jittable functions, as these crash when pickling.
+            # For now, we only do this if jitting is disabled, as it may still
+            # be useful to use pickling in lieu of a proper cache. To this end,
+            # we also leave around the non-function caches like multiplication tables.
+            for k, v in list(state.items()):
+                if isinstance(getattr(type(self), k, None), _cached_property) and callable(v):
+                    del state[k]
+
+            return data

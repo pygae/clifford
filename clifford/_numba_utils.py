@@ -27,7 +27,11 @@ class pickleable_function:
     Numba jitted functions are pickleable, so we should be too.
 
     Here we just reach into the internals of numba to pull out their
-    serialization helpers
+    serialization helpers.
+
+    .. warning::
+        This seems to no longer work in most versions of numba, see
+        gh-404.
     """
     def __new__(cls, func):
         if isinstance(func, pickleable_function):

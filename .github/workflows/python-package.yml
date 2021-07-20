@@ -45,10 +45,9 @@ jobs:
       matrix:
         include:
           # fastest jobs first
-          # This job currently fails
-          # - python-version: 3.8
-          #   name: without JIT
-          #   disable_jit: 1
+          - python-version: 3.8
+            name: without JIT
+            disable_jit: 1
           - python-version: 3.8
             name: doctests
             mode: doctests
@@ -70,7 +69,7 @@ jobs:
     name: "build | ${{ matrix.name }} | Python ${{matrix.python-version}}"
     steps:
     - uses: actions/checkout@v2
-    
+
     # python / pip
     - name: Set up Python ${{ matrix.python-version }}
       if: "!matrix.conda"
@@ -84,7 +83,7 @@ jobs:
         pip install . --prefer-binary;
         # test dependencies
         pip install --upgrade pytest pytest-cov pytest-benchmark IPython
-        
+
     # conda
     - name: Set up Python ${{ matrix.python-version }} (conda)
       if: matrix.conda

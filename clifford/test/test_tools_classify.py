@@ -27,7 +27,7 @@ class _TestBase:
     def radius(self, request):
         return request.param
 
-    def _test_roundrip(self, cls, g, **kwargs):
+    def _test_roundtrip(self, cls, g, **kwargs):
         b = cls[g](**kwargs)
         b_rt = classify(b.mv)
         assert isinstance(b_rt, cls)
@@ -45,28 +45,28 @@ class _TestBase:
 
     def test_roundtrip_direction(self, direction):
         g = _grade(direction)
-        self._test_roundrip(
+        self._test_roundtrip(
             Direction, g + 1,
             direction=direction,
         )
 
     def test_roundtrip_round(self, direction, location, radius):
         g = _grade(direction)
-        self._test_roundrip(
+        self._test_roundtrip(
             Round, g + 1,
             direction=direction, location=location, radius=radius,
         )
 
     def test_roundtrip_flat(self, direction, location):
         g = _grade(direction)
-        self._test_roundrip(
+        self._test_roundtrip(
             Flat, g + 2,
             direction=direction, location=location,
         )
 
     def test_roundtrip_dual_flat(self, direction, location):
         g = _grade(direction)
-        self._test_roundrip(
+        self._test_roundtrip(
             DualFlat, self.layout.dims - (g + 2),
             flat=Flat(direction=direction, location=location),
         )
