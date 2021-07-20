@@ -4,7 +4,10 @@ pandas
 ipykernel
 nbsphinx
 ipywidgets
-sphinx>=2.4
+
+# workaround for https://github.com/spatialaudio/nbsphinx/issues/584
+sphinx>=4.0.0,<4.1.0
+
 sphinx_rtd_theme>=0.5.0
 sphinxcontrib-bibtex>=2.3.0
 
