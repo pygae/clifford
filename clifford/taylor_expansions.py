@@ -44,7 +44,7 @@ from . import _settings
 
 @_numba_utils.njit
 def exp(x, max_order=15):
-    """
+    r"""
     This implements the series expansion of :math:`\exp x` where :math:`x` is a multivector
     The parameter `max_order` is the maximum order of the taylor series to use
     """
