@@ -43,7 +43,7 @@ Compatibility notes
   and so ``mv[i]`` and ``len(mv)`` both emit :exc:`DeprecationWarning`s. If the underlying
   storage order is of interest, use ``mv.value[i]`` and ``len(mv)``respectively. To obtain the
   scalar part of a :class:`MultiVector`, use ``mv[()]`` instead of ``mv[0]``.
-* ``Layout.gradeList`` has been removed. If still needed, it can be recovered as an :type:`ndarray`
+* ``Layout.gradeList`` has been removed. If still needed, it can be recovered as an :class:`ndarray`
   isntead of a :class:`list` via the private attribute ``layout._basis_blade_order.grades``
   (:attr:`BasisBladeOrder.grades`).
 * This will be the last release to support Python 3.5, which reached its end-of-life during our

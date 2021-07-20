@@ -18,13 +18,13 @@ and more accurate. Nonetheless, having pre-written taylor expansions for the gen
 
     For example::
 
-    >>> from clifford.g3 import *
-    >>> import numpy as np
-    >>> np.sin(np.pi*e12/4)
-    (0.86867^e12)
+        >>> from clifford.g3 import *
+        >>> import numpy as np
+        >>> np.sin(np.pi*e12/4)
+        (0.86867^e12)
 
 Implemented functions
-----------------
+---------------------
 
 .. autofunction:: exp
 .. autofunction:: sin

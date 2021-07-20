@@ -224,7 +224,7 @@ class Layout(object):
         algebra.  This list determines the order of coefficients in the
         internal representation of multivectors.  The entry for the scalar
         must be an empty tuple, and the entries for grade-1 vectors must be
-        singleton tuples.  Remember, the length of the list will be ``2**dims`.
+        singleton tuples.  Remember, the length of the list will be ``2**dims``.
 
         Example::
 
@@ -266,8 +266,6 @@ class Layout(object):
         dimensionality of vectors (``len(self.sig)``)
     sig :
         normalized signature, with all values ``+1`` or ``-1``
-    bladeTupList :
-        list of blades
     gaDims :
         2**dims
     names :
@@ -673,8 +671,8 @@ class Layout(object):
         """
         Get a function that returns left-inverse using a computational linear algebra method
         proposed by Christian Perwass.
-         -1         -1
-        M    where M  * M  == 1
+
+        Computes :math:`M^{-1}` where :math:`M^{-1}M = 1`.
         """
         mult_table = self.gmt
         k_list, l_list, m_list = mult_table.coords
