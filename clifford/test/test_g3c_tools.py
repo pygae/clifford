@@ -12,7 +12,6 @@ import numba
 
 from clifford import Cl
 from clifford.g3c import *
-from clifford import general_exp
 from clifford.tools.g3c import *
 from clifford.tools.g3c.rotor_parameterisation import ga_log, ga_exp, general_logarithm, \
     interpolate_rotors
@@ -107,7 +106,7 @@ class TestGeneralLogarithm:
         for i in range(50):
             t = random_euc_mv(rng=rng)
             biv = ninf * t / 2
-            R = general_exp(biv).normal()
+            R = biv.exp().normal()
             biv_2 = general_logarithm(R)
             assert_allclose(biv.value, biv_2.value)
 
@@ -116,7 +115,7 @@ class TestGeneralLogarithm:
         for i in range(50):
             scale = 0.5 + rng.random()
             biv = -np.log(scale) * e45 / 2
-            R = general_exp(biv).normal()
+            R = biv.exp().normal()
             biv_2 = general_logarithm(R)
             assert_allclose(biv.value, biv_2.value)
 
@@ -142,10 +141,10 @@ class TestGeneralLogarithm:
             # T = generate_translation_rotor(e3 + 7 * e2 - e1).normal()
             # V = (T*R).normal()
             biv_true = random_bivector(rng=rng)
-            V = general_exp(biv_true).normal()
+            V = biv_true.exp().normal()
             biv = general_logarithm(V)
 
-            V_rebuilt = (general_exp(biv)).normal()
+            V_rebuilt = biv.exp().normal()
 
             C1 = random_point_pair(rng=rng)
             C2 = (V * C1 * ~V).normal()
@@ -160,7 +159,7 @@ class TestGeneralLogarithm:
             T = generate_translation_rotor(t)
             V = (T * S).normal()
             biv = general_logarithm(V)
-            V_rebuilt = (general_exp(biv)).normal()
+            V_rebuilt = biv.exp().normal()
 
             C1 = random_point_pair(rng=rng)
             C2 = (V * C1 * ~V).normal()
@@ -175,7 +174,7 @@ class TestGeneralLogarithm:
             T = generate_translation_rotor(e3 + 7 * e2 - e1)
             V = (T * R * S).normal()
             biv = general_logarithm(V)
-            V_rebuilt = general_exp(biv).normal()
+            V_rebuilt = biv.exp().normal()
             biv2 = general_logarithm(V)
 
             C1 = random_point_pair(rng=rng)
@@ -192,7 +191,7 @@ class TestGeneralLogarithm:
             Y = obj_gen(rng=rng)
             R = rotor_between_objects(X, Y)
             biv = general_logarithm(R)
-            R_recon = general_exp(biv).normal()
+            R_recon = biv.exp().normal()
             assert_allclose(R.value, R_recon.value)
 
 
