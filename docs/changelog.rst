@@ -157,8 +157,7 @@ Bugs fixed
 * ``pow(mv, 0)`` gives the right result
 * ``nan`` is now printed correctly when it appears in multivectors. Previously it was hidden
 * :meth:`MultiVector.right_complement` no longer performs the left complement.
-* :meth:`MultiVector.vee` has been corrected to have the same sign as
-   :meth:`MultiVector.meet`
+* :meth:`MultiVector.vee` has been corrected to have the same sign as :meth:`MultiVector.meet`
 
 Compatibility notes
 -------------------
