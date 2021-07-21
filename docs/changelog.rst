@@ -42,8 +42,8 @@ Compatibility notes
 * :func:`clifford.general_exp` is deprecated in favor of :meth:`clifford.taylor_expansions.exp`,
   although typically :meth:`clifford.MultiVector.exp` is a better choice
 * Transparently treating a :class:`MultiVector` as a flat array of coefficients is deprecated,
-  and so ``mv[i]`` and ``len(mv)`` both emit :exc:`DeprecationWarning`s. If the underlying
-  storage order is of interest, use ``mv.value[i]`` and ``len(mv)``respectively. To obtain the
+  and so ``mv[i]`` and ``len(mv)`` both emit :exc:`DeprecationWarning`\ s. If the underlying
+  storage order is of interest, use ``mv.value[i]`` and ``len(mv)`` respectively. To obtain the
   scalar part of a :class:`MultiVector`, use ``mv[()]`` instead of ``mv[0]``.
 * ``Layout.gradeList`` has been removed. If still needed, it can be recovered as an :class:`ndarray`
   isntead of a :class:`list` via the private attribute ``layout._basis_blade_order.grades``
@@ -157,8 +157,7 @@ Bugs fixed
 * ``pow(mv, 0)`` gives the right result
 * ``nan`` is now printed correctly when it appears in multivectors. Previously it was hidden
 * :meth:`MultiVector.right_complement` no longer performs the left complement.
-* :meth:`MultiVector.vee` has been corrected to have the same sign as
-   :meth:`MultiVector.meet`
+* :meth:`MultiVector.vee` has been corrected to have the same sign as :meth:`MultiVector.meet`
 
 Compatibility notes
 -------------------
