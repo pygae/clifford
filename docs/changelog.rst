@@ -42,7 +42,7 @@ Compatibility notes
 * :func:`clifford.general_exp` is deprecated in favor of :meth:`clifford.taylor_expansions.exp`,
   although typically :meth:`clifford.MultiVector.exp` is a better choice
 * Transparently treating a :class:`MultiVector` as a flat array of coefficients is deprecated,
-  and so ``mv[i]`` and ``len(mv)`` both emit :exc:`DeprecationWarning`s. If the underlying
+  and so ``mv[i]`` and ``len(mv)`` both emit :exc:`DeprecationWarning`\ s. If the underlying
   storage order is of interest, use ``mv.value[i]`` and ``len(mv)``respectively. To obtain the
   scalar part of a :class:`MultiVector`, use ``mv[()]`` instead of ``mv[0]``.
 * ``Layout.gradeList`` has been removed. If still needed, it can be recovered as an :class:`ndarray`
