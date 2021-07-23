@@ -80,8 +80,11 @@ nbsphinx_prolog = r"""
 .. raw:: html
 
     <div class="admonition note">
-      <pre>}{{ env.config }}</pre>
-      <pre>}{{ env.config.html_context }}</pre>
+      <pre>{{ env.config }}</pre>
+      <pre>{{ github_version }}</pre>
+      <pre>{{ current_version }}</pre>
+      <pre>{{ commit }}</pre>
+      <pre>{{ env.config.html_context }}</pre>
       <p>This page was generated from
         <a class="reference external" href="https://github.com/pygae/clifford/blob/{{ git_ref|e }}/{{ docname|e }}">{{ docname|e }}</a>.
         Interactive online version:
