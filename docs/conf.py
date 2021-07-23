@@ -74,12 +74,17 @@ nbsphinx_timeout = 60
 # This is processed by Jinja2 and inserted before each notebook
 nbsphinx_prolog = r"""
 {% set docname = 'docs/' + env.doc2path(env.docname, base=None) %}
-{% set git_ref = 'master' if not READTHEDOCS else 
-                 commit if '.' not in current_version else
+{% set git_ref = 'master' if not env.config.html_context['READTHEDOCS'] else 
+                 env.config.html_context['github_version'] if '.' not in env.config.html_context['current_version'] else
                  'v' + env.config.release %}
 .. raw:: html
 
     <div class="admonition note">
+      <pre>{{ env.config }}</pre>
+      <pre>{{ github_version }}</pre>
+      <pre>{{ current_version }}</pre>
+      <pre>{{ commit }}</pre>
+      <pre>{{ env.config.html_context }}</pre>
       <p>This page was generated from
         <a class="reference external" href="https://github.com/pygae/clifford/blob/{{ git_ref|e }}/{{ docname|e }}">{{ docname|e }}</a>.
         Interactive online version:
