@@ -81,7 +81,6 @@ nbsphinx_prolog = r"""
 
     <div class="admonition note">
       <pre>}{{ config }}</pre>
-      <pre>}{{ vars(config) }}</pre>
       <pre>}{{ config.html_context }}</pre>
       <p>This page was generated from
         <a class="reference external" href="https://github.com/pygae/clifford/blob/{{ git_ref|e }}/{{ docname|e }}">{{ docname|e }}</a>.
