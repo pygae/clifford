@@ -1,20 +1,20 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
+message: If you use this software, please cite it as below.
 authors:
-- given-names: "Hugo"
-  family-names: "Hadfield"
-  affiliation: "University of Cambridge"
+- given-names: Hugo
+  family-names: Hadfield
+  affiliation: University of Cambridge
   orcid: "https://orcid.org/0000-0003-4318-050X"
-- given-names: "Eric"
-  family-names: "Wieser"
-  affiliation: "University of Cambridge"
+- given-names: Eric
+  family-names: Wieser
+  affiliation: University of Cambridge
   orcid: "https://orcid.org/0000-0003-0412-4978"
-- given-names: "Alex"
-  family-names: "Arsenovic"
+- given-names: Alex
+  family-names: Arsenovic
   affiliation: "810 Labs"
   orcid: "https://orcid.org/0000-0002-8599-5873"
-- given-names: "Robert"
-  family-names: "Kern"
+- given-names: Robert
+  family-names: Kern
   affiliation: "Enthought, Inc."
 - name: "The Pygae Team"
 keywords:
@@ -22,8 +22,7 @@ keywords:
 - "clifford algebra"
 - "geometric algebra"
 - "geometry"
-license:
-- "BSD-3-Clause"
+license: "BSD-3-Clause"
 title: "pygae/clifford"
 doi: 10.5281/zenodo.1453978
 url: "https://github.com/pygae/clifford"
