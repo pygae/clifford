@@ -11,7 +11,7 @@ Provides two core classes, :class:`Layout` and :class:`MultiVector`, along with 
 Constructing algebras
 =====================
 
-Note that typically the :doc:`predefined-algebras` are sufficient, and there is no need to build an algebra from scratch.
+Note that typically the :doc:`/predefined-algebras` are sufficient, and there is no need to build an algebra from scratch.
 
 .. autosummary::
     :toctree:
@@ -77,7 +77,7 @@ Miscellaneous functions
 import os
 import itertools
 import warnings
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Dict
 
 # Major library imports.
 import numpy as np
@@ -318,10 +318,25 @@ def elements(dims: int, firstIdx=0) -> List[Tuple[int, ...]]:
     return list(_powerset(range(firstIdx, firstIdx + dims)))
 
 
-def Cl(p=0, q=0, r=0, sig=None, names=None, firstIdx=1, mvClass=MultiVector):
+def Cl(p: int = 0, q: int = 0, r: int = 0, sig=None, names=None, firstIdx=1,
+        mvClass=MultiVector) -> Tuple[Layout, Dict[str, MultiVector]]:
     r"""Returns a :class:`Layout` and basis blade :class:`MultiVector`\ s for the geometric algebra :math:`Cl_{p,q,r}`.
 
     The notation :math:`Cl_{p,q,r}` means that the algebra is :math:`p+q+r`-dimensional, with the first :math:`p` vectors with positive signature, the next :math:`q` vectors negative, and the final :math:`r` vectors with null signature.
+
+    Parameters
+    ----------
+    p : int
+        number of positive-signature basis vectors
+    q : int
+        number of negative-signature basis vectors
+    r : int
+        number of zero-signature basis vectors
+    sig
+        See the docs for :class:`clifford.Layout`. If ``sig`` is passed, then
+        `p`, `q`, and `r` are ignored.
+    names, firstIdx
+        See the docs for :class:`clifford.Layout`.
 
     Returns
     =======
@@ -346,13 +361,33 @@ def basis_vectors(layout):
 
 
 def randomMV(
-        layout, min=-2.0, max=2.0, grades=None, mvClass=MultiVector,
-        uniform=None, n=1, normed=False, rng=None):
+        layout: Layout, min=-2.0, max=2.0, grades=None, mvClass=MultiVector,
+        uniform=None, n=1, normed: bool = False, rng=None):
     """n Random MultiVectors with given layout.
 
     Coefficients are between min and max, and if grades is a list of integers,
     only those grades will be non-zero.
 
+    Parameters
+    ------------
+    layout : Layout
+        the layout
+    min, max : Number
+        range of values from which to uniformly sample coefficients
+    grades : int, List[int]
+        grades which should have non-zero coefficients. If ``None``, defaults to
+        all grades. A single integer is treated as a list of one integers.
+    uniform : Callable[[Number, Number, Tuple[int, ...]], np.ndarray]
+        A function like `np.random.uniform`. Defaults to ``rng.uniform``.
+    n : int
+        The number of samples to generate. If ``n > 1``, this function
+        returns a list instead of a single multivector
+    normed : bool
+        If true, call :meth:`MultiVector.normal` on each multivector. Note
+        that this does not result in a uniform sampling of directions.
+    rng :
+        The random number state to use. Typical use would be to construct a
+        generator with :func:`numpy.random.default_rng`.
 
     Examples
     --------
@@ -387,7 +422,7 @@ def randomMV(
     return mv
 
 
-def conformalize(layout, added_sig=[1, -1], *, mvClass=MultiVector, **kwargs):
+def conformalize(layout: Layout, added_sig=[1, -1], *, mvClass=MultiVector, **kwargs):
     '''
     Conformalize a Geometric Algebra
 
@@ -406,7 +441,7 @@ def conformalize(layout, added_sig=[1, -1], *, mvClass=MultiVector, **kwargs):
     added_sig: list-like
         list of +1, -1  denoted the added signatures
     **kwargs :
-        passed to Cl() used to generate conformal layout
+        extra arguments to pass on into the :class:`Layout` constructor.
 
     Returns
     ---------

@@ -18,13 +18,13 @@ and more accurate. Nonetheless, having pre-written taylor expansions for the gen
 
     For example::
 
-    >>> from clifford.g3 import *
-    >>> import numpy as np
-    >>> np.sin(np.pi*e12/4)
-    (0.86867^e12)
+        >>> from clifford.g3 import *
+        >>> import numpy as np
+        >>> np.sin(np.pi*e12/4)
+        (0.86867^e12)
 
 Implemented functions
-----------------
+---------------------
 
 .. autofunction:: exp
 .. autofunction:: sin
@@ -44,7 +44,7 @@ from . import _settings
 
 @_numba_utils.njit
 def exp(x, max_order=15):
-    """
+    r"""
     This implements the series expansion of :math:`\exp x` where :math:`x` is a multivector
     The parameter `max_order` is the maximum order of the taylor series to use
     """

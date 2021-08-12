@@ -1,0 +1,173 @@
+name: Python package
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  release:
+    types: [ created ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.8]
+    name: "lint | Python ${{ matrix.python-version }}"
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8
+        pip install .
+    - name: Setup flake8 annotations
+      uses: rbialon/flake8-annotations@v1
+    - name: Run flake8
+      run: |
+        flake8 clifford --show-source --statistics
+
+  test:
+    defaults:
+      run:
+        # conda needs this to activate environments properly
+        shell: bash -l {0}
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # fastest jobs first
+          - python-version: 3.8
+            name: without JIT
+            disable_jit: 1
+          - python-version: 3.8
+            name: doctests
+            mode: doctests
+          # really slow job next, so it runs in parallel with the others
+          - python-version: 3.8
+            name: slow tests
+            mode: very_slow
+          - python-version: 3.5
+            name: default
+          - python-version: 3.8
+            name: default
+          - python-version: 3.9
+            name: default
+          - python-version: 3.8
+            name: conda
+            conda: true
+          - python-version: 3.8
+            name: benchmarks
+            mode: bench
+
+    name: "build | ${{ matrix.name }} | Python ${{matrix.python-version}}"
+    steps:
+    - uses: actions/checkout@v2
+
+    # python / pip
+    - name: Set up Python ${{ matrix.python-version }}
+      if: "!matrix.conda"
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      if: "!matrix.conda"
+      run: |
+        python -m pip install --upgrade pip;
+        pip install . --prefer-binary;
+        # test dependencies
+        pip install --upgrade pytest pytest-cov pytest-benchmark IPython
+
+    # conda
+    - name: Set up Python ${{ matrix.python-version }} (conda)
+      if: matrix.conda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies (conda)
+      if: matrix.conda
+      run: |
+        echo $CONDA/bin >> $GITHUB_PATH;
+        conda install \
+          "numpy>=1.17.0" \
+          scipy \
+          pip \
+          IPython \
+          h5py;
+        conda install -c conda-forge sparse;
+        conda install -c numba "numba>=0.45.1";
+        # make sure in conda we do not overwrite dependencies with pip
+        python setup.py develop --no-deps;
+        # test dependencies
+        python -m pip install --upgrade pytest pytest-cov pytest-benchmark;
+
+    - name: Test with pytest
+      env:
+        MODE: ${{ matrix.mode }}
+        NUMBA_DISABLE_JIT: ${{ matrix.disable_jit }}
+      run: |
+        PYTEST_ARGS=();
+        if [[ "${MODE}" == "bench" ]]; then
+          PYTEST_ARGS+=(--benchmark-only);
+        else
+          PYTEST_ARGS+=(--benchmark-skip);
+        fi;
+        if [[ "${MODE}" == "very_slow" ]]; then
+          PYTEST_ARGS+=(-m "veryslow");
+        else
+          PYTEST_ARGS+=(-m "not veryslow");
+        fi;
+        if [[ "${MODE}" == "doctests" ]]; then
+          PYTEST_ARGS+=(--doctest-modules --ignore clifford/test);
+        fi;
+
+        # `python -m` ensures we dispatch to conda if appropriate
+        python -m pytest \
+          "${PYTEST_ARGS[@]}" \
+          --color=yes \
+          -o junit_family=legacy \
+          --junitxml=junit/test-results.xml \
+          --durations=25 \
+          --cov=clifford \
+          --cov-branch;
+    # This only publishes result for the last run right now
+    # - name: Publish Test Report
+    #   uses: mikepenz/action-junit-report@v2
+    #   if: ${{ always() }}
+    #   with:
+    #     report_paths: 'junit/test-results.xml'
+    - uses: codecov/codecov-action@v1
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    name: deploy
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: "Install"
+      run: |
+        python -m pip install --upgrade pip;
+        python -m pip install build
+        python -m build --sdist --wheel --outdir dist/
+    - uses: actions/upload-artifact@v2
+      with:
+        name: dist
+        path: dist
+    - uses: pypa/gh-action-pypi-publish@release/v1
+      if: startsWith(github.ref, 'refs/tags/v')
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_PASSWORD }}

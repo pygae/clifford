@@ -223,7 +223,7 @@ class Layout(object):
         algebra.  This list determines the order of coefficients in the
         internal representation of multivectors.  The entry for the scalar
         must be an empty tuple, and the entries for grade-1 vectors must be
-        singleton tuples.  Remember, the length of the list will be ``2**dims`.
+        singleton tuples.  Remember, the length of the list will be ``2**dims``.
 
         Example::
 
@@ -265,8 +265,6 @@ class Layout(object):
         dimensionality of vectors (``len(self.sig)``)
     sig :
         normalized signature, with all values ``+1`` or ``-1``
-    bladeTupList :
-        list of blades
     gaDims :
         2**dims
     names :
@@ -573,9 +571,7 @@ class Layout(object):
 
     @_cached_property
     def _shirokov_inverse(self):
-        """
-        Performs the inversion operation as described in Theorem 4, page 16 of the paper :cite:`shirokov2020inverse`
-        """
+        """ See `MultiVector.shirokov_inverse` for documentation """
         n = len(self.sig)
         exponent = (n + 1) // 2
         N = 2 ** exponent
@@ -593,9 +589,7 @@ class Layout(object):
 
     @_cached_property
     def _hitzer_inverse(self):
-        """
-        Performs the inversion operation as described in the paper :cite:`Hitzer_Sangwine_2017`
-        """
+        """ See `MultiVector.hitzer_inverse` for documentation """
         tot = len(self.sig)
         @_numba_utils.njit
         def hitzer_inverse(operand):
@@ -676,8 +670,8 @@ class Layout(object):
         """
         Get a function that returns left-inverse using a computational linear algebra method
         proposed by Christian Perwass.
-         -1         -1
-        M    where M  * M  == 1
+
+        Computes :math:`M^{-1}` where :math:`M^{-1}M = 1`.
         """
         mult_table = self.gmt
         k_list, l_list, m_list = mult_table.coords
@@ -884,3 +878,19 @@ class Layout(object):
         convenience func to ``MultiVector(layout)``
         '''
         return MultiVector(self, *args, **kwargs)
+
+    if _numba_utils.DISABLE_JIT:
+        def __reduce__(self):
+            data = super().__reduce__()
+            state = data[2]
+
+            # Workaround for gh-404 - remove all cached properties that look
+            # like jittable functions, as these crash when pickling.
+            # For now, we only do this if jitting is disabled, as it may still
+            # be useful to use pickling in lieu of a proper cache. To this end,
+            # we also leave around the non-function caches like multiplication tables.
+            for k, v in list(state.items()):
+                if isinstance(getattr(type(self), k, None), _cached_property) and callable(v):
+                    del state[k]
+
+            return data
