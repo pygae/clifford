@@ -27,6 +27,7 @@ def sta_split():
             'ls': [16.0, -4.0],
             'logR': 2 * ex * ey + 4 * ez * et}
 
+
 @lru_cache
 def pga3d_split():
     alg = Layout([1, 1, 1, 0], ids=BasisVectorIds(['x', 'y', 'z', 'w']))
@@ -35,6 +36,7 @@ def pga3d_split():
             'Bs': [4 * ez * ew, 2 * ex * ey],
             'ls': [0.0, -4.0],
             'logR': 2 * ex * ey + 4 * ez * ew}
+
 
 @lru_cache
 def r22_split():
@@ -45,6 +47,7 @@ def r22_split():
                    0.25 * ((1+1j)*e1*e2 + (1-1j)*e1*e4 + (-1+1j)*e2*e3 + (-1-1j)*e3*e4)],
             'ls': [0.5j, -0.5j],
             'logR': 0.5 * (e1*e2 + e1*e4 - e2*e3 - e3*e4)}
+
 
 @lru_cache
 def r6_split():
@@ -57,6 +60,7 @@ def r6_split():
             # With the conventions of this implementation this is the answer, which is a
             # total of 4 pi away from the input B.
             'logR': (2 - np.pi)*e1*e2 + (5 - np.pi)*e3*e4 + (7 - 2*np.pi)*e5*e6}
+
 
 @lru_cache
 def r4_split():
