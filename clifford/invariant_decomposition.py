@@ -16,6 +16,7 @@ rotors into simple rotors.
 
 Example usage::
 
+    >>> from clifford.g4 import *
     >>> B = 1*e12 + 2*e34
     >>> bivector_split(B)
     [1^e12, 2^e34]

@@ -18,7 +18,7 @@ from . import too_slow_without_jit
 # given in `ls`. Lastly, the expected logarithm is `logR`.
 # We use `lru_cache` here so that these layouts can be reused between tests,
 # but are not constructed at all if not needed.
-@lru_cache
+@lru_cache(maxsize=None)
 def sta_split():
     alg = Layout([1, 1, 1, -1], ids=BasisVectorIds(['x', 'y', 'z', 't']))
     ex, ey, ez, et = alg.basis_vectors_lst
@@ -28,7 +28,7 @@ def sta_split():
             'logR': 2 * ex * ey + 4 * ez * et}
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def pga3d_split():
     alg = Layout([1, 1, 1, 0], ids=BasisVectorIds(['x', 'y', 'z', 'w']))
     ex, ey, ez, ew = alg.basis_vectors_lst
@@ -38,7 +38,7 @@ def pga3d_split():
             'logR': 2 * ex * ey + 4 * ez * ew}
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def r22_split():
     alg = Layout([1, 1, -1, -1])
     e1, e2, e3, e4 = alg.basis_vectors_lst
@@ -49,7 +49,7 @@ def r22_split():
             'logR': 0.5 * (e1*e2 + e1*e4 - e2*e3 - e3*e4)}
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def r6_split():
     alg = Layout([1, 1, 1, 1, 1, 1])
     e1, e2, e3, e4, e5, e6 = alg.basis_vectors_lst
@@ -62,7 +62,7 @@ def r6_split():
             'logR': (2 - np.pi)*e1*e2 + (5 - np.pi)*e3*e4 + (7 - 2*np.pi)*e5*e6}
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def r4_split():
     alg = Layout([1, 1, 1, 1])
     e1, e2, e3, e4 = alg.basis_vectors_lst
