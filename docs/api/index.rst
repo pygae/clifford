@@ -11,4 +11,5 @@ API
     operator
     transformations
     taylor_expansions
+    invariant_decomposition
     numba
