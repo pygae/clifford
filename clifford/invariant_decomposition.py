@@ -19,7 +19,7 @@ Example usage::
     >>> from clifford.g4 import *
     >>> B = 1*e12 + 2*e34
     >>> bivector_split(B)
-    [1^e12, 2^e34]
+    [((1+0j)^e12), ((2+0j)^e34)]
 
 Implemented functions
 ---------------------
