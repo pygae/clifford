@@ -135,7 +135,7 @@ class TestInvariantDecomposition:
     @pytest.mark.parametrize('r', range(2))
     @pytest.mark.parametrize('p, q', [
         pytest.param(p, total_dims - p,
-            marks=[pytest.mark.veryslow, too_slow_without_jit] if total_dims >= 6 else [])
+                     marks=[pytest.mark.veryslow, too_slow_without_jit] if total_dims >= 6 else [])
         for total_dims in [0, 1, 2, 3, 4, 5, 6, 7, 8]
         for p in range(total_dims + 1)
     ])

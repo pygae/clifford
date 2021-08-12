@@ -5,7 +5,7 @@
 invariant_decomposition (:mod:`clifford.invariant_decomposition`)
 =====================================================
 
-.. versionadded:: 1.4.0
+.. versionadded:: 1.5.0
 
 
 This file implements the invariant decomposition (aka bivector split) of bivectors into
@@ -16,9 +16,9 @@ rotors into simple rotors.
 
 Example usage::
 
->>> B = 1*e12 + 2*e34
->>> bivector_split(B)
-[1^e12, 2^e34]
+    >>> B = 1*e12 + 2*e34
+    >>> bivector_split(B)
+    [1^e12, 2^e34]
 
 Implemented functions
 ---------------------
@@ -88,6 +88,7 @@ def single_split_odd(Wm, li, r):
 
 def _bivector_split(Wm, return_all=True):
     """Internal helper function to perform the decomposition, given a set of Wm.
+
     Parameters
     ----------
     return_all : bool, optional
@@ -120,8 +121,7 @@ def _bivector_split(Wm, return_all=True):
 
 
 def bivector_split(B, k=None, roots=False):
-    """Bivector split of the bivector B based on the method of :cite:`roelfs2021thesis`, chapter 6.
-
+    r"""Bivector split of the bivector B based on the method of :cite:`roelfs2021thesis`, chapter 6.
 
     Parameters
     ----------
