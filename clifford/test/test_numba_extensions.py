@@ -2,6 +2,7 @@ import operator
 import pickle
 
 import numba
+import numpy as np
 import pytest
 
 from clifford.g3c import layout, e1, e2, e3, e4, e5
@@ -59,15 +60,44 @@ class TestBasic:
 
         assert_mv_equal(add_e1(e2), e1 + e2)
 
+
+class TestLayout:
+
     def test_multivector_shorthand(self):
         @numba.njit
         def double(a):
             return a.layout.MultiVector(a.value*2)
 
+        @numba.njit
+        def czeros(l):
+            return l.MultiVector(dtype=np.complex64)
+
         assert_mv_equal(double(e2), 2 * e2)
+        assert_mv_equal(czeros(layout), layout.MultiVector(dtype=np.complex64))
+
+    def test_sig(self):
+        @numba.njit
+        def jit_func(a):
+            return layout.sig
+
+        assert list(jit_func(layout)) == list(layout.sig)
+
+    def test_dims(self):
+        @numba.njit
+        def jit_func(a):
+            return layout.dims
+
+        assert jit_func(layout) == layout.dims
+
+    def test_gaDims(self):
+        @numba.njit
+        def jit_func(a):
+            return layout.gaDims
+
+        assert jit_func(layout) == layout.gaDims
 
 
-class TestOperators:
+class TestMultiVectorOperators:
     @pytest.mark.parametrize("op", [
         pytest.param(getattr(operator, op), id=op)
         for op in ['add', 'sub', 'mul', 'xor', 'or_']
@@ -152,7 +182,7 @@ class TestOperators:
         assert func(a, 0, 1, 2, 3, 4, 5) == a
 
 
-class TestMethods:
+class TestMultiVectorMethods:
     def test_leftLaInv(self):
         @numba.njit
         def jit_func(a):
@@ -208,7 +238,7 @@ class TestMethods:
         assert_mv_equal(a.anticommutator(b), jit_func(a, b))
 
 
-class TestProperties:
+class TestMultiVectorProperties:
 
     @pytest.mark.parametrize('v', [1 + e1 + e2*e3, 1.0 + e1])
     def test_even(self, v):

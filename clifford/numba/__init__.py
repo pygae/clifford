@@ -35,8 +35,12 @@ Supported operations
 --------------------
 The following list of operations are supported in a jitted context:
 
-* A limited version of the constructor ``MultiVector(layout, value)``, and
-  the alias :meth:`layout.MultiVector`.
+* :class:`MultiVector`: A limited version of the constructor supporting only
+  ``MultiVector(layout, value)`` and ``MultiVector(layout, dtype=dtype)``.
+* :meth:`layout.MultiVector`, with the same caveats as above.
+* :attr:`layout.dims`
+* :attr:`layout.gaDims`
+* :attr:`layout.sig`
 * :attr:`MultiVector.value`
 * :attr:`MultiVector.layout`
 * Arithmetic:

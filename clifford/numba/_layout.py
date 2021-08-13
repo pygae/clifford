@@ -80,7 +80,32 @@ def box_Layout(typ: LayoutType, val: llvmlite.ir.Value, c) -> Layout:
 # methods
 
 @numba.extending.overload_method(LayoutType, 'MultiVector')
-def Layout_MultiVector(self, value):
-    def impl(self, value):
-        return MultiVector(self, value)
+def Layout_MultiVector(self, value=None, dtype=None):
+    def impl(self, value=None, dtype=None):
+        return MultiVector(self, value, dtype)
+    return impl
+
+# attributes
+
+@numba.extending.overload_attribute(LayoutType, 'sig')
+def Layout_sig(self):
+    val = self.obj.sig
+    def impl(self):
+        return val
+    return impl
+
+
+@numba.extending.overload_attribute(LayoutType, 'dims')
+def Layout_dims(self):
+    val = self.obj.dims
+    def impl(self):
+        return val
+    return impl
+
+
+@numba.extending.overload_attribute(LayoutType, 'gaDims')
+def Layout_gaDims(self):
+    val = self.obj.gaDims
+    def impl(self):
+        return val
     return impl

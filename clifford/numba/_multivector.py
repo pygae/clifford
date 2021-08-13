@@ -86,23 +86,33 @@ class MultiVectorModel(numba.extending.models.StructModel):
         ]
         super().__init__(dmm, fe_type, members)
 
+# low-level internal multivector constructor
+@numba.extending.intrinsic
+def MultiVector_basic_ctor(tyctx, layout, value):
+    def impl(cgctx, builder, sig, args):
+        typ = sig.return_type
+        layout, value = args
+        mv = cgutils.create_struct_proxy(typ)(cgctx, builder)
+        mv.layout = layout
+        mv.value = value
+        return impl_ret_borrowed(cgctx, builder, sig.return_type, mv._getvalue())
+    sig = MultiVectorType(layout, value)(layout, value)
+    return sig, impl
 
-@numba.extending.type_callable(MultiVector)
-def type_MultiVector(context):
-    def typer(layout, value):
-        if isinstance(layout, LayoutType) and isinstance(value, types.Array):
-            return MultiVectorType(layout, value)
-    return typer
 
-
-@numba.extending.lower_builtin(MultiVector, LayoutType, types.Any)
-def impl_MultiVector(context, builder, sig, args):
-    typ = sig.return_type
-    layout, value = args
-    mv = cgutils.create_struct_proxy(typ)(context, builder)
-    mv.layout = layout
-    mv.value = value
-    return impl_ret_borrowed(context, builder, sig.return_type, mv._getvalue())
+@numba.extending.overload(MultiVector)
+def MultiVector_ctor(layout, value=None, dtype=None):
+    if not isinstance(layout, LayoutType):
+        return
+    if isinstance(value, types.Array):
+        def impl(layout, value=None, dtype=None):
+            return MultiVector_basic_ctor(layout, value)
+        return impl
+    elif dtype is not None:
+        n = layout.obj.gaDims
+        def impl(layout, value=None, dtype=None):
+            return MultiVector_basic_ctor(layout, np.zeros(n, dtype))
+        return impl
 
 
 @lower_constant(MultiVectorType)
