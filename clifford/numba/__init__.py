@@ -56,8 +56,15 @@ The following list of operations are supported in a jitted context:
 * :meth:`MultiVector.mag2`
 * :meth:`MultiVector.__abs__`
 * :meth:`MultiVector.normal`
+* :meth:`MultiVector.leftLaInv`
+* :meth:`MultiVector.shirokov_inverse`
+* :meth:`MultiVector.hitzer_inverse`
 * :meth:`MultiVector.gradeInvol`
 * :meth:`MultiVector.conjugate`
+* :meth:`MultiVector.commutator`
+* :meth:`MultiVector.anticommutator`
+* :attr:`MultiVector.even`
+* :attr:`MultiVector.odd`
 
 Performance considerations
 --------------------------
