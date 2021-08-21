@@ -12,7 +12,7 @@ To obtain BibTex citation information for a _specific_ release (recommended):
 * Scroll down to the bottom of the page, and click the "BibTex" link in the "Export" sidebar
 
 If you want to cite all releases, use:
-```tex
+```BibTeX
 @software{python_clifford,
   author       = {Hugo Hadfield and
                   Eric Wieser and
