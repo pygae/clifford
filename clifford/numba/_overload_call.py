@@ -36,14 +36,13 @@ class _OverloadCallTemplate(_OverloadAttributeTemplate):
     """
     is_method = True
 
-    @classmethod
-    def do_class_init(cls):
-        """
-        Register generic method implementation.
-        """
+    # https://github.com/numba/numba/pull/7061 broke this hack, so we have to
+    # special case it before and after
 
+    @classmethod
+    def _init_once_impl(cls, lower_builtin):
         # this line is changed for __call__
-        @numba.extending.lower_builtin(cls.key, cls.key, types.VarArg(types.Any))
+        @lower_builtin(cls.key, cls.key, types.VarArg(types.Any))
         def method_impl(context, builder, sig, args):
             typ = sig.args[0]
             typing_context = context.typing_context
@@ -53,6 +52,15 @@ class _OverloadCallTemplate(_OverloadAttributeTemplate):
             # Link dependent library
             context.add_linking_libs(getattr(call, 'libs', ()))
             return call(builder, args)
+
+    @classmethod
+    def do_class_init(cls):
+        # numba < 0.54.0rc1
+        cls._init_once_impl(numba.extending.lower_builtin)
+
+    def _init_once(self):
+        # numba >= 0.54.0rc1
+        self._init_once_impl(self._get_target_registry().lower)
 
     def _resolve(self, typ, attr):
         if self._attr != attr:
