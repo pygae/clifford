@@ -590,9 +590,9 @@ class Layout(object):
     @_cached_property
     def _hitzer_inverse(self):
         """ See `MultiVector.hitzer_inverse` for documentation """
-        tot = len(self.sig)
         @_numba_utils.njit
         def hitzer_inverse(operand):
+            tot = operand.layout.dims
             if tot == 0:
                 numerator = 1 + 0*operand
             elif tot == 1:

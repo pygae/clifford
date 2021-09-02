@@ -2,6 +2,7 @@ import operator
 import pickle
 
 import numba
+import numpy as np
 import pytest
 
 from clifford.g3c import layout, e1, e2, e3, e4, e5
@@ -11,6 +12,15 @@ import clifford as cf
 @numba.njit
 def identity(x):
     return x
+
+
+def assert_mv_equal(a, b):
+    assert a.layout is b.layout
+    # numba disagrees with numpy about what type `int` is on windows, so we
+    # can't directly compare the dtypes. We only care that the float / int
+    # state is kept anyway.
+    assert a.value.dtype.kind == b.value.dtype.kind
+    assert a == b
 
 
 class TestBasic:
@@ -26,8 +36,7 @@ class TestBasic:
         assert type(e1_r) is type(e1_r)
 
         # mvs are values, and not preserved by identity
-        assert e1_r.layout is e1.layout
-        assert e1_r == e1
+        assert_mv_equal(e1_r, e1)
 
     def test_piecewise_construction(self):
         @numba.njit
@@ -36,32 +45,59 @@ class TestBasic:
 
         n_e1 = negate(e1)
         assert n_e1.layout is e1.layout
-        assert n_e1 == -e1
+        assert_mv_equal(n_e1, -e1)
 
         @numba.njit
         def add(a, b):
             return cf.MultiVector(a.layout, a.value + b.value)
 
-        ab = add(e1, e2)
-        assert ab == e1 + e2
-        assert ab.layout is e1.layout
+        assert_mv_equal(add(e1, e2), e1 + e2)
 
     def test_constant_multivector(self):
         @numba.njit
         def add_e1(a):
             return cf.MultiVector(a.layout, a.value + e1.value)
 
-        assert add_e1(e2) == e1 + e2
+        assert_mv_equal(add_e1(e2), e1 + e2)
+
+
+class TestLayout:
 
     def test_multivector_shorthand(self):
         @numba.njit
         def double(a):
             return a.layout.MultiVector(a.value*2)
 
-        assert double(e2) == 2 * e2
+        @numba.njit
+        def czeros(l):
+            return l.MultiVector(dtype=np.complex64)
+
+        assert_mv_equal(double(e2), 2 * e2)
+        assert_mv_equal(czeros(layout), layout.MultiVector(dtype=np.complex64))
+
+    def test_sig(self):
+        @numba.njit
+        def jit_func(a):
+            return layout.sig
+
+        assert list(jit_func(layout)) == list(layout.sig)
+
+    def test_dims(self):
+        @numba.njit
+        def jit_func(a):
+            return layout.dims
+
+        assert jit_func(layout) == layout.dims
+
+    def test_gaDims(self):
+        @numba.njit
+        def jit_func(a):
+            return layout.gaDims
+
+        assert jit_func(layout) == layout.gaDims
 
 
-class TestOperators:
+class TestMultiVectorOperators:
     @pytest.mark.parametrize("op", [
         pytest.param(getattr(operator, op), id=op)
         for op in ['add', 'sub', 'mul', 'xor', 'or_']
@@ -75,14 +111,7 @@ class TestOperators:
         def overload(a, b):
             return op(a, b)
 
-        ab = op(a, b)
-        ab_alt = overload(a, b)
-        assert ab == ab_alt
-        assert ab.layout is ab_alt.layout
-        # numba disagrees with numpy about what type `int` is on windows, so we
-        # can't directly compare the dtypes. We only care that the float / int
-        # state is kept anyway.
-        assert ab.value.dtype.kind == ab_alt.value.dtype.kind
+        assert_mv_equal(op(a, b), overload(a, b))
 
     # `op` is not parametrized, for simplicity we only support MultiVector / scalar.
     @pytest.mark.parametrize("a,b", [(e1, 2), (2.0*e1, 2)])
@@ -93,14 +122,7 @@ class TestOperators:
         def overload(a, b):
             return op(a, b)
 
-        ab = op(a, b)
-        ab_alt = overload(a, b)
-        assert ab == ab_alt
-        assert ab.layout is ab_alt.layout
-        # numba disagrees with numpy about what type `int` is on windows, so we
-        # can't directly compare the dtypes. We only care that the float / int
-        # state is kept anyway.
-        assert ab.value.dtype.kind == ab_alt.value.dtype.kind
+        assert_mv_equal(op(a, b), overload(a, b))
 
     @pytest.mark.parametrize("op", [
         pytest.param(getattr(operator, op), id=op)
@@ -112,11 +134,7 @@ class TestOperators:
         def overload(a):
             return op(a)
 
-        ret = op(a)
-        ret_alt = overload(a)
-        assert ret == ret_alt
-        assert ret.layout is ret_alt.layout
-        assert ret.value.dtype == ret_alt.value.dtype
+        assert_mv_equal(op(a), overload(a))
 
     # We have a special overload for literal arguments for speed
     def literal_grade_func(a, grade):
@@ -162,6 +180,79 @@ class TestOperators:
 
         assert func(a, 0, 1) == 1 + e1
         assert func(a, 0, 1, 2, 3, 4, 5) == a
+
+
+class TestMultiVectorMethods:
+    def test_leftLaInv(self):
+        @numba.njit
+        def jit_func(a):
+            return a.leftLaInv()
+
+        assert_mv_equal(jit_func(2.0*e1), (2.0*e1).leftLaInv())
+
+        with pytest.raises(ValueError):
+            jit_func(1.0*e1 - e5)
+
+    def test_shirokov_inverse(self):
+        @numba.njit
+        def jit_func(a):
+            return a.shirokov_inverse()
+
+        assert_mv_equal(jit_func(2.0*e1), (2.0*e1).shirokov_inverse())
+
+        with pytest.raises(ValueError):
+            jit_func(1.0*e1 - e5)
+
+    def test_hitzer_inverse(self):
+        @numba.njit
+        def jit_func(a):
+            return a.hitzer_inverse()
+
+        assert_mv_equal(jit_func(2.0*e1), (2.0*e1).hitzer_inverse())
+
+        with pytest.raises(ValueError):
+            jit_func(1.0*e1 - e5)
+
+    @pytest.mark.parametrize('a', [1 + e1 + e2*e3, 1.0 + e1])
+    def test_gradeInvol(self, a):
+        @numba.njit
+        def jit_func(a):
+            return a.gradeInvol()
+
+        assert_mv_equal(a.gradeInvol(), jit_func(a))
+
+    @pytest.mark.parametrize('a,b', [(e1*e2, e2*e3), (e1*e2*1.0, e2*e3)])
+    def test_commutator(self, a, b):
+        @numba.njit
+        def jit_func(a, b):
+            return a.commutator(b)
+
+        assert_mv_equal(a.commutator(b), jit_func(a, b))
+
+    @pytest.mark.parametrize('a,b', [(e1*e2, e2*e3), (e1*e2*1.0, e2*e3)])
+    def test_anticommutator(self, a, b):
+        @numba.njit
+        def jit_func(a, b):
+            return a.anticommutator(b)
+
+        assert_mv_equal(a.anticommutator(b), jit_func(a, b))
+
+
+class TestMultiVectorProperties:
+
+    @pytest.mark.parametrize('v', [1 + e1 + e2*e3, 1.0 + e1])
+    def test_even(self, v):
+        @numba.njit
+        def jit_func(a):
+            return a.even
+        assert_mv_equal(v.even, jit_func(v))
+
+    @pytest.mark.parametrize('v', [1 + e1 + e2*e3, 1.0 + e1])
+    def test_odd(self, v):
+        @numba.njit
+        def jit_func(a):
+            return a.odd
+        assert_mv_equal(v.odd, jit_func(v))
 
 
 def test_pickling():

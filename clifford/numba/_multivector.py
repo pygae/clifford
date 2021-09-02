@@ -86,23 +86,33 @@ class MultiVectorModel(numba.extending.models.StructModel):
         ]
         super().__init__(dmm, fe_type, members)
 
+# low-level internal multivector constructor
+@numba.extending.intrinsic
+def MultiVector_basic_ctor(tyctx, layout, value):
+    def impl(cgctx, builder, sig, args):
+        typ = sig.return_type
+        layout, value = args
+        mv = cgutils.create_struct_proxy(typ)(cgctx, builder)
+        mv.layout = layout
+        mv.value = value
+        return impl_ret_borrowed(cgctx, builder, sig.return_type, mv._getvalue())
+    sig = MultiVectorType(layout, value)(layout, value)
+    return sig, impl
 
-@numba.extending.type_callable(MultiVector)
-def type_MultiVector(context):
-    def typer(layout, value):
-        if isinstance(layout, LayoutType) and isinstance(value, types.Array):
-            return MultiVectorType(layout, value)
-    return typer
 
-
-@numba.extending.lower_builtin(MultiVector, LayoutType, types.Any)
-def impl_MultiVector(context, builder, sig, args):
-    typ = sig.return_type
-    layout, value = args
-    mv = cgutils.create_struct_proxy(typ)(context, builder)
-    mv.layout = layout
-    mv.value = value
-    return impl_ret_borrowed(context, builder, sig.return_type, mv._getvalue())
+@numba.extending.overload(MultiVector)
+def MultiVector_ctor(layout, value=None, dtype=None):
+    if not isinstance(layout, LayoutType):
+        return
+    if isinstance(value, types.Array):
+        def impl(layout, value=None, dtype=None):
+            return MultiVector_basic_ctor(layout, value)
+        return impl
+    elif dtype is not None:
+        n = layout.obj.gaDims
+        def impl(layout, value=None, dtype=None):
+            return MultiVector_basic_ctor(layout, np.zeros(n, dtype))
+        return impl
 
 
 @lower_constant(MultiVectorType)
@@ -363,12 +373,65 @@ def MultiVector_normal(self):
 
 @numba.extending.overload_method(MultiVectorType, 'gradeInvol')
 def MultiVector_gradeInvol(self):
-    g_func = self.layout_type.obj._grade_invol
-    def impl(self):
-        return g_func(self)
-    return impl
+    if isinstance(self, MultiVectorType):
+        g_func = self.layout_type.obj._grade_invol
+        def impl(self):
+            return g_func(self)
+        return impl
 
 
 @numba.extending.overload_method(MultiVectorType, 'conjugate')
 def MultiVector_conjugate(self):
     return MultiVector.conjugate
+
+
+@numba.extending.overload_attribute(MultiVectorType, 'even')
+def MultiVector_even(self):
+    return MultiVector.even.fget
+
+
+@numba.extending.overload_attribute(MultiVectorType, 'odd')
+def MultiVector_odd(self):
+    return MultiVector.odd.fget
+
+
+@numba.extending.overload_method(MultiVectorType, 'conjugate')
+def MultiVector_conjugate(self):
+    return MultiVector.conjugate
+
+
+@numba.extending.overload_method(MultiVectorType, 'commutator')
+def MultiVector_commutator(self, other):
+    return MultiVector.commutator
+
+
+@numba.extending.overload_method(MultiVectorType, 'anticommutator')
+def MultiVector_commutator(self, other):
+    return MultiVector.anticommutator
+
+
+@numba.extending.overload_method(MultiVectorType, 'leftLaInv')
+def MultiVector_leftLaInv(self):
+    if isinstance(self, MultiVectorType):
+        inv_func = self.layout_type.obj.inv_func
+        def impl(self):
+            return self.layout.MultiVector(inv_func(self.value))
+        return impl
+
+
+@numba.extending.overload_method(MultiVectorType, 'hitzer_inverse')
+def MultiVector_hitzer_inverse(self):
+    if isinstance(self, MultiVectorType):
+        func = self.layout_type.obj._hitzer_inverse
+        def impl(self):
+            return func(self)
+        return impl
+
+
+@numba.extending.overload_method(MultiVectorType, 'shirokov_inverse')
+def MultiVector_shirokov_inverse(self):
+    if isinstance(self, MultiVectorType):
+        func = self.layout_type.obj._shirokov_inverse
+        def impl(self):
+            return func(self)
+        return impl
