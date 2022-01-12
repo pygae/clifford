@@ -132,7 +132,7 @@ jobs:
 
         # `python -m` ensures we dispatch to conda if appropriate
         python -m pytest \
-          --pyargs clifford
+          --pyargs clifford \
           "${PYTEST_ARGS[@]}" \
           --color=yes \
           -o junit_family=legacy \
