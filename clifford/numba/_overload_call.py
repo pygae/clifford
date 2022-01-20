@@ -59,8 +59,12 @@ class _OverloadCallTemplate(_OverloadAttributeTemplate):
         cls._init_once_impl(numba.extending.lower_builtin)
 
     def _init_once(self):
-        # numba >= 0.54.0rc1
-        self._init_once_impl(self._get_target_registry().lower)
+        if numba.version_info >= (0, 55):
+            # https://github.com/numba/numba/commit/8c3ca97262cffb8b6e6321acd5995ec591bf462c
+            self._init_once_impl(self._get_target_registry('__call__ overload').lower)
+        else:
+            # numba >= 0.54.0rc1
+            self._init_once_impl(self._get_target_registry().lower)
 
     def _resolve(self, typ, attr):
         if self._attr != attr:
