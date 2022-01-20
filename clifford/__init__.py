@@ -255,7 +255,7 @@ def grades_present(objin: 'MultiVector', threshold=0.0000001) -> Set[int]:
 
 # todo: work out how to let numba use the COO objects directly
 @_numba_utils.njit
-def _numba_val_get_left_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
+def _numba_val_get_left_mt_matrix(x, k_list, l_list, m_list, mult_table_vals, ndims):
     # TODO: consider `dtype=result_type(x.dtype, mult_table_vals.dtype)`
     intermed = np.zeros((ndims, ndims), dtype=x.dtype)
     test_ind = 0
@@ -267,24 +267,24 @@ def _numba_val_get_left_gmt_matrix(x, k_list, l_list, m_list, mult_table_vals, n
     return intermed
 
 
-def val_get_left_gmt_matrix(mt: sparse.COO, x):
+def val_get_left_mt_matrix(mt: sparse.COO, x):
     """
     This produces the matrix X that performs left multiplication with x
     eg. X@b == (x*b).value
     """
     dims = mt.shape[1]
     k_list, l_list, m_list = mt.coords
-    return _numba_val_get_left_gmt_matrix(
+    return _numba_val_get_left_mt_matrix(
         x, k_list, l_list, m_list, mt.data, dims
     )
 
 
-def val_get_right_gmt_matrix(mt: sparse.COO, x):
+def val_get_right_mt_matrix(mt: sparse.COO, x):
     """
     This produces the matrix X that performs right multiplication with x
     eg. X@b == (b*x).value
     """
-    return val_get_left_gmt_matrix(mt.T, x)
+    return val_get_left_mt_matrix(mt.T, x)
 
 
 # TODO: Move this to the top once we remove circular imports
