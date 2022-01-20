@@ -10,9 +10,9 @@ import sparse
 import clifford as cf
 from . import (
     get_mult_function,
-    val_get_left_gmt_matrix,
-    val_get_right_gmt_matrix,
-    _numba_val_get_left_gmt_matrix,
+    val_get_left_mt_matrix,
+    val_get_right_mt_matrix,
+    _numba_val_get_left_mt_matrix,
     NUMBA_PARALLEL
 )
 from . import _numba_utils
@@ -684,7 +684,7 @@ class Layout(object):
 
         @_numba_utils.njit
         def leftLaInvJIT(value):
-            intermed = _numba_val_get_left_gmt_matrix(value, k_list, l_list, m_list, mult_table_vals, n_dims)
+            intermed = _numba_val_get_left_mt_matrix(value, k_list, l_list, m_list, mult_table_vals, n_dims)
             if abs(np.linalg.det(intermed)) < _settings._eps:
                 raise ValueError("multivector has no left-inverse")
             sol = np.linalg.solve(intermed, identity.astype(intermed.dtype))
@@ -697,14 +697,14 @@ class Layout(object):
         This produces the matrix X that performs left multiplication with x
         eg. ``X@b == (x*b).value``
         """
-        return val_get_left_gmt_matrix(self.gmt, x.value)
+        return val_get_left_mt_matrix(self.gmt, x.value)
 
     def get_right_gmt_matrix(self, x):
         """
         This produces the matrix X that performs right multiplication with x
         eg. ``X@b == (b*x).value``
         """
-        return val_get_right_gmt_matrix(self.gmt, x.value)
+        return val_get_right_mt_matrix(self.gmt, x.value)
 
     def load_ga_file(self, filename: str) -> 'cf.MVArray':
         """
