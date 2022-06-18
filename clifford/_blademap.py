@@ -1,6 +1,11 @@
-class BladeMap(object):
+from .transformations import LinearMatrix
+
+class BladeMap:
     '''
-    A Map Relating Blades in two different algebras
+    A Map Relating Blades in two different algebras.
+
+    This is now just a thin wrapper around :func:`LinearMatrix.from_mapping`,
+    which is more powerful.
 
     Examples
     -----------
@@ -12,13 +17,15 @@ class BladeMap(object):
     >>> # Pauli Algebra  `P`
     >>> P, P_blades = Cl(3, names='p')
     >>> locals().update(P_blades)
-    >>> sta_split = BladeMap([(d01, p1),
-    ...                       (d02, p2),
-    ...                       (d03, p3),
-    ...                       (d12, p12),
-    ...                       (d23, p23),
-    ...                       (d13, p13)])
-
+    >>> sta_split = BladeMap([
+    ...     (d01, p1),
+    ...     (d02, p2),
+    ...     (d03, p3),
+    ...     (d12, p12),
+    ...     (d23, p23),
+    ...     (d13, p13),
+    ...     (d0123, p123)
+    ... ])
     '''
     def __init__(self, blades_map, map_scalars=True):
         self.blades_map = blades_map
@@ -28,6 +35,8 @@ class BladeMap(object):
             s1 = self.b1[0]._newMV(dtype=int)+1
             s2 = self.b2[0]._newMV(dtype=int)+1
             self.blades_map = [(s1, s2)] + self.blades_map
+
+        self._transformation = LinearMatrix.from_mapping(self.blades_map)
 
     @property
     def b1(self):
@@ -39,28 +48,19 @@ class BladeMap(object):
 
     @property
     def layout1(self):
-        return self.b1[0].layout
+        return self._transformation.layout_src
 
     @property
     def layout2(self):
-        return self.b2[0].layout
+        return self._transformation.layout_dst
 
     def __call__(self, A):
         '''map an MV `A` according to blade_map'''
 
         # determine direction of map
-        if A.layout == self.layout1:
-            from_b = self.b1
-            to_b = self.b2
-
+        if A.layout == self._transformation.layout_src:
+            return _transformation(A)
         elif A.layout == self.layout2:
-            from_b = self.b2
-            to_b = self.b1
+            return _transformation.adjoint(A)
         else:
             raise ValueError('A doesnt belong to either Algebra in this Map')
-
-        # create empty MV, and map values
-        B = to_b[0]._newMV(dtype=int)
-        for from_obj, to_obj in zip(from_b, to_b):
-            B += (sum(A.value*from_obj.value)*to_obj)
-        return B
