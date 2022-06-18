@@ -70,6 +70,8 @@ Miscellaneous functions
 
     grade_obj
     randomMV
+    randomIntMV
+    randomV
 
 """
 
@@ -393,6 +395,9 @@ def randomMV(
     --------
     >>> randomMV(layout, min=-2.0, max=2.0, grades=None, uniform=None, n=2)  # doctest: +SKIP
 
+    See Also
+    ----------
+    randomIntMV
     """
 
     if n > 1:
@@ -421,6 +426,21 @@ def randomMV(
 
     return mv
 
+def randomIntMV(layout, min=-10, max=10, uniform=np.random.randint,
+                *args,**kw):
+    '''
+    Random MultiVectors with given layout.
+
+    Coefficients are between min and max, and if grades is a list of integers,
+    only those grades will be non-zero.
+
+    This is just a wrapper of `randomMV`, which sets `uniform` and `min`/`max`
+
+    See Also
+    ----------
+    randomMV
+    '''
+    return randomMV(layout=layout, min=min,max=max,uniform=uniform, *args, **kw)
 
 def conformalize(layout: Layout, added_sig=[1, -1], *, mvClass=MultiVector, **kwargs):
     '''

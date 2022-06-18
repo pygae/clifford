@@ -45,7 +45,10 @@ translated into a Versor.
     orthoFrames2Versor
     orthoMat2Versor
     mat2Frame
+    frame2Mat
+    func2Mat
     omoh
+    rotor_decomp
 
 """
 
@@ -53,15 +56,16 @@ from functools import reduce
 
 from typing import Union, Optional, List, Tuple
 from math import sqrt
-from numpy import eye, array, sign, zeros, sin, arccos
+from numpy import eye, array, sign, zeros, sin, arccos,log
 import numpy as np
-from .. import Cl, gp, Frame, MultiVector, Layout
+from .. import Cl, gp, Frame, MultiVector
 from .. import eps as global_eps
 
 from warnings import warn
 
 
-def omoh(A: Union[Frame, List[MultiVector]], B: Union[Frame, List[MultiVector]]) -> np.ndarray:
+def omoh(A: Union[Frame, List[MultiVector]],
+         B: Union[Frame, List[MultiVector]]) -> np.ndarray:
     r'''
     Determines homogenization scaling for two :class:`~clifford.Frame`\ s related by a Rotor
 
@@ -112,8 +116,8 @@ def omoh(A: Union[Frame, List[MultiVector]], B: Union[Frame, List[MultiVector]])
 
 
 def mat2Frame(A: np.ndarray,
-              layout: Optional[Layout] = None,
-              is_complex: bool = None) -> Tuple[List[MultiVector], Layout]:
+              I: Optional[MultiVector] = None,
+              is_complex: bool = None) -> Tuple[List[MultiVector], MultiVector]:
     '''
     Translates a (possibly complex) matrix into a real vector frame
 
@@ -130,12 +134,17 @@ def mat2Frame(A: np.ndarray,
     A : ndarray
         MxN matrix representing vectors
 
+    I : MultiVector
+        if none we generate an algebra of Gn, if layout we take the
+        vector basis from that, and if its a list   we will assume its
+        a vector basis.
+
     Returns
     -------
     a : list of clifford.MultiVector
         The resulting vectors
-    layout : clifford.Layout
-        The layout of the vectors in ``a``.
+    I : clifford.MultiVector
+        The blade holding the vectors in ``a``.
     '''
 
     # TODO: could simplify this by just implementing the real case and then
@@ -155,10 +164,10 @@ def mat2Frame(A: np.ndarray,
         N = N * 2
         M = M * 2
 
-    if layout is None:
+    if I is None:
         layout, blades = Cl(M)
-
-    e_ = layout.basis_vectors_lst[:M]
+        I = layout.pseudoScalar
+    e_ = I.basis()
 
     a = [0 ^ e_[0]] * N
 
@@ -179,20 +188,59 @@ def mat2Frame(A: np.ndarray,
                 a[n_ + 1] = (a[n_ + 1]) \
                     + ((-A[m, n].imag) ^ e_[m_]) \
                     + ((A[m, n].real) ^ e_[m_ + 1])
-    return a, layout
+    return a, I
 
 
-def frame2Mat(B, A=None, is_complex=None):
+def frame2Mat(B, A=None, I=None, is_complex=None):
+    '''
+
+    convert a list of vectors to a matrix
+
+    Parameters
+    ------------
+    B : list
+        a list of vectors that have been transformed
+    A : None, list of vectors
+        a list of vectors in their initial state. if none we assume
+        orthonormal basis given by B.pseudoScalar, or I
+    I : MultiVector, None
+        pseudoscalar of the space. if  None, we use B.pseudoScalar
+    is_complex: Bool
+        do you want a complex matrix?
+
+    '''
     if is_complex is not None:
         raise NotImplementedError()
+
+    if I is None:
+        I = B[0].pseudoScalar
     if A is None:
         # assume we have orthonormal initial frame
-        A = B[0].layout.basis_vectors_lst
+        A = I.basis()
 
     # you need float() due to bug in clifford
-    M = [float(b | a) for b in B for a in A]
+    M = [float(b | a) for a in A for b in B]
     M = array(M).reshape(len(B), len(B))
+    return M, I
 
+def func2Mat(f,I):
+    '''
+    Convert a function to a matrix by acting on standard basis
+
+    Parameters
+    ---------------
+    f : function
+        function that maps vectors to vectors
+    I : MultiVector
+        psuedoscalar of basis
+
+    See Also
+    ---------
+    frame2Mat
+    '''
+    A = I.basis()
+    B = [f(a) for a in A]
+    return frame2Mat(B=B, A=A,I=I)
 
 def orthoFrames2Versor_dist(A, B, eps=None):
     '''
@@ -401,7 +449,7 @@ def orthoFrames2Versor(B, A=None, delta: float = 1e-3,
     return R, r_list
 
 
-def orthoMat2Versor(A, eps=None, layout=None, is_complex=None):
+def orthoMat2Versor(A, eps=None, I=None, is_complex=None):
     '''
     Translates an orthogonal (or unitary) matrix to a Versor
 
@@ -411,14 +459,22 @@ def orthoMat2Versor(A, eps=None, layout=None, is_complex=None):
 
     Parameters
     ------------
+    A : matrix
+        matrix to be transformed
+    eps : number
+        tolerance
+    I : MultiVector
+        GA  of A
+    is_complex : boolean
+        is A complex?
 
     '''
-    B, layout = mat2Frame(A, layout=layout, is_complex=is_complex)
+    B, layout = mat2Frame(A, I=I, is_complex=is_complex)
     N = len(B)
 
     # if (A.dot(A.conj().T) -eye(N/2)).max()>eps:
     #     warn('A doesnt appear to be a rotation. ')
-    A, layout = mat2Frame(eye(N), layout=layout, is_complex=False)
+    A, dum = mat2Frame(eye(N), I=I, is_complex=False)
     return orthoFrames2Versor(A=A, B=B, eps=eps)
 
 

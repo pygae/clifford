@@ -7,14 +7,15 @@ from clifford import Cl
 from clifford.tools import orthoFrames2Versor as of2v
 from clifford._numba_utils import DISABLE_JIT
 
+from clifford import tools
 from . import rng  # noqa: F401
+
 
 too_slow_without_jit = pytest.mark.skipif(
     DISABLE_JIT, reason="test is too slow without JIT"
 )
 
 
-@pytest.mark.skip(reason="unknown")
 class TestTools:
 
     def checkit(self, p, q, rng):  # noqa: F811
@@ -39,6 +40,7 @@ class TestTools:
         # Determined Versor implements desired transformation
         self.assertTrue([R_found*a*~R_found for a in A] == B)
 
+    @unittest.skip("reason unknown")
     def testOrthoFrames2VersorEuclidean(self):
         for p, q in [(2, 0), (3, 0), (4, 0)]:
             self.checkit(p=p, q=q)
@@ -52,6 +54,15 @@ class TestTools:
     def testOrthoFrames2VersorBalanced(self):
         for p, q in [(2, 2)]:
             self.checkit(p=p, q=q)
+
+    def testframe2Mat(self):
+        for N in [2, 3, 4]:
+            l, b = Cl(N)
+            X = np.random.rand((N**2)).reshape(N, N)
+            I = l.pseudoScalar
+            B, I = tools.mat2Frame(X, I=I)
+            X_, I = tools.frame2Mat(B=B, I=I)
+            testing.assert_almost_equal(X, X_)
 
 
 class TestG3Tools:
