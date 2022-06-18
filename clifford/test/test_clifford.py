@@ -650,13 +650,32 @@ class TestBasicConformal41:
             assert v.isVersor()
 
         neither = [
-            layout.scalar*0,
             1 + e1,
             1 + (e1^e2^e3)
         ]
         for n in neither:
             assert not n.isBlade()
             assert not n.isVersor()
+
+    def test_categorization_null(self, g3c):
+        layout = g3c
+        e1 = layout.blades['e1']
+
+        blades = [
+            layout.scalar*0,
+            layout.einf,
+            layout.eo,
+            e1^layout.eo
+        ]
+        for b in blades:
+            # none of these are invertible
+            assert not b.isBlade(invertible=True)
+            assert not b.isVersor(invertible=True)
+
+            # but if we allow them to be non-invertible, they are blades and
+            # versors
+            assert b.isBlade(invertible=False)
+            assert b.isVersor(invertible=False)
 
     def test_blades_of_grade(self, g3):
         layout = g3

@@ -44,6 +44,15 @@ class TestPGA:
         L = P1 & P2
         assert L == -(4^e01) + (3^e02) - (1^e12) - (4^e13) + (3^e23)
 
+    def test_is_blade(self):
+        blades = self.layout.blades
+        e0 = blades['e0']
+        e1 = blades['e1']
+
+        for b in [e0, e0^e1]:
+            assert e0.isBlade()
+            assert not e0.isBlade(invertible=True)
+
     def test_no_crash(self):
         """ TODO: This doesn't actually do any asserts! """
         layout = self.layout
