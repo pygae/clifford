@@ -21,6 +21,9 @@ The easiest way to get started with ``clifford`` is to use one of several predef
 * .. module:: clifford.pga
 
   ``pga``: Projective space for G3 ``Cl(3, 0, 1)``.
+* .. module:: clifford.pga2d
+
+  ``pga2d``: Projective space for G2 ``Cl(2, 0, 1)``.
 * .. module:: clifford.gac
 
   ``gac``: Geometric Algebra for Conics, ``Cl(5, 3)``.
