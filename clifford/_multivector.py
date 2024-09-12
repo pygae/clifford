@@ -439,7 +439,7 @@ class MultiVector(object):
         Implements ``self[key] = value``.
 
         If key is a blade tuple (e.g. (0, 1) or (1, 3)), then set
-        the (real) value of that blade's coeficient.
+        the (real) value of that blade's coefficient.
 
         .. deprecated:: 1.4.0
             If an integer is passed, it is treated as an index into ``self.value``.

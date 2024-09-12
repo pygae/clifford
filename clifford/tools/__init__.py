@@ -87,7 +87,7 @@ def omoh(A: Union[Frame, List[MultiVector]], B: Union[Frame, List[MultiVector]])
     Returns
     ---------
     out : array of floats
-        weights on `B`, which produce inhomogenous versions of `B`. If
+        weights on `B`, which produce inhomogeneous versions of `B`. If
         you multiply the input `B` by `lam`, it will fulfill `B = R*A*~R`
 
     Examples
@@ -417,7 +417,7 @@ def orthoMat2Versor(A, eps=None, layout=None, is_complex=None):
     N = len(B)
 
     # if (A.dot(A.conj().T) -eye(N/2)).max()>eps:
-    #     warn('A doesnt appear to be a rotation. ')
+    #     warn('A does not appear to be a rotation. ')
     A, layout = mat2Frame(eye(N), layout=layout, is_complex=False)
     return orthoFrames2Versor(A=A, B=B, eps=eps)
 

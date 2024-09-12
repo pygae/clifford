@@ -187,7 +187,7 @@ class GAScene():
                 elif return_val == 7:
                     self.add_plane(mv, color=color)
             else:
-                raise ValueError('Input object cannot be interpretted as an object.')
+                raise ValueError('Input object cannot be interpreted as an object.')
         else:
             raise ValueError(str(mv_type) + ' is not a valid mv_type. You must specify a valid mv_type.')
 

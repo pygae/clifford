@@ -67,7 +67,7 @@ class ConformalLayout(Layout):
                 new_val[:len(old_val)] = old_val
                 x = self.MultiVector(value=new_val)
         except(AttributeError):
-            # if x is a scalar it doesnt have layout but following
+            # if x is a scalar it does not have layout but following
             # will still work
             pass
 

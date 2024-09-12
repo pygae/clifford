@@ -465,7 +465,7 @@ class Layout(object):
         """
         Generates the vee product function
         """
-        # Often, the dual and undual are used here. However, this unecessarily
+        # Often, the dual and undual are used here. However, this unnecessarily
         # invokes the metric for a product that is itself non-metric. The
         # complement functions are faster anyway.
         rc_func = self.right_complement_func
@@ -772,7 +772,7 @@ class Layout(object):
         '''
         generate a random Rotor.
 
-        this is created by muliplying an N unit vectors, where N is
+        this is created by multiplying an N unit vectors, where N is
         the dimension of the algebra if its even; else its one less.
 
         '''

@@ -63,7 +63,7 @@ class TestPGA:
         E2 = blades['e2']           # y=0 plane
         E3 = blades['e3']           # z=0 plane
 
-        # A plane is defined using its homogenous equation ax + by + cz + d = 0
+        # A plane is defined using its homogeneous equation ax + by + cz + d = 0
         def PLANE(a, b, c, d):
             return a*E1 + b*E2 + c*E3 + d*E0
 

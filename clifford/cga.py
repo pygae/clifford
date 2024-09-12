@@ -127,7 +127,7 @@ class Flat(CGAThing):
 
         Typically constructed as method of existing cga, like `cga.flat()`
 
-        multivector is accessable by `mv` property
+        multivector is accessible by `mv` property
 
         Parameters
         -----------
@@ -154,7 +154,7 @@ class Flat(CGAThing):
     # could inherent some generic CGAObject class
     def __init__(self, cga, *args) -> None:
         super().__init__(cga)
-        self.einf = self.cga.einf  # we use this alot
+        self.einf = self.cga.einf  # we use this a lot
 
         if len(args) == 0:
             # generate random highest dimension flat
@@ -193,7 +193,7 @@ class Round(CGAThing):
 
     Typically constructed as method of existing cga, like `cga.round()`
 
-    multivector is accessable by `mv` property
+    multivector is accessible by `mv` property
 
     Parameters
     -----------
@@ -461,7 +461,7 @@ class Rotation(CGAThing):
                     # multivector has improper grade
                     raise ValueError('bad input')
             else:
-                # arg isnt a multivector
+                # arg is not a multivector
                 raise ValueError('bad input')
 
         else:

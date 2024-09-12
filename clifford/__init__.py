@@ -440,7 +440,7 @@ def conformalize(layout: Layout, added_sig=[1, -1], *, mvClass=MultiVector, **kw
         layout of the GA to conformalize (the base)
     added_sig: list-like
         list of +1, -1  denoted the added signatures
-    **kwargs :
+    ``**kwargs`` :
         extra arguments to pass on into the :class:`Layout` constructor.
 
     Returns
