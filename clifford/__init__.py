@@ -81,12 +81,7 @@ from typing import List, Tuple, Set, Dict
 
 # Major library imports.
 import numpy as np
-import numba as _numba  # to avoid clashing with clifford.numba
 import sparse
-try:
-    from numba.np import numpy_support as _numpy_support
-except ImportError:
-    import numba.numpy_support as _numpy_support
 
 
 from clifford.io import write_ga_file, read_ga_file  # noqa: F401
@@ -150,12 +145,6 @@ def get_mult_function(mt: sparse.COO, gradeList,
 
     else:
         return _get_mult_function_runtime_sparse(mt)
-
-
-def _get_mult_function_result_type(a: _numba.types.Type, b: _numba.types.Type, mt: np.dtype):
-    a_dt = _numpy_support.as_dtype(getattr(a, 'dtype', a))
-    b_dt = _numpy_support.as_dtype(getattr(b, 'dtype', b))
-    return np.result_type(a_dt, mt, b_dt)
 
 
 def _get_mult_function(mt: sparse.COO):
