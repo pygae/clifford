@@ -849,7 +849,7 @@ class MultiVector(object):
     def commutator(self, other) -> 'MultiVector':
         r"""The commutator product of two multivectors.
 
-        :math:`[M, N] = M \times N = (MN + NM)/2`
+        :math:`[M, N] = M \times N = (MN - NM)/2`
         """
 
         return ((self * other) - (other * self)) / 2
