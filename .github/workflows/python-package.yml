@@ -14,12 +14,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.8]
+        python-version: [3.11]
     name: "lint | Python ${{ matrix.python-version }}"
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -45,37 +45,37 @@ jobs:
       matrix:
         include:
           # fastest jobs first
-          - python-version: 3.8
+          - python-version: 3.11
             name: without JIT
             disable_jit: 1
-          - python-version: 3.8
+          - python-version: 3.11
             name: doctests
             mode: doctests
           # really slow job next, so it runs in parallel with the others
-          - python-version: 3.8
+          - python-version: 3.11
             name: slow tests
             mode: very_slow
-          - python-version: 3.5
-            name: default
           - python-version: 3.8
             name: default
-          - python-version: 3.9
+          - python-version: 3.11
             name: default
-          - python-version: 3.8
+          - python-version: 3.12
+            name: default
+          - python-version: 3.11
             name: conda
             conda: true
-          - python-version: 3.8
+          - python-version: 3.11
             name: benchmarks
             mode: bench
 
     name: "build | ${{ matrix.name }} | Python ${{matrix.python-version}}"
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     # python / pip
     - name: Set up Python ${{ matrix.python-version }}
       if: "!matrix.conda"
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -89,7 +89,7 @@ jobs:
     # conda
     - name: Set up Python ${{ matrix.python-version }} (conda)
       if: matrix.conda
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v3
       with:
         auto-update-conda: true
         python-version: ${{ matrix.python-version }}
@@ -146,16 +146,16 @@ jobs:
     #   if: ${{ always() }}
     #   with:
     #     report_paths: 'junit/test-results.xml'
-    - uses: codecov/codecov-action@v1
+    - uses: codecov/codecov-action@v5
 
   deploy:
     needs: test
     runs-on: ubuntu-latest
     name: deploy
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: "Install"
@@ -163,7 +163,7 @@ jobs:
         python -m pip install --upgrade pip;
         python -m pip install build
         python -m build --sdist --wheel --outdir dist/
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: dist
         path: dist
