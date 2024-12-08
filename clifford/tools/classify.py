@@ -116,7 +116,7 @@ class _GradedTypesMeta(type):
     override : bool
         Used when creating an override of a particular grade, such as
         ``class Line(Flat[3], override=True)``, which will make ``Flat[3]``
-        return ``Line`` in future. Each grade can be overriden exactly once,
+        return ``Line`` in future. Each grade can be overridden exactly once,
         and should not be outside of this file.
     """
     def __new__(metacls, names, bases, dict, override=False):

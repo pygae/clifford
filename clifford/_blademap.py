@@ -57,7 +57,7 @@ class BladeMap(object):
             from_b = self.b2
             to_b = self.b1
         else:
-            raise ValueError('A doesnt belong to either Algebra in this Map')
+            raise ValueError('A does not belong to either Algebra in this Map')
 
         # create empty MV, and map values
         B = to_b[0]._newMV(dtype=int)

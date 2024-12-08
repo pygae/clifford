@@ -218,7 +218,7 @@ def apply_rotor_device(mv, rotor, output):
 
 @numba.cuda.jit
 def apply_rotor_kernel(mv, rotor, output):
-    # This does elementwise gp with the input arrays into the ouput array
+    # This does elementwise gp with the input arrays into the output array
     i = numba.cuda.grid(1)
     if i < mv.shape[0]:
         apply_rotor_device(mv[i, :], rotor[i, :], output[i, :])
@@ -274,7 +274,7 @@ def adjoint_device(value, output):
 
 @numba.cuda.jit
 def gp_kernel(value, other_value, output):
-    # This does elementwise gp with the input arrays into the ouput array
+    # This does elementwise gp with the input arrays into the output array
     i = numba.cuda.grid(1)
     if i < value.shape[0]:
         gp_device(value[i, :], other_value[i, :], output[i, :])
