@@ -220,7 +220,7 @@ class TestClifford:
         # check properties of the array are preserved (no need to check both a and b)
         np.testing.assert_array_equal(mv_array_a.value, value_array_a)
         assert mv_array_a.value.dtype == value_array_a.dtype
-        assert type(mv_array_a.value) == type(value_array_a)
+        assert type(mv_array_a.value) is type(value_array_a)
 
         # Check addition
         mv_array_sum = mv_array_a + mv_array_b
@@ -806,9 +806,9 @@ class TestFrame:
         for m, a in enumerate(A):
             for n, b in enumerate(A.inv):
                 if m == n:
-                    assert(a | b == 1)
+                    assert (a | b == 1)
                 else:
-                    assert(a | b == 0)
+                    assert (a | b == 0)
 
     @pytest.mark.parametrize(('p', 'q'), [
         (2, 0), (3, 0), (4, 0)
