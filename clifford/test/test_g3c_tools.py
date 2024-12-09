@@ -1,4 +1,3 @@
-import random
 from functools import reduce
 import time
 import functools
@@ -6,15 +5,11 @@ import functools
 
 import numpy as np
 import numpy.testing as npt
-from numpy import exp
 import pytest
-import numba
 
-from clifford import Cl
 from clifford.g3c import *
 from clifford.tools.g3c import *
-from clifford.tools.g3c.rotor_parameterisation import ga_log, ga_exp, general_logarithm, \
-    interpolate_rotors
+from clifford.tools.g3c.rotor_parameterisation import ga_log, general_logarithm
 from clifford.tools.g3c.rotor_estimation import *
 from clifford.tools.g3c.object_clustering import *
 from clifford.tools.g3c.scene_simplification import *
@@ -175,7 +170,7 @@ class TestGeneralLogarithm:
             V = (T * R * S).normal()
             biv = general_logarithm(V)
             V_rebuilt = biv.exp().normal()
-            biv2 = general_logarithm(V)
+            _ = general_logarithm(V)
 
             C1 = random_point_pair(rng=rng)
             C2 = (V * C1 * ~V).normal()
@@ -381,8 +376,8 @@ class TestG3CTools:
         for _ in range(100):
             C1 = random_circle(rng=rng)
             C2 = random_circle(rng=rng)
-            pclose = iterative_closest_points_on_circles(C1, C2)
-            pfar = iterative_furthest_points_on_circles(C1, C2)
+            _ = iterative_closest_points_on_circles(C1, C2)
+            _ = iterative_furthest_points_on_circles(C1, C2)
 
     def test_closest_points_circle_line(self, rng):  # noqa: F811
         """
@@ -740,7 +735,7 @@ class TestG3CTools:
         rad = get_radius_from_sphere(C1)
         t_r = generate_translation_rotor(2.5*rad*e1)
         C2 = (t_r * C1 * ~t_r)(4).normal()
-        rad2 = get_radius_from_sphere(C2)
+        _ = get_radius_from_sphere(C2)
         R = rotor_between_objects(C1, C2)
         C3 = (R * C1 * ~R).normal()
         if sum(np.abs((C2 + C3).value)) < 0.0001:
@@ -1021,7 +1016,7 @@ class TestObjectClustering:
 
         n_repeats = 5
         for i in range(n_repeats):
-            r = random_rotation_translation_rotor(0.001, np.pi / 32, rng=rng)
+            _ = random_rotation_translation_rotor(0.001, np.pi / 32, rng=rng)
             object_set_a = [obj_gen(rng=rng) for i in range(20)]
             object_set_b = [l for l in object_set_a]
             label_a, costs_a = assign_measurements_to_objects_matrix(object_set_a, object_set_b)
