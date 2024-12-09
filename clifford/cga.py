@@ -399,7 +399,7 @@ class Dilation(CGAThing):
                     arg = float(arg)
 
             if arg < 0:
-                raise (ValueError('dilation should be positive'))
+                raise ValueError('dilation should be positive')
 
             mv = e**((-log(arg)/2.)*(self.cga.E0))
 
