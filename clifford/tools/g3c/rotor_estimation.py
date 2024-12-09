@@ -1,5 +1,4 @@
 import random
-from scipy import e
 import numpy as np
 import multiprocessing
 
@@ -379,7 +378,7 @@ def cartans_lines(obj_list_a, obj_list_b):
     """ Performs the extended cartans algorithm as suggested by Alex Arsenovic """
     V_found, rs = cartan(A=obj_list_a, B=obj_list_b)
     theta = ((V_found*~V_found)*e1234)(0)
-    V_found = e**(-theta/2*e123inf)*V_found
+    V_found = np.e**(-theta/2*e123inf)*V_found
     return V_found
 
 
