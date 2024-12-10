@@ -579,7 +579,7 @@ class MultiVector(object):
                 p.pretty(self.layout)
                 p.text(",")
                 p.breakable()
-            p.text(repr(list(self.value)))
+            p.text(repr(self.value.tolist()))
             if self.value.dtype != np.float64:
                 p.text(",")
                 p.breakable()
