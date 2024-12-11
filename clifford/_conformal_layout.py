@@ -66,7 +66,7 @@ class ConformalLayout(Layout):
                 new_val = np.zeros(self.gaDims)
                 new_val[:len(old_val)] = old_val
                 x = self.MultiVector(value=new_val)
-        except(AttributeError):
+        except AttributeError:
             # if x is a scalar it does not have layout but following
             # will still work
             pass

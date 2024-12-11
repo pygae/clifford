@@ -59,39 +59,11 @@ class pickleable_function:
         return "_pickleable_function({!r})".format(self.__func)
 
 
-class _fake_generated_jit:
-    def __init__(self, f):
-        self.__cache = {}
-        self.__func = pickleable_function(f)
-        functools.update_wrapper(self, self.__func)
-
-    def __getnewargs_ex__(self):
-        return (self.__func,), {}
-
-    def __getstate__(self):
-        return {}
-
-    def __call__(self, *args):
-        arg_type = tuple(numba.typeof(arg) for arg in args)
-        try:
-            func = self.__cache[arg_type]
-        except KeyError:
-            func = self.__cache[arg_type] = self.__func(*arg_type)
-        return func(*args)
-
-
 if not DISABLE_JIT:
     njit = numba.njit
-    generated_jit = numba.generated_jit
 else:
     def njit(f=None, **kwargs):
         if f is None:
             return pickleable_function
         else:
             return pickleable_function(f)
-
-    def generated_jit(f=None, **kwargs):
-        if f is None:
-            return _fake_generated_jit
-        else:
-            return _fake_generated_jit(f)

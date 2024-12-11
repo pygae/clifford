@@ -479,7 +479,7 @@ class Layout(object):
     def __repr__(self):
         return "{}({!r}, ids={!r}, order={!r}, names={!r})".format(
             type(self).__name__,
-            list(self.sig), self._basis_vector_ids, self._basis_blade_order, self.names
+            self.sig.tolist(), self._basis_vector_ids, self._basis_blade_order, self.names
         )
 
     def _repr_pretty_(self, p, cycle):
@@ -489,7 +489,7 @@ class Layout(object):
         prefix = '{}('.format(type(self).__name__)
 
         with p.group(len(prefix), prefix, ')'):
-            p.text('{},'.format(list(self.sig)))
+            p.text('{},'.format(self.sig.tolist()))
             p.breakable()
             p.text('ids=')
             p.pretty(self._basis_vector_ids)
