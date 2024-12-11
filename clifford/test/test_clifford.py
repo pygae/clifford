@@ -741,6 +741,24 @@ class TestBasicAlgebra:
             res2 = layout.MultiVector(value=b_right@a.value)
             np.testing.assert_almost_equal(res.value, res2.value)
 
+    @pytest.mark.parametrize('func', [
+        operator.add,
+        operator.sub,
+        operator.mul,
+        operator.xor,  # outer product
+        operator.or_,  # inner product
+    ])
+    def test_swapped_operands(self, algebra, rng, func):    # noqa: F811
+        layout = algebra
+        for _ in range(10):
+            mv = layout.randomMV(rng=rng)
+            mv2 = layout.randomMV(rng=rng)
+            # Convert first operand to MVArray. This provokes use of operation with
+            # swapped operands: MultiVector.__rmul__, __ror__, etc.
+            ma = clifford.MVArray(mv)
+            np.testing.assert_equal(func(ma, mv2), func(mv, mv2))
+            np.testing.assert_equal(func(mv2, ma), func(mv2, mv))
+
 
 class TestPrettyRepr:
     """ Test ipython pretty printing, with tidy line wrapping """
