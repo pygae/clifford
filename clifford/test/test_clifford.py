@@ -748,7 +748,7 @@ class TestBasicAlgebra:
         operator.xor,  # outer product
         operator.or_,  # inner product
     ])
-    def test_swapped_operands(self, algebra, rng, func):
+    def test_swapped_operands(self, algebra, rng, func):    # noqa: F811
         layout = algebra
         for _ in range(10):
             mv = layout.randomMV(rng=rng)
