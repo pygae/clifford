@@ -218,7 +218,21 @@ class MultiVector(object):
 
         return self._newMV(newValue)
 
-    __ror__ = __or__
+    def __ror__(self, other) -> 'MultiVector':
+        r"""Right-hand inner product, :math:`N \cdot M` """
+
+        other, mv = self._checkOther(other)
+
+        if mv:
+            newValue = self.layout.imt_func(other.value, self.value)
+        else:
+            if isinstance(other, np.ndarray):
+                obj = self.__array__()
+                return other|obj
+            # l * M = M * l = 0 for scalar l
+            return self._newMV(dtype=np.result_type(self.value.dtype, other))
+
+        return self._newMV(newValue)
 
     def __add__(self, other) -> 'MultiVector':
         """ ``self + other``, addition """
