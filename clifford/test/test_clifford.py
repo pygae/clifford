@@ -748,16 +748,20 @@ class TestBasicAlgebra:
         operator.xor,  # outer product
         operator.or_,  # inner product
     ])
-    def test_swapped_operands(self, algebra, rng, func):    # noqa: F811
-        layout = algebra
-        for _ in range(10):
-            mv = layout.randomMV(rng=rng)
-            mv2 = layout.randomMV(rng=rng)
-            # Convert first operand to MVArray. This provokes use of operation with
-            # swapped operands: MultiVector.__rmul__, __ror__, etc.
-            ma = clifford.MVArray(mv)
-            np.testing.assert_equal(func(ma, mv2), func(mv, mv2))
-            np.testing.assert_equal(func(mv2, ma), func(mv2, mv))
+    def test_swapped_operands(self, g3, func):
+        layout = g3
+        e1 = layout.blades['e1']
+        e2 = layout.blades['e2']
+        e12 = layout.blades['e12']
+        # Pick two numbers with non-commutative products
+        # e1^e2 == -e2^e1, e1|e12 == -e12|e1
+        mv = 1 * e1 + 2 * e2
+        mv2 = 3 * e1 + 5 * e12
+        # Convert first operand to MVArray. This provokes use of operation with
+        # swapped operands: MultiVector.__rmul__, __ror__, etc.
+        ma = clifford.MVArray(mv)
+        np.testing.assert_equal(func(ma, mv2), func(mv, mv2))
+        np.testing.assert_equal(func(mv2, ma), func(mv2, mv))
 
 
 class TestPrettyRepr:
