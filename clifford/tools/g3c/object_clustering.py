@@ -14,13 +14,10 @@ from .cuda import object_set_cost_cuda_mvs
 def compare_labels(old_labels, new_labels):
     """
     Compares two lists of labels to see if any of them are different
+
+    assuming both inputs have the same length
     """
-    for i in range(len(old_labels)):
-        ol = old_labels[i]
-        nl = new_labels[i]
-        if ol != nl:
-            return False
-    return True
+    return all(x == y for x, y in zip(old_labels, new_labels))
 
 
 def assign_measurements_to_objects_matrix(objects, objects_measurements, object_type='generic',
@@ -62,14 +59,14 @@ def fit_object_to_objects(object_start, objects, averaging_method='unweighted'):
         elif averaging_method == 'unweighted':
             final_object = average_objects(objects)
         elif averaging_method == 'weighted':
-            final_object = 1.0*object_start
+            final_object = 1.0 * object_start
             for i in range(10):
                 weights = (1.0 / (object_set_cost_matrix([final_object], objects) + 0.0001)).flatten()
                 final_object = average_objects(objects, weights=weights)
         else:
             raise ValueError('No averaging method defined')
     else:
-        return 1.0*object_start
+        return 1.0 * object_start
     return final_object
 
 
@@ -80,7 +77,7 @@ def reassign_unused_centroids(labels, costs, n):
     k = 0
     new_labels = copy.deepcopy(labels)
     for i in range(n):
-        if not (i in labels):
+        if i not in labels:
             new_labels[max_cost_labels_index[k]] = i
             k = k + 1
     return new_labels
