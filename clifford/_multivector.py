@@ -2,6 +2,7 @@ import numbers
 import math
 from typing import List, Set, Tuple, Union
 import warnings
+import operator
 
 import numpy as np
 
@@ -684,25 +685,37 @@ class MultiVector(object):
 
         return True
 
-    def isBlade(self) -> bool:
+    def isBlade(self, *, invertible=False) -> bool:
         """Returns true if multivector is a blade.
         """
-        if len(self.grades()) != 1:
+        if len(self.grades()) > 1:
             return False
 
-        return self.isVersor()
+        return self.isVersor(invertible=invertible)
 
-    def isVersor(self) -> bool:
+    def isVersor(self, *, invertible=True) -> bool:
         """Returns true if multivector is a versor.
         From :cite:`ga4cs` section 21.5, definition from 7.6.4
         """
+        if invertible:
+            grade_cmp = operator.eq
+        else:
+            grade_cmp = operator.le  # subset
+
         Vhat = self.gradeInvol()
         Vrev = ~self
-        Vinv = Vrev/(self*Vrev)[()]
+        mag = (self*Vrev)[()]
+        if mag != 0:
+            # not strictly necessary, just scales to make eps appropriate below
+            Vinv = Vrev / mag
+        elif invertible:
+            return False
+        else:
+            Vinv = Vrev
 
         # Test if the versor inverse (~V)/(V * ~V) is truly the inverse of the
         # multivector V
-        if (Vhat*Vinv).grades(eps=0.000001) != {0}:
+        if not grade_cmp((Vhat*Vinv).grades(eps=0.000001), {0}):
             return False
         if not np.sum(np.abs((Vhat*Vinv).value - (Vinv*Vhat).value)) < 0.0001:
             return False
@@ -710,7 +723,7 @@ class MultiVector(object):
         # applying a versor (and hence an invertible blade) to a vector should
         # not change the grade
         if not all(
-            (Vhat*e*Vrev).grades(eps=0.000001) == {1}
+            grade_cmp((Vhat*e*Vrev).grades(eps=0.000001), {1})
             for e in cf.basis_vectors(self.layout).values()
         ):
             return False
