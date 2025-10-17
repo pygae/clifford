@@ -24,8 +24,6 @@ Scalars, vectors, and higher-grade entities can be mixed freely and consistently
 
 ![Visual explanation of blades](https://raw.githubusercontent.com/pygae/clifford/master/docs/_static/blades.png)
  
-
-
 Quick Installation
 ------------------
 Requires Python version >=3.5
