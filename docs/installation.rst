@@ -3,13 +3,7 @@ Installation
 
 Clifford can be installed via the standard mechanisms for Python packages, and is available through both PyPI and Anaconda.
 
-conda
------
-If you are using the `Anaconda python distribution <https://www.anaconda.com/distribution/#download-section>`_, then you should install using the ``conda`` command.
 
-Once you have anaconda installed you can install clifford from the conda-forge channel with the command::
-
-    conda install -c conda-forge clifford
 
 PyPI
 ----
