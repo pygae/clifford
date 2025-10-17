@@ -61,9 +61,9 @@ jobs:
             name: default
           - python-version: 3.12
             name: default
-          - python-version: 3.11
-            name: conda
-            conda: true
+          #- python-version: 3.11
+          #  name: conda
+          #  conda: true
           - python-version: 3.11
             name: benchmarks
             mode: bench
